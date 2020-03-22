@@ -1,2 +1,2 @@
 # vvgo
-Virtual Videogame Orchestra
+Virtual Video Game Orchestra
