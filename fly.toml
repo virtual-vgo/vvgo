@@ -1,6 +1,9 @@
 app = "vvgo"
 
 
+[build]
+  builder = "cloudfoundry/cnb:tiny"
+
 [[services]]
   internal_port = 8080
   protocol = "tcp"
@@ -19,4 +22,11 @@ app = "vvgo"
 
   [[services.tcp_checks]]
     interval = 10000
+    timeout = 2000
+
+  [[services.http_checks]]
+    interval = 10000
+    method = "get"
+    path = "/"
+    protocol = "http"
     timeout = 2000
