@@ -10,12 +10,16 @@
 
     <title>Virtual Video Game Orchestra</title>
 
-    <link rel="icon" href="img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="images/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="stylesheet" type="text/css" href="css/theme.css">
+    <link rel="stylesheet" type="text/css" href="css/jquery.dataTables.css">
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="js/music_pdfs.js"></script>
 </head>
 <body>
 <h1>Music PDFs</h1>
-<table>
+<table id="example" class="display">
     <thead>
     <tr>
         <th>Project</th>
@@ -23,6 +27,7 @@
         <th>Part Number</th>
     </tr>
     </thead>
+    <tbody>
     {{- range .}}
         <tr>
             <td>{{.Project}}</td>
@@ -30,6 +35,7 @@
             <td>{{.PartNumber}}</td>
         </tr>
     {{- end }}
+    </tbody>
 </table>
 </body>
 </html>
