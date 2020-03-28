@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"log"
-	"net/http"
 )
 
 type ObjectStore interface {
@@ -14,10 +13,10 @@ type ObjectStore interface {
 }
 
 type Object struct {
-	ContentType string       `json:"content-type"`
-	Name        string       `json:"name"`
-	Meta        http.Header  `json:"meta"`
-	Buffer      bytes.Buffer `json:"-"`
+	ContentType string            `json:"content-type"`
+	Name        string            `json:"name"`
+	Meta        map[string]string `json:"meta"`
+	Buffer      bytes.Buffer      `json:"-"`
 }
 
 type MinioConfig struct {
@@ -45,8 +44,12 @@ func (x *minioDriver) PutObject(bucketName string, object *Object) error {
 	if err := x.MakeBucket(bucketName); err != nil {
 		return err
 	}
-	n, err := x.Client.PutObject(bucketName, object.Name, &object.Buffer,
-		int64(object.Buffer.Len()), minio.PutObjectOptions{ContentType: object.ContentType})
+
+	opts := minio.PutObjectOptions{
+		ContentType:  object.ContentType,
+		UserMetadata: object.Meta,
+	}
+	n, err := x.Client.PutObject(bucketName, object.Name, &object.Buffer, -1, opts)
 	if err != nil {
 		return err
 	}
@@ -73,10 +76,19 @@ func (x *minioDriver) ListObjects(bucketName string) []Object {
 
 	var objects []Object
 	for objectInfo := range x.Client.ListObjects(bucketName, "", false, done) {
+		opts := minio.StatObjectOptions{}
+
+		objectInfo, err := x.Client.StatObject(bucketName, objectInfo.Key, opts)
+		if err != nil {
+			log.Printf("minio.StatObject() failed: %v", err)
+			continue
+		}
+
+		log.Printf("%#v", objectInfo)
 		objects = append(objects, Object{
 			ContentType: objectInfo.ContentType,
 			Name:        objectInfo.Key,
-			Meta:        objectInfo.Metadata,
+			Meta:        objectInfo.UserMetadata,
 		})
 	}
 	return objects

@@ -66,7 +66,7 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 	object := Object{
 		ContentType: "application/pdf",
 		Name:        fmt.Sprintf("%s-%s-%d.pdf", meta.Project, meta.Instrument, meta.PartNumber),
-		Meta:        meta.ToHeader(),
+		Meta:        meta.ToMap(),
 		Buffer:      pdfBytes,
 	}
 	if err := x.PutObject(MusicPdfsBucketName, &object); err != nil {
@@ -90,18 +90,18 @@ type MusicPDFMeta struct {
 	PartNumber int
 }
 
-func (x *MusicPDFMeta) ToHeader() http.Header {
-	header := make(http.Header)
-	header.Add("Project", x.Project)
-	header.Add("Instrument", x.Instrument)
-	header.Add("PartNumber", strconv.Itoa(x.PartNumber))
-	return header
+func (x *MusicPDFMeta) ToMap() map[string]string {
+	return map[string]string{
+		"Project":     x.Project,
+		"Instrument":  x.Instrument,
+		"Part-Number": strconv.Itoa(x.PartNumber),
+	}
 }
 
 func (x *MusicPDFMeta) ReadFromHeader(header http.Header) {
 	x.Project = header.Get("Project")
 	x.Instrument = header.Get("Instrument")
-	x.PartNumber, _ = strconv.Atoi(header.Get("PartNumber"))
+	x.PartNumber, _ = strconv.Atoi(header.Get("Part-Number"))
 }
 
 func (x *MusicPDFMeta) ReadFromUrlValues(values url.Values) {
