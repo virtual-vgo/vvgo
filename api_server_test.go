@@ -35,15 +35,15 @@ func TestApiServer_Index(t *testing.T) {
 						{
 							ContentType: "application/pdf",
 							Name:        "trumpet.pdf",
-							Meta: http.Header{
-								"instrument": []string{"trumpet"},
+							Meta: map[string]string{
+								"instrument": "trumpet",
 							},
 						},
 						{
 							ContentType: "application/pdf",
 							Name:        "flute.pdf",
-							Meta: http.Header{
-								"instrument": []string{"flute"},
+							Meta: map[string]string{
+								"instrument": "flute",
 							},
 						},
 					}
@@ -52,7 +52,7 @@ func TestApiServer_Index(t *testing.T) {
 			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusOK,
-				body: `[{"content-type":"application/pdf","name":"trumpet.pdf","meta":{"instrument":["trumpet"]}},{"content-type":"application/pdf","name":"flute.pdf","meta":{"instrument":["flute"]}}]`,
+				body: `[{"content-type":"application/pdf","name":"trumpet.pdf","meta":{"instrument":"trumpet"}},{"content-type":"application/pdf","name":"flute.pdf","meta":{"instrument":"flute"}}]`,
 			},
 		},
 	} {
@@ -64,7 +64,7 @@ func TestApiServer_Index(t *testing.T) {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
 			if expected, got := tt.wants.body, strings.TrimSpace(gotResponse.Body.String()); expected != got {
-				t.Errorf("expected body `%s`, got `%s`", expected, got)
+				t.Errorf("expected body:\nwant: `%s`\n got: `%s`", expected, got)
 			}
 		})
 	}
@@ -109,10 +109,10 @@ func TestApiServer_Upload(t *testing.T) {
 				object: Object{
 					ContentType: "application/pdf",
 					Name:        "01-snake-eater-trumpet-4.pdf",
-					Meta: http.Header{
-						"Project":    []string{"01-snake-eater"},
-						"Instrument": []string{"trumpet"},
-						"Partnumber": []string{"4"},
+					Meta: map[string]string{
+						"Project":    "01-snake-eater",
+						"Instrument":  "trumpet",
+						"Part-Number": "4",
 					},
 					Buffer: *bytes.NewBufferString(":wave:"),
 				},
@@ -132,10 +132,10 @@ func TestApiServer_Upload(t *testing.T) {
 				object: Object{
 					ContentType: "application/pdf",
 					Name:        "01-snake-eater-trumpet-4.pdf",
-					Meta: http.Header{
-						"Project":    []string{"01-snake-eater"},
-						"Instrument": []string{"trumpet"},
-						"Partnumber": []string{"4"},
+					Meta: map[string]string{
+						"Project":    "01-snake-eater",
+						"Instrument":  "trumpet",
+						"Part-Number": "4",
 					},
 					Buffer: *bytes.NewBufferString(":wave:"),
 				},
@@ -170,33 +170,33 @@ func TestApiServer_Upload(t *testing.T) {
 	}
 }
 
-func TestMusicPDFMeta_ToHeader(t *testing.T) {
+func TestMusicPDFMeta_ToMap(t *testing.T) {
 	meta := MusicPDFMeta{
-		Project:    "test-project",
-		Instrument: "test-instrument",
+		Project:    "01-snake-eater",
+		Instrument: "trumpet",
 		PartNumber: 4,
 	}
 
-	wantHeader := make(http.Header)
-	wantHeader.Add("Project", "test-project")
-	wantHeader.Add("Instrument", "test-instrument")
-	wantHeader.Add("PartNumber", "4")
-
-	gotHeader := meta.ToHeader()
-	if expected, got := fmt.Sprintf("%#v", wantHeader), fmt.Sprintf("%#v", gotHeader); expected != got {
+	wantMap := map[string]string{
+		"Project":    "01-snake-eater",
+		"Instrument":  "trumpet",
+		"Part-Number": "4",
+	}
+	gotMap := meta.ToMap()
+	if expected, got := fmt.Sprintf("%#v", wantMap), fmt.Sprintf("%#v", gotMap); expected != got {
 		t.Errorf("expected %v, got %v", expected, got)
 	}
 }
 
 func TestMusicPDFMeta_ReadFromHeader(t *testing.T) {
 	header := make(http.Header)
-	header.Add("Project", "test-project")
-	header.Add("Instrument", "test-instrument")
-	header.Add("PartNumber", "4")
+	header.Add("Project", "01-snake-eater")
+	header.Add("Instrument", "trumpet")
+	header.Add("Part-Number", "4")
 
 	expectedMeta := MusicPDFMeta{
-		Project:    "test-project",
-		Instrument: "test-instrument",
+		Project:    "01-snake-eater",
+		Instrument: "trumpet",
 		PartNumber: 4,
 	}
 
