@@ -19,8 +19,6 @@ type ApiServer struct {
 	mux *http.ServeMux
 }
 
-var musicPDFsTemplate = template.Must(template.ParseFiles("templates/music_pdfs.gohtml"))
-
 type APIHandlerFunc func(r *http.Request) ([]byte, int)
 
 func (x APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +72,11 @@ func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
 	var buf bytes.Buffer
 	switch true {
 	case acceptsType(r, "text/html"):
+		musicPDFsTemplate, err := template.ParseFiles("public/music_pdfs.gohtml")
+		if err != nil {
+			logger.Printf("template.ParseFiles() failed: %v", err)
+			return nil, http.StatusInternalServerError
+		}
 		if err := musicPDFsTemplate.Execute(&buf, &pdfs); err != nil {
 			logger.Printf("template.Execute() failed: %v", err)
 			return nil, http.StatusInternalServerError
