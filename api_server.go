@@ -23,7 +23,7 @@ func (x *ApiServer) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	objects := x.ListObjects("music_pdfs")
+	objects := x.ListObjects(MusicPdfsBucketName)
 	if err := json.NewEncoder(w).Encode(&objects); err != nil {
 		log.Printf("json.Encode() failed: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
