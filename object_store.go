@@ -20,8 +20,24 @@ type Object struct {
 	Buffer      bytes.Buffer `json:"-"`
 }
 
+type MinioConfig struct {
+	Endpoint        string
+	AccessKeyID     string
+	SecretAccessKey string
+	UseSSL          bool
+}
+
 type minioDriver struct {
 	*minio.Client
+}
+
+func NewMinioDriverMust(config MinioConfig) *minioDriver {
+	minioClient, err := minio.New(config.Endpoint, config.AccessKeyID,
+		config.SecretAccessKey, config.UseSSL)
+	if err != nil {
+		log.Fatalf("minio.New() failed: %v", err)
+	}
+	return &minioDriver{minioClient}
 }
 
 func (x *minioDriver) PutObject(bucketName string, object *Object) error {
