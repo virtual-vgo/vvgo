@@ -69,12 +69,14 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 		Meta:        meta.ToHeader(),
 		Buffer:      pdfBytes,
 	}
-	if err := x.PutObject("music_pdfs", &object); err != nil {
+	if err := x.PutObject(MusicPdfsBucketName, &object); err != nil {
 		log.Printf("storage.PutObject() failed: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
+
+const MusicPdfsBucketName = "music-pdfs"
 
 var (
 	ErrMissingProject    = fmt.Errorf("missing required field `project`")
