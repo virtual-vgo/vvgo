@@ -1,6 +1,6 @@
 body {
     background-color: #0A0A0A;
-    color: white;
+    color: #E9E9E9;
 }
 
 .logo {
@@ -8,6 +8,17 @@ body {
     margin: 20px auto;
     width: 50%;
     height: 50%;
+}
+
+.logo-tiny {
+    display: block;
+    margin: 20px auto;
+    width: 20%;
+    height: 20%;
+}
+
+.title {
+    text-align: center;
 }
 
 .button-table {
@@ -31,4 +42,18 @@ body {
     font-family: Sans-serif;
     font-weight: bold;
     border-radius: 4px;
+}
+
+
+#download-link a:link, a:visited {
+    background-color: #f44336;
+    color: white;
+    padding: 14px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+#download-link a:link, a:visited, a:active, a:hover {
+    text-decoration: none;
 }
