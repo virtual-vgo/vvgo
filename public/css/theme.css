@@ -1,22 +1,17 @@
 body {
     background-color: #0A0A0A;
+    color: white;
 }
 
 .logo {
     display: block;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 20px auto;
     width: 50%;
     height: 50%;
 }
 
 .button-table {
-    margin-top: 0;
-    margin-bottom: 0;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto;
 }
 
 .button {

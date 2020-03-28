@@ -58,7 +58,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/music_pdfs", APIHandlerFunc(apiServer.MusicPDFsIndex))
 	mux.Handle("/music_pdfs/upload", APIHandlerFunc(apiServer.MusicPDFsUpload))
-	mux.Handle("/", http.FileServer(http.Dir(".")))
+	mux.Handle("/", http.FileServer(http.Dir("public")))
 	httpServer := &http.Server{
 		Addr:    ":8080",
 		Handler: mux,
