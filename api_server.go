@@ -41,8 +41,9 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 	logger.WithFields(logrus.Fields{
 		"client_ip":       clientIP,
 		"request_path":    r.URL.EscapedPath(),
+		"user_agent":      r.UserAgent(),
 		"request_method":  r.Method,
-		"request_size":   r.ContentLength,
+		"request_size":    r.ContentLength,
 		"request_seconds": time.Since(start).Seconds(),
 		"status_code":     code,
 	}).Info("request completed")
@@ -65,10 +66,15 @@ func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
 	}
 
 	objects := x.ListObjects(MusicPdfsBucketName)
+	pdfs := make([]MusicPDFMeta, 0, len(objects))
+	for i := range objects {
+		pdfs = append(pdfs, NewMusicPDFMetaFromTags(objects[i].Tags))
+	}
+
 	var buf bytes.Buffer
-	switch r.Header.Get("Accept") {
-	case "text/html":
-		if err := musicPDFsTemplate.Execute(&buf, &objects); err != nil {
+	switch true {
+	case acceptsType(r, "text/html"):
+		if err := musicPDFsTemplate.Execute(&buf, &pdfs); err != nil {
 			logger.Printf("template.Execute() failed: %v", err)
 			return nil, http.StatusInternalServerError
 		}
@@ -79,6 +85,15 @@ func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
 		}
 	}
 	return buf.Bytes(), http.StatusOK
+}
+
+func acceptsType(r *http.Request, mimeType string) bool {
+	for _, t := range strings.Split(r.Header.Get("Accept"), ",") {
+		if t == mimeType {
+			return true
+		}
+	}
+	return false
 }
 
 func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
@@ -93,8 +108,7 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 	}
 
 	// read the metadata
-	var meta MusicPDFMeta
-	meta.ReadFromUrlValues(r.URL.Query())
+	meta := NewMusicPDFMetaFromUrlValues(r.URL.Query())
 	if err := meta.Validate(); err != nil {
 		return []byte(err.Error()), http.StatusBadRequest
 	}
@@ -110,7 +124,7 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 	object := Object{
 		ContentType: "application/pdf",
 		Name:        fmt.Sprintf("%s-%s-%d.pdf", meta.Project, meta.Instrument, meta.PartNumber),
-		Meta:        meta.ToMap(),
+		Tags:        meta.ToTags(),
 		Buffer:      pdfBytes,
 	}
 	if err := x.PutObject(MusicPdfsBucketName, &object); err != nil {
@@ -134,24 +148,30 @@ type MusicPDFMeta struct {
 	PartNumber int
 }
 
-func (x *MusicPDFMeta) ToMap() map[string]string {
+func NewMusicPDFMetaFromTags(tags Tags) MusicPDFMeta {
+	partNumber, _ := strconv.Atoi(tags["Part-Number"])
+	return MusicPDFMeta{
+		Project:    tags["Project"],
+		Instrument: tags["Instrument"],
+		PartNumber: partNumber,
+	}
+}
+
+func NewMusicPDFMetaFromUrlValues(values url.Values) MusicPDFMeta {
+	partNumber, _ := strconv.Atoi(values.Get("part_number"))
+	return MusicPDFMeta{
+		Project:    values.Get("project"),
+		Instrument: values.Get("instrument"),
+		PartNumber: partNumber,
+	}
+}
+
+func (x *MusicPDFMeta) ToTags() map[string]string {
 	return map[string]string{
 		"Project":     x.Project,
 		"Instrument":  x.Instrument,
 		"Part-Number": strconv.Itoa(x.PartNumber),
 	}
-}
-
-func (x *MusicPDFMeta) ReadFromHeader(header http.Header) {
-	x.Project = header.Get("Project")
-	x.Instrument = header.Get("Instrument")
-	x.PartNumber, _ = strconv.Atoi(header.Get("Part-Number"))
-}
-
-func (x *MusicPDFMeta) ReadFromUrlValues(values url.Values) {
-	x.Project = values.Get("project")
-	x.Instrument = values.Get("instrument")
-	x.PartNumber, _ = strconv.Atoi(values.Get("part_number"))
 }
 
 func (x *MusicPDFMeta) Validate() error {

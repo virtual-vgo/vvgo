@@ -11,23 +11,25 @@
     <title>Virtual Video Game Orchestra</title>
 
     <link rel="icon" href="img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
-
+    <link rel="stylesheet" type="text/css" href="css/theme.css">
 </head>
 <body>
 <h1>Music PDFs</h1>
 <table>
     <thead>
-    <td>Project</td>
-    <td>Instrument</td>
-    <td>Part Number</td>
+    <tr>
+        <th>Project</th>
+        <th>Instrument</th>
+        <th>Part Number</th>
+    </tr>
     </thead>
-    {{ range .}}
+    {{- range .}}
         <tr>
-            <td>.Project</td>
-            <td>.Instrument</td>
-            <td>.PartNumber</td>
+            <td>{{.Project}}</td>
+            <td>{{.Instrument}}</td>
+            <td>{{.PartNumber}}</td>
         </tr>
-    {{ end }}
+    {{- end }}
 </table>
 </body>
 </html>

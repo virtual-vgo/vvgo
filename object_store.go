@@ -13,11 +13,13 @@ type ObjectStore interface {
 }
 
 type Object struct {
-	ContentType string            `json:"content-type"`
-	Name        string            `json:"name"`
-	Meta        map[string]string `json:"meta"`
-	Buffer      bytes.Buffer      `json:"-"`
+	ContentType string       `json:"content-type"`
+	Name        string       `json:"name"`
+	Tags        Tags         `json:"tags"`
+	Buffer      bytes.Buffer `json:"-"`
 }
+
+type Tags map[string]string
 
 type MinioConfig struct {
 	Endpoint        string
@@ -47,14 +49,14 @@ func (x *minioDriver) PutObject(bucketName string, object *Object) error {
 
 	opts := minio.PutObjectOptions{
 		ContentType:  object.ContentType,
-		UserMetadata: object.Meta,
+		UserMetadata: object.Tags,
 	}
 	n, err := x.Client.PutObject(bucketName, object.Name, &object.Buffer, -1, opts)
 	if err != nil {
 		return err
 	}
 	logger.WithFields(logrus.Fields{
-		"object_name":  object.Name,
+		"object_name": object.Name,
 		"object_size": n,
 	}).Println("uploaded pdf")
 	return nil
@@ -90,7 +92,7 @@ func (x *minioDriver) ListObjects(bucketName string) []Object {
 		objects = append(objects, Object{
 			ContentType: objectInfo.ContentType,
 			Name:        objectInfo.Key,
-			Meta:        objectInfo.UserMetadata,
+			Tags:        Tags(objectInfo.UserMetadata),
 		})
 	}
 	return objects
