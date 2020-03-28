@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Virtual Video Game Orchestra">
+    <meta name="generator" content="Jekyll v3.8.6">
+
+    <title>Virtual Video Game Orchestra</title>
+
+    <link rel="icon" href="img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+
+</head>
+<body>
+<h1>Music PDFs</h1>
+<table>
+    <thead>
+    <td>Project</td>
+    <td>Instrument</td>
+    <td>Part Number</td>
+    </thead>
+    {{ range .}}
+        <tr>
+            <td>.Project</td>
+            <td>.Instrument</td>
+            <td>.PartNumber</td>
+        </tr>
+    {{ end }}
+</table>
+</body>
+</html>

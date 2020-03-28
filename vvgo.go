@@ -1,13 +1,25 @@
 package main
 
 import (
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"strconv"
 )
 
 const Location = "us-east-1"
+
+var logger = &logrus.Logger{
+	Out: os.Stderr,
+	Formatter: &logrus.TextFormatter{
+		ForceColors:   true,
+		FullTimestamp: true,
+	},
+	Hooks:        make(logrus.LevelHooks),
+	Level:        logrus.InfoLevel,
+	ExitFunc:     os.Exit,
+	ReportCaller: false,
+}
 
 type Config struct {
 	Minio MinioConfig
@@ -44,12 +56,12 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/upload", apiServer.Upload)
-	mux.HandleFunc("/index", apiServer.Index)
+	mux.Handle("/music_pdfs", APIHandlerFunc(apiServer.MusicPDFsIndex))
+	mux.Handle("/music_pdfs/upload", APIHandlerFunc(apiServer.MusicPDFsUpload))
 	mux.Handle("/", http.FileServer(http.Dir(".")))
 	httpServer := &http.Server{
 		Addr:    ":8080",
 		Handler: mux,
 	}
-	log.Fatal(httpServer.ListenAndServe())
+	logger.Fatal(httpServer.ListenAndServe())
 }

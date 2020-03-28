@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/minio/minio-go/v6"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type ObjectStore interface {
@@ -34,7 +34,7 @@ func NewMinioDriverMust(config MinioConfig) *minioDriver {
 	minioClient, err := minio.New(config.Endpoint, config.AccessKeyID,
 		config.SecretAccessKey, config.UseSSL)
 	if err != nil {
-		log.Fatalf("minio.New() failed: %v", err)
+		logger.WithError(err).Fatalf("minio.New() failed")
 	}
 	return &minioDriver{minioClient}
 }
@@ -53,7 +53,10 @@ func (x *minioDriver) PutObject(bucketName string, object *Object) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("uploaded %s of size %d\n", object.Name, n)
+	logger.WithFields(logrus.Fields{
+		"object_name":  object.Name,
+		"object_size": n,
+	}).Println("uploaded pdf")
 	return nil
 }
 
@@ -80,11 +83,10 @@ func (x *minioDriver) ListObjects(bucketName string) []Object {
 
 		objectInfo, err := x.Client.StatObject(bucketName, objectInfo.Key, opts)
 		if err != nil {
-			log.Printf("minio.StatObject() failed: %v", err)
+			logger.WithError(err).Printf("minio.StatObject()")
 			continue
 		}
 
-		log.Printf("%#v", objectInfo)
 		objects = append(objects, Object{
 			ContentType: objectInfo.ContentType,
 			Name:        objectInfo.Key,

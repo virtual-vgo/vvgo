@@ -57,13 +57,12 @@ func TestApiServer_Index(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			gotResponse := httptest.NewRecorder()
-			apiServer := ApiServer{tt.objectStore}
-			apiServer.Index(gotResponse, tt.request)
-			if expected, got := tt.wants.code, gotResponse.Code; expected != got {
+			apiServer := ApiServer{ObjectStore: tt.objectStore}
+			gotBody, gotCode := apiServer.MusicPDFsIndex(tt.request)
+			if expected, got := tt.wants.code, gotCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
-			if expected, got := tt.wants.body, strings.TrimSpace(gotResponse.Body.String()); expected != got {
+			if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
 				t.Errorf("expected body:\nwant: `%s`\n got: `%s`", expected, got)
 			}
 		})
@@ -73,6 +72,7 @@ func TestApiServer_Index(t *testing.T) {
 func TestApiServer_Upload(t *testing.T) {
 	type wants struct {
 		code       int
+		body       string
 		bucketName string
 		object     Object
 	}
@@ -95,7 +95,10 @@ func TestApiServer_Upload(t *testing.T) {
 		{
 			name:    "post with missing fields",
 			request: httptest.NewRequest(http.MethodPost, "/?project=test-project&instrument=test-instrument", strings.NewReader("")),
-			wants:   wants{code: http.StatusBadRequest},
+			wants:   wants{
+				code: http.StatusBadRequest,
+				body: ErrMissingPartNumber.Error(),
+			},
 		},
 		{
 			name: "post with db error",
@@ -110,7 +113,7 @@ func TestApiServer_Upload(t *testing.T) {
 					ContentType: "application/pdf",
 					Name:        "01-snake-eater-trumpet-4.pdf",
 					Meta: map[string]string{
-						"Project":    "01-snake-eater",
+						"Project":     "01-snake-eater",
 						"Instrument":  "trumpet",
 						"Part-Number": "4",
 					},
@@ -133,7 +136,7 @@ func TestApiServer_Upload(t *testing.T) {
 					ContentType: "application/pdf",
 					Name:        "01-snake-eater-trumpet-4.pdf",
 					Meta: map[string]string{
-						"Project":    "01-snake-eater",
+						"Project":     "01-snake-eater",
 						"Instrument":  "trumpet",
 						"Part-Number": "4",
 					},
@@ -147,8 +150,7 @@ func TestApiServer_Upload(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotObject Object
 			var gotBucketName string
-			gotResponse := httptest.NewRecorder()
-			apiServer := ApiServer{MockObjectStore{
+			apiServer := ApiServer{ObjectStore: MockObjectStore{
 				listObjects: tt.objectStore.listObjects,
 				putObject: func(bucketName string, object *Object) error {
 					gotObject = *object
@@ -156,9 +158,12 @@ func TestApiServer_Upload(t *testing.T) {
 					return tt.objectStore.putObject(bucketName, object)
 				},
 			}}
-			apiServer.Upload(gotResponse, tt.request)
-			if expected, got := tt.wants.code, gotResponse.Code; expected != got {
+			gotBody, gotCode := apiServer.MusicPDFsUpload(tt.request)
+			if expected, got := tt.wants.code, gotCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
+			}
+			if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
+				t.Errorf("expected body:\nwant: `%s`\n got: `%s`", expected, got)
 			}
 			if expected, got := fmt.Sprintf("%#v", tt.wants.bucketName), fmt.Sprintf("%#v", gotBucketName); expected != got {
 				t.Errorf("\nwant bucket:%v\n got bucket:%v", expected, got)
@@ -178,7 +183,7 @@ func TestMusicPDFMeta_ToMap(t *testing.T) {
 	}
 
 	wantMap := map[string]string{
-		"Project":    "01-snake-eater",
+		"Project":     "01-snake-eater",
 		"Instrument":  "trumpet",
 		"Part-Number": "4",
 	}
