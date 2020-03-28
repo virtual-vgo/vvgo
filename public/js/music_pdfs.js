@@ -1,3 +1,6 @@
 $(document).ready(function () {
-    $('#example').DataTable();
+    $('#example').DataTable({
+        paging: false,
+        columnDefs: [{"className": "dt-center", "targets": "_all"}],
+    });
 });

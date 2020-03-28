@@ -58,7 +58,7 @@ func (x *minioDriver) PutObject(bucketName string, object *Object) error {
 	logger.WithFields(logrus.Fields{
 		"object_name": object.Name,
 		"object_size": n,
-	}).Println("uploaded pdf")
+	}).Info("uploaded pdf")
 	return nil
 }
 
@@ -85,7 +85,7 @@ func (x *minioDriver) ListObjects(bucketName string) []Object {
 
 		objectInfo, err := x.Client.StatObject(bucketName, objectInfo.Key, opts)
 		if err != nil {
-			logger.WithError(err).Printf("minio.StatObject()")
+			logger.WithError(err).Error("minio.StatObject() failed")
 			continue
 		}
 

@@ -17,25 +17,39 @@
     <script type="text/javascript" src="js/jquery.dataTables.js"></script>
     <script type="text/javascript" src="js/music_pdfs.js"></script>
 </head>
+<style>
+    .music-pdfs-table {
+        border: none;
+        margin: 10px auto;
+        padding: 15px 15px;
+        width: 90%;
+    }
+</style>
+
 <body>
-<h1>Music PDFs</h1>
-<table id="example" class="display">
-    <thead>
-    <tr>
-        <th>Project</th>
-        <th>Instrument</th>
-        <th>Part Number</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{- range .}}
+<div><img src="images/logo.svg" alt="logo" class="logo-tiny"></div>
+<h1 class="title">Music PDFs</h1>
+<div class="music-pdfs-table">
+    <table id="example" class="hover row-border order-column">
+        <thead>
         <tr>
-            <td>{{.Project}}</td>
-            <td>{{.Instrument}}</td>
-            <td>{{.PartNumber}}</td>
+            <th>Project</th>
+            <th>Instrument</th>
+            <th>Part Number</th>
+            <th>Download</th>
         </tr>
-    {{- end }}
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+        {{- range .}}
+            <tr>
+                <td>{{.Project}}</td>
+                <td>{{.Instrument}}</td>
+                <td>{{.PartNumber}}</td>
+                <td><a href="{{.DownloadLink}}" class="download-link">&raquo; download &laquo;</a></td>
+            </tr>
+        {{- end }}
+        </tbody>
+    </table>
+</div>
 </body>
 </html>

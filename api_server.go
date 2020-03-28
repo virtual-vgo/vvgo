@@ -36,7 +36,7 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 	if clientIP == "" {
 		clientIP, _, _ = net.SplitHostPort(r.RemoteAddr)
 	}
-	logger.WithFields(logrus.Fields{
+	fields := logrus.Fields{
 		"client_ip":       clientIP,
 		"request_path":    r.URL.EscapedPath(),
 		"user_agent":      r.UserAgent(),
@@ -44,7 +44,12 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 		"request_size":    r.ContentLength,
 		"request_seconds": time.Since(start).Seconds(),
 		"status_code":     code,
-	}).Info("request completed")
+	}
+	if code < 500 {
+		logger.WithFields(fields).Info("request completed")
+	} else {
+		logger.WithFields(fields).Error("request failed")
+	}
 	return body, code
 }
 
@@ -74,16 +79,16 @@ func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
 	case acceptsType(r, "text/html"):
 		musicPDFsTemplate, err := template.ParseFiles("public/music_pdfs.gohtml")
 		if err != nil {
-			logger.Printf("template.ParseFiles() failed: %v", err)
+			logger.WithError(err).Error("template.ParseFiles() failed")
 			return nil, http.StatusInternalServerError
 		}
 		if err := musicPDFsTemplate.Execute(&buf, &pdfs); err != nil {
-			logger.Printf("template.Execute() failed: %v", err)
+			logger.WithError(err).Error("template.Execute() failed")
 			return nil, http.StatusInternalServerError
 		}
 	default:
 		if err := json.NewEncoder(&buf).Encode(&objects); err != nil {
-			logger.Printf("json.Encode() failed: %v", err)
+			logger.WithError(err).Error("json.Encode() failed")
 			return nil, http.StatusInternalServerError
 		}
 	}
@@ -146,9 +151,10 @@ var (
 )
 
 type MusicPDFMeta struct {
-	Project    string
-	Instrument string
-	PartNumber int
+	Project      string
+	Instrument   string
+	PartNumber   int
+	DownloadLink string
 }
 
 func NewMusicPDFMetaFromTags(tags Tags) MusicPDFMeta {
