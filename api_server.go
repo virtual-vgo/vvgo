@@ -4,62 +4,106 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/sirupsen/logrus"
+	"html/template"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type ApiServer struct {
 	ObjectStore
+	mux *http.ServeMux
 }
 
-func (x *ApiServer) Index(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+var musicPDFsTemplate = template.Must(template.ParseFiles("templates/music_pdfs.gohtml"))
 
+type APIHandlerFunc func(r *http.Request) ([]byte, int)
+
+func (x APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, code := logRequest(x, r)
+	w.WriteHeader(code)
+	w.Write(body)
+}
+
+func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
+	start := time.Now()
+	body, code := handlerFunc(r)
+
+	clientIP := strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0]
+	if clientIP == "" {
+		clientIP, _, _ = net.SplitHostPort(r.RemoteAddr)
+	}
+	logger.WithFields(logrus.Fields{
+		"client_ip":       clientIP,
+		"request_path":    r.URL.EscapedPath(),
+		"request_method":  r.Method,
+		"request_size":   r.ContentLength,
+		"request_seconds": time.Since(start).Seconds(),
+		"status_code":     code,
+	}).Info("request completed")
+	return body, code
+}
+
+func (x *ApiServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if x.mux == nil {
+		x.mux = http.NewServeMux()
+		x.mux.Handle("/music_pdfs", APIHandlerFunc(x.MusicPDFsIndex))
+		x.mux.Handle("/music_pdfs/upload", APIHandlerFunc(x.MusicPDFsUpload))
+	}
+	x.mux.ServeHTTP(w, r)
+}
+
+func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
 	// only accept get
 	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return nil, http.StatusMethodNotAllowed
 	}
 
 	objects := x.ListObjects(MusicPdfsBucketName)
-	if err := json.NewEncoder(w).Encode(&objects); err != nil {
-		log.Printf("json.Encode() failed: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+	var buf bytes.Buffer
+	switch r.Header.Get("Accept") {
+	case "text/html":
+		if err := musicPDFsTemplate.Execute(&buf, &objects); err != nil {
+			logger.Printf("template.Execute() failed: %v", err)
+			return nil, http.StatusInternalServerError
+		}
+	default:
+		if err := json.NewEncoder(&buf).Encode(&objects); err != nil {
+			logger.Printf("json.Encode() failed: %v", err)
+			return nil, http.StatusInternalServerError
+		}
 	}
+	return buf.Bytes(), http.StatusOK
 }
 
-func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
+func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 	// only accept post
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return nil, http.StatusMethodNotAllowed
 	}
 
 	// only allow <1MB
 	if r.ContentLength > int64(1e6) {
-		w.WriteHeader(http.StatusRequestEntityTooLarge)
-		return
+		return nil, http.StatusRequestEntityTooLarge
 	}
 
 	// read the metadata
 	var meta MusicPDFMeta
 	meta.ReadFromUrlValues(r.URL.Query())
 	if err := meta.Validate(); err != nil {
-		log.Printf("validation failed for: %#v", meta)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return []byte(err.Error()), http.StatusBadRequest
 	}
 
 	// read the pdf from the body
 	var pdfBytes bytes.Buffer
 	if _, err := pdfBytes.ReadFrom(r.Body); err != nil {
-		log.Printf("r.body.Read() failed: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		logger.WithError(err).Println("r.body.Read() failed")
+		return nil, http.StatusBadRequest
 	}
 
 	// write the pdf
@@ -70,10 +114,10 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 		Buffer:      pdfBytes,
 	}
 	if err := x.PutObject(MusicPdfsBucketName, &object); err != nil {
-		log.Printf("storage.PutObject() failed: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		logger.WithError(err).Println("storage.PutObject() failed")
+		return nil, http.StatusInternalServerError
 	}
+	return nil, http.StatusOK
 }
 
 const MusicPdfsBucketName = "music-pdfs"
@@ -113,14 +157,11 @@ func (x *MusicPDFMeta) ReadFromUrlValues(values url.Values) {
 func (x *MusicPDFMeta) Validate() error {
 	if x.Project == "" {
 		return ErrMissingProject
-	}
-	if x.Instrument == "" {
+	} else if x.Instrument == "" {
 		return ErrMissingInstrument
-	}
-	if x.PartNumber == 0 {
+	} else if x.PartNumber == 0 {
 		return ErrMissingPartNumber
-	}
-	{
+	} else {
 		return nil
 	}
 }
