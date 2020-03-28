@@ -49,7 +49,7 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 	var meta MusicPDFMeta
 	meta.ReadFromUrlValues(r.URL.Query())
 	if err := meta.Validate(); err != nil {
-		w.Write([]byte(err.Error()))
+		log.Printf("validation failed for: %#v", meta)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -72,6 +72,7 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 	if err := x.PutObject("music_pdfs", &object); err != nil {
 		log.Printf("storage.PutObject() failed: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -110,11 +111,14 @@ func (x *MusicPDFMeta) ReadFromUrlValues(values url.Values) {
 func (x *MusicPDFMeta) Validate() error {
 	if x.Project == "" {
 		return ErrMissingProject
-	} else if x.Instrument == "" {
+	}
+	if x.Instrument == "" {
 		return ErrMissingInstrument
-	} else if x.PartNumber == 0 {
+	}
+	if x.PartNumber == 0 {
 		return ErrMissingPartNumber
-	} else {
+	}
+	{
 		return nil
 	}
 }
