@@ -72,8 +72,9 @@ func TestApiServer_Index(t *testing.T) {
 
 func TestApiServer_Upload(t *testing.T) {
 	type wants struct {
-		code   int
-		object Object
+		code       int
+		bucketName string
+		object     Object
 	}
 	for _, tt := range []struct {
 		name        string
@@ -115,7 +116,8 @@ func TestApiServer_Upload(t *testing.T) {
 					},
 					Buffer: *bytes.NewBufferString(":wave:"),
 				},
-				code: http.StatusInternalServerError,
+				bucketName: MusicPdfsBucketName,
+				code:       http.StatusInternalServerError,
 			},
 		},
 		{
@@ -137,17 +139,20 @@ func TestApiServer_Upload(t *testing.T) {
 					},
 					Buffer: *bytes.NewBufferString(":wave:"),
 				},
-				code: http.StatusOK,
+				bucketName: MusicPdfsBucketName,
+				code:       http.StatusOK,
 			},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotObject Object
+			var gotBucketName string
 			gotResponse := httptest.NewRecorder()
 			apiServer := ApiServer{MockObjectStore{
 				listObjects: tt.objectStore.listObjects,
 				putObject: func(bucketName string, object *Object) error {
 					gotObject = *object
+					gotBucketName = bucketName
 					return tt.objectStore.putObject(bucketName, object)
 				},
 			}}
@@ -155,8 +160,11 @@ func TestApiServer_Upload(t *testing.T) {
 			if expected, got := tt.wants.code, gotResponse.Code; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
+			if expected, got := fmt.Sprintf("%#v", tt.wants.bucketName), fmt.Sprintf("%#v", gotBucketName); expected != got {
+				t.Errorf("\nwant bucket:%v\n got bucket:%v", expected, got)
+			}
 			if expected, got := fmt.Sprintf("%#v", tt.wants.object), fmt.Sprintf("%#v", gotObject); expected != got {
-				t.Errorf("\nwant body:%v\n got body:%v", expected, got)
+				t.Errorf("\nwant object:%v\n got body:%v", expected, got)
 			}
 		})
 	}
