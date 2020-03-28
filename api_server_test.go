@@ -99,7 +99,9 @@ func TestApiServer_Upload(t *testing.T) {
 		{
 			name: "post with db error",
 			objectStore: MockObjectStore{
-				putObject: func(bucketName string, object *Object) error { return fmt.Errorf("mock error") },
+				putObject: func(string, *Object) error {
+					return fmt.Errorf("mock error")
+				},
 			},
 			request: httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
 			wants: wants{
@@ -119,7 +121,7 @@ func TestApiServer_Upload(t *testing.T) {
 		{
 			name: "success",
 			objectStore: MockObjectStore{
-				putObject: func(bucketName string, object *Object) error {
+				putObject: func(string, *Object) error {
 					return nil
 				},
 			},
@@ -168,9 +170,9 @@ func TestMusicPDFMeta_ToHeader(t *testing.T) {
 	}
 
 	wantHeader := make(http.Header)
-	wantHeader.Add("project", "test-project")
-	wantHeader.Add("instrument", "test-instrument")
-	wantHeader.Add("part_number", "4")
+	wantHeader.Add("Project", "test-project")
+	wantHeader.Add("Instrument", "test-instrument")
+	wantHeader.Add("PartNumber", "4")
 
 	gotHeader := meta.ToHeader()
 	if expected, got := fmt.Sprintf("%#v", wantHeader), fmt.Sprintf("%#v", gotHeader); expected != got {
@@ -180,9 +182,9 @@ func TestMusicPDFMeta_ToHeader(t *testing.T) {
 
 func TestMusicPDFMeta_ReadFromHeader(t *testing.T) {
 	header := make(http.Header)
-	header.Add("project", "test-project")
-	header.Add("instrument", "test-instrument")
-	header.Add("part_number", "4")
+	header.Add("Project", "test-project")
+	header.Add("Instrument", "test-instrument")
+	header.Add("PartNumber", "4")
 
 	expectedMeta := MusicPDFMeta{
 		Project:    "test-project",
