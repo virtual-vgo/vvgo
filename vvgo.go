@@ -1,28 +1,47 @@
 package main
 
 import (
-	"github.com/minio/minio-go/v6"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 )
 
 const Location = "us-east-1"
 
-func main() {
-	// We will use the MinIO server running at https://play.min.io in this example.
-	// Feel free to use this service for testing and development.
-	// Access credentials shown in this example are open to the public.
-	endpoint := "play.min.io"
-	accessKeyID := "Q3AM3UQ867SPQQA43P2F"
-	secretAccessKey := "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG"
-	useSSL := true
+type Config struct {
+	Minio MinioConfig
+}
 
-	// build minio client
-	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, useSSL)
-	if err != nil {
-		log.Fatalf("minio.New() failed: %v", err)
+func NewDefaultConfig() Config {
+	return Config{MinioConfig{
+		Endpoint:        "localhost:9000",
+		AccessKeyID:     "minioadmin",
+		SecretAccessKey: "minioadmin",
+		UseSSL:          false,
+	}}
+}
+
+func (x *Config) ParseEnv() {
+	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
+		x.Minio.Endpoint = endpoint
 	}
-	apiServer := ApiServer{&minioDriver{minioClient}}
+	if id := os.Getenv("MINIO_ACCESS_KEY_ID"); id != "" {
+		x.Minio.AccessKeyID = id
+	}
+	if key := os.Getenv("MINIO_SECRET_ACCESS_KEY"); key != "" {
+		x.Minio.SecretAccessKey = key
+	}
+	x.Minio.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
+}
+
+func main() {
+	config := NewDefaultConfig()
+	config.ParseEnv()
+
+	apiServer := ApiServer{
+		ObjectStore: NewMinioDriverMust(config.Minio),
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/upload", apiServer.Upload)
