@@ -6,6 +6,7 @@ import (
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"net/url"
+	"time"
 )
 
 type ObjectStore interface {
@@ -111,6 +112,8 @@ func (x *minioDriver) StatObject(bucketName, objectName string) (Object, error) 
 		}, nil
 	}
 }
+
+const LinkExpiration = 24 * 3600 * time.Second // 1 Day for protect links
 
 func (x *minioDriver) DownloadURL(bucketName string, objectName string) (string, error) {
 	policy, err := x.Client.GetBucketPolicy(bucketName)

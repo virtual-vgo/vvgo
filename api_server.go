@@ -163,8 +163,6 @@ func (x *ApiServer) SheetsUpload(r *http.Request) ([]byte, int) {
 	return nil, http.StatusOK
 }
 
-const LinkExpiration = 24 * 3600 * time.Second // 1 Day
-
 func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
 	var downloadURL string
 	body, code := logRequest(func(*http.Request) ([]byte, int) {
