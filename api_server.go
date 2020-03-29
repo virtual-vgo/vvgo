@@ -178,21 +178,26 @@ func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
 
 		var err error
 		downloadURL, err = x.DownloadURL(bucket, key)
-		switch err {
+
+		switch e := err.(type) {
 		case nil:
 			return nil, http.StatusFound
-		case minio.ErrInvalidBucketName(bucket), minio.ErrInvalidObjectName(bucket):
-			logger.WithError(err).Error("minio.StatObject() failed")
-			return []byte(err.Error()), http.StatusBadRequest
-		default:
-			logger.WithError(err).Error("minio.StatObject() failed")
-			return []byte(err.Error()), http.StatusInternalServerError
+		case minio.ErrorResponse:
+			if e.StatusCode == http.StatusNotFound {
+				return nil, http.StatusNotFound
+			}
 		}
+
+		logger.WithError(err).Error("minio.StatObject() failed")
+		return nil, http.StatusInternalServerError
 	}, r)
 
-	if code == http.StatusFound {
+	switch code {
+	case http.StatusFound:
 		http.Redirect(w, r, downloadURL, code)
-	} else {
+	case http.StatusNotFound:
+		http.NotFound(w, r)
+	default:
 		w.WriteHeader(code)
 		w.Write(body)
 	}

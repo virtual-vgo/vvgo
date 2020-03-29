@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/minio/minio-go/v6"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -240,36 +241,40 @@ func TestApiServer_Download(t *testing.T) {
 			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
 				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodPost, "/?bucket=cheese&key=danish", strings.NewReader("")),
 			wants: wants{
-				code:     http.StatusFound,
-				location: "http://storage.example.com/cheese/danish",
-				body:     `<a href="http://storage.example.com/cheese/danish">Found</a>.`,
+				code: http.StatusMethodNotAllowed,
 			},
 		},
 		{
-			name: "success",
+			name: "invalid bucket",
 			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
-				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
 			}},
 			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
 			wants: wants{
-				code:     http.StatusFound,
-				location: "http://storage.example.com/cheese/danish",
-				body:     `<a href="http://storage.example.com/cheese/danish">Found</a>.`,
+				code: http.StatusNotFound,
+				body: "404 page not found",
 			},
 		},
 		{
-			name: "success",
+			name: "invalid object",
 			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
-				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
 			}},
 			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
 			wants: wants{
-				code:     http.StatusFound,
-				location: "http://storage.example.com/cheese/danish",
-				body:     `<a href="http://storage.example.com/cheese/danish">Found</a>.`,
+				code: http.StatusNotFound,
+				body: "404 page not found",
 			},
+		},
+		{
+			name: "server error",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return "", fmt.Errorf("mock error")
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			wants:   wants{code: http.StatusInternalServerError},
 		},
 		{
 			name: "success",
