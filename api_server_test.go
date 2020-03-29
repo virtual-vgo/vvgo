@@ -35,16 +35,20 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 					return []Object{
 						{
 							ContentType: "application/pdf",
-							Name:        "trumpet.pdf",
+							Name:        "midnight-trumpet-3.pdf",
 							Tags: map[string]string{
-								"instrument": "trumpet",
+								"Project":     "midnight",
+								"Instrument":  "trumpet",
+								"Part-Number": "3",
 							},
 						},
 						{
 							ContentType: "application/pdf",
-							Name:        "flute.pdf",
+							Name:        "daylight-flute-2.pdf",
 							Tags: map[string]string{
-								"instrument": "flute",
+								"Project":     "daylight",
+								"Instrument":  "flute",
+								"Part-Number": "2",
 							},
 						},
 					}
@@ -53,7 +57,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 			request: httptest.NewRequest(http.MethodGet, "/sheets", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusOK,
-				body: `[{"content-type":"application/pdf","name":"trumpet.pdf","tags":{"instrument":"trumpet"}},{"content-type":"application/pdf","name":"flute.pdf","tags":{"instrument":"flute"}}]`,
+				body: `[{"project":"midnight","instrument":"trumpet","part_number":3,"link":"/download?bucket=sheets\u0026key=midnight-trumpet-3.pdf"},{"project":"daylight","instrument":"flute","part_number":2,"link":"/download?bucket=sheets\u0026key=daylight-flute-2.pdf"}]`,
 			},
 		},
 	} {
@@ -166,7 +170,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 					},
 					Buffer: *bytes.NewBufferString(":wave:"),
 				},
-				bucketName: MusicPdfsBucketName,
+				bucketName: SheetsBucketName,
 				code:       http.StatusInternalServerError,
 			},
 		},
@@ -190,7 +194,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 					},
 					Buffer: *bytes.NewBufferString(":wave:"),
 				},
-				bucketName: MusicPdfsBucketName,
+				bucketName: SheetsBucketName,
 				code:       http.StatusOK,
 			},
 		},
@@ -314,7 +318,7 @@ func TestApiServer_Download(t *testing.T) {
 }
 
 func TestMusicPDFMeta_ToMap(t *testing.T) {
-	meta := MusicPDFMeta{
+	meta := Sheet{
 		Project:    "01-snake-eater",
 		Instrument: "trumpet",
 		PartNumber: 4,
@@ -338,13 +342,13 @@ func TestNewMusicPDFMetaFromTags(t *testing.T) {
 		"Part-Number": "4",
 	}
 
-	expectedMeta := MusicPDFMeta{
+	expectedMeta := Sheet{
 		Project:    "01-snake-eater",
 		Instrument: "trumpet",
 		PartNumber: 4,
 	}
 
-	gotMeta := NewMusicPDFMetaFromTags(tags)
+	gotMeta := NewSheetFromTags(tags)
 	if expected, got := fmt.Sprintf("%#v", expectedMeta), fmt.Sprintf("%#v", gotMeta); expected != got {
 		t.Errorf("expected %v, got %v", expected, got)
 	}
@@ -356,13 +360,13 @@ func TestMusicPDFMeta_ReadFromUrlValues(t *testing.T) {
 		t.Fatalf("url.ParseQuery() failed: %v", err)
 	}
 
-	expectedMeta := MusicPDFMeta{
+	expectedMeta := Sheet{
 		Project:    "test-project",
 		Instrument: "test-instrument",
 		PartNumber: 4,
 	}
 
-	gotMeta := NewMusicPDFMetaFromUrlValues(values)
+	gotMeta := NewSheetFromUrlValues(values)
 	if expected, got := fmt.Sprintf("%#v", expectedMeta), fmt.Sprintf("%#v", gotMeta); expected != got {
 		t.Errorf("expected %v, got %v", expected, got)
 	}
@@ -414,7 +418,7 @@ func TestMusicPDFMeta_Validate(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			x := &MusicPDFMeta{
+			x := &Sheet{
 				Project:    tt.fields.Project,
 				Instrument: tt.fields.Instrument,
 				PartNumber: tt.fields.PartNumber,

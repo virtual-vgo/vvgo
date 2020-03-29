@@ -16,10 +16,10 @@ type ObjectStore interface {
 }
 
 type Object struct {
-	ContentType string       `json:"content-type"`
-	Name        string       `json:"name"`
-	Tags        Tags         `json:"tags"`
-	Buffer      bytes.Buffer `json:"-"`
+	ContentType string
+	Name        string
+	Tags        Tags
+	Buffer      bytes.Buffer
 }
 
 type Tags map[string]string

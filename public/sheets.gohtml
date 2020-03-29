@@ -15,7 +15,7 @@
     <link rel="stylesheet" type="text/css" href="css/jquery.dataTables.css">
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.dataTables.js"></script>
-    <script type="text/javascript" src="js/music_pdfs.js"></script>
+    <script type="text/javascript" src="js/sheets.js"></script>
 </head>
 <style>
     .music-pdfs-table {
@@ -42,10 +42,10 @@
         <tbody>
         {{- range .}}
             <tr>
-                <td>{{.Project}}</td>
-                <td>{{.Instrument}}</td>
-                <td>{{.PartNumber}}</td>
-                <td><a href="{{.DownloadLink}}" class="download-link">&raquo; download &laquo;</a></td>
+                <td>{{.Sheet.Project}}</td>
+                <td>{{.Sheet.Instrument}}</td>
+                <td>{{.Sheet.PartNumber}}</td>
+                <td><a href="{{.Link}}" class="download-link">&raquo; download &laquo;</a></td>
             </tr>
         {{- end }}
         </tbody>
