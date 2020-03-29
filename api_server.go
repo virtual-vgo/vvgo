@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const MusicPdfsBucketName = "sheets"
+
 type ApiServerConfig struct {
 	MaxContentLength int64
 }
@@ -133,6 +135,11 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 		return []byte(err.Error()), http.StatusBadRequest
 	}
 
+	// validate content encoding
+	if r.Header.Get("Content-Type") != "application/pdf" {
+		return nil, http.StatusUnsupportedMediaType
+	}
+
 	// read the pdf from the body
 	var pdfBytes bytes.Buffer
 	if _, err := pdfBytes.ReadFrom(r.Body); err != nil {
@@ -153,8 +160,6 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 	}
 	return nil, http.StatusOK
 }
-
-const MusicPdfsBucketName = "sheets"
 
 var (
 	ErrMissingProject    = fmt.Errorf("missing required field `project`")
