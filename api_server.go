@@ -14,12 +14,26 @@ import (
 	"time"
 )
 
+type ApiServerConfig struct {
+	MaxContentLength int64
+}
+
 type ApiServer struct {
 	ObjectStore
+	ApiServerConfig
 	mux *http.ServeMux
 }
 
-type APIHandlerFunc func(r *http.Request) ([]byte, int)
+func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
+	server := ApiServer{
+		ObjectStore:     store,
+		ApiServerConfig: config,
+		mux:             http.NewServeMux(),
+	}
+	server.mux.Handle("/sheets", APIHandlerFunc(server.MusicPDFsIndex))
+	server.mux.Handle("/sheets/upload", APIHandlerFunc(server.MusicPDFsUpload))
+	return &server
+}
 
 func (x APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -27,6 +41,8 @@ func (x APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(code)
 	w.Write(body)
 }
+
+type APIHandlerFunc func(r *http.Request) ([]byte, int)
 
 func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 	start := time.Now()
@@ -51,15 +67,6 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 		logger.WithFields(fields).Error("request failed")
 	}
 	return body, code
-}
-
-func (x *ApiServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if x.mux == nil {
-		x.mux = http.NewServeMux()
-		x.mux.Handle("/music_pdfs", APIHandlerFunc(x.MusicPDFsIndex))
-		x.mux.Handle("/music_pdfs/upload", APIHandlerFunc(x.MusicPDFsUpload))
-	}
-	x.mux.ServeHTTP(w, r)
 }
 
 func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
@@ -96,9 +103,11 @@ func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
 }
 
 func acceptsType(r *http.Request, mimeType string) bool {
-	for _, t := range strings.Split(r.Header.Get("Accept"), ",") {
-		if t == mimeType {
-			return true
+	for _, value := range r.Header["Accept"] {
+		for _, wantType := range strings.Split(value, ",") {
+			if wantType == mimeType {
+				return true
+			}
 		}
 	}
 	return false
@@ -110,8 +119,7 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 		return nil, http.StatusMethodNotAllowed
 	}
 
-	// only allow <1MB
-	if r.ContentLength > int64(1e6) {
+	if r.ContentLength > x.MaxContentLength {
 		return nil, http.StatusRequestEntityTooLarge
 	}
 
@@ -124,7 +132,7 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 	// read the pdf from the body
 	var pdfBytes bytes.Buffer
 	if _, err := pdfBytes.ReadFrom(r.Body); err != nil {
-		logger.WithError(err).Println("r.body.Read() failed")
+		logger.WithError(err).Error("r.body.Read() failed")
 		return nil, http.StatusBadRequest
 	}
 
@@ -136,13 +144,13 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 		Buffer:      pdfBytes,
 	}
 	if err := x.PutObject(MusicPdfsBucketName, &object); err != nil {
-		logger.WithError(err).Println("storage.PutObject() failed")
+		logger.WithError(err).Error("storage.PutObject() failed")
 		return nil, http.StatusInternalServerError
 	}
 	return nil, http.StatusOK
 }
 
-const MusicPdfsBucketName = "music-pdfs"
+const MusicPdfsBucketName = "sheets"
 
 var (
 	ErrMissingProject    = fmt.Errorf("missing required field `project`")
