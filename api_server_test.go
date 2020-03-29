@@ -25,7 +25,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 	}{
 		{
 			name:    "method post",
-			request: httptest.NewRequest(http.MethodPost, "/", nil),
+			request: httptest.NewRequest(http.MethodPost, "/sheets", nil),
 			wants:   wants{code: http.StatusMethodNotAllowed},
 		},
 		{
@@ -50,7 +50,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 					}
 				},
 			},
-			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/sheets", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusOK,
 				body: `[{"content-type":"application/pdf","name":"trumpet.pdf","tags":{"instrument":"trumpet"}},{"content-type":"application/pdf","name":"flute.pdf","tags":{"instrument":"flute"}}]`,
@@ -59,8 +59,11 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			apiServer := NewApiServer(tt.objectStore, ApiServerConfig{1e3})
-			gotBody, gotCode := apiServer.SheetsIndex(tt.request)
-			if expected, got := tt.wants.code, gotCode; expected != got {
+			recorder := httptest.NewRecorder()
+			apiServer.ServeHTTP(recorder, tt.request)
+			gotResp := recorder.Result()
+			gotBody := recorder.Body.String()
+			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
 			if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
@@ -118,25 +121,25 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 	}{
 		{
 			name:        "get",
-			request:     httptest.NewRequest(http.MethodGet, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
+			request:     httptest.NewRequest(http.MethodGet, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
 			contentType: "application/pdf",
 			wants:       wants{code: http.StatusMethodNotAllowed},
 		},
 		{
 			name:        "body too large",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", bytes.NewReader(make([]byte, maxContentLength+1))),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", bytes.NewReader(make([]byte, maxContentLength+1))),
 			contentType: "application/pdf",
 			wants:       wants{code: http.StatusRequestEntityTooLarge},
 		},
 		{
 			name:        "wrong content type",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
 			contentType: "application/cheese",
 			wants:       wants{code: http.StatusUnsupportedMediaType},
 		},
 		{
 			name:        "missing fields",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=test-project&instrument=test-instrument", strings.NewReader("")),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=test-project&instrument=test-instrument", strings.NewReader("")),
 			contentType: "application/pdf",
 			wants: wants{
 				code: http.StatusBadRequest,
@@ -145,7 +148,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 		},
 		{
 			name:        "db error",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
 			contentType: "application/pdf",
 			objectStore: MockObjectStore{
 				putObject: func(string, *Object) error {
@@ -169,7 +172,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 		},
 		{
 			name:        "success",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
 			contentType: "application/pdf",
 			objectStore: MockObjectStore{
 				putObject: func(string, *Object) error {
@@ -206,8 +209,11 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				MaxContentLength: 1e3,
 			})
 			tt.request.Header.Set("Content-Type", tt.contentType)
-			gotBody, gotCode := apiServer.SheetsUpload(tt.request)
-			if expected, got := tt.wants.code, gotCode; expected != got {
+			recorder := httptest.NewRecorder()
+			apiServer.ServeHTTP(recorder, tt.request)
+			gotResp := recorder.Result()
+			gotBody := recorder.Body.String()
+			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
 			if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
@@ -241,7 +247,7 @@ func TestApiServer_Download(t *testing.T) {
 			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
 				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
 			}},
-			request: httptest.NewRequest(http.MethodPost, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodPost, "/download?bucket=cheese&key=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusMethodNotAllowed,
 			},
@@ -251,7 +257,7 @@ func TestApiServer_Download(t *testing.T) {
 			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
 				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusNotFound,
 				body: "404 page not found",
@@ -262,7 +268,7 @@ func TestApiServer_Download(t *testing.T) {
 			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
 				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusNotFound,
 				body: "404 page not found",
@@ -273,7 +279,7 @@ func TestApiServer_Download(t *testing.T) {
 			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
 				return "", fmt.Errorf("mock error")
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
 			wants:   wants{code: http.StatusInternalServerError},
 		},
 		{
@@ -281,7 +287,7 @@ func TestApiServer_Download(t *testing.T) {
 			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
 				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
 			wants: wants{
 				code:     http.StatusFound,
 				location: "http://storage.example.com/cheese/danish",
@@ -292,7 +298,7 @@ func TestApiServer_Download(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := NewApiServer(tt.objectStore, ApiServerConfig{})
 			recorder := httptest.NewRecorder()
-			server.Download(recorder, tt.request)
+			server.ServeHTTP(recorder, tt.request)
 			gotResp := recorder.Result()
 			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
