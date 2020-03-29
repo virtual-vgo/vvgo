@@ -317,7 +317,7 @@ func TestApiServer_Download(t *testing.T) {
 	}
 }
 
-func TestMusicPDFMeta_ToMap(t *testing.T) {
+func TestSheet_ToTags(t *testing.T) {
 	meta := Sheet{
 		Project:    "01-snake-eater",
 		Instrument: "trumpet",
@@ -335,7 +335,7 @@ func TestMusicPDFMeta_ToMap(t *testing.T) {
 	}
 }
 
-func TestNewMusicPDFMetaFromTags(t *testing.T) {
+func TestNewSheetFromTags(t *testing.T) {
 	tags := map[string]string{
 		"Project":     "01-snake-eater",
 		"Instrument":  "trumpet",
@@ -354,7 +354,7 @@ func TestNewMusicPDFMetaFromTags(t *testing.T) {
 	}
 }
 
-func TestMusicPDFMeta_ReadFromUrlValues(t *testing.T) {
+func TestNewSheetFromUrlValues(t *testing.T) {
 	values, err := url.ParseQuery(`project=test-project&instrument=test-instrument&part_number=4`)
 	if err != nil {
 		t.Fatalf("url.ParseQuery() failed: %v", err)
@@ -372,7 +372,7 @@ func TestMusicPDFMeta_ReadFromUrlValues(t *testing.T) {
 	}
 }
 
-func TestMusicPDFMeta_Validate(t *testing.T) {
+func TestSheet_Validate(t *testing.T) {
 	type fields struct {
 		Project    string
 		Instrument string
