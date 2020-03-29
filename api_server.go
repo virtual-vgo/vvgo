@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"html/template"
 	"net"
@@ -32,8 +33,9 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 		ApiServerConfig: config,
 		ServeMux:        http.NewServeMux(),
 	}
-	server.Handle("/sheets", APIHandlerFunc(server.MusicPDFsIndex))
-	server.Handle("/sheets/upload", APIHandlerFunc(server.MusicPDFsUpload))
+	server.Handle("/sheets", APIHandlerFunc(server.SheetsIndex))
+	server.Handle("/sheets/upload", APIHandlerFunc(server.SheetsUpload))
+	server.Handle("/download", http.HandlerFunc(server.Download))
 	server.Handle("/", http.FileServer(http.Dir("public")))
 	return &server
 }
@@ -68,14 +70,14 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 	case code >= 500:
 		logger.WithFields(fields).Error("request failed")
 	case 400 <= code && code < 500:
-		logger.WithFields(fields).Error("request failed")
+		logger.WithFields(fields).Error("invalid request")
 	default:
 		logger.WithFields(fields).Info("request completed")
 	}
 	return body, code
 }
 
-func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
+func (x *ApiServer) SheetsIndex(r *http.Request) ([]byte, int) {
 	// only accept get
 	if r.Method != http.MethodGet {
 		return nil, http.StatusMethodNotAllowed
@@ -119,7 +121,7 @@ func acceptsType(r *http.Request, mimeType string) bool {
 	return false
 }
 
-func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
+func (x *ApiServer) SheetsUpload(r *http.Request) ([]byte, int) {
 	// only accept post
 	if r.Method != http.MethodPost {
 		return nil, http.StatusMethodNotAllowed
@@ -159,6 +161,41 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 		return nil, http.StatusInternalServerError
 	}
 	return nil, http.StatusOK
+}
+
+const LinkExpiration = 24 * 3600 * time.Second // 1 Day
+
+func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
+	var downloadURL string
+	body, code := logRequest(func(*http.Request) ([]byte, int) {
+		if r.Method != http.MethodGet {
+			return nil, http.StatusMethodNotAllowed
+		}
+
+		values := r.URL.Query()
+		key := values.Get("key")
+		bucket := values.Get("bucket")
+
+		var err error
+		downloadURL, err = x.DownloadURL(bucket, key)
+		switch err {
+		case nil:
+			return nil, http.StatusFound
+		case minio.ErrInvalidBucketName(bucket), minio.ErrInvalidObjectName(bucket):
+			logger.WithError(err).Error("minio.StatObject() failed")
+			return []byte(err.Error()), http.StatusBadRequest
+		default:
+			logger.WithError(err).Error("minio.StatObject() failed")
+			return []byte(err.Error()), http.StatusInternalServerError
+		}
+	}, r)
+
+	if code == http.StatusFound {
+		http.Redirect(w, r, downloadURL, code)
+	} else {
+		w.WriteHeader(code)
+		w.Write(body)
+	}
 }
 
 var (

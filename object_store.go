@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
+	"net/url"
 )
 
 type ObjectStore interface {
 	PutObject(bucketName string, object *Object) error
 	ListObjects(bucketName string) []Object
+	DownloadURL(bucketName string, objectName string) (string, error)
 }
 
 type Object struct {
@@ -85,18 +87,47 @@ func (x *minioDriver) ListObjects(bucketName string) []Object {
 			continue
 		}
 
-		opts := minio.StatObjectOptions{}
-		objectInfo, err := x.Client.StatObject(bucketName, objectInfo.Key, opts)
+		object, err := x.StatObject(bucketName, objectInfo.Key)
 		if err != nil {
 			logger.WithError(err).Error("minio.StatObject() failed")
 			continue
 		}
 
-		objects = append(objects, Object{
+		objects = append(objects, object)
+	}
+	return objects
+}
+
+func (x *minioDriver) StatObject(bucketName, objectName string) (Object, error) {
+	opts := minio.StatObjectOptions{}
+	objectInfo, err := x.Client.StatObject(bucketName, objectName, opts)
+	if err != nil {
+		return Object{}, err
+	} else {
+		return Object{
 			ContentType: objectInfo.ContentType,
 			Name:        objectInfo.Key,
 			Tags:        Tags(objectInfo.UserMetadata),
-		})
+		}, nil
 	}
-	return objects
+}
+
+func (x *minioDriver) DownloadURL(bucketName string, objectName string) (string, error) {
+	policy, err := x.Client.GetBucketPolicy(bucketName)
+	if err != nil {
+		return "", err
+	}
+
+	var downloadUrl *url.URL
+	switch policy {
+	case "download":
+		downloadUrl, err = url.Parse(fmt.Sprintf("http://localhost:9000/%s/%s", bucketName, objectName))
+	default:
+		downloadUrl, err = x.Client.PresignedGetObject(bucketName, objectName, LinkExpiration, nil)
+	}
+	if err != nil {
+		return "", err
+	} else {
+		return downloadUrl.String(), nil
+	}
 }

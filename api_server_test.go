@@ -58,7 +58,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			apiServer := NewApiServer(tt.objectStore, ApiServerConfig{1e3})
-			gotBody, gotCode := apiServer.MusicPDFsIndex(tt.request)
+			gotBody, gotCode := apiServer.SheetsIndex(tt.request)
 			if expected, got := tt.wants.code, gotCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
@@ -205,7 +205,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				MaxContentLength: 1e3,
 			})
 			tt.request.Header.Set("Content-Type", tt.contentType)
-			gotBody, gotCode := apiServer.MusicPDFsUpload(tt.request)
+			gotBody, gotCode := apiServer.SheetsUpload(tt.request)
 			if expected, got := tt.wants.code, gotCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
@@ -217,6 +217,86 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 			}
 			if expected, got := fmt.Sprintf("%#v", tt.wants.object), fmt.Sprintf("%#v", gotObject); expected != got {
 				t.Errorf("\nwant object:%v\n got body:%v", expected, got)
+			}
+		})
+	}
+}
+
+func TestApiServer_Download(t *testing.T) {
+	type wants struct {
+		code     int
+		location string
+		body     string
+	}
+
+	for _, tt := range []struct {
+		name        string
+		objectStore MockObjectStore
+		request     *http.Request
+		wants       wants
+	}{
+		{
+			name: "post",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			wants: wants{
+				code:     http.StatusFound,
+				location: "http://storage.example.com/cheese/danish",
+				body:     `<a href="http://storage.example.com/cheese/danish">Found</a>.`,
+			},
+		},
+		{
+			name: "success",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			wants: wants{
+				code:     http.StatusFound,
+				location: "http://storage.example.com/cheese/danish",
+				body:     `<a href="http://storage.example.com/cheese/danish">Found</a>.`,
+			},
+		},
+		{
+			name: "success",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			wants: wants{
+				code:     http.StatusFound,
+				location: "http://storage.example.com/cheese/danish",
+				body:     `<a href="http://storage.example.com/cheese/danish">Found</a>.`,
+			},
+		},
+		{
+			name: "success",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/?bucket=cheese&key=danish", strings.NewReader("")),
+			wants: wants{
+				code:     http.StatusFound,
+				location: "http://storage.example.com/cheese/danish",
+				body:     `<a href="http://storage.example.com/cheese/danish">Found</a>.`,
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			server := NewApiServer(tt.objectStore, ApiServerConfig{})
+			recorder := httptest.NewRecorder()
+			server.Download(recorder, tt.request)
+			gotResp := recorder.Result()
+			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
+				t.Errorf("expected code %v, got %v", expected, got)
+			}
+			if expected, got := tt.wants.location, gotResp.Header.Get("Location"); expected != got {
+				t.Errorf("expected location %v, got %v", expected, got)
+			}
+			if expected, got := tt.wants.body, strings.TrimSpace(recorder.Body.String()); expected != got {
+				t.Errorf("expected body %v, got %v", expected, got)
 			}
 		})
 	}
