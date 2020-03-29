@@ -57,13 +57,44 @@ func TestApiServer_Index(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			apiServer := ApiServer{ObjectStore: tt.objectStore}
+			apiServer := NewApiServer(tt.objectStore, ApiServerConfig{1e3})
 			gotBody, gotCode := apiServer.MusicPDFsIndex(tt.request)
 			if expected, got := tt.wants.code, gotCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
 			if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
 				t.Errorf("expected body:\nwant: `%s`\n got: `%s`", expected, got)
+			}
+		})
+	}
+}
+
+func Test_acceptsType(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		header http.Header
+		arg    string
+		want   bool
+	}{
+		{
+			name: "yep",
+			header: http.Header{
+				"Accept": []string{"text/html,application/json,application/pdf", "application/xml,cheese/sandwich"},
+			},
+			arg:  "application/xml",
+			want: true,
+		},
+		{
+			name: "nope",
+			header: http.Header{
+				"Accept": []string{"text/html,application/json,application/pdf", "application/xml,cheese/sandwich"},
+			},
+			arg: "sour/cream", want: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if expected, got := tt.want, acceptsType(&http.Request{Header: tt.header}, tt.arg); expected != got {
+				t.Errorf("expected %v, got %v", expected, got)
 			}
 		})
 	}
@@ -150,14 +181,16 @@ func TestApiServer_Upload(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotObject Object
 			var gotBucketName string
-			apiServer := ApiServer{ObjectStore: MockObjectStore{
+			apiServer := NewApiServer(MockObjectStore{
 				listObjects: tt.objectStore.listObjects,
 				putObject: func(bucketName string, object *Object) error {
 					gotObject = *object
 					gotBucketName = bucketName
 					return tt.objectStore.putObject(bucketName, object)
 				},
-			}}
+			}, ApiServerConfig{
+				MaxContentLength: 1e3,
+			})
 			gotBody, gotCode := apiServer.MusicPDFsUpload(tt.request)
 			if expected, got := tt.wants.code, gotCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
