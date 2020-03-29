@@ -81,8 +81,11 @@ func (x *minioDriver) ListObjects(bucketName string) []Object {
 
 	var objects []Object
 	for objectInfo := range x.Client.ListObjects(bucketName, "", false, done) {
-		opts := minio.StatObjectOptions{}
+		if objectInfo.Key == "" {
+			continue
+		}
 
+		opts := minio.StatObjectOptions{}
 		objectInfo, err := x.Client.StatObject(bucketName, objectInfo.Key, opts)
 		if err != nil {
 			logger.WithError(err).Error("minio.StatObject() failed")
