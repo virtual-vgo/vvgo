@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestApiServer_Index(t *testing.T) {
+func TestApiServer_SheetsIndex(t *testing.T) {
 	type wants struct {
 		code int
 		body string
@@ -100,7 +100,8 @@ func Test_acceptsType(t *testing.T) {
 	}
 }
 
-func TestApiServer_Upload(t *testing.T) {
+func TestApiServer_SheetsUpload(t *testing.T) {
+	maxContentLength := int64(1e3)
 	type wants struct {
 		code       int
 		body       string
@@ -111,34 +112,45 @@ func TestApiServer_Upload(t *testing.T) {
 		name        string
 		objectStore MockObjectStore
 		request     *http.Request
+		contentType string
 		wants       wants
 	}{
 		{
-			name:    "get",
-			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
-			wants:   wants{code: http.StatusMethodNotAllowed},
+			name:        "get",
+			request:     httptest.NewRequest(http.MethodGet, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
+			contentType: "application/pdf",
+			wants:       wants{code: http.StatusMethodNotAllowed},
 		},
 		{
-			name:    "post with too large body",
-			request: httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(make([]byte, 1e6+1))),
-			wants:   wants{code: http.StatusRequestEntityTooLarge},
+			name:        "body too large",
+			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", bytes.NewReader(make([]byte, maxContentLength+1))),
+			contentType: "application/pdf",
+			wants:       wants{code: http.StatusRequestEntityTooLarge},
 		},
 		{
-			name:    "post with missing fields",
-			request: httptest.NewRequest(http.MethodPost, "/?project=test-project&instrument=test-instrument", strings.NewReader("")),
+			name:        "wrong content type",
+			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
+			contentType: "application/cheese",
+			wants:       wants{code: http.StatusUnsupportedMediaType},
+		},
+		{
+			name:        "missing fields",
+			request:     httptest.NewRequest(http.MethodPost, "/?project=test-project&instrument=test-instrument", strings.NewReader("")),
+			contentType: "application/pdf",
 			wants: wants{
 				code: http.StatusBadRequest,
 				body: ErrMissingPartNumber.Error(),
 			},
 		},
 		{
-			name: "post with db error",
+			name:        "db error",
+			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
+			contentType: "application/pdf",
 			objectStore: MockObjectStore{
 				putObject: func(string, *Object) error {
 					return fmt.Errorf("mock error")
 				},
 			},
-			request: httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
 			wants: wants{
 				object: Object{
 					ContentType: "application/pdf",
@@ -155,13 +167,14 @@ func TestApiServer_Upload(t *testing.T) {
 			},
 		},
 		{
-			name: "success",
+			name:        "success",
+			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
+			contentType: "application/pdf",
 			objectStore: MockObjectStore{
 				putObject: func(string, *Object) error {
 					return nil
 				},
 			},
-			request: httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
 			wants: wants{
 				object: Object{
 					ContentType: "application/pdf",
@@ -191,6 +204,7 @@ func TestApiServer_Upload(t *testing.T) {
 			}, ApiServerConfig{
 				MaxContentLength: 1e3,
 			})
+			tt.request.Header.Set("Content-Type", tt.contentType)
 			gotBody, gotCode := apiServer.MusicPDFsUpload(tt.request)
 			if expected, got := tt.wants.code, gotCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
