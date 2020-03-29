@@ -21,17 +21,18 @@ type ApiServerConfig struct {
 type ApiServer struct {
 	ObjectStore
 	ApiServerConfig
-	mux *http.ServeMux
+	*http.ServeMux
 }
 
 func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 	server := ApiServer{
 		ObjectStore:     store,
 		ApiServerConfig: config,
-		mux:             http.NewServeMux(),
+		ServeMux:        http.NewServeMux(),
 	}
-	server.mux.Handle("/sheets", APIHandlerFunc(server.MusicPDFsIndex))
-	server.mux.Handle("/sheets/upload", APIHandlerFunc(server.MusicPDFsUpload))
+	server.Handle("/sheets", APIHandlerFunc(server.MusicPDFsIndex))
+	server.Handle("/sheets/upload", APIHandlerFunc(server.MusicPDFsUpload))
+	server.Handle("/", http.FileServer(http.Dir("public")))
 	return &server
 }
 
