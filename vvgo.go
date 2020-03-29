@@ -23,15 +23,21 @@ var logger = &logrus.Logger{
 
 type Config struct {
 	Minio MinioConfig
+	Api   ApiServerConfig
 }
 
 func NewDefaultConfig() Config {
-	return Config{MinioConfig{
-		Endpoint:        "localhost:9000",
-		AccessKeyID:     "minioadmin",
-		SecretAccessKey: "minioadmin",
-		UseSSL:          false,
-	}}
+	return Config{
+		Minio: MinioConfig{
+			Endpoint:        "localhost:9000",
+			AccessKeyID:     "minioadmin",
+			SecretAccessKey: "minioadmin",
+			UseSSL:          false,
+		},
+		Api: ApiServerConfig{
+			MaxContentLength: 1e6,
+		},
+	}
 }
 
 func (x *Config) ParseEnv() {
@@ -45,15 +51,20 @@ func (x *Config) ParseEnv() {
 		x.Minio.SecretAccessKey = key
 	}
 	x.Minio.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
+
+	if maxContentLength, _ := strconv.ParseInt(os.Getenv("API_MAX_CONTENT_LENGTH"), 10, 64); maxContentLength != 0 {
+		x.Api.MaxContentLength = maxContentLength
+	}
 }
 
 func main() {
 	config := NewDefaultConfig()
 	config.ParseEnv()
 
-	apiServer := ApiServer{
-		ObjectStore: NewMinioDriverMust(config.Minio),
-	}
+	apiServer := NewApiServer(
+		NewMinioDriverMust(config.Minio),
+		config.Api,
+	)
 
 	mux := http.NewServeMux()
 	mux.Handle("/music_pdfs", APIHandlerFunc(apiServer.MusicPDFsIndex))
