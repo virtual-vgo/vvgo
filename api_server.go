@@ -36,14 +36,14 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 	return &server
 }
 
+type APIHandlerFunc func(r *http.Request) ([]byte, int)
+
 func (x APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	body, code := logRequest(x, r)
 	w.WriteHeader(code)
 	w.Write(body)
 }
-
-type APIHandlerFunc func(r *http.Request) ([]byte, int)
 
 func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 	start := time.Now()
@@ -62,10 +62,13 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 		"request_seconds": time.Since(start).Seconds(),
 		"status_code":     code,
 	}
-	if code < 500 {
-		logger.WithFields(fields).Info("request completed")
-	} else {
+	switch true {
+	case code >= 500:
 		logger.WithFields(fields).Error("request failed")
+	case 400 <= code && code < 500:
+		logger.WithFields(fields).Error("request failed")
+	default:
+		logger.WithFields(fields).Info("request completed")
 	}
 	return body, code
 }
