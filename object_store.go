@@ -32,6 +32,7 @@ type MinioConfig struct {
 }
 
 type minioDriver struct {
+	MinioConfig
 	*minio.Client
 }
 
@@ -41,7 +42,10 @@ func NewMinioDriverMust(config MinioConfig) *minioDriver {
 	if err != nil {
 		logger.WithError(err).Fatalf("minio.New() failed")
 	}
-	return &minioDriver{minioClient}
+	return &minioDriver{
+		MinioConfig: config,
+		Client:      minioClient,
+	}
 }
 
 func (x *minioDriver) PutObject(bucketName string, object *Object) error {
@@ -124,7 +128,7 @@ func (x *minioDriver) DownloadURL(bucketName string, objectName string) (string,
 	var downloadUrl *url.URL
 	switch policy {
 	case "download":
-		downloadUrl, err = url.Parse(fmt.Sprintf("http://localhost:9000/%s/%s", bucketName, objectName))
+		downloadUrl, err = url.Parse(fmt.Sprintf("%s/%s/%s", x.Client.EndpointURL(), bucketName, objectName))
 	default:
 		downloadUrl, err = x.Client.PresignedGetObject(bucketName, objectName, LinkExpiration, nil)
 	}
