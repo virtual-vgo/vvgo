@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Virtual Video Game Orchestra">
+    <meta name="generator" content="Jekyll v3.8.6">
+
+    <title>Virtual Video Game Orchestra</title>
+
+    <link rel="icon" href="../images/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" type="text/css" href="../css/theme.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery.dataTables.css">
+    <script type="text/javascript" src="../js/jquery.js"></script>
+    <script type="text/javascript" src="../js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="../js/sheets.js"></script>
+</head>
+
+<style>
+    .upload-form {
+        border: none;
+        margin: 10px auto;
+        padding: 15px 15px;
+        width: 50%;
+        text-align: center;
+    }
+
+    .upload-table {
+        border: none;
+        margin: 0 auto;
+        padding: 15px 15px;
+        width: 50%;
+        text-align: center;
+    }
+</style>
+
+<body>
+<div><a href="/"><img src="../images/logo.svg" alt="logo" class="logo-tiny"></a></div>
+<h1 class="title">Upload</h1>
+<form enctype="multipart/form-data" class="upload-form" action="/sheets/upload" method="post">
+    <input type="hidden" name="token" value=""/> {{/* TODO: Put a session token here. */}}
+    <table class="upload-table">
+        <tbody>
+        <tr>
+            <td><strong>Project</strong></td>
+            <td><input type="text" name="project" readonly="readonly" required="required" value="01-snake-eater"/></td>
+        </tr>
+        <tr>
+            <td><strong>Instrument</strong></td>
+            <td><input type="text" name="instrument" required="required"/></td>
+        </tr>
+        <tr>
+            <td><strong>Part Number</strong></td>
+            <td><input type="number" name="part_number" required="required"/></td>
+        </tr>
+        <tr>
+            <td colspan="2"><input type="file" name="upload_file" required="required" accept="application/pdf"/></td>
+        </tr>
+        <tr>
+            <td colspan="2"><input type="submit" value="submit"/></td>
+        </tr>
+        </tbody>
+    </table>
+</form>
+</body>
+</html>

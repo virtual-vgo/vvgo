@@ -9,7 +9,6 @@ import (
 	"html/template"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -43,6 +42,7 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 type APIHandlerFunc func(r *http.Request) ([]byte, int)
 
 func (x APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
 	defer r.Body.Close()
 	body, code := logRequest(x, r)
 	w.WriteHeader(code)
@@ -98,25 +98,21 @@ func (x *ApiServer) SheetsIndex(r *http.Request) ([]byte, int) {
 		})
 	}
 
-	var buf bytes.Buffer
 	switch true {
 	case acceptsType(r, "text/html"):
-		sheetsTemplate, err := template.ParseFiles("public/sheets.gohtml")
-		if err != nil {
-			logger.WithError(err).Error("template.ParseFiles() failed")
-			return nil, http.StatusInternalServerError
-		}
-		if err := sheetsTemplate.Execute(&buf, &rows); err != nil {
-			logger.WithError(err).Error("template.Execute() failed")
-			return nil, http.StatusInternalServerError
-		}
+		return parseAndExecute(&rows, "public/sheets.gohtml")
 	default:
-		if err := json.NewEncoder(&buf).Encode(&rows); err != nil {
-			logger.WithError(err).Error("json.Encode() failed")
-			return nil, http.StatusInternalServerError
-		}
+		return jsonEncode(&rows)
 	}
-	return buf.Bytes(), http.StatusOK
+}
+
+func jsonEncode(data interface{}) ([]byte, int) {
+	if dataJSON, err := json.Marshal(data); err != nil {
+		logger.WithError(err).Error("json.Encode() failed")
+		return nil, http.StatusInternalServerError
+	} else {
+		return dataJSON, http.StatusOK
+	}
 }
 
 func acceptsType(r *http.Request, mimeType string) bool {
@@ -131,45 +127,90 @@ func acceptsType(r *http.Request, mimeType string) bool {
 }
 
 func (x *ApiServer) SheetsUpload(r *http.Request) ([]byte, int) {
-	// only accept post
-	if r.Method != http.MethodPost {
+	switch r.Method {
+	case http.MethodGet:
+		return parseAndExecute(struct{}{}, "public/sheets/upload.gohtml")
+
+	case http.MethodPost:
+		if r.ContentLength > x.MaxContentLength {
+			return nil, http.StatusRequestEntityTooLarge
+		}
+
+		// get the sheet data
+		sheet, err := NewSheetFromRequest(r)
+		if err != nil {
+			logger.WithError(err).Error("NewSheetFromRequest() failed")
+			return []byte(err.Error()), http.StatusBadRequest
+		}
+
+		// read the pdf content
+		var pdfBytes bytes.Buffer
+		switch contentType := r.Header.Get("Content-Type"); true {
+		case contentType == "application/pdf":
+			if _, err = pdfBytes.ReadFrom(r.Body); err != nil {
+				logger.WithError(err).Error("r.body.Read() failed")
+				return nil, http.StatusBadRequest
+			}
+
+		case strings.HasPrefix(contentType, "multipart/form-data"):
+			file, fileHeader, err := r.FormFile("upload_file")
+			if err != nil {
+				logger.WithError(err).Error("r.FormFile() failed")
+				return nil, http.StatusBadRequest
+			}
+			defer file.Close()
+
+			if contentType := fileHeader.Header.Get("Content-Type"); contentType != "application/pdf" {
+				logger.WithField("Content-Type", contentType).Error("invalid content type")
+				return nil, http.StatusUnsupportedMediaType
+			}
+
+			// read the pdf from the body
+			if _, err = pdfBytes.ReadFrom(file); err != nil {
+				logger.WithError(err).Error("r.body.Read() failed")
+				return nil, http.StatusBadRequest
+			}
+
+		default:
+			logger.WithField("Content-Type", contentType).Error("invalid content type")
+			return nil, http.StatusUnsupportedMediaType
+		}
+
+		// check file type
+		if contentType := http.DetectContentType(pdfBytes.Bytes()); contentType != "application/pdf" {
+			logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
+			return nil, http.StatusUnsupportedMediaType
+		}
+
+		// write the pdf
+		object := Object{
+			ContentType: "application/pdf",
+			Name:        sheet.ObjectKey(),
+			Tags:        sheet.Tags(),
+			Buffer:      pdfBytes,
+		}
+		if err := x.PutObject(SheetsBucketName, &object); err != nil {
+			logger.WithError(err).Error("storage.PutObject() failed")
+			return nil, http.StatusInternalServerError
+		}
+		return nil, http.StatusOK
+	default:
 		return nil, http.StatusMethodNotAllowed
 	}
+}
 
-	if r.ContentLength > x.MaxContentLength {
-		return nil, http.StatusRequestEntityTooLarge
-	}
-
-	// read the metadata
-	meta := NewSheetFromUrlValues(r.URL.Query())
-	if err := meta.Validate(); err != nil {
-		return []byte(err.Error()), http.StatusBadRequest
-	}
-
-	// validate content encoding
-	if r.Header.Get("Content-Type") != "application/pdf" {
-		return nil, http.StatusUnsupportedMediaType
-	}
-
-	// read the pdf from the body
-	var pdfBytes bytes.Buffer
-	if _, err := pdfBytes.ReadFrom(r.Body); err != nil {
-		logger.WithError(err).Error("r.body.Read() failed")
-		return nil, http.StatusBadRequest
-	}
-
-	// write the pdf
-	object := Object{
-		ContentType: "application/pdf",
-		Name:        meta.ObjectKey(),
-		Tags:        meta.ToTags(),
-		Buffer:      pdfBytes,
-	}
-	if err := x.PutObject(SheetsBucketName, &object); err != nil {
-		logger.WithError(err).Error("storage.PutObject() failed")
+func parseAndExecute(data interface{}, templateFiles ...string) ([]byte, int) {
+	var buf bytes.Buffer
+	uploadTemplate, err := template.ParseFiles(templateFiles...)
+	if err != nil {
+		logger.WithError(err).Error("template.ParseFiles() failed")
 		return nil, http.StatusInternalServerError
 	}
-	return nil, http.StatusOK
+	if err := uploadTemplate.Execute(&buf, &data); err != nil {
+		logger.WithError(err).Error("template.Execute() failed")
+		return nil, http.StatusInternalServerError
+	}
+	return buf.Bytes(), http.StatusOK
 }
 
 func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
@@ -231,13 +272,14 @@ func NewSheetFromTags(tags Tags) Sheet {
 	}
 }
 
-func NewSheetFromUrlValues(values url.Values) Sheet {
-	partNumber, _ := strconv.Atoi(values.Get("part_number"))
-	return Sheet{
-		Project:    values.Get("project"),
-		Instrument: values.Get("instrument"),
+func NewSheetFromRequest(r *http.Request) (Sheet, error) {
+	partNumber, _ := strconv.Atoi(r.FormValue("part_number"))
+	sheet := Sheet{
+		Project:    r.FormValue("project"),
+		Instrument: r.FormValue("instrument"),
 		PartNumber: partNumber,
 	}
+	return sheet, sheet.Validate()
 }
 
 func (x Sheet) ObjectKey() string {
@@ -248,7 +290,7 @@ func (x Sheet) Link() string {
 	return fmt.Sprintf("/download?bucket=%s&key=%s", SheetsBucketName, x.ObjectKey())
 }
 
-func (x Sheet) ToTags() map[string]string {
+func (x Sheet) Tags() map[string]string {
 	return map[string]string{
 		"Project":     x.Project,
 		"Instrument":  x.Instrument,
