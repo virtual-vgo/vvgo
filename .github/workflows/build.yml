@@ -52,6 +52,6 @@ jobs:
           echo VERSION=$VERSION
 
           docker tag builder $IMAGE_ID:$VERSION-builder
-          docker tag vvgo $IMAGE_ID:$VERSION
+          docker tag ${{ github.base_ref }} $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION-builder
           docker push $IMAGE_ID:$VERSION
