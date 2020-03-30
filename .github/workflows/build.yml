@@ -27,7 +27,7 @@ jobs:
             --target vvgo \
             --cache-from=$CACHE_FROM:latest-builder \
             --cache-from=$CACHE_FROM:latest \
-            --tag vvgo
+            --tag artifact
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
@@ -52,6 +52,10 @@ jobs:
           echo VERSION=$VERSION
 
           docker tag builder $IMAGE_ID:$VERSION-builder
-          docker tag ${{ github.base_ref }} $IMAGE_ID:$VERSION
+          docker tag artifact $IMAGE_ID:$VERSION
+          docker tag artifact $IMAGE_ID:${{ github.base_ref }}
+          docker tag artifact $IMAGE_ID:${{ github.base_ref }}-$VERSION
           docker push $IMAGE_ID:$VERSION-builder
           docker push $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:${{ github.base_ref }}
+          docker push $IMAGE_ID:${{ github.base_ref }}-$VERSION
