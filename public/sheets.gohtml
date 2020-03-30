@@ -15,10 +15,10 @@
     <link rel="stylesheet" type="text/css" href="css/jquery.dataTables.css">
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.dataTables.js"></script>
-    <script type="text/javascript" src="js/music_pdfs.js"></script>
+    <script type="text/javascript" src="js/sheets.js"></script>
 </head>
 <style>
-    .music-pdfs-table {
+    .sheets-table {
         border: none;
         margin: 10px auto;
         padding: 15px 15px;
@@ -28,9 +28,9 @@
 
 <body>
 <div><a href="https://vvgo.org/"><img src="images/logo.svg" alt="logo" class="logo-tiny"></a></div>
-<h1 class="title">Music PDFs</h1>
-<div class="music-pdfs-table">
-    <table id="example" class="hover row-border order-column">
+<h1 class="title">Sheets</h1>
+<div class="sheets-table">
+    <table id="sheets" class="hover row-border order-column">
         <thead>
         <tr>
             <th>Project</th>
@@ -42,10 +42,10 @@
         <tbody>
         {{- range .}}
             <tr>
-                <td>{{.Project}}</td>
-                <td>{{.Instrument}}</td>
-                <td>{{.PartNumber}}</td>
-                <td><a href="{{.DownloadLink}}" class="download-link">&raquo; download &laquo;</a></td>
+                <td>{{.Sheet.Project}}</td>
+                <td>{{.Sheet.Instrument}}</td>
+                <td>{{.Sheet.PartNumber}}</td>
+                <td><a href="{{.Link}}" class="download-link">&raquo; download &laquo;</a></td>
             </tr>
         {{- end }}
         </tbody>

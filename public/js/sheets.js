@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    $('#example').DataTable({
+    $('#sheets').DataTable({
         paging: false,
         columnDefs: [{"className": "dt-center", "targets": "_all"}],
     });

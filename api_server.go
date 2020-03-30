@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"html/template"
 	"net"
@@ -14,7 +15,7 @@ import (
 	"time"
 )
 
-const MusicPdfsBucketName = "sheets"
+const SheetsBucketName = "sheets"
 
 type ApiServerConfig struct {
 	MaxContentLength int64
@@ -32,8 +33,9 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 		ApiServerConfig: config,
 		ServeMux:        http.NewServeMux(),
 	}
-	server.Handle("/sheets", APIHandlerFunc(server.MusicPDFsIndex))
-	server.Handle("/sheets/upload", APIHandlerFunc(server.MusicPDFsUpload))
+	server.Handle("/sheets", APIHandlerFunc(server.SheetsIndex))
+	server.Handle("/sheets/upload", APIHandlerFunc(server.SheetsUpload))
+	server.Handle("/download", http.HandlerFunc(server.Download))
 	server.Handle("/", http.FileServer(http.Dir("public")))
 	return &server
 }
@@ -68,39 +70,48 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 	case code >= 500:
 		logger.WithFields(fields).Error("request failed")
 	case 400 <= code && code < 500:
-		logger.WithFields(fields).Error("request failed")
+		logger.WithFields(fields).Error("invalid request")
 	default:
 		logger.WithFields(fields).Info("request completed")
 	}
 	return body, code
 }
 
-func (x *ApiServer) MusicPDFsIndex(r *http.Request) ([]byte, int) {
+func (x *ApiServer) SheetsIndex(r *http.Request) ([]byte, int) {
 	// only accept get
 	if r.Method != http.MethodGet {
 		return nil, http.StatusMethodNotAllowed
 	}
 
-	objects := x.ListObjects(MusicPdfsBucketName)
-	pdfs := make([]MusicPDFMeta, 0, len(objects))
+	type tableRow struct {
+		Sheet
+		Link string `json:"link"`
+	}
+
+	objects := x.ListObjects(SheetsBucketName)
+	rows := make([]tableRow, 0, len(objects))
 	for i := range objects {
-		pdfs = append(pdfs, NewMusicPDFMetaFromTags(objects[i].Tags))
+		sheet := NewSheetFromTags(objects[i].Tags)
+		rows = append(rows, tableRow{
+			Sheet: sheet,
+			Link:  sheet.Link(),
+		})
 	}
 
 	var buf bytes.Buffer
 	switch true {
 	case acceptsType(r, "text/html"):
-		musicPDFsTemplate, err := template.ParseFiles("public/music_pdfs.gohtml")
+		sheetsTemplate, err := template.ParseFiles("public/sheets.gohtml")
 		if err != nil {
 			logger.WithError(err).Error("template.ParseFiles() failed")
 			return nil, http.StatusInternalServerError
 		}
-		if err := musicPDFsTemplate.Execute(&buf, &pdfs); err != nil {
+		if err := sheetsTemplate.Execute(&buf, &rows); err != nil {
 			logger.WithError(err).Error("template.Execute() failed")
 			return nil, http.StatusInternalServerError
 		}
 	default:
-		if err := json.NewEncoder(&buf).Encode(&objects); err != nil {
+		if err := json.NewEncoder(&buf).Encode(&rows); err != nil {
 			logger.WithError(err).Error("json.Encode() failed")
 			return nil, http.StatusInternalServerError
 		}
@@ -119,7 +130,7 @@ func acceptsType(r *http.Request, mimeType string) bool {
 	return false
 }
 
-func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
+func (x *ApiServer) SheetsUpload(r *http.Request) ([]byte, int) {
 	// only accept post
 	if r.Method != http.MethodPost {
 		return nil, http.StatusMethodNotAllowed
@@ -130,7 +141,7 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 	}
 
 	// read the metadata
-	meta := NewMusicPDFMetaFromUrlValues(r.URL.Query())
+	meta := NewSheetFromUrlValues(r.URL.Query())
 	if err := meta.Validate(); err != nil {
 		return []byte(err.Error()), http.StatusBadRequest
 	}
@@ -150,15 +161,53 @@ func (x *ApiServer) MusicPDFsUpload(r *http.Request) ([]byte, int) {
 	// write the pdf
 	object := Object{
 		ContentType: "application/pdf",
-		Name:        fmt.Sprintf("%s-%s-%d.pdf", meta.Project, meta.Instrument, meta.PartNumber),
+		Name:        meta.ObjectKey(),
 		Tags:        meta.ToTags(),
 		Buffer:      pdfBytes,
 	}
-	if err := x.PutObject(MusicPdfsBucketName, &object); err != nil {
+	if err := x.PutObject(SheetsBucketName, &object); err != nil {
 		logger.WithError(err).Error("storage.PutObject() failed")
 		return nil, http.StatusInternalServerError
 	}
 	return nil, http.StatusOK
+}
+
+func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
+	var downloadURL string
+	body, code := logRequest(func(*http.Request) ([]byte, int) {
+		if r.Method != http.MethodGet {
+			return nil, http.StatusMethodNotAllowed
+		}
+
+		values := r.URL.Query()
+		key := values.Get("key")
+		bucket := values.Get("bucket")
+
+		var err error
+		downloadURL, err = x.DownloadURL(bucket, key)
+
+		switch e := err.(type) {
+		case nil:
+			return nil, http.StatusFound
+		case minio.ErrorResponse:
+			if e.StatusCode == http.StatusNotFound {
+				return nil, http.StatusNotFound
+			}
+		}
+
+		logger.WithError(err).Error("minio.StatObject() failed")
+		return nil, http.StatusInternalServerError
+	}, r)
+
+	switch code {
+	case http.StatusFound:
+		http.Redirect(w, r, downloadURL, code)
+	case http.StatusNotFound:
+		http.NotFound(w, r)
+	default:
+		w.WriteHeader(code)
+		w.Write(body)
+	}
 }
 
 var (
@@ -167,32 +216,39 @@ var (
 	ErrMissingPartNumber = fmt.Errorf("missing required field `part_number`")
 )
 
-type MusicPDFMeta struct {
-	Project      string
-	Instrument   string
-	PartNumber   int
-	DownloadLink string
+type Sheet struct {
+	Project    string `json:"project"`
+	Instrument string `json:"instrument"`
+	PartNumber int    `json:"part_number"`
 }
 
-func NewMusicPDFMetaFromTags(tags Tags) MusicPDFMeta {
+func NewSheetFromTags(tags Tags) Sheet {
 	partNumber, _ := strconv.Atoi(tags["Part-Number"])
-	return MusicPDFMeta{
+	return Sheet{
 		Project:    tags["Project"],
 		Instrument: tags["Instrument"],
 		PartNumber: partNumber,
 	}
 }
 
-func NewMusicPDFMetaFromUrlValues(values url.Values) MusicPDFMeta {
+func NewSheetFromUrlValues(values url.Values) Sheet {
 	partNumber, _ := strconv.Atoi(values.Get("part_number"))
-	return MusicPDFMeta{
+	return Sheet{
 		Project:    values.Get("project"),
 		Instrument: values.Get("instrument"),
 		PartNumber: partNumber,
 	}
 }
 
-func (x *MusicPDFMeta) ToTags() map[string]string {
+func (x Sheet) ObjectKey() string {
+	return fmt.Sprintf("%s-%s-%d.pdf", x.Project, x.Instrument, x.PartNumber)
+}
+
+func (x Sheet) Link() string {
+	return fmt.Sprintf("/download?bucket=%s&key=%s", SheetsBucketName, x.ObjectKey())
+}
+
+func (x Sheet) ToTags() map[string]string {
 	return map[string]string{
 		"Project":     x.Project,
 		"Instrument":  x.Instrument,
@@ -200,7 +256,7 @@ func (x *MusicPDFMeta) ToTags() map[string]string {
 	}
 }
 
-func (x *MusicPDFMeta) Validate() error {
+func (x Sheet) Validate() error {
 	if x.Project == "" {
 		return ErrMissingProject
 	} else if x.Instrument == "" {

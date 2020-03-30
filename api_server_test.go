@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/minio/minio-go/v6"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -24,7 +25,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 	}{
 		{
 			name:    "method post",
-			request: httptest.NewRequest(http.MethodPost, "/", nil),
+			request: httptest.NewRequest(http.MethodPost, "/sheets", nil),
 			wants:   wants{code: http.StatusMethodNotAllowed},
 		},
 		{
@@ -34,32 +35,39 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 					return []Object{
 						{
 							ContentType: "application/pdf",
-							Name:        "trumpet.pdf",
+							Name:        "midnight-trumpet-3.pdf",
 							Tags: map[string]string{
-								"instrument": "trumpet",
+								"Project":     "midnight",
+								"Instrument":  "trumpet",
+								"Part-Number": "3",
 							},
 						},
 						{
 							ContentType: "application/pdf",
-							Name:        "flute.pdf",
+							Name:        "daylight-flute-2.pdf",
 							Tags: map[string]string{
-								"instrument": "flute",
+								"Project":     "daylight",
+								"Instrument":  "flute",
+								"Part-Number": "2",
 							},
 						},
 					}
 				},
 			},
-			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/sheets", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusOK,
-				body: `[{"content-type":"application/pdf","name":"trumpet.pdf","tags":{"instrument":"trumpet"}},{"content-type":"application/pdf","name":"flute.pdf","tags":{"instrument":"flute"}}]`,
+				body: `[{"project":"midnight","instrument":"trumpet","part_number":3,"link":"/download?bucket=sheets\u0026key=midnight-trumpet-3.pdf"},{"project":"daylight","instrument":"flute","part_number":2,"link":"/download?bucket=sheets\u0026key=daylight-flute-2.pdf"}]`,
 			},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			apiServer := NewApiServer(tt.objectStore, ApiServerConfig{1e3})
-			gotBody, gotCode := apiServer.MusicPDFsIndex(tt.request)
-			if expected, got := tt.wants.code, gotCode; expected != got {
+			recorder := httptest.NewRecorder()
+			apiServer.ServeHTTP(recorder, tt.request)
+			gotResp := recorder.Result()
+			gotBody := recorder.Body.String()
+			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
 			if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
@@ -117,25 +125,25 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 	}{
 		{
 			name:        "get",
-			request:     httptest.NewRequest(http.MethodGet, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
+			request:     httptest.NewRequest(http.MethodGet, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
 			contentType: "application/pdf",
 			wants:       wants{code: http.StatusMethodNotAllowed},
 		},
 		{
 			name:        "body too large",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", bytes.NewReader(make([]byte, maxContentLength+1))),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", bytes.NewReader(make([]byte, maxContentLength+1))),
 			contentType: "application/pdf",
 			wants:       wants{code: http.StatusRequestEntityTooLarge},
 		},
 		{
 			name:        "wrong content type",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
 			contentType: "application/cheese",
 			wants:       wants{code: http.StatusUnsupportedMediaType},
 		},
 		{
 			name:        "missing fields",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=test-project&instrument=test-instrument", strings.NewReader("")),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=test-project&instrument=test-instrument", strings.NewReader("")),
 			contentType: "application/pdf",
 			wants: wants{
 				code: http.StatusBadRequest,
@@ -144,7 +152,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 		},
 		{
 			name:        "db error",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
 			contentType: "application/pdf",
 			objectStore: MockObjectStore{
 				putObject: func(string, *Object) error {
@@ -162,13 +170,13 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 					},
 					Buffer: *bytes.NewBufferString(":wave:"),
 				},
-				bucketName: MusicPdfsBucketName,
+				bucketName: SheetsBucketName,
 				code:       http.StatusInternalServerError,
 			},
 		},
 		{
 			name:        "success",
-			request:     httptest.NewRequest(http.MethodPost, "/?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
+			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
 			contentType: "application/pdf",
 			objectStore: MockObjectStore{
 				putObject: func(string, *Object) error {
@@ -186,7 +194,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 					},
 					Buffer: *bytes.NewBufferString(":wave:"),
 				},
-				bucketName: MusicPdfsBucketName,
+				bucketName: SheetsBucketName,
 				code:       http.StatusOK,
 			},
 		},
@@ -205,8 +213,11 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				MaxContentLength: 1e3,
 			})
 			tt.request.Header.Set("Content-Type", tt.contentType)
-			gotBody, gotCode := apiServer.MusicPDFsUpload(tt.request)
-			if expected, got := tt.wants.code, gotCode; expected != got {
+			recorder := httptest.NewRecorder()
+			apiServer.ServeHTTP(recorder, tt.request)
+			gotResp := recorder.Result()
+			gotBody := recorder.Body.String()
+			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
 			if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
@@ -222,8 +233,92 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 	}
 }
 
-func TestMusicPDFMeta_ToMap(t *testing.T) {
-	meta := MusicPDFMeta{
+func TestApiServer_Download(t *testing.T) {
+	type wants struct {
+		code     int
+		location string
+		body     string
+	}
+
+	for _, tt := range []struct {
+		name        string
+		objectStore MockObjectStore
+		request     *http.Request
+		wants       wants
+	}{
+		{
+			name: "post",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+			}},
+			request: httptest.NewRequest(http.MethodPost, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			wants: wants{
+				code: http.StatusMethodNotAllowed,
+			},
+		},
+		{
+			name: "invalid bucket",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			wants: wants{
+				code: http.StatusNotFound,
+				body: "404 page not found",
+			},
+		},
+		{
+			name: "invalid object",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			wants: wants{
+				code: http.StatusNotFound,
+				body: "404 page not found",
+			},
+		},
+		{
+			name: "server error",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return "", fmt.Errorf("mock error")
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			wants:   wants{code: http.StatusInternalServerError},
+		},
+		{
+			name: "success",
+			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+			}},
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			wants: wants{
+				code:     http.StatusFound,
+				location: "http://storage.example.com/cheese/danish",
+				body:     `<a href="http://storage.example.com/cheese/danish">Found</a>.`,
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			server := NewApiServer(tt.objectStore, ApiServerConfig{})
+			recorder := httptest.NewRecorder()
+			server.ServeHTTP(recorder, tt.request)
+			gotResp := recorder.Result()
+			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
+				t.Errorf("expected code %v, got %v", expected, got)
+			}
+			if expected, got := tt.wants.location, gotResp.Header.Get("Location"); expected != got {
+				t.Errorf("expected location %v, got %v", expected, got)
+			}
+			if expected, got := tt.wants.body, strings.TrimSpace(recorder.Body.String()); expected != got {
+				t.Errorf("expected body %v, got %v", expected, got)
+			}
+		})
+	}
+}
+
+func TestSheet_ToTags(t *testing.T) {
+	meta := Sheet{
 		Project:    "01-snake-eater",
 		Instrument: "trumpet",
 		PartNumber: 4,
@@ -240,44 +335,44 @@ func TestMusicPDFMeta_ToMap(t *testing.T) {
 	}
 }
 
-func TestNewMusicPDFMetaFromTags(t *testing.T) {
+func TestNewSheetFromTags(t *testing.T) {
 	tags := map[string]string{
 		"Project":     "01-snake-eater",
 		"Instrument":  "trumpet",
 		"Part-Number": "4",
 	}
 
-	expectedMeta := MusicPDFMeta{
+	expectedMeta := Sheet{
 		Project:    "01-snake-eater",
 		Instrument: "trumpet",
 		PartNumber: 4,
 	}
 
-	gotMeta := NewMusicPDFMetaFromTags(tags)
+	gotMeta := NewSheetFromTags(tags)
 	if expected, got := fmt.Sprintf("%#v", expectedMeta), fmt.Sprintf("%#v", gotMeta); expected != got {
 		t.Errorf("expected %v, got %v", expected, got)
 	}
 }
 
-func TestMusicPDFMeta_ReadFromUrlValues(t *testing.T) {
+func TestNewSheetFromUrlValues(t *testing.T) {
 	values, err := url.ParseQuery(`project=test-project&instrument=test-instrument&part_number=4`)
 	if err != nil {
 		t.Fatalf("url.ParseQuery() failed: %v", err)
 	}
 
-	expectedMeta := MusicPDFMeta{
+	expectedMeta := Sheet{
 		Project:    "test-project",
 		Instrument: "test-instrument",
 		PartNumber: 4,
 	}
 
-	gotMeta := NewMusicPDFMetaFromUrlValues(values)
+	gotMeta := NewSheetFromUrlValues(values)
 	if expected, got := fmt.Sprintf("%#v", expectedMeta), fmt.Sprintf("%#v", gotMeta); expected != got {
 		t.Errorf("expected %v, got %v", expected, got)
 	}
 }
 
-func TestMusicPDFMeta_Validate(t *testing.T) {
+func TestSheet_Validate(t *testing.T) {
 	type fields struct {
 		Project    string
 		Instrument string
@@ -323,7 +418,7 @@ func TestMusicPDFMeta_Validate(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			x := &MusicPDFMeta{
+			x := &Sheet{
 				Project:    tt.fields.Project,
 				Instrument: tt.fields.Instrument,
 				PartNumber: tt.fields.PartNumber,
