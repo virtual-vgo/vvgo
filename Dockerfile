@@ -5,8 +5,7 @@ RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o /go/bin/vvgo
 
 FROM builder as tester
-RUN apt-get update
-RUN apt-get install -y shellcheck
+RUN apt-get update && apt-get install -y shellcheck
 CMD ["go", "test", "-v", "./..."]
 
 FROM gcr.io/distroless/base-debian10 as vvgo
