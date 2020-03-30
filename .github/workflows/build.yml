@@ -1,51 +1,14 @@
-name: Docker
-
-on:
-  push:
-    # Publish `master` as Docker `latest` image.
-    branches:
-      - master
-
-    # Publish `v1.2.3` tags as releases.
-    tags:
-      - v*
-
-  # Run tests for any PRs.
-  pull_request:
+name: build
+on: pull_request
 
 env:
   IMAGE_NAME: vvgo
 
 jobs:
-  # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  # test:
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #     - uses: actions/checkout@v2
-
-  #     - name: Run tests
-  #       run: |
-  #         if [ -f docker-compose.test.yml ]; then
-  #           docker-compose --file docker-compose.test.yml build
-  #           docker-compose --file docker-compose.test.yml run sut
-  #         else
-  #           docker build . --file Dockerfile
-  #         fi
-
-  # Push image to GitHub Packages.
-  # See also https://docs.docker.com/docker-hub/builds/
-  push:
-    # Ensure test job passes before pushing image.
-    # needs: test
-
+  vvgo:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-
     steps:
       - uses: actions/checkout@v2
-
       - name: Build image
         run: |
           CACHE_FROM=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
@@ -61,10 +24,10 @@ jobs:
 
           docker build . \
             --file Dockerfile \
-            --target artifact \
+            --target vvgo \
             --cache-from=$CACHE_FROM:latest-builder \
             --cache-from=$CACHE_FROM:latest \
-            --tag artifact
+            --tag vvgo
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
@@ -89,6 +52,6 @@ jobs:
           echo VERSION=$VERSION
 
           docker tag builder $IMAGE_ID:$VERSION-builder
-          docker tag artifact $IMAGE_ID:$VERSION
+          docker tag vvgo $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION-builder
           docker push $IMAGE_ID:$VERSION
