@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y shellcheck
 CMD ["go", "test", "-v", "./..."]
 
 FROM gcr.io/distroless/base-debian10 as vvgo
-COPY --from=builder /go/bin/vvgo ./vvgo
+COPY --from=builder /go/bin/vvgo /vvgo
 COPY --from=builder /go/src/vvgo/public ./public
 EXPOSE 8080
 CMD ["/vvgo"]
