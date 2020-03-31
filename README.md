@@ -1,3 +1,6 @@
+![tests](https://github.com/virtual-vgo/vvgo/workflows/tests/badge.svg)
+![build](https://github.com/virtual-vgo/vvgo/workflows/build/badge.svg)
+
 # Virtual Video Game Orchestra
 
 :wave: We are the Virtual Video Game Orchestra (VVGO for short), an orchestra organized by members from various IRL VGOs/GSOs, and comprised of local musicians hailing from across the globe!
