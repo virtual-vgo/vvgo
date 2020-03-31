@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
       - name: Build image
         run: |
           CACHE_FROM=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
@@ -28,9 +32,6 @@ jobs:
             --cache-from=$CACHE_FROM:latest-builder \
             --cache-from=$CACHE_FROM:latest \
             --tag artifact
-
-      - name: Log into registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
 
       - name: Push image
         shell: bash
