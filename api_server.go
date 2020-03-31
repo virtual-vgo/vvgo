@@ -43,7 +43,8 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 		basicAuth:       auth,
 	}
 
-	server.Handle("/sheets", auth.Authenticate(server.SheetsIndex))
+	server.Handle("/sheets", http.RedirectHandler("/sheets/", http.StatusMovedPermanently))
+	server.Handle("/sheets/", auth.Authenticate(server.SheetsIndex))
 	server.Handle("/sheets/upload", auth.Authenticate(server.SheetsUpload))
 	server.Handle("/download", auth.Authenticate(server.Download))
 	server.Handle("/", http.FileServer(http.Dir("public")))
