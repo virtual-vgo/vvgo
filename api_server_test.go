@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/minio/minio-go/v6"
+	"github.com/virtual-vgo/vvgo/pkg/version"
 	"golang.org/x/net/html"
 	"io"
 	"io/ioutil"
@@ -623,6 +624,9 @@ func TestApiServer_Version(t *testing.T) {
 		apiServer := NewApiServer(MockObjectStore{}, ApiServerConfig{})
 		apiServer.ServeHTTP(recorder, req)
 		if expected, got := http.StatusOK, recorder.Code; expected != got {
+			t.Errorf("expected code %v, got %v", expected, got)
+		}
+		if expected, got := version.String(), recorder.Body.String(); expected != got {
 			t.Errorf("expected code %v, got %v", expected, got)
 		}
 	})

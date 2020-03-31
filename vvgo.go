@@ -26,8 +26,6 @@ var logger = &logrus.Logger{
 	ReportCaller: false,
 }
 
-var ver version.Version
-
 type Config struct {
 	Minio MinioConfig
 	Api   ApiServerConfig
