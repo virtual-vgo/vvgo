@@ -7,9 +7,9 @@ import (
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"html/template"
+	"io"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -40,18 +40,24 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 	return &server
 }
 
-type APIHandlerFunc func(r *http.Request) ([]byte, int)
+type APIHandlerFunc func(w http.ResponseWriter, r *http.Request)
 
-func (x APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	body, code := logRequest(x, r)
-	w.WriteHeader(code)
-	w.Write(body)
+// This is http.ResponseWriter middleware that captures the response code
+// and other info that might useful in logs
+type responseWriter struct {
+	code int
+	http.ResponseWriter
 }
 
-func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
+func (x *responseWriter) WriteHeader(code int) {
+	x.code = code
+	x.ResponseWriter.WriteHeader(code)
+}
+
+func (handlerFunc APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	body, code := handlerFunc(r)
+	results := responseWriter{ResponseWriter: w}
+	handlerFunc(&results, r)
 
 	clientIP := strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0]
 	if clientIP == "" {
@@ -64,23 +70,23 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 		"request_method":  r.Method,
 		"request_size":    r.ContentLength,
 		"request_seconds": time.Since(start).Seconds(),
-		"status_code":     code,
+		"status_code":     results.code,
 	}
 	switch true {
-	case code >= 500:
+	case results.code >= 500:
 		logger.WithFields(fields).Error("request failed")
-	case 400 <= code && code < 500:
+	case results.code >= 400:
 		logger.WithFields(fields).Error("invalid request")
 	default:
 		logger.WithFields(fields).Info("request completed")
 	}
-	return body, code
 }
 
-func (x *ApiServer) SheetsIndex(r *http.Request) ([]byte, int) {
+func (x *ApiServer) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 	// only accept get
 	if r.Method != http.MethodGet {
-		return nil, http.StatusMethodNotAllowed
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
 	}
 
 	type tableRow struct {
@@ -98,25 +104,37 @@ func (x *ApiServer) SheetsIndex(r *http.Request) ([]byte, int) {
 		})
 	}
 
-	var buf bytes.Buffer
 	switch true {
 	case acceptsType(r, "text/html"):
-		sheetsTemplate, err := template.ParseFiles("public/sheets.gohtml")
-		if err != nil {
-			logger.WithError(err).Error("template.ParseFiles() failed")
-			return nil, http.StatusInternalServerError
-		}
-		if err := sheetsTemplate.Execute(&buf, &rows); err != nil {
-			logger.WithError(err).Error("template.Execute() failed")
-			return nil, http.StatusInternalServerError
+		if ok := parseAndExecute(w, &rows, "public/sheets.gohtml"); !ok {
+			http.Error(w, "", http.StatusInternalServerError)
 		}
 	default:
-		if err := json.NewEncoder(&buf).Encode(&rows); err != nil {
-			logger.WithError(err).Error("json.Encode() failed")
-			return nil, http.StatusInternalServerError
+		if ok := jsonEncode(w, &rows); !ok {
+			http.Error(w, "", http.StatusInternalServerError)
 		}
 	}
-	return buf.Bytes(), http.StatusOK
+}
+
+func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) bool {
+	uploadTemplate, err := template.ParseFiles(templateFiles...)
+	if err != nil {
+		logger.WithError(err).Error("template.ParseFiles() failed")
+		return false
+	}
+	if err := uploadTemplate.Execute(dest, &data); err != nil {
+		logger.WithError(err).Error("template.Execute() failed")
+		return false
+	}
+	return true
+}
+
+func jsonEncode(dest io.Writer, data interface{}) bool {
+	if err := json.NewEncoder(dest).Encode(data); err != nil {
+		logger.WithError(err).Error("json.Encode() failed")
+		return false
+	}
+	return true
 }
 
 func acceptsType(r *http.Request, mimeType string) bool {
@@ -130,83 +148,118 @@ func acceptsType(r *http.Request, mimeType string) bool {
 	return false
 }
 
-func (x *ApiServer) SheetsUpload(r *http.Request) ([]byte, int) {
-	// only accept post
-	if r.Method != http.MethodPost {
-		return nil, http.StatusMethodNotAllowed
-	}
+func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		if ok := parseAndExecute(w, struct{}{}, "public/sheets/upload.gohtml"); !ok {
+			http.Error(w, "", http.StatusInternalServerError)
+		}
 
-	if r.ContentLength > x.MaxContentLength {
-		return nil, http.StatusRequestEntityTooLarge
-	}
+	case http.MethodPost:
+		if r.ContentLength > x.MaxContentLength {
+			http.Error(w, "", http.StatusRequestEntityTooLarge)
+			return
+		}
 
-	// read the metadata
-	meta := NewSheetFromUrlValues(r.URL.Query())
-	if err := meta.Validate(); err != nil {
-		return []byte(err.Error()), http.StatusBadRequest
-	}
+		// get the sheet data
+		sheet, err := NewSheetFromRequest(r)
+		if err != nil {
+			logger.WithError(err).Error("NewSheetFromRequest() failed")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-	// validate content encoding
-	if r.Header.Get("Content-Type") != "application/pdf" {
-		return nil, http.StatusUnsupportedMediaType
-	}
+		// read the pdf content
+		var pdfBytes bytes.Buffer
+		switch contentType := r.Header.Get("Content-Type"); true {
+		case contentType == "application/pdf":
+			if _, err = pdfBytes.ReadFrom(r.Body); err != nil {
+				logger.WithError(err).Error("r.body.Read() failed")
+				http.Error(w, "", http.StatusBadRequest)
+				return
+			}
 
-	// read the pdf from the body
-	var pdfBytes bytes.Buffer
-	if _, err := pdfBytes.ReadFrom(r.Body); err != nil {
-		logger.WithError(err).Error("r.body.Read() failed")
-		return nil, http.StatusBadRequest
-	}
+		case strings.HasPrefix(contentType, "multipart/form-data"):
+			file, fileHeader, err := r.FormFile("upload_file")
+			if err != nil {
+				logger.WithError(err).Error("r.FormFile() failed")
+				http.Error(w, "", http.StatusBadRequest)
+				return
+			}
+			defer file.Close()
 
-	// write the pdf
-	object := Object{
-		ContentType: "application/pdf",
-		Name:        meta.ObjectKey(),
-		Tags:        meta.ToTags(),
-		Buffer:      pdfBytes,
+			if contentType := fileHeader.Header.Get("Content-Type"); contentType != "application/pdf" {
+				logger.WithField("Content-Type", contentType).Error("invalid content type")
+				http.Error(w, "", http.StatusUnsupportedMediaType)
+				return
+			}
+
+			// read the pdf from the body
+			if _, err = pdfBytes.ReadFrom(file); err != nil {
+				logger.WithError(err).Error("r.body.Read() failed")
+				http.Error(w, "", http.StatusBadRequest)
+				return
+			}
+
+		default:
+			logger.WithField("Content-Type", contentType).Error("invalid content type")
+			http.Error(w, "", http.StatusUnsupportedMediaType)
+			return
+		}
+
+		// check file type
+		if contentType := http.DetectContentType(pdfBytes.Bytes()); contentType != "application/pdf" {
+			logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
+			http.Error(w, "", http.StatusUnsupportedMediaType)
+			return
+		}
+
+		// write the pdf
+		object := Object{
+			ContentType: "application/pdf",
+			Name:        sheet.ObjectKey(),
+			Tags:        sheet.Tags(),
+			Buffer:      pdfBytes,
+		}
+		if err := x.PutObject(SheetsBucketName, &object); err != nil {
+			logger.WithError(err).Error("storage.PutObject() failed")
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
+		// redirect web browsers back to /sheets/upload
+		if acceptsType(r, "text/html") {
+			http.Redirect(w, r, "/sheets", http.StatusFound)
+		}
+
+	default:
+		http.Error(w, "", http.StatusMethodNotAllowed)
 	}
-	if err := x.PutObject(SheetsBucketName, &object); err != nil {
-		logger.WithError(err).Error("storage.PutObject() failed")
-		return nil, http.StatusInternalServerError
-	}
-	return nil, http.StatusOK
 }
 
 func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
-	var downloadURL string
-	body, code := logRequest(func(*http.Request) ([]byte, int) {
-		if r.Method != http.MethodGet {
-			return nil, http.StatusMethodNotAllowed
+	if r.Method != http.MethodGet {
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
+	values := r.URL.Query()
+	key := values.Get("key")
+	bucket := values.Get("bucket")
+
+	downloadURL, err := x.DownloadURL(bucket, key)
+	switch e := err.(type) {
+	case nil:
+		http.Redirect(w, r, downloadURL, http.StatusFound)
+	case minio.ErrorResponse:
+		if e.StatusCode == http.StatusNotFound {
+			http.NotFound(w, r)
+		} else {
+			http.Error(w, "", http.StatusInternalServerError)
 		}
-
-		values := r.URL.Query()
-		key := values.Get("key")
-		bucket := values.Get("bucket")
-
-		var err error
-		downloadURL, err = x.DownloadURL(bucket, key)
-
-		switch e := err.(type) {
-		case nil:
-			return nil, http.StatusFound
-		case minio.ErrorResponse:
-			if e.StatusCode == http.StatusNotFound {
-				return nil, http.StatusNotFound
-			}
-		}
-
-		logger.WithError(err).Error("minio.StatObject() failed")
-		return nil, http.StatusInternalServerError
-	}, r)
-
-	switch code {
-	case http.StatusFound:
-		http.Redirect(w, r, downloadURL, code)
-	case http.StatusNotFound:
-		http.NotFound(w, r)
 	default:
-		w.WriteHeader(code)
-		w.Write(body)
+		logger.WithError(err).Error("minio.StatObject() failed")
+		http.Error(w, "", http.StatusInternalServerError)
 	}
 }
 
@@ -231,13 +284,14 @@ func NewSheetFromTags(tags Tags) Sheet {
 	}
 }
 
-func NewSheetFromUrlValues(values url.Values) Sheet {
-	partNumber, _ := strconv.Atoi(values.Get("part_number"))
-	return Sheet{
-		Project:    values.Get("project"),
-		Instrument: values.Get("instrument"),
+func NewSheetFromRequest(r *http.Request) (Sheet, error) {
+	partNumber, _ := strconv.Atoi(r.FormValue("part_number"))
+	sheet := Sheet{
+		Project:    r.FormValue("project"),
+		Instrument: r.FormValue("instrument"),
 		PartNumber: partNumber,
 	}
+	return sheet, sheet.Validate()
 }
 
 func (x Sheet) ObjectKey() string {
@@ -248,7 +302,7 @@ func (x Sheet) Link() string {
 	return fmt.Sprintf("/download?bucket=%s&key=%s", SheetsBucketName, x.ObjectKey())
 }
 
-func (x Sheet) ToTags() map[string]string {
+func (x Sheet) Tags() map[string]string {
 	return map[string]string{
 		"Project":     x.Project,
 		"Instrument":  x.Instrument,

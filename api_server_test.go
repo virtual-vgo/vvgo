@@ -4,12 +4,25 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/minio/minio-go/v6"
+	"golang.org/x/net/html"
+	"io"
+	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	"net/textproto"
+	"os"
 	"strings"
 	"testing"
 )
+
+func tokenizeHTMLFile(src string) *html.Tokenizer {
+	file, err := os.Open(src)
+	if err != nil {
+		panic(fmt.Errorf("os.Open() failed: %v", err))
+	}
+	return html.NewTokenizer(file)
+}
 
 func TestApiServer_SheetsIndex(t *testing.T) {
 	type wants struct {
@@ -109,127 +122,304 @@ func Test_acceptsType(t *testing.T) {
 }
 
 func TestApiServer_SheetsUpload(t *testing.T) {
-	maxContentLength := int64(1e3)
-	type wants struct {
-		code       int
-		body       string
-		bucketName string
-		object     Object
-	}
-	for _, tt := range []struct {
-		name        string
-		objectStore MockObjectStore
-		request     *http.Request
-		contentType string
-		wants       wants
-	}{
-		{
-			name:        "get",
-			request:     httptest.NewRequest(http.MethodGet, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
-			contentType: "application/pdf",
-			wants:       wants{code: http.StatusMethodNotAllowed},
-		},
-		{
-			name:        "body too large",
-			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", bytes.NewReader(make([]byte, maxContentLength+1))),
-			contentType: "application/pdf",
-			wants:       wants{code: http.StatusRequestEntityTooLarge},
-		},
-		{
-			name:        "wrong content type",
-			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader("")),
-			contentType: "application/cheese",
-			wants:       wants{code: http.StatusUnsupportedMediaType},
-		},
-		{
-			name:        "missing fields",
-			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=test-project&instrument=test-instrument", strings.NewReader("")),
-			contentType: "application/pdf",
-			wants: wants{
-				code: http.StatusBadRequest,
-				body: ErrMissingPartNumber.Error(),
-			},
-		},
-		{
-			name:        "db error",
-			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
-			contentType: "application/pdf",
-			objectStore: MockObjectStore{
-				putObject: func(string, *Object) error {
-					return fmt.Errorf("mock error")
+	t.Run("get", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/sheets/upload", strings.NewReader(""))
+		wantCode := http.StatusOK
+		wantHTML := tokenizeHTMLFile("testdata/test-get-sheets-upload.html")
+
+		apiServer := NewApiServer(MockObjectStore{}, ApiServerConfig{})
+		recorder := httptest.NewRecorder()
+		apiServer.ServeHTTP(recorder, request)
+		gotResp := recorder.Result()
+		gotHTML := html.NewTokenizer(gotResp.Body)
+
+		if expected, got := wantCode, gotResp.StatusCode; expected != got {
+			t.Errorf("expected code %v, got %v", expected, got)
+		}
+
+		var expected string
+		for token := wantHTML.Next(); token != html.ErrorToken; token = wantHTML.Next() {
+			expected += string(wantHTML.Raw())
+		}
+
+		var got string
+		for token := gotHTML.Next(); token != html.ErrorToken; token = gotHTML.Next() {
+			got += string(gotHTML.Raw())
+		}
+
+		if expected != got {
+			t.Errorf("\nwant: `%#v`\n got: `%#v`", expected, got)
+		}
+	})
+
+	t.Run("post", func(t *testing.T) {
+		maxContentLength := int64(1024 * 1024)
+		type storeParams struct {
+			bucketName string
+			object     Object
+		}
+
+		type wants struct {
+			code        int
+			body        string
+			storeParams storeParams
+		}
+
+		for _, tt := range []struct {
+			name        string
+			objectStore MockObjectStore
+			request     *http.Request
+			wants       wants
+		}{
+			{
+				// we should check too many bytes before anything else, so other fields in this mock request
+				// are also invalid
+				name: "too many bytes",
+				request: newPostRequest("/sheets/upload",
+					"application/xml", bytes.NewReader(make([]byte, maxContentLength+1))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusRequestEntityTooLarge,
 				},
 			},
-			wants: wants{
-				object: Object{
-					ContentType: "application/pdf",
-					Name:        "01-snake-eater-trumpet-4.pdf",
-					Tags: map[string]string{
-						"Project":     "01-snake-eater",
-						"Instrument":  "trumpet",
-						"Part-Number": "4",
+			{
+				name: "invalid content-type",
+				request: newPostRequest("/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4",
+					"application/xml", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusUnsupportedMediaType,
+				},
+			},
+			{
+				name: "multipart/form-data/not a form",
+				request: newPostRequest("/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4",
+					"multipart/form-data", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusBadRequest,
+				},
+			},
+			{
+				name: "multipart/form-data/missing fields",
+				request: newFileUploadRequest("/sheets/upload",
+					map[string]string{"project": "01-snake-eater", "instrument": "trumpet"},
+					"upload_file", "upload.pdf", "application/pdf", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusBadRequest,
+					body: ErrMissingPartNumber.Error(),
+				},
+			},
+			{
+				name: "multipart/form-data/file is not a pdf",
+				request: newFileUploadRequest("/sheets/upload",
+					map[string]string{"project": "01-snake-eater", "instrument": "trumpet", "part_number": "4"},
+					"upload_file", "upload.pdf", "application/xml", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusUnsupportedMediaType,
+				},
+			},
+			{
+				name: "multipart/form-data/file does not contain pdf data",
+				request: newFileUploadRequest("/sheets/upload",
+					map[string]string{"project": "01-snake-eater", "instrument": "trumpet", "part_number": "4"},
+					"upload_file", "upload.pdf", "application/pdf", strings.NewReader("")),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusUnsupportedMediaType,
+				},
+			},
+			{
+				name: "multipart/form-data/db error",
+				request: newFileUploadRequest("/sheets/upload",
+					map[string]string{"project": "01-snake-eater", "instrument": "trumpet", "part_number": "4"},
+					"upload_file", "upload.pdf", "application/pdf", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return fmt.Errorf("mock error") }},
+				wants: wants{
+					code: http.StatusInternalServerError,
+					storeParams: storeParams{
+						bucketName: SheetsBucketName,
+						object: Object{
+							ContentType: "application/pdf",
+							Name:        "01-snake-eater-trumpet-4.pdf",
+							Tags:        map[string]string{"Project": "01-snake-eater", "Instrument": "trumpet", "Part-Number": "4"},
+							Buffer:      *bytes.NewBuffer(mustReadFile("testdata/empty.pdf")),
+						},
 					},
-					Buffer: *bytes.NewBufferString(":wave:"),
-				},
-				bucketName: SheetsBucketName,
-				code:       http.StatusInternalServerError,
-			},
-		},
-		{
-			name:        "success",
-			request:     httptest.NewRequest(http.MethodPost, "/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4", strings.NewReader(":wave:")),
-			contentType: "application/pdf",
-			objectStore: MockObjectStore{
-				putObject: func(string, *Object) error {
-					return nil
 				},
 			},
-			wants: wants{
-				object: Object{
-					ContentType: "application/pdf",
-					Name:        "01-snake-eater-trumpet-4.pdf",
-					Tags: map[string]string{
-						"Project":     "01-snake-eater",
-						"Instrument":  "trumpet",
-						"Part-Number": "4",
+			{
+				name: "multipart/form-data/success",
+				request: newFileUploadRequest("/sheets/upload",
+					map[string]string{"project": "01-snake-eater", "instrument": "trumpet", "part_number": "4"},
+					"upload_file", "upload.pdf", "application/pdf", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusOK,
+					storeParams: storeParams{
+						bucketName: SheetsBucketName,
+						object: Object{
+							ContentType: "application/pdf",
+							Name:        "01-snake-eater-trumpet-4.pdf",
+							Tags:        map[string]string{"Project": "01-snake-eater", "Instrument": "trumpet", "Part-Number": "4"},
+							Buffer:      *bytes.NewBuffer(mustReadFile("testdata/empty.pdf")),
+						},
 					},
-					Buffer: *bytes.NewBufferString(":wave:"),
 				},
-				bucketName: SheetsBucketName,
-				code:       http.StatusOK,
 			},
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			var gotObject Object
-			var gotBucketName string
-			apiServer := NewApiServer(MockObjectStore{
-				listObjects: tt.objectStore.listObjects,
-				putObject: func(bucketName string, object *Object) error {
-					gotObject = *object
-					gotBucketName = bucketName
-					return tt.objectStore.putObject(bucketName, object)
+			{
+				name: "application/pdf/missing fields",
+				request: newPostRequest("/sheets/upload?project=01-snake-eater&instrument=trumpet",
+					"application/pdf", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusBadRequest,
+					body: ErrMissingPartNumber.Error(),
 				},
-			}, ApiServerConfig{
-				MaxContentLength: 1e3,
+			},
+			{
+				name: "application/pdf/body does not contain pdf data",
+				request: newPostRequest("/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4",
+					"application/pdf", strings.NewReader("")),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusUnsupportedMediaType,
+				},
+			},
+			{
+				name: "application/pdf/db error",
+				request: newPostRequest("/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4",
+					"application/pdf", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return fmt.Errorf("mock error") }},
+				wants: wants{
+					code: http.StatusInternalServerError,
+					storeParams: storeParams{
+						bucketName: SheetsBucketName,
+						object: Object{
+							ContentType: "application/pdf",
+							Name:        "01-snake-eater-trumpet-4.pdf",
+							Tags:        map[string]string{"Project": "01-snake-eater", "Instrument": "trumpet", "Part-Number": "4"},
+							Buffer:      *bytes.NewBuffer(mustReadFile("testdata/empty.pdf")),
+						},
+					},
+				},
+			},
+			{
+				name: "application/pdf/success",
+				request: newPostRequest("/sheets/upload?project=01-snake-eater&instrument=trumpet&part_number=4",
+					"application/pdf", bytes.NewReader(mustReadFile("testdata/empty.pdf"))),
+				objectStore: MockObjectStore{putObject: func(string, *Object) error { return nil }},
+				wants: wants{
+					code: http.StatusOK,
+					storeParams: storeParams{
+						bucketName: SheetsBucketName,
+						object: Object{
+							ContentType: "application/pdf",
+							Name:        "01-snake-eater-trumpet-4.pdf",
+							Tags:        map[string]string{"Project": "01-snake-eater", "Instrument": "trumpet", "Part-Number": "4"},
+							Buffer:      *bytes.NewBuffer(mustReadFile("testdata/empty.pdf")),
+						},
+					},
+				},
+			},
+		} {
+			t.Run(tt.name, func(t *testing.T) {
+				var gotObject Object
+				var gotBucketName string
+				apiServer := NewApiServer(MockObjectStore{
+					listObjects: tt.objectStore.listObjects,
+					putObject: func(bucketName string, object *Object) error {
+						gotObject = *object
+						gotBucketName = bucketName
+						return tt.objectStore.putObject(bucketName, object)
+					},
+				}, ApiServerConfig{
+					MaxContentLength: maxContentLength,
+				})
+				recorder := httptest.NewRecorder()
+				apiServer.ServeHTTP(recorder, tt.request)
+				gotResp := recorder.Result()
+				gotBody := recorder.Body.String()
+				if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
+					t.Errorf("expected code %v, got %v", expected, got)
+				}
+				if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
+					t.Errorf("expected body:\nwant: `%s`\n got: `%s`", expected, got)
+				}
+				if expected, got := fmt.Sprintf("%#v", tt.wants.storeParams.bucketName), fmt.Sprintf("%#v", gotBucketName); expected != got {
+					t.Errorf("\nwant bucket:%v\n got bucket:%v", expected, got)
+				}
+				if expected, got := fmt.Sprintf("%#v", tt.wants.storeParams.object), fmt.Sprintf("%#v", gotObject); expected != got {
+					t.Errorf("\nwant object:%v\n got body:%v", expected, got)
+				}
 			})
-			tt.request.Header.Set("Content-Type", tt.contentType)
-			recorder := httptest.NewRecorder()
-			apiServer.ServeHTTP(recorder, tt.request)
-			gotResp := recorder.Result()
-			gotBody := recorder.Body.String()
-			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
-				t.Errorf("expected code %v, got %v", expected, got)
+		}
+	})
+
+}
+
+func newPostRequest(uri string, contentType string, src io.Reader) *http.Request {
+	req, err := http.NewRequest(http.MethodPost, uri, src)
+	if err != nil {
+		panic(fmt.Sprintf("http.NewRequest() failed: %v", err))
+	}
+	req.Header.Set("Content-Type", contentType)
+	return req
+}
+
+// Creates a new file upload http request with optional extra params
+func newFileUploadRequest(uri string, params map[string]string, fileParam, fileName, contentType string, src io.Reader) *http.Request {
+	escapeQuotes := strings.NewReplacer("\\", "\\\\", `"`, "\\\"").Replace
+
+	if r, err := func() (*http.Request, error) {
+		var body bytes.Buffer
+		multipartWriter := multipart.NewWriter(&body)
+
+		fileHeader := make(textproto.MIMEHeader)
+		fileHeader.Set("Content-Disposition",
+			fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+				escapeQuotes(fileParam), escapeQuotes(fileName)))
+		fileHeader.Set("Content-Type", contentType)
+		fileDest, err := multipartWriter.CreatePart(fileHeader)
+
+		if err != nil {
+			return nil, fmt.Errorf("multipartWriter.CreateFormFile() failed: %v", err)
+		}
+
+		if _, err = io.Copy(fileDest, src); err != nil {
+			return nil, fmt.Errorf("io.Copy() failed: %v", err)
+		}
+
+		for key, val := range params {
+			if err = multipartWriter.WriteField(key, val); err != nil {
+				return nil, fmt.Errorf("multipartWriter.WriteField() failed: %v", err)
 			}
-			if expected, got := tt.wants.body, strings.TrimSpace(string(gotBody)); expected != got {
-				t.Errorf("expected body:\nwant: `%s`\n got: `%s`", expected, got)
-			}
-			if expected, got := fmt.Sprintf("%#v", tt.wants.bucketName), fmt.Sprintf("%#v", gotBucketName); expected != got {
-				t.Errorf("\nwant bucket:%v\n got bucket:%v", expected, got)
-			}
-			if expected, got := fmt.Sprintf("%#v", tt.wants.object), fmt.Sprintf("%#v", gotObject); expected != got {
-				t.Errorf("\nwant object:%v\n got body:%v", expected, got)
-			}
-		})
+		}
+
+		if err = multipartWriter.Close(); err != nil {
+			return nil, fmt.Errorf("multipartWriter.Close() failed: %v", err)
+		}
+
+		if req, err := http.NewRequest("POST", uri, &body); err != nil {
+			return nil, fmt.Errorf("http.NewRequest() failed: %v", err)
+		} else {
+			req.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+			return req, nil
+		}
+	}(); err != nil {
+		panic(err)
+	} else {
+		return r
+	}
+}
+
+func mustReadFile(fileName string) []byte {
+	if buf, err := ioutil.ReadFile(fileName); err != nil {
+		panic(fmt.Sprintf("ioutil.ReadFile() failed: %v", err))
+	} else {
+		return buf
 	}
 }
 
@@ -329,7 +519,7 @@ func TestSheet_ToTags(t *testing.T) {
 		"Instrument":  "trumpet",
 		"Part-Number": "4",
 	}
-	gotMap := meta.ToTags()
+	gotMap := meta.Tags()
 	if expected, got := fmt.Sprintf("%#v", wantMap), fmt.Sprintf("%#v", gotMap); expected != got {
 		t.Errorf("expected %v, got %v", expected, got)
 	}
@@ -349,24 +539,6 @@ func TestNewSheetFromTags(t *testing.T) {
 	}
 
 	gotMeta := NewSheetFromTags(tags)
-	if expected, got := fmt.Sprintf("%#v", expectedMeta), fmt.Sprintf("%#v", gotMeta); expected != got {
-		t.Errorf("expected %v, got %v", expected, got)
-	}
-}
-
-func TestNewSheetFromUrlValues(t *testing.T) {
-	values, err := url.ParseQuery(`project=test-project&instrument=test-instrument&part_number=4`)
-	if err != nil {
-		t.Fatalf("url.ParseQuery() failed: %v", err)
-	}
-
-	expectedMeta := Sheet{
-		Project:    "test-project",
-		Instrument: "test-instrument",
-		PartNumber: 4,
-	}
-
-	gotMeta := NewSheetFromUrlValues(values)
 	if expected, got := fmt.Sprintf("%#v", expectedMeta), fmt.Sprintf("%#v", gotMeta); expected != got {
 		t.Errorf("expected %v, got %v", expected, got)
 	}
