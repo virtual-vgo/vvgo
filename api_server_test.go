@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"golang.org/x/net/html"
@@ -595,6 +596,36 @@ func TestSheet_ToTags(t *testing.T) {
 	if expected, got := fmt.Sprintf("%#v", wantMap), fmt.Sprintf("%#v", gotMap); expected != got {
 		t.Errorf("expected %v, got %v", expected, got)
 	}
+}
+
+func TestApiServer_Version(t *testing.T) {
+	t.Run("accept:application/json", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/version", strings.NewReader(""))
+		req.Header.Set("Accept", "application/json")
+		apiServer := NewApiServer(MockObjectStore{}, ApiServerConfig{})
+		apiServer.ServeHTTP(recorder, req)
+
+		if expected, got := http.StatusOK, recorder.Code; expected != got {
+			t.Errorf("expected code %v, got %v", expected, got)
+		}
+		var gotJSON json.RawMessage
+		if err := json.NewDecoder(recorder.Body).Decode(&gotJSON); err != nil {
+			t.Errorf("json.Decode() failed: %v", err)
+		}
+
+	})
+	t.Run("accept:text/html", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/version", strings.NewReader(""))
+		req.Header.Set("Accept", "text/html")
+
+		apiServer := NewApiServer(MockObjectStore{}, ApiServerConfig{})
+		apiServer.ServeHTTP(recorder, req)
+		if expected, got := http.StatusOK, recorder.Code; expected != got {
+			t.Errorf("expected code %v, got %v", expected, got)
+		}
+	})
 }
 
 func TestNewSheetFromTags(t *testing.T) {
