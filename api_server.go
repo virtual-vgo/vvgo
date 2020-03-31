@@ -32,7 +32,10 @@ type ApiServer struct {
 }
 
 func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
-	auth := basicAuth{config.BasicAuthUser: config.BasicAuthPass}
+	auth := make(basicAuth)
+	if config.BasicAuthUser != "" {
+		auth[config.BasicAuthUser] = config.BasicAuthPass
+	}
 	server := ApiServer{
 		ObjectStore:     store,
 		ApiServerConfig: config,
@@ -53,16 +56,18 @@ type basicAuth map[string]string
 
 func (x basicAuth) Authenticate(handlerFunc APIHandlerFunc) APIHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-		if len(auth) != 2 || auth[0] != "Basic" {
-			http.Error(w, "authorization failed", http.StatusUnauthorized)
-			return
-		}
-		payload, _ := base64.StdEncoding.DecodeString(auth[1])
-		creds := strings.SplitN(string(payload), ":", 2)
-		if len(creds) != 2 || !(x[creds[0]] == creds[1]) {
-			http.Error(w, "authorization failed", http.StatusUnauthorized)
-			return
+		if len(x) > 0 { // skip auth for empty map
+			auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+			if len(auth) != 2 || auth[0] != "Basic" {
+				http.Error(w, "authorization failed", http.StatusUnauthorized)
+				return
+			}
+			payload, _ := base64.StdEncoding.DecodeString(auth[1])
+			creds := strings.SplitN(string(payload), ":", 2)
+			if len(creds) != 2 || !(x[creds[0]] == creds[1]) {
+				http.Error(w, "authorization failed", http.StatusUnauthorized)
+				return
+			}
 		}
 		handlerFunc(w, r)
 	}
