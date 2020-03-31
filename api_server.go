@@ -75,7 +75,7 @@ func (handlerFunc APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	switch true {
 	case results.code >= 500:
 		logger.WithFields(fields).Error("request failed")
-	case 400 <= results.code && results.code < 500:
+	case results.code >= 400:
 		logger.WithFields(fields).Error("invalid request")
 	default:
 		logger.WithFields(fields).Info("request completed")
