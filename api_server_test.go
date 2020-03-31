@@ -4,15 +4,25 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/minio/minio-go/v6"
+	"golang.org/x/net/html"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
+	"os"
 	"strings"
 	"testing"
 )
+
+func tokenizeHTMLFile(src string) *html.Tokenizer {
+	file, err := os.Open(src)
+	if err != nil {
+		panic(fmt.Errorf("os.Open() failed: %v", err))
+	}
+	return html.NewTokenizer(file)
+}
 
 func TestApiServer_SheetsIndex(t *testing.T) {
 	type wants struct {
@@ -115,90 +125,36 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 	t.Run("get", func(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/sheets/upload", strings.NewReader(""))
 		wantCode := http.StatusOK
-		wantBody := `<!doctype html>
-<html lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="Virtual Video Game Orchestra">
-    <meta name="generator" content="Jekyll v3.8.6">
-
-    <title>Virtual Video Game Orchestra</title>
-
-    <link rel="icon" href="../images/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
-    <link rel="stylesheet" type="text/css" href="../css/theme.css">
-    <link rel="stylesheet" type="text/css" href="../css/jquery.dataTables.css">
-    <script type="text/javascript" src="../js/jquery.js"></script>
-    <script type="text/javascript" src="../js/jquery.dataTables.js"></script>
-    <script type="text/javascript" src="../js/sheets.js"></script>
-</head>
-
-<style>
-    .upload-form {
-        border: none;
-        margin: 10px auto;
-        padding: 15px 15px;
-        width: 50%;
-        text-align: center;
-    }
-
-    .upload-table {
-        border: none;
-        margin: 0 auto;
-        padding: 15px 15px;
-        width: 50%;
-        text-align: center;
-    }
-</style>
-
-<body>
-<div><a href="/"><img src="../images/logo.svg" alt="logo" class="logo-tiny"></a></div>
-<h1 class="title">Upload</h1>
-<form enctype="multipart/form-data" class="upload-form" action="/sheets/upload" method="post">
-    <input type="hidden" name="token" value=""/> 
-    <table class="upload-table">
-        <tbody>
-        <tr>
-            <td><strong>Project</strong></td>
-            <td><input type="text" name="project" readonly="readonly" required="required" value="01-snake-eater"/></td>
-        </tr>
-        <tr>
-            <td><strong>Instrument</strong></td>
-            <td><input type="text" name="instrument" required="required"/></td>
-        </tr>
-        <tr>
-            <td><strong>Part Number</strong></td>
-            <td><input type="number" name="part_number" required="required"/></td>
-        </tr>
-        <tr>
-            <td colspan="2"><input type="file" name="upload_file" required="required" accept="application/pdf"/></td>
-        </tr>
-        <tr>
-            <td colspan="2"><input type="submit" value="submit"/></td>
-        </tr>
-        </tbody>
-    </table>
-</form>
-</body>
-</html>`
+		wantHTML := tokenizeHTMLFile("testdata/test-get-sheets-upload.html")
 
 		apiServer := NewApiServer(MockObjectStore{}, ApiServerConfig{})
 		recorder := httptest.NewRecorder()
 		apiServer.ServeHTTP(recorder, request)
 		gotResp := recorder.Result()
-		gotBody := recorder.Body.String()
+		gotHTML := html.NewTokenizer(gotResp.Body)
+
+
 		if expected, got := wantCode, gotResp.StatusCode; expected != got {
 			t.Errorf("expected code %v, got %v", expected, got)
 		}
-		if expected, got := wantBody, strings.TrimSpace(string(gotBody)); expected != got {
-			t.Errorf("expected body:\nwant: `%s`\n got: `%s`", expected, got)
+
+		var expected string
+		for token := wantHTML.Next(); token != html.ErrorToken; token = wantHTML.Next(){
+			expected += string(wantHTML.Raw())
+		}
+
+		var got string
+		for token := gotHTML.Next(); token != html.ErrorToken; token = gotHTML.Next(){
+			got += string(gotHTML.Raw())
+		}
+
+		if expected != got {
+			t.Errorf("\nwant: `%#v`\n got: `%#v`", expected, got)
 		}
 	})
 
 	t.Run("post", func(t *testing.T) {
-		maxContentLength := int64(1024*1024)
+		maxContentLength := int64(1024 * 1024)
 		type storeParams struct {
 			bucketName string
 			object     Object
