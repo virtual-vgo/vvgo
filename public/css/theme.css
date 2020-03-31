@@ -1,7 +1,7 @@
 body {
     background-color: #0A0A0A;
     color: #E9E9E9;
-    font-family: Sans-serif, serif;
+    font-family: sans-serif, serif;
 }
 
 .logo {
@@ -20,7 +20,7 @@ body {
 
 .title {
     text-align: center;
-    font-family: Sans-serif, serif;
+    font-family: sans-serif, serif;
     font-weight: bold;
 }
 
@@ -42,7 +42,7 @@ body {
 .discord {
     background-color: #7289DA;
     color: white;
-    font-family: Sans-serif, serif;
+    font-family: sans-serif, serif;
     font-weight: bold;
     border-radius: 4px;
 }
