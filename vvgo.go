@@ -1,7 +1,12 @@
+//go:generate go run github.com/virtual-vgo/vvgo/tools/version
+
 package main
 
 import (
+	"flag"
+	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"os"
 	"strconv"
@@ -66,9 +71,22 @@ func (x *Config) ParseEnv() {
 	}
 }
 
+func (x Config) ParseFlags() {
+	var showReleaseTags bool
+	flag.BoolVar(&showReleaseTags, "release-tags", false, "show release tags and quit")
+	flag.Parse()
+	if showReleaseTags {
+		for _, tag := range version.ReleaseTags() {
+			fmt.Fprintf(os.Stdout, "%s\n", tag)
+		}
+		os.Exit(0)
+	}
+}
+
 func main() {
 	config := NewDefaultConfig()
 	config.ParseEnv()
+	config.ParseFlags()
 
 	apiServer := NewApiServer(
 		NewMinioDriverMust(config.Minio),
