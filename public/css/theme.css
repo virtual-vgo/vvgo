@@ -1,6 +1,7 @@
 body {
     background-color: #0A0A0A;
     color: #E9E9E9;
+    font-family: sans-serif, serif;
 }
 
 .logo {
@@ -19,6 +20,8 @@ body {
 
 .title {
     text-align: center;
+    font-family: sans-serif, serif;
+    font-weight: bold;
 }
 
 .button-table {
@@ -34,6 +37,14 @@ body {
     font-size: 20px;
     text-decoration: none;
     text-align: center;
+}
+
+.discord {
+    background-color: #7289DA;
+    color: white;
+    font-family: sans-serif, serif;
+    font-weight: bold;
+    border-radius: 4px;
 }
 
 .facebook {
