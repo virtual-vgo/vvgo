@@ -133,18 +133,17 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 		gotResp := recorder.Result()
 		gotHTML := html.NewTokenizer(gotResp.Body)
 
-
 		if expected, got := wantCode, gotResp.StatusCode; expected != got {
 			t.Errorf("expected code %v, got %v", expected, got)
 		}
 
 		var expected string
-		for token := wantHTML.Next(); token != html.ErrorToken; token = wantHTML.Next(){
+		for token := wantHTML.Next(); token != html.ErrorToken; token = wantHTML.Next() {
 			expected += string(wantHTML.Raw())
 		}
 
 		var got string
-		for token := gotHTML.Next(); token != html.ErrorToken; token = gotHTML.Next(){
+		for token := gotHTML.Next(); token != html.ErrorToken; token = gotHTML.Next() {
 			got += string(gotHTML.Raw())
 		}
 
