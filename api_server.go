@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/version"
 	"html/template"
 	"io"
 	"net"
@@ -47,6 +48,7 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 	server.Handle("/sheets/", auth.Authenticate(server.SheetsIndex))
 	server.Handle("/sheets/upload", auth.Authenticate(server.SheetsUpload))
 	server.Handle("/download", auth.Authenticate(server.Download))
+	server.Handle("/version", APIHandlerFunc(server.Version))
 	server.Handle("/", http.FileServer(http.Dir("public")))
 	return &server
 }
@@ -292,6 +294,25 @@ func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
 	default:
 		logger.WithError(err).Error("minio.StatObject() failed")
 		http.Error(w, "", http.StatusInternalServerError)
+	}
+}
+
+func (x ApiServer) Version(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
+	versionHeader := version.Header()
+	for k := range versionHeader {
+		w.Header().Set(k, versionHeader.Get(k))
+	}
+
+	switch true {
+	case acceptsType(r, "application/json"):
+		w.Write(version.JSON())
+	default:
+		w.Write([]byte(version.String()))
 	}
 }
 
