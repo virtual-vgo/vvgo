@@ -1,9 +1,6 @@
 app = "vvgo"
 
 
-[build]
-  builder = "cloudfoundry/cnb:tiny"
-
 [[services]]
   internal_port = 8080
   protocol = "tcp"
