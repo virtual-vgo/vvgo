@@ -64,8 +64,8 @@ func TestApiServer_Authenticate(t *testing.T) {
 			request: newAuthRequest("/", "jackson", ""),
 			config:  ApiServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
-				code: http.StatusUnauthorized,
-				body: "authorization failed",
+				code:   http.StatusUnauthorized,
+				body:   "authorization failed",
 				header: map[string]string{"WWW-Authenticate": `Basic charset="UTF-8"`},
 			},
 		},
@@ -74,8 +74,8 @@ func TestApiServer_Authenticate(t *testing.T) {
 			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
 			config:  ApiServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
-				code: http.StatusUnauthorized,
-				body: "authorization failed",
+				code:   http.StatusUnauthorized,
+				body:   "authorization failed",
 				header: map[string]string{"WWW-Authenticate": `Basic charset="UTF-8"`},
 			},
 		},
