@@ -123,7 +123,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 	}{
 		{
 			name:    "method post",
-			request: httptest.NewRequest(http.MethodPost, "/sheets/", nil),
+			request: httptest.NewRequest(http.MethodPost, "/sheets", nil),
 			wants:   wants{code: http.StatusMethodNotAllowed},
 		},
 		{
@@ -152,7 +152,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 					}
 				},
 			},
-			request: httptest.NewRequest(http.MethodGet, "/sheets/", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/sheets", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusOK,
 				body: `[{"project":"midnight","instrument":"trumpet","part_number":3,"link":"/download?bucket=sheets\u0026key=midnight-trumpet-3.pdf"},{"project":"daylight","instrument":"flute","part_number":2,"link":"/download?bucket=sheets\u0026key=daylight-flute-2.pdf"}]`,
