@@ -7,6 +7,7 @@ import (
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"html/template"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -39,19 +40,24 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 	return &server
 }
 
-type APIHandlerFunc func(r *http.Request) ([]byte, int)
+type APIHandlerFunc func(w http.ResponseWriter, r *http.Request)
 
-func (x APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
-	defer r.Body.Close()
-	body, code := logRequest(x, r)
-	w.WriteHeader(code)
-	w.Write(body)
+// This is http.ResponseWriter middleware that captures the response code
+// and other info that might useful in logs
+type responseWriter struct {
+	code int
+	http.ResponseWriter
 }
 
-func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
+func (x *responseWriter) WriteHeader(code int) {
+	x.code = code
+	x.ResponseWriter.WriteHeader(code)
+}
+
+func (handlerFunc APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	body, code := handlerFunc(r)
+	results := responseWriter{ResponseWriter: w}
+	handlerFunc(&results, r)
 
 	clientIP := strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0]
 	if clientIP == "" {
@@ -64,23 +70,23 @@ func logRequest(handlerFunc APIHandlerFunc, r *http.Request) ([]byte, int) {
 		"request_method":  r.Method,
 		"request_size":    r.ContentLength,
 		"request_seconds": time.Since(start).Seconds(),
-		"status_code":     code,
+		"status_code":     results.code,
 	}
 	switch true {
-	case code >= 500:
+	case results.code >= 500:
 		logger.WithFields(fields).Error("request failed")
-	case 400 <= code && code < 500:
+	case 400 <= results.code && results.code < 500:
 		logger.WithFields(fields).Error("invalid request")
 	default:
 		logger.WithFields(fields).Info("request completed")
 	}
-	return body, code
 }
 
-func (x *ApiServer) SheetsIndex(r *http.Request) ([]byte, int) {
+func (x *ApiServer) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 	// only accept get
 	if r.Method != http.MethodGet {
-		return nil, http.StatusMethodNotAllowed
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
 	}
 
 	type tableRow struct {
@@ -100,19 +106,35 @@ func (x *ApiServer) SheetsIndex(r *http.Request) ([]byte, int) {
 
 	switch true {
 	case acceptsType(r, "text/html"):
-		return parseAndExecute(&rows, "public/sheets.gohtml")
+		if ok := parseAndExecute(w, &rows, "public/sheets.gohtml"); !ok {
+			http.Error(w, "", http.StatusInternalServerError)
+		}
 	default:
-		return jsonEncode(&rows)
+		if ok := jsonEncode(w, &rows); !ok {
+			http.Error(w, "", http.StatusInternalServerError)
+		}
 	}
 }
 
-func jsonEncode(data interface{}) ([]byte, int) {
-	if dataJSON, err := json.Marshal(data); err != nil {
-		logger.WithError(err).Error("json.Encode() failed")
-		return nil, http.StatusInternalServerError
-	} else {
-		return dataJSON, http.StatusOK
+func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) bool {
+	uploadTemplate, err := template.ParseFiles(templateFiles...)
+	if err != nil {
+		logger.WithError(err).Error("template.ParseFiles() failed")
+		return false
 	}
+	if err := uploadTemplate.Execute(dest, &data); err != nil {
+		logger.WithError(err).Error("template.Execute() failed")
+		return false
+	}
+	return true
+}
+
+func jsonEncode(dest io.Writer, data interface{}) bool {
+	if err := json.NewEncoder(dest).Encode(data); err != nil {
+		logger.WithError(err).Error("json.Encode() failed")
+		return false
+	}
+	return true
 }
 
 func acceptsType(r *http.Request, mimeType string) bool {
@@ -126,21 +148,25 @@ func acceptsType(r *http.Request, mimeType string) bool {
 	return false
 }
 
-func (x *ApiServer) SheetsUpload(r *http.Request) ([]byte, int) {
+func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		return parseAndExecute(struct{}{}, "public/sheets/upload.gohtml")
+		if ok := parseAndExecute(w, struct{}{}, "public/sheets/upload.gohtml"); !ok {
+			http.Error(w, "", http.StatusInternalServerError)
+		}
 
 	case http.MethodPost:
 		if r.ContentLength > x.MaxContentLength {
-			return nil, http.StatusRequestEntityTooLarge
+			http.Error(w, "", http.StatusRequestEntityTooLarge)
+			return
 		}
 
 		// get the sheet data
 		sheet, err := NewSheetFromRequest(r)
 		if err != nil {
 			logger.WithError(err).Error("NewSheetFromRequest() failed")
-			return []byte(err.Error()), http.StatusBadRequest
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
 		// read the pdf content
@@ -149,37 +175,43 @@ func (x *ApiServer) SheetsUpload(r *http.Request) ([]byte, int) {
 		case contentType == "application/pdf":
 			if _, err = pdfBytes.ReadFrom(r.Body); err != nil {
 				logger.WithError(err).Error("r.body.Read() failed")
-				return nil, http.StatusBadRequest
+				http.Error(w, "", http.StatusBadRequest)
+				return
 			}
 
 		case strings.HasPrefix(contentType, "multipart/form-data"):
 			file, fileHeader, err := r.FormFile("upload_file")
 			if err != nil {
 				logger.WithError(err).Error("r.FormFile() failed")
-				return nil, http.StatusBadRequest
+				http.Error(w, "", http.StatusBadRequest)
+				return
 			}
 			defer file.Close()
 
 			if contentType := fileHeader.Header.Get("Content-Type"); contentType != "application/pdf" {
 				logger.WithField("Content-Type", contentType).Error("invalid content type")
-				return nil, http.StatusUnsupportedMediaType
+				http.Error(w, "", http.StatusUnsupportedMediaType)
+				return
 			}
 
 			// read the pdf from the body
 			if _, err = pdfBytes.ReadFrom(file); err != nil {
 				logger.WithError(err).Error("r.body.Read() failed")
-				return nil, http.StatusBadRequest
+				http.Error(w, "", http.StatusBadRequest)
+				return
 			}
 
 		default:
 			logger.WithField("Content-Type", contentType).Error("invalid content type")
-			return nil, http.StatusUnsupportedMediaType
+			http.Error(w, "", http.StatusUnsupportedMediaType)
+			return
 		}
 
 		// check file type
 		if contentType := http.DetectContentType(pdfBytes.Bytes()); contentType != "application/pdf" {
 			logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
-			return nil, http.StatusUnsupportedMediaType
+			http.Error(w, "", http.StatusUnsupportedMediaType)
+			return
 		}
 
 		// write the pdf
@@ -191,63 +223,43 @@ func (x *ApiServer) SheetsUpload(r *http.Request) ([]byte, int) {
 		}
 		if err := x.PutObject(SheetsBucketName, &object); err != nil {
 			logger.WithError(err).Error("storage.PutObject() failed")
-			return nil, http.StatusInternalServerError
+			http.Error(w, "", http.StatusInternalServerError)
+			return
 		}
-		return nil, http.StatusOK
-	default:
-		return nil, http.StatusMethodNotAllowed
-	}
-}
 
-func parseAndExecute(data interface{}, templateFiles ...string) ([]byte, int) {
-	var buf bytes.Buffer
-	uploadTemplate, err := template.ParseFiles(templateFiles...)
-	if err != nil {
-		logger.WithError(err).Error("template.ParseFiles() failed")
-		return nil, http.StatusInternalServerError
+		// redirect web browsers back to /sheets/upload
+		if acceptsType(r, "text/html") {
+			http.Redirect(w, r, "/sheets", http.StatusFound)
+		}
+
+	default:
+		http.Error(w, "", http.StatusMethodNotAllowed)
 	}
-	if err := uploadTemplate.Execute(&buf, &data); err != nil {
-		logger.WithError(err).Error("template.Execute() failed")
-		return nil, http.StatusInternalServerError
-	}
-	return buf.Bytes(), http.StatusOK
 }
 
 func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
-	var downloadURL string
-	body, code := logRequest(func(*http.Request) ([]byte, int) {
-		if r.Method != http.MethodGet {
-			return nil, http.StatusMethodNotAllowed
+	if r.Method != http.MethodGet {
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
+	values := r.URL.Query()
+	key := values.Get("key")
+	bucket := values.Get("bucket")
+
+	downloadURL, err := x.DownloadURL(bucket, key)
+	switch e := err.(type) {
+	case nil:
+		http.Redirect(w, r, downloadURL, http.StatusFound)
+	case minio.ErrorResponse:
+		if e.StatusCode == http.StatusNotFound {
+			http.NotFound(w, r)
+		} else {
+			http.Error(w, "", http.StatusInternalServerError)
 		}
-
-		values := r.URL.Query()
-		key := values.Get("key")
-		bucket := values.Get("bucket")
-
-		var err error
-		downloadURL, err = x.DownloadURL(bucket, key)
-
-		switch e := err.(type) {
-		case nil:
-			return nil, http.StatusFound
-		case minio.ErrorResponse:
-			if e.StatusCode == http.StatusNotFound {
-				return nil, http.StatusNotFound
-			}
-		}
-
-		logger.WithError(err).Error("minio.StatObject() failed")
-		return nil, http.StatusInternalServerError
-	}, r)
-
-	switch code {
-	case http.StatusFound:
-		http.Redirect(w, r, downloadURL, code)
-	case http.StatusNotFound:
-		http.NotFound(w, r)
 	default:
-		w.WriteHeader(code)
-		w.Write(body)
+		logger.WithError(err).Error("minio.StatObject() failed")
+		http.Error(w, "", http.StatusInternalServerError)
 	}
 }
 
