@@ -26,8 +26,9 @@ func tokenizeHTMLFile(src string) *html.Tokenizer {
 
 func TestApiServer_Authenticate(t *testing.T) {
 	type wants struct {
-		code int
-		body string
+		code   int
+		body   string
+		header map[string]string
 	}
 
 	var newAuthRequest = func(url, user, pass string) *http.Request {
@@ -53,8 +54,9 @@ func TestApiServer_Authenticate(t *testing.T) {
 			request: newAuthRequest("/", "", "the-earth-is-flat"),
 			config:  ApiServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
-				code: http.StatusUnauthorized,
-				body: "authorization failed",
+				code:   http.StatusUnauthorized,
+				body:   "authorization failed",
+				header: map[string]string{"WWW-Authenticate": `Basic charset="UTF-8"`},
 			},
 		},
 		{
@@ -64,6 +66,7 @@ func TestApiServer_Authenticate(t *testing.T) {
 			wants: wants{
 				code: http.StatusUnauthorized,
 				body: "authorization failed",
+				header: map[string]string{"WWW-Authenticate": `Basic charset="UTF-8"`},
 			},
 		},
 		{
@@ -73,6 +76,7 @@ func TestApiServer_Authenticate(t *testing.T) {
 			wants: wants{
 				code: http.StatusUnauthorized,
 				body: "authorization failed",
+				header: map[string]string{"WWW-Authenticate": `Basic charset="UTF-8"`},
 			},
 		},
 	} {
@@ -91,6 +95,13 @@ func TestApiServer_Authenticate(t *testing.T) {
 			}
 			if expected, got := tt.wants.body, gotBody; expected != got {
 				t.Errorf("expected %v, got %v", expected, got)
+			}
+
+			for wantK := range tt.wants.header {
+				fmt.Println(tt.wants.header)
+				if expected, got := tt.wants.header[wantK], recorder.Header().Get(wantK); expected != got {
+					t.Errorf("expected `%s: %v`, got `%s: %v`", wantK, expected, wantK, got)
+				}
 			}
 		})
 	}
