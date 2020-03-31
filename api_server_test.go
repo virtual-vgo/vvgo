@@ -24,6 +24,78 @@ func tokenizeHTMLFile(src string) *html.Tokenizer {
 	return html.NewTokenizer(file)
 }
 
+func TestApiServer_Authenticate(t *testing.T) {
+	type wants struct {
+		code int
+		body string
+	}
+
+	var newAuthRequest = func(url, user, pass string) *http.Request {
+		req := httptest.NewRequest(http.MethodGet, url, strings.NewReader(""))
+		req.SetBasicAuth(user, pass)
+		return req
+	}
+
+	for _, tt := range []struct {
+		name    string
+		config  ApiServerConfig
+		request *http.Request
+		wants   wants
+	}{
+		{
+			name:    "success",
+			request: newAuthRequest("/", "jackson", "the-earth-is-flat"),
+			config:  ApiServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			wants:   wants{code: http.StatusOK},
+		},
+		{
+			name:    "incorrect user",
+			request: newAuthRequest("/", "", "the-earth-is-flat"),
+			config:  ApiServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			wants: wants{
+				code: http.StatusUnauthorized,
+				body: "authorization failed",
+			},
+		},
+		{
+			name:    "incorrect pass",
+			request: newAuthRequest("/", "jackson", ""),
+			config:  ApiServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			wants: wants{
+				code: http.StatusUnauthorized,
+				body: "authorization failed",
+			},
+		},
+		{
+			name:    "no auth",
+			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
+			config:  ApiServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			wants: wants{
+				code: http.StatusUnauthorized,
+				body: "authorization failed",
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			server := NewApiServer(MockObjectStore{}, tt.config)
+			server.Authenticate(func(w http.ResponseWriter, r *http.Request) {
+				// do nothing
+			})(recorder, tt.request)
+
+			gotCode := recorder.Code
+			gotBody := strings.TrimSpace(recorder.Body.String())
+
+			if expected, got := tt.wants.code, gotCode; expected != got {
+				t.Errorf("expected %v, got %v", expected, got)
+			}
+			if expected, got := tt.wants.body, gotBody; expected != got {
+				t.Errorf("expected %v, got %v", expected, got)
+			}
+		})
+	}
+}
+
 func TestApiServer_SheetsIndex(t *testing.T) {
 	type wants struct {
 		code int
@@ -75,7 +147,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			apiServer := NewApiServer(tt.objectStore, ApiServerConfig{1e3})
+			apiServer := NewApiServer(tt.objectStore, ApiServerConfig{MaxContentLength: 1e3})
 			recorder := httptest.NewRecorder()
 			apiServer.ServeHTTP(recorder, tt.request)
 			gotResp := recorder.Result()

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/minio/minio-go/v6"
@@ -19,28 +20,58 @@ const SheetsBucketName = "sheets"
 
 type ApiServerConfig struct {
 	MaxContentLength int64
+	BasicAuthUser    string
+	BasicAuthPass    string
 }
 
 type ApiServer struct {
 	ObjectStore
 	ApiServerConfig
 	*http.ServeMux
+	basicAuth
 }
 
 func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
+	auth := make(basicAuth)
+	if config.BasicAuthUser != "" {
+		auth[config.BasicAuthUser] = config.BasicAuthPass
+	}
 	server := ApiServer{
 		ObjectStore:     store,
 		ApiServerConfig: config,
 		ServeMux:        http.NewServeMux(),
+		basicAuth:       auth,
 	}
-	server.Handle("/sheets", APIHandlerFunc(server.SheetsIndex))
-	server.Handle("/sheets/upload", APIHandlerFunc(server.SheetsUpload))
-	server.Handle("/download", http.HandlerFunc(server.Download))
+
+	server.Handle("/sheets", auth.Authenticate(server.SheetsIndex))
+	server.Handle("/sheets/upload", auth.Authenticate(server.SheetsUpload))
+	server.Handle("/download", auth.Authenticate(server.Download))
 	server.Handle("/", http.FileServer(http.Dir("public")))
 	return &server
 }
 
 type APIHandlerFunc func(w http.ResponseWriter, r *http.Request)
+
+type basicAuth map[string]string
+
+func (x basicAuth) Authenticate(handlerFunc APIHandlerFunc) APIHandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if len(x) > 0 { // skip auth for empty map
+			auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+			if len(auth) != 2 || auth[0] != "Basic" {
+				http.Error(w, "authorization failed", http.StatusUnauthorized)
+				return
+			}
+			payload, _ := base64.StdEncoding.DecodeString(auth[1])
+			creds := strings.SplitN(string(payload), ":", 2)
+			if len(creds) != 2 || !(x[creds[0]] == creds[1]) {
+				http.Error(w, "authorization failed", http.StatusUnauthorized)
+				return
+			}
+		}
+		handlerFunc(w, r)
+	}
+}
 
 // This is http.ResponseWriter middleware that captures the response code
 // and other info that might useful in logs

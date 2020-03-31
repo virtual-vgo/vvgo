@@ -36,6 +36,8 @@ func NewDefaultConfig() Config {
 		},
 		Api: ApiServerConfig{
 			MaxContentLength: 1e6,
+			BasicAuthUser:    "admin",
+			BasicAuthPass:    "admin",
 		},
 	}
 }
@@ -54,6 +56,13 @@ func (x *Config) ParseEnv() {
 
 	if maxContentLength, _ := strconv.ParseInt(os.Getenv("API_MAX_CONTENT_LENGTH"), 10, 64); maxContentLength != 0 {
 		x.Api.MaxContentLength = maxContentLength
+	}
+
+	if user := os.Getenv("BASIC_AUTH_USER"); user != "" {
+		x.Api.BasicAuthUser = user
+	}
+	if pass := os.Getenv("BASIC_AUTH_PASS"); pass != "" {
+		x.Api.BasicAuthPass = pass
 	}
 }
 
