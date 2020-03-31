@@ -38,16 +38,9 @@ jobs:
           set -x
           IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-          VERSION=${{ github.sha }}
-
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
-
-          docker tag builder $IMAGE_ID:$VERSION-builder
-          docker tag artifact $IMAGE_ID:$VERSION
-          docker tag artifact $IMAGE_ID:${{ github.head_ref }}
-          docker tag artifact $IMAGE_ID:${{ github.head_ref }}-$VERSION
-          docker push $IMAGE_ID:$VERSION-builder
-          docker push $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:${{ github.head_ref }}
-          docker push $IMAGE_ID:${{ github.head_ref }}-$VERSION
+          for tag in $(docker run --rm artifact --release-tags); do
+              docker tag builder $IMAGE_ID:$tag-builder
+              docker tag artifact $IMAGE_ID:$tag
+              docker push $IMAGE_ID:$tag-builder
+              docker push $IMAGE_ID:$tag
+          done
