@@ -68,7 +68,7 @@ func gitSha() string {
 
 func gitBranch() string {
 	// github runners pass this var
-	if branch := os.Getenv("GITHUB_REF"); branch != "" {
+	if branch := os.Getenv("GITHUB_HEAD_REF"); branch != "" {
 		return branch
 	}
 	// for local builds, we use the current branch name
