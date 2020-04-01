@@ -1,0 +1,50 @@
+version: "3.7"
+services:
+  nginx:
+    image: nginx
+    ports:
+      - "8082"
+    networks:
+      - frontend
+      - backend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  vvgo:
+    image: docker.pkg.github.com/virtual-vgo/vvgo/vvgo:master
+    ports:
+      - "8080"
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379"
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+
+networks:
+  frontend:
+  backend:
+
