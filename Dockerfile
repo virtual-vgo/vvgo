@@ -2,11 +2,12 @@ FROM golang:1.14.1 as builder
 WORKDIR /go/src/vvgo
 COPY . .
 RUN go mod download
+ARG GITHUB_REF
+ARG GITHUB_SHA
 RUN go generate
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o /go/bin/vvgo
 
 FROM builder as tester
-RUN apt-get update && apt-get install -y shellcheck
 CMD ["go", "test", "-v", "./..."]
 
 FROM gcr.io/distroless/base-debian10 as vvgo
