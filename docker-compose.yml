@@ -12,6 +12,7 @@ services:
         mode: host
     links:
       - vvgo
+      - minio
     networks:
       - frontend
       - backend
@@ -22,7 +23,7 @@ services:
       dockerfile: Dockerfile
     container_name: vvgo
     environment:
-      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY_ID: minioadmin
       MINIO_SECRET_ACCESS_KEY: minioadmin
     expose:
@@ -38,6 +39,7 @@ services:
       dockerfile: Dockerfile
     container_name: minio
     environment:
+      MINIO_REGION_NAME: us-east-1
       MINIO_CACHE_EXPIRY: 1
       MINIO_CACHE_QUOTA: 99
       MINIO_CACHE_AFTER: 1
@@ -45,7 +47,6 @@ services:
       - 9000
     networks:
       - backend
-
 
 networks:
   frontend:
