@@ -1,47 +1,30 @@
 version: "3.7"
 services:
   nginx:
-    image: nginx
+    build:
+      context: infra/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
     ports:
-      - "8082"
+      - target: 80
+        published: 8080
+        protocol: tcp
+        mode: host
+    links:
+      - vvgo
     networks:
       - frontend
       - backend
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-        condition: on-failure
 
   vvgo:
-    image: docker.pkg.github.com/virtual-vgo/vvgo/vvgo:master
-    ports:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vvgo
+    expose:
       - "8080"
     networks:
       - backend
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-        condition: on-failure
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379"
-    networks:
-      - backend
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-        condition: on-failure
 
 
 networks:
