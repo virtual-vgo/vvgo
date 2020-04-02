@@ -10,12 +10,6 @@ services:
         published: 8080
         protocol: tcp
         mode: host
-    links:
-      - vvgo
-      - minio
-    networks:
-      - frontend
-      - backend
 
   vvgo:
     build:
@@ -28,10 +22,6 @@ services:
       MINIO_SECRET_ACCESS_KEY: minioadmin
     expose:
       - 8080
-    links:
-      - minio
-    networks:
-      - backend
 
   minio:
     build:
@@ -45,10 +35,3 @@ services:
       MINIO_CACHE_AFTER: 1
     expose:
       - 9000
-    networks:
-      - backend
-
-networks:
-  frontend:
-  backend:
-
