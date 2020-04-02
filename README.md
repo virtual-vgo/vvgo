@@ -1,5 +1,6 @@
 ![tests](https://github.com/virtual-vgo/vvgo/workflows/tests/badge.svg)
 ![build](https://github.com/virtual-vgo/vvgo/workflows/build/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/virtual-vgo/vvgo)](https://goreportcard.com/report/github.com/virtual-vgo/vvgo)
 
 # Virtual Video Game Orchestra
 
