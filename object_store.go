@@ -25,10 +25,10 @@ type Object struct {
 type Tags map[string]string
 
 type MinioConfig struct {
-	Endpoint        string
-	AccessKeyID     string
-	SecretAccessKey string
-	UseSSL          bool
+	Endpoint  string
+	AccessKey string
+	SecretKey string
+	UseSSL    bool
 }
 
 type minioDriver struct {
@@ -37,8 +37,8 @@ type minioDriver struct {
 }
 
 func NewMinioDriverMust(config MinioConfig) *minioDriver {
-	minioClient, err := minio.New(config.Endpoint, config.AccessKeyID,
-		config.SecretAccessKey, config.UseSSL)
+	minioClient, err := minio.New(config.Endpoint, config.AccessKey,
+		config.SecretKey, config.UseSSL)
 	if err != nil {
 		logger.WithError(err).Fatalf("minio.New() failed")
 	}

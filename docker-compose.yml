@@ -1,16 +1,5 @@
 version: "3.7"
 services:
-  nginx:
-    build:
-      context: infra/nginx
-      dockerfile: Dockerfile
-    container_name: nginx
-    ports:
-      - target: 80
-        published: 8080
-        protocol: tcp
-        mode: host
-
   vvgo:
     build:
       context: .
@@ -23,11 +12,22 @@ services:
     expose:
       - 8080
 
-  minio:
+  page-cache:
     build:
-      context: infra/minio
+      context: infra/page-cache
       dockerfile: Dockerfile
-    container_name: minio
+    container_name: page-cache
+    ports:
+      - target: 80
+        published: 8080
+        protocol: tcp
+        mode: host
+
+  object-cache:
+    build:
+      context: infra/object-cache
+      dockerfile: Dockerfile
+    container_name: object-cache
     environment:
       MINIO_REGION_NAME: us-east-1
       MINIO_CACHE_EXPIRY: 1

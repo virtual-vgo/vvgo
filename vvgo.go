@@ -34,10 +34,10 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Minio: MinioConfig{
-			Endpoint:        "localhost:9000",
-			AccessKeyID:     "minioadmin",
-			SecretAccessKey: "minioadmin",
-			UseSSL:          false,
+			Endpoint:  "localhost:9000",
+			AccessKey: "minioadmin",
+			SecretKey: "minioadmin",
+			UseSSL:    false,
 		},
 		Api: ApiServerConfig{
 			MaxContentLength: 1e6,
@@ -51,11 +51,11 @@ func (x *Config) ParseEnv() {
 	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
 		x.Minio.Endpoint = endpoint
 	}
-	if id := os.Getenv("MINIO_ACCESS_KEY_ID"); id != "" {
-		x.Minio.AccessKeyID = id
+	if id := os.Getenv("MINIO_ACCESS_KEY"); id != "" {
+		x.Minio.AccessKey = id
 	}
-	if key := os.Getenv("MINIO_SECRET_ACCESS_KEY"); key != "" {
-		x.Minio.SecretAccessKey = key
+	if key := os.Getenv("MINIO_SECRET_KEY"); key != "" {
+		x.Minio.SecretKey = key
 	}
 	x.Minio.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
 
