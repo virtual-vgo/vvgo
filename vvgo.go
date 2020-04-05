@@ -32,7 +32,7 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Minio: MinioConfig{
-			Endpoint:  "localhost:9000",
+			Endpoint:  "http://localhost:9000",
 			Region:    "us-east-1",
 			AccessKey: "minioadmin",
 			SecretKey: "minioadmin",
