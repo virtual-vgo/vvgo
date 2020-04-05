@@ -7,8 +7,10 @@ services:
     container_name: vvgo
     environment:
       MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY_ID: minioadmin
-      MINIO_SECRET_ACCESS_KEY: minioadmin
+      MINIO_ACCESS_KEY: vvgo-dev
+      MINIO_SECRET_KEY: vvgo-dev
+      BASIC_AUTH_USER: vvgo-dev
+      BASIC_AUTH_PASS: vvgo-dev
     expose:
       - 8080
 
@@ -29,6 +31,8 @@ services:
       dockerfile: Dockerfile
     container_name: object-cache
     environment:
+      MINIO_ACCESS_KEY: vvgo-dev
+      MINIO_SECRET_KEY: vvgo-dev
       MINIO_REGION_NAME: us-east-1
       MINIO_CACHE_EXPIRY: 1
       MINIO_CACHE_QUOTA: 99

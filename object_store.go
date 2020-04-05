@@ -26,6 +26,7 @@ type Tags map[string]string
 
 type MinioConfig struct {
 	Endpoint  string
+	Region    string
 	AccessKey string
 	SecretKey string
 	UseSSL    bool
@@ -75,7 +76,7 @@ func (x *minioDriver) MakeBucket(bucketName string) error {
 		return fmt.Errorf("x.minioClient.BucketExists() failed: %v", err)
 	}
 	if exists == false {
-		if err := x.Client.MakeBucket(bucketName, Location); err != nil {
+		if err := x.Client.MakeBucket(bucketName, x.Region); err != nil {
 			return fmt.Errorf("x.minioClient.MakeBucket() failed: %v", err)
 		}
 	}

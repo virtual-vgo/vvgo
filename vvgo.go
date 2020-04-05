@@ -12,8 +12,6 @@ import (
 	"strconv"
 )
 
-const Location = "us-east-1"
-
 var logger = &logrus.Logger{
 	Out: os.Stderr,
 	Formatter: &logrus.TextFormatter{
@@ -35,6 +33,7 @@ func NewDefaultConfig() Config {
 	return Config{
 		Minio: MinioConfig{
 			Endpoint:  "localhost:9000",
+			Region:    "us-east-1",
 			AccessKey: "minioadmin",
 			SecretKey: "minioadmin",
 			UseSSL:    false,
