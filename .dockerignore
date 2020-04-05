@@ -1,0 +1,6 @@
+*.md
+.dockerignore
+CNAME
+Dockerfile
+LICENSE
+fly.toml
