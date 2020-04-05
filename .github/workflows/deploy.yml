@@ -4,13 +4,22 @@ on:
     branches:
       - master
 env:
-  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  VVGO_IMAGE_NAME: vvgo
+  PAGE_CACHE_IMAGE_NAME: page-cache
+  OBJECT_CACHE_IMAGE_NAME: object-cache
 jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: superfly/flyctl-actions@1.0
-        with:
-          args: "deploy"
+      - name: Push image
+        shell: bash
+        run: |
+          set -x
+          for image_name in "$VVGO_IMAGE_NAME:master" "$OBJECT_CACHE_IMAGE_NAME:master" "$PAGE_CACHE_IMAGE_NAME:master"; do
+            GITHUB_IMAGE="docker.pkg.github.com/${{ github.repository }}/$image_name"
+            DOCKERHUB_IMAGE="docker.io/virtualvgo/$image_name"
+            docker tag "$GITHUB_IMAGE" "$DOCKERHUB_IMAGE"
+            docker push "$DOCKERHUB_IMAGE"
+          done
