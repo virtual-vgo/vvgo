@@ -12,6 +12,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"strconv"
 	"strings"
 	"time"
@@ -43,6 +44,13 @@ func NewApiServer(store ObjectStore, config ApiServerConfig) *ApiServer {
 		ServeMux:        http.NewServeMux(),
 		basicAuth:       auth,
 	}
+
+	// debug endpoints from net/http/pprof
+	server.HandleFunc("/debug/pprof/", pprof.Index)
+	server.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	server.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	server.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	server.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	server.Handle("/sheets", auth.Authenticate(server.SheetsIndex))
 	server.Handle("/sheets/", http.RedirectHandler("/sheets", http.StatusMovedPermanently))

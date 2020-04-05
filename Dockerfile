@@ -1,18 +1,28 @@
+# syntax=docker/dockerfile:experimental
+
 FROM golang:1.14.1 as builder
-WORKDIR /go/src/vvgo
-COPY . .
-RUN go mod download
+
 ARG GITHUB_REF
 ARG GITHUB_SHA
-RUN go generate
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o /go/bin/vvgo
+
+ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
+
+WORKDIR /go/src/github.com/virtual-vgo/vvgo
+COPY go.mod go.sum .
+RUN go mod download
+
+COPY . .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go generate \
+    && go build -v -o /vvgo
 
 FROM builder as tester
 CMD ["go", "test", "-v", "./..."]
 
 FROM gcr.io/distroless/base-debian10 as vvgo
-COPY --from=builder /go/bin/vvgo /vvgo
-COPY --from=builder /go/src/vvgo/public /public
+COPY --from=builder /vvgo /vvgo
+COPY ./public /public
 EXPOSE 8080
 CMD ["/vvgo"]
 ENTRYPOINT ["/vvgo"]
