@@ -11,7 +11,7 @@ WORKDIR /go/src/github.com/virtual-vgo/vvgo
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
+COPY *.go tools .
 RUN \
 	# BEGIN BUILDKIT
     --mount=type=cache,target=/go/pkg/mod \
