@@ -1,1 +1,7 @@
-[]
+[
+  { 
+    "project name": "01-snake-eater",
+    "arrangers": ["Jerome", "Jackson"],
+    ...
+  
+]
