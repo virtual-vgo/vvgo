@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Disable BuildKit functionality.
+        run: |
+          sed '/# BEGIN BUILDKIT/,/# END BUILDKIT/d' Dockerfile > fly.Dockerfile
+
       - uses: superfly/flyctl-actions@1.0
         with:
-          args: "deploy"
+          args: "deploy --dockerfile fly.Dockerfile"

@@ -12,8 +12,11 @@ COPY go.mod go.sum .
 RUN go mod download
 
 COPY . .
-RUN --mount=type=cache,target=/go/pkg/mod \
+RUN \
+	# BEGIN BUILDKIT
+    --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
+	# END BUILDKIT
     go generate \
     && go build -v -o /vvgo
 
