@@ -8,7 +8,6 @@ ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
 WORKDIR /go/src/github.com/virtual-vgo/vvgo
 COPY go.mod go.sum ./
 RUN go mod download
-
 COPY . .
 RUN go generate \
     && go build -v -o /vvgo
