@@ -287,11 +287,11 @@ type UploadType string
 func (x UploadType) String() string { return string(x) }
 
 const (
-	ClickTrack UploadType = "click track"
-	SheetMusic UploadType = "sheet music"
+	UploadTypeClickTrack UploadType = "click_track"
+	UploadTypeSheetMusic UploadType = "sheet_music"
 )
 
-type UploadDocument struct {
+type Upload struct {
 	UploadType        `json:"upload_type"`
 	*ClickTrackUpload `json:"click_track_upload"`
 	*SheetMusicUpload `json:"sheet_music_upload"`
@@ -324,7 +324,7 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var documents []UploadDocument
+	var documents []Upload
 	if err := json.NewDecoder(r.Body).Decode(&documents); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
 		badRequest(w, "")
