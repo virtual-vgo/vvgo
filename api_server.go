@@ -351,7 +351,7 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 	wg.Add(len(documents))
 	statuses := make(chan UploadStatus, len(documents))
 	for _, upload := range documents {
-		go func() {
+		go func(upload Upload) {
 			defer wg.Done()
 
 			// check for context cancelled
@@ -378,7 +378,7 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 					Error:    "invalid upload type",
 				}
 			}
-		}()
+		}(upload)
 	}
 
 	wg.Wait()
