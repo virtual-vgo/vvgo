@@ -130,7 +130,7 @@ func (handlerFunc APIHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Reque
 func (x *ApiServer) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 	// only accept get
 	if r.Method != http.MethodGet {
-		http.Error(w, "", http.StatusMethodNotAllowed)
+		methodNotAllowed(w)
 		return
 	}
 
@@ -152,11 +152,11 @@ func (x *ApiServer) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 	switch true {
 	case acceptsType(r, "text/html"):
 		if ok := parseAndExecute(w, &rows, "public/sheets.gohtml"); !ok {
-			http.Error(w, "", http.StatusInternalServerError)
+			internalServerError(w)
 		}
 	default:
 		if ok := jsonEncode(w, &rows); !ok {
-			http.Error(w, "", http.StatusInternalServerError)
+			internalServerError(w)
 		}
 	}
 }
@@ -197,12 +197,12 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		if ok := parseAndExecute(w, struct{}{}, "public/sheets/upload.gohtml"); !ok {
-			http.Error(w, "", http.StatusInternalServerError)
+			internalServerError(w)
 		}
 
 	case http.MethodPost:
 		if r.ContentLength > x.MaxContentLength {
-			http.Error(w, "", http.StatusRequestEntityTooLarge)
+			tooManyBytes(w)
 			return
 		}
 
@@ -210,7 +210,7 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 		sheet, err := NewSheetFromRequest(r)
 		if err != nil {
 			logger.WithError(err).Error("NewSheetFromRequest() failed")
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			badRequest(w)
 			return
 		}
 
@@ -220,7 +220,7 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 		case contentType == "application/pdf":
 			if _, err = pdfBytes.ReadFrom(r.Body); err != nil {
 				logger.WithError(err).Error("r.body.Read() failed")
-				http.Error(w, "", http.StatusBadRequest)
+				badRequest(w)
 				return
 			}
 
@@ -228,34 +228,34 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 			file, fileHeader, err := r.FormFile("upload_file")
 			if err != nil {
 				logger.WithError(err).Error("r.FormFile() failed")
-				http.Error(w, "", http.StatusBadRequest)
+				badRequest(w)
 				return
 			}
 			defer file.Close()
 
 			if contentType := fileHeader.Header.Get("Content-Type"); contentType != "application/pdf" {
 				logger.WithField("Content-Type", contentType).Error("invalid content type")
-				http.Error(w, "", http.StatusUnsupportedMediaType)
+				invalidContent(w)
 				return
 			}
 
 			// read the pdf from the body
 			if _, err = pdfBytes.ReadFrom(file); err != nil {
 				logger.WithError(err).Error("r.body.Read() failed")
-				http.Error(w, "", http.StatusBadRequest)
+				badRequest(w)
 				return
 			}
 
 		default:
 			logger.WithField("Content-Type", contentType).Error("invalid content type")
-			http.Error(w, "", http.StatusUnsupportedMediaType)
+			invalidContent(w)
 			return
 		}
 
 		// check file type
 		if contentType := http.DetectContentType(pdfBytes.Bytes()); contentType != "application/pdf" {
 			logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
-			http.Error(w, "", http.StatusUnsupportedMediaType)
+			invalidContent(w)
 			return
 		}
 
@@ -268,7 +268,7 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := x.PutObject(SheetsBucketName, &object); err != nil {
 			logger.WithError(err).Error("storage.PutObject() failed")
-			http.Error(w, "", http.StatusInternalServerError)
+			internalServerError(w)
 			return
 		}
 
@@ -278,13 +278,65 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 		}
 
 	default:
-		http.Error(w, "", http.StatusMethodNotAllowed)
+		methodNotAllowed(w)
 	}
+}
+
+type UploadType string
+
+func (x UploadType) String() string { return string(x) }
+
+const (
+	ClickTrack UploadType = "click track"
+	SheetMusic UploadType = "sheet music"
+)
+
+type UploadDocument struct {
+	UploadType        `json:"upload_type"`
+	*ClickTrackUpload `json:"click_track_upload"`
+	*SheetMusicUpload `json:"sheet_music_upload"`
+}
+
+type ClickTrackUpload struct {
+	ContentType string   `json:"content_type"`
+	Project     string   `json:"project"`
+	PartNames   []string `json:"part_names"`
+	PartNumbers []int    `json:"part_numbers"`
+	FileBytes   []byte   `json:"file_bytes"`
+}
+
+type SheetMusicUpload struct {
+	ContentType string   `json:"content_type"`
+	Project     string   `json:"project"`
+	PartNames   []string `json:"part_names"`
+	PartNumbers []int    `json:"part_numbers"`
+	FileBytes   []byte   `json:"file_bytes"`
+}
+
+func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w)
+		return
+	}
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		invalidContent(w)
+		return
+	}
+
+	var documents []UploadDocument
+	if err := json.NewDecoder(r.Body).Decode(&documents); err != nil {
+		logger.WithError(err).Error("json.Decode() failed")
+		badRequest(w)
+		return
+	}
+
+	// do something with the documents
 }
 
 func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "", http.StatusMethodNotAllowed)
+		methodNotAllowed(w)
 		return
 	}
 
