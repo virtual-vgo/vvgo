@@ -2,8 +2,8 @@ package main
 
 import "net/http"
 
-func badRequest(w http.ResponseWriter) {
-	http.Error(w, "", http.StatusBadRequest)
+func badRequest(w http.ResponseWriter, reason string) {
+	http.Error(w, reason, http.StatusBadRequest)
 }
 
 func internalServerError(w http.ResponseWriter) {

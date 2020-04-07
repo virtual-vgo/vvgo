@@ -210,7 +210,7 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 		sheet, err := NewSheetFromRequest(r)
 		if err != nil {
 			logger.WithError(err).Error("NewSheetFromRequest() failed")
-			badRequest(w)
+			badRequest(w, err.Error())
 			return
 		}
 
@@ -220,7 +220,7 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 		case contentType == "application/pdf":
 			if _, err = pdfBytes.ReadFrom(r.Body); err != nil {
 				logger.WithError(err).Error("r.body.Read() failed")
-				badRequest(w)
+				badRequest(w, "")
 				return
 			}
 
@@ -228,7 +228,7 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 			file, fileHeader, err := r.FormFile("upload_file")
 			if err != nil {
 				logger.WithError(err).Error("r.FormFile() failed")
-				badRequest(w)
+				badRequest(w, "")
 				return
 			}
 			defer file.Close()
@@ -242,7 +242,7 @@ func (x *ApiServer) SheetsUpload(w http.ResponseWriter, r *http.Request) {
 			// read the pdf from the body
 			if _, err = pdfBytes.ReadFrom(file); err != nil {
 				logger.WithError(err).Error("r.body.Read() failed")
-				badRequest(w)
+				badRequest(w, "")
 				return
 			}
 
@@ -327,7 +327,7 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 	var documents []UploadDocument
 	if err := json.NewDecoder(r.Body).Decode(&documents); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
-		badRequest(w)
+		badRequest(w, "")
 		return
 	}
 
