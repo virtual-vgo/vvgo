@@ -352,25 +352,34 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 	wg.Add(len(documents))
 	statuses := make(chan UploadStatus, len(documents))
 	for _, upload := range documents {
-		switch upload.UploadType {
-		case UploadTypeClickTrack:
-			go func() {
-				defer wg.Done()
-				statuses <- x.handleClickTrack(ctx, upload)
-			}()
-		case UploadTypeSheetMusic:
-			go func() {
-				defer wg.Done()
-				statuses <- x.handleSheetMusic(ctx, upload)
-			}()
-		default:
-			wg.Done()
-			statuses <- UploadStatus{
-				FileName: upload.FileName,
-				Code:     http.StatusBadRequest,
-				Error:    "invalid upload type",
+		go func() {
+			defer wg.Done()
+
+			// check for context cancelled
+			select {
+			case <-ctx.Done():
+				statuses <- UploadStatus{
+					FileName: upload.FileName,
+					Code:     http.StatusRequestTimeout,
+					Error:    ctx.Err().Error(),
+				}
+			default:
 			}
-		}
+
+			// handle the upload
+			switch upload.UploadType {
+			case UploadTypeClickTrack:
+				statuses <- x.handleClickTrack(ctx, upload)
+			case UploadTypeSheetMusic:
+				statuses <- x.handleSheetMusic(ctx, upload)
+			default:
+				statuses <- UploadStatus{
+					FileName: upload.FileName,
+					Code:     http.StatusBadRequest,
+					Error:    "invalid upload type",
+				}
+			}
+		}()
 	}
 
 	wg.Wait()
@@ -384,29 +393,12 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (x *ApiServer) handleClickTrack(ctx context.Context, upload Upload) UploadStatus {
-	select {
-	case <-ctx.Done():
-		return UploadStatus{
-			FileName: upload.FileName,
-			Code:     http.StatusRequestTimeout,
-			Error:    ctx.Err().Error(),
-		}
-	default:
-		panic("Implement me!")
-	}
+	panic("Implement me!")
+
 }
 
 func (x *ApiServer) handleSheetMusic(ctx context.Context, upload Upload) UploadStatus {
-	select {
-	case <-ctx.Done():
-		return UploadStatus{
-			FileName: upload.FileName,
-			Code:     http.StatusRequestTimeout,
-			Error:    ctx.Err().Error(),
-		}
-	default:
-		panic("Implement me!")
-	}
+	panic("Implement me!")
 }
 
 func (x *ApiServer) Download(w http.ResponseWriter, r *http.Request) {
