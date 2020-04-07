@@ -300,6 +300,7 @@ type Upload struct {
 	Project       string `json:"project"`
 	FileName      string `json:"file_name"`
 	FileBytes     []byte `json:"file_bytes"`
+	ContentType   string `json:"content_type"`
 }
 
 type UploadStatus struct {
@@ -309,13 +310,11 @@ type UploadStatus struct {
 }
 
 type ClixUpload struct {
-	ContentType string   `json:"content_type"`
 	PartNames   []string `json:"part_names"`
 	PartNumbers []int    `json:"part_numbers"`
 }
 
 type SheetsUpload struct {
-	ContentType string   `json:"content_type"`
 	PartNames   []string `json:"part_names"`
 	PartNumbers []int    `json:"part_numbers"`
 }
