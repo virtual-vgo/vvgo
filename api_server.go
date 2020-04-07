@@ -289,16 +289,17 @@ type UploadType string
 func (x UploadType) String() string { return string(x) }
 
 const (
-	UploadTypeClickTrack UploadType = "click_track"
-	UploadTypeSheetMusic UploadType = "sheet_music"
+	UploadTypeClix   UploadType = "clix"
+	UploadTypeSheets UploadType = "sheets"
 )
 
 type Upload struct {
-	UploadType        `json:"upload_type"`
-	*ClickTrackUpload `json:"click_track_upload"`
-	*SheetMusicUpload `json:"sheet_music_upload"`
-	FileName          string `json:"file_name"`
-	FileBytes         []byte `json:"file_bytes"`
+	UploadType    `json:"upload_type"`
+	*ClixUpload   `json:"clix_upload"`
+	*SheetsUpload `json:"sheets_upload"`
+	Project       string `json:"project"`
+	FileName      string `json:"file_name"`
+	FileBytes     []byte `json:"file_bytes"`
 }
 
 type UploadStatus struct {
@@ -307,16 +308,14 @@ type UploadStatus struct {
 	Error    string
 }
 
-type ClickTrackUpload struct {
+type ClixUpload struct {
 	ContentType string   `json:"content_type"`
-	Project     string   `json:"project"`
 	PartNames   []string `json:"part_names"`
 	PartNumbers []int    `json:"part_numbers"`
 }
 
-type SheetMusicUpload struct {
+type SheetsUpload struct {
 	ContentType string   `json:"content_type"`
-	Project     string   `json:"project"`
 	PartNames   []string `json:"part_names"`
 	PartNumbers []int    `json:"part_numbers"`
 }
@@ -368,9 +367,9 @@ func (x *ApiServer) Upload(w http.ResponseWriter, r *http.Request) {
 
 			// handle the upload
 			switch upload.UploadType {
-			case UploadTypeClickTrack:
+			case UploadTypeClix:
 				statuses <- x.handleClickTrack(ctx, upload)
-			case UploadTypeSheetMusic:
+			case UploadTypeSheets:
 				statuses <- x.handleSheetMusic(ctx, upload)
 			default:
 				statuses <- UploadStatus{
