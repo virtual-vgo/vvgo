@@ -55,12 +55,12 @@ jobs:
           OBJECT_CACHE_IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$OBJECT_CACHE_IMAGE_NAME
           PAGE_CACHE_IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$PAGE_CACHE_IMAGE_NAME
           for tag in $(docker run --rm artifact --release-tags); do
-              docker tag builder $VVGO_IMAGE_NAME:$tag-builder
-              docker tag artifact $VVGO_IMAGE_NAME:$tag
-              docker tag object-cache $OBJECT_CACHE_IMAGE_NAME:$tag
-              docker tag page-cache $PAGE_CACHE_IMAGE_NAME:$tag
+              docker tag builder $IMAGE_ID:$tag-builder
+              docker tag artifact $IMAGE_ID:$tag
+              docker tag object-cache $OBJECT_CACHE_IMAGE_ID:$tag
+              docker tag page-cache $PAGE_CACHE_IMAGE_ID:$tag
               docker push $IMAGE_ID:$tag-builder
               docker push $IMAGE_ID:$tag
-              docker push $OBJECT_CACHE_IMAGE_NAME:$tag
-              docker push $PAGE_CACHE_IMAGE_NAME:$tag
+              docker push $OBJECT_CACHE_IMAGE_ID:$tag
+              docker push $PAGE_CACHE_IMAGE_ID:$tag
           done
