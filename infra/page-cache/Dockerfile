@@ -1,3 +1,3 @@
 FROM nginx:1.17.9-alpine
 WORKDIR /etc/nginx
-COPY . .
+COPY ./nginx.conf .
