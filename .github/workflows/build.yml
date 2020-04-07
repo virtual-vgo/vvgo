@@ -19,15 +19,9 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
         run: |
-          CACHE_FROM=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
-
-          docker pull $CACHE_FROM:latest-builder || true
-          docker pull $CACHE_FROM:latest || true
-
           docker build . \
             --file Dockerfile \
             --target builder \
-            --cache-from=$CACHE_FROM:latest-builder \
             --build-arg GITHUB_SHA=$GITHUB_SHA \
             --build-arg GITHUB_REF=$GITHUB_REF \
             --tag builder
@@ -35,8 +29,6 @@ jobs:
           docker build . \
             --file Dockerfile \
             --target vvgo \
-            --cache-from=$CACHE_FROM:latest-builder \
-            --cache-from=$CACHE_FROM:latest \
             --tag artifact
 
           docker build infra/object-cache \
