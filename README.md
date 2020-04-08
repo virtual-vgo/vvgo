@@ -17,7 +17,7 @@ When you run it, you can visit the site at http://localhost:8080.
 # Clone the repo
 git clone https://github.com/virtual-vgo/vvgo.git
 # Build the docker image
-docker build --tag vvgo .
+make images/vvgo
 # Start the container
 docker run -p8080:8080 --rm vvgo
 ```
@@ -28,7 +28,7 @@ docker run -p8080:8080 --rm vvgo
 # Clone the repo
 git clone https://github.com/virtual-vgo/vvgo.git && cd vvgo
 # Build it
-go build -o vvgo
+make vvgo
 # Run it
 ./vvgo
 ```
