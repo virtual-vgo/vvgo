@@ -1,0 +1,539 @@
+# This was originally taken from https://musescore.org/en/instruments and pruned of duplicates.
+# Feel free to add additional instruments as needed.
+# This is intended to protect us from things like `Horn in F` vs `F Horn`, and misspellings like `Trumper` instead of `Trumpet`.
+# Each part name should be separated by new-line.
+# Any line starting with a `#` will be ignored.
+
+10 Hole A Diatonic Harmonica
+10 Hole C Diatonic Harmonica
+10 Hole D Diatonic Harmonica
+10 Hole F Diatonic Harmonica
+10 Hole G Diatonic Harmonica
+10 Hole High G Diatonic Harmonica
+10 Hole Low D Diatonic Harmonica
+11-string Alto Guitar
+12 Hole C Chromatic Harmonica
+12 Hole G Chromatic Harmonica
+12 Hole Tenor C Chromatic Harmonica
+12-string Guitar
+14 Hole C Chromatic Harmonica
+16 Hole C Chromatic Harmonica
+20 Hole Chordet Harmonica
+5-str. Electric Bass
+5-string Electric Bass (High C/Tenor) (Tablature)
+5-string Electric Bass (Tablature)
+6-str. Electric Bass
+6-string Electric Bass (Tablature)
+7-string Guitar
+7-string Guitar (Tablature)
+A Bass Clarinet
+A Bass Clarinet (Bass Clef)
+A Bass Duduk
+Accordion
+A Clarinet
+A Cornet
+Acoustic Bass
+Acoustic Guitar
+Acoustic Nylon Strung Guitar (Tablature)
+Acoustic Steel Strung Guitar (Tablature)
+A Dizi
+A Duduk
+Almglocken
+Alphorn
+Alto
+Alto Balalaika
+Alto Bugle
+Alto Chalumeau
+Alto Clarinet
+Alto Cornamuse
+Alto Cornett
+Alto Crumhorn
+Alto Flute
+Alto Gemshorn
+Alto Guitar
+Alto Kalimba
+Alto Kelhorn
+Alto Mandola
+Alto Recorder
+Alto Sackbut
+Alto Sarrusophone
+Alto Saxophone
+Alto Shawm
+Alto Sheng
+Alto Steel Drums
+Alto Trombone
+Alto Viol
+Anvil
+Archlute
+Atmosphere Synthesizer
+A Trumpet
+Aulochrome
+Automobile Brake Drums
+Bagpipe
+Balalaika
+B♭­ Alto Ocarina
+Bamboo Wind Chimes
+Bandoneon
+Banjo
+Banjo (Tablature)
+Baritone
+Baritone Bugle
+Baritone Guitar
+Baritone Horn
+Baritone Oboe
+Baritone Sarrusophone
+Baritone Saxophone
+Baritone Ukulele
+Baroque Oboe
+Baroque Trumpet
+Baroque Trumpet in B♭
+Baroque Trumpet in C
+Baroque Trumpet in D
+Baroque Trumpet in E♭
+Baroque Trumpet in F
+Baryton
+Bass
+Bass Balalaika
+Bass Chalumeau
+Bass Clarinet
+Bass Cornamuse
+Bass Crumhorn
+Bass Drums
+Basset Clarinet
+Basset Horn
+Bass Flute
+Bass Gemshorn
+Bass Guitar
+Bass Guitar (Tablature)
+Bass Harmonica
+Bass Hohner Harmonica
+Bass Huang Harmonica
+Bass Kelhorn
+Bass Marimba
+Bassoon
+Bass Recorder
+Bass Sackbut
+Bass Sarrusophone
+Bass Saxophone
+Bass Shawm
+Bass Sheng
+Bass Steel Drums
+Bass Synthesizer
+Bass Trombone
+Bass Trumpet
+Bass Trumpet in C
+Bass Tuba in E♭
+Bass Tuba in F
+B♭ Bass Clarinet (Bass Clef)
+B♭ Bass Ophicleide
+B♭ Bass Trumpet
+B♭ Clarinet
+B♭ Cornet
+B Duduk
+B♭ Duduk
+Bell Plate
+Bells
+Berda
+B♭ Fife
+Bongos
+Bouzouki
+Bowed Synthesizer
+Bowl Gongs
+Boy Soprano
+Brač
+Brass
+Brass Synthesizer
+Brightness Synthesizer
+B♭ Soprano Ocarina
+B♭ Sousaphone
+B♭ Tin Whistle
+B♭ Trumpet
+B♭ Tuba
+Bugarija
+Bugle
+B♭ Wagner Tuba
+Cabasa
+C Alto Ocarina
+Castanets
+Cavaquinho
+Cavaquinho (4-string Guitar) (Tablature)
+C Bass Ocarina
+C Bass Ophicleide
+C Clarinet
+C Cornet
+C Dizi
+C Duduk
+Celesta
+Cello Steel Drums
+Cello
+Chains
+Chalumeau
+Chimes
+Chinese Cymbal
+Chinese Tom-Toms
+Choir Synthesizer
+Cimbasso
+Clarinet
+Classical Guitar
+Claves
+Clavichord
+Clavinet
+Concert Bass Drum
+Concertina
+Concert Snare Drum
+Concert Toms
+Conch
+Congas
+Contra-alto Clarinet
+Contra-alto Flute
+Contrabass
+Contrabass Balalaika
+Contrabass Bugle
+Contrabass Clarinet
+Contrabass Flute
+Contrabass Marimba
+Contrabassoon
+Contrabass Recorder
+Contrabass Sarrusophone
+Contrabass Saxophone
+Contrabass Trombone
+Contra Guitar
+Contralto
+Cornamuse
+Cornett
+Cornettino
+Countertenor
+Cowbell
+C Quena
+Crash Cymbal
+Cromorne
+Crotales
+Crumhorn
+Crystal Synthesizer
+C Soprano Ocarina
+C Trumpet
+C Tuba
+Cuica
+Cymbal
+Cymbals
+Danso
+D Clarinet
+Didgeridoo
+Dizi
+Double Bass
+Double Contrabass Flute
+D♭ Piccolo
+Drumset
+D Tin Whistle
+D Trumpet
+Duduk
+Dulcian
+Dulcimer
+D Violone
+E♭ Alto Horn
+E♭ Alto Ophicleide
+E♭ Bass Trumpet
+Echoes Synthesizer
+E♭ Clarinet
+E♭ Contrabass Ophicleide
+E♭ Cornet
+E Dizi
+E Duduk
+Effect Synthesizer
+E Horn
+Electric Bass
+Electric Bass (Tablature)
+Electric Guitar
+Electric Guitar (Tablature)
+Electric Piano
+English Flageolet
+English Horn
+Erhu
+E Trumpet
+E♭ Trumpet
+E♭ Tuba
+Euphonium
+Euphonium Bugle
+F Alto Horn
+F Alto Ocarina
+F Alto Ophicleide
+F Dizi
+F Duduk
+Field Drum
+Finger Cymbals
+Finger Snap
+Fiscorn
+Flageolet
+Flexatone
+Flugelhorn
+Flute
+F Quena
+Frame Drum
+French Flageolet
+Fretless Electric Bass
+F Soprano Ocarina
+F Trumpet
+F Tuba
+F Wagner Tuba
+G Alto Ocarina
+Garklein Recorder
+G Clarinet
+G Dizi
+G Duduk
+Gemshorn
+Glass Harmonica
+Glass Wind Chimes
+Glockenspiel
+Goblins Synthesizer
+G Quena
+Grand Piano
+Greatbass Crumhorn
+Greatbass Kelhorn
+Greatbass Recorder
+Great Bass Shawm
+G Soprano Ocarina
+Güiro
+Guitar
+Guitar Steel Drums
+Halo Synthesizer
+Hammond Organ
+Hand Bells
+Hand Clap
+Harmonica
+Harmonium
+Harp
+Harpsichord
+Heckelphone
+Heckelphone-clarinet
+Helicon
+High C Horn
+Hi-hat
+Honky Tonk Piano
+Horagai
+Horn in A
+Horn in A♭
+Horn in B♭
+Horn in B♭ basso
+Horn in C
+Horn in D
+Horn in E♭
+Horn in F
+Horn in G
+Hyperbass Flute
+Irish Flute
+Irish Tenor Banjo
+Irish Tenor Banjo (Tablature)
+Iron Pipes
+Kalimba
+Kazoo
+Koto
+Kuhlohorn
+Lupophone
+Lute
+Lute (Tablature)
+Mallet Synthesizer
+Mandocello
+Mandola
+Mandolin
+Mandolin (Tablature)
+Maracas
+Marimba
+Mellophone
+Mellophone Bugle
+Melodica
+Melody Saxophone
+Men
+Metal Castanets
+Metallic Synthesizer
+Metallophone
+Metal Wind Chimes
+Mezzo-soprano
+Mezzo-Soprano Saxophone
+Musical Glasses
+Musical Saw
+New Age Synthesizer
+Nyckelharpa
+Oboe
+Oboe da caccia
+Oboe d'amore
+Ocarina
+Octave Mandolin
+Octavin
+Ondes Martenot
+Ophicleide
+Orff Alto Glockenspiel
+Orff Alto Metallophone
+Orff Alto Xylophone
+Orff Bass Metallophone
+Orff Bass Xylophone
+Orff Soprano Glockenspiel
+Orff Soprano Metallophone
+Orff Soprano Xylophone
+Organ
+Oud
+Pad Synthesizer
+Pan Flute
+Pardessus de viole
+Pedal Steel Guitar
+Percussion
+Percussion Synthesizer
+Percussive Organ
+Piano
+Piccolo
+Piccolo Balalaika
+Piccolo Clarinet
+Piccolo Heckelphone
+Piccolo Oboe
+Piccolo Snare
+Piccolo Trumpet
+Piccolo Trumpet in A
+Piccolo Trumpet in B♭
+Pipe Organ
+Pocket Trumpet
+Poly Synthesizer
+Posthorn
+Prim
+Prima Balalaika
+Quena
+Quijada
+Rackett
+Rag Dung
+Rain Synthesizer
+Ratchet
+Rauschpfeife
+Recorder
+Reed Contrabass
+Reed Organ
+Ride Cymbal
+Rotary Organ
+Roto-Toms
+Sandpaper Blocks
+Sarrusophone
+Saw Synthesizer
+Saxhorn
+Saxophone
+Sci-fi Synthesizer
+Secunda Balalaika
+Serpent
+Shamisen
+Shell Wind Chimes
+Shenai
+Sheng
+Shofar
+Sine Synthesizer
+Sitar
+Slap
+Sleigh Bells
+Slide Trumpet
+Slide Whistle
+Slit Drum
+Snare Drum
+Sopranino Chalumeau
+Sopranino Rauschpfeife
+Sopranino Recorder
+Sopranino Sarrusophone
+Sopranino Saxophone
+Sopranino Shawm
+Sopranissimo Saxophone
+Soprano
+Soprano Bugle
+Soprano Chalumeau
+Soprano Clarinet
+Soprano Cornamuse
+Soprano Cornett
+Soprano Crumhorn
+Soprano Flute
+Soprano Gemshorn
+Soprano Guitar
+Soprano Kelhorn
+Soprano Rauschpfeife
+Soprano Recorder
+Soprano Sarrusophone
+Soprano Saxophone
+Soprano Shawm
+Soprano Sheng
+Soprano Steel Drums
+Soprano Trombone
+Soundtrack Synthesizer
+Sousaphone
+Splash Cymbal
+Square Synthesizer
+Stamp
+Steel Drums
+Stones
+Strings
+String Synthesizer
+Sub Contra-alto Flute
+Subcontrabass Saxophone
+Sub-Contrabass Tuba
+Sweep Synthesizer
+Tablas
+Tambourine
+Tam-Tam
+Tarogato
+Temple Blocks
+Tenor
+Tenor Banjo
+Tenor Chalumeau
+Tenor Cornamuse
+Tenor Cornett
+Tenor Crumhorn
+Tenor Drums
+Tenor Gemshorn
+Tenor Kelhorn
+Tenor Mandola
+Tenor Recorder
+Tenor Sackbut
+Tenor Sarrusophone
+Tenor Saxophone
+Tenor Shawm
+Tenor Sheng
+Tenor Steel Drums
+Tenor Trombone
+Tenor Trumpet
+Tenor Ukulele
+Tenor Viol
+Theorbo
+Theremin
+Thundersheet
+Timbales
+Timpani
+Tin Whistle
+Toy Piano
+Traverso
+Treble Flute
+Treble Kalimba
+Treble Viol
+Triangle
+Trombone
+Trumpet
+Tuba
+Tubaphone
+Tubo
+Tuned Gongs
+Tuned Klaxon Horns
+Ukulele
+Ukulele (4-str. TAB)
+Ukulele (Low G)
+Upright Piano
+Vibraphone
+Vibraslap
+Vienna Horn
+Viola
+Viola da gamba
+Viola da gamba (Tab)
+Violin
+Violoncello
+Violone
+Virginal
+Voice
+Vuvuzela
+Wagner Tuba
+Warm Synthesizer
+Whip
+Winds
+Women
+Wood Blocks
+Wooden Wind Chimes
+Xylomarimba
+Xylophone
