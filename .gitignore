@@ -1,3 +1,4 @@
 vvgo
 .idea
 info.go
+!cmd/*
