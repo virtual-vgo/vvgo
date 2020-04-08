@@ -1,15 +1,18 @@
-package main
+package storage
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"net/url"
 	"time"
 )
 
-type ObjectStore interface {
+var logger = log.Logger()
+
+type ObjectStorage interface {
 	PutObject(bucketName string, object *Object) error
 	ListObjects(bucketName string) []Object
 	DownloadURL(bucketName string, objectName string) (string, error)

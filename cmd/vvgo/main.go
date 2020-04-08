@@ -5,40 +5,32 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"os"
 	"strconv"
 )
 
-var logger = &logrus.Logger{
-	Out: os.Stderr,
-	Formatter: &logrus.TextFormatter{
-		ForceColors:   true,
-		FullTimestamp: true,
-	},
-	Hooks:        make(logrus.LevelHooks),
-	Level:        logrus.InfoLevel,
-	ExitFunc:     os.Exit,
-	ReportCaller: false,
-}
+var logger = log.Logger()
 
 type Config struct {
-	Minio MinioConfig
-	Api   ApiServerConfig
+	Minio storage.MinioConfig
+	Api   api.Config
 }
 
 func NewDefaultConfig() Config {
 	return Config{
-		Minio: MinioConfig{
-			Endpoint:  "http://localhost:9000",
-			Region:    "us-east-1",
+		Minio: storage.MinioConfig{
+			Endpoint:  "localhost:9000",
+			Region:    "sfo2",
 			AccessKey: "minioadmin",
 			SecretKey: "minioadmin",
 			UseSSL:    false,
 		},
-		Api: ApiServerConfig{
+		Api: api.Config{
 			MaxContentLength: 1e6,
 			BasicAuthUser:    "admin",
 			BasicAuthPass:    "admin",
@@ -87,8 +79,8 @@ func main() {
 	config.ParseEnv()
 	config.ParseFlags()
 
-	apiServer := NewApiServer(
-		NewMinioDriverMust(config.Minio),
+	apiServer := api.NewServer(
+		storage.NewMinioDriverMust(config.Minio),
 		config.Api,
 	)
 	httpServer := &http.Server{
