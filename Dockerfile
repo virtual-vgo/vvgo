@@ -10,8 +10,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . ./
-RUN \
-    go generate ./... \
+RUN go generate ./... \
     && go build -v -o /vvgo github.com/virtual-vgo/vvgo/cmd/vvgo
 
 FROM builder as tester

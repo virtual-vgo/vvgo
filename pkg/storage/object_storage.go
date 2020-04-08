@@ -30,10 +30,11 @@ type Object struct {
 type Tags map[string]string
 
 type MinioConfig struct {
-	Endpoint        string
-	AccessKeyID     string
-	SecretAccessKey string
-	UseSSL          bool
+	Endpoint  string
+	Region    string
+	AccessKey string
+	SecretKey string
+	UseSSL    bool
 }
 
 type minioDriver struct {
@@ -42,8 +43,8 @@ type minioDriver struct {
 }
 
 func NewMinioDriverMust(config MinioConfig) *minioDriver {
-	minioClient, err := minio.New(config.Endpoint, config.AccessKeyID,
-		config.SecretAccessKey, config.UseSSL)
+	minioClient, err := minio.New(config.Endpoint, config.AccessKey,
+		config.SecretKey, config.UseSSL)
 	if err != nil {
 		logger.WithError(err).Fatalf("minio.New() failed")
 	}
@@ -80,7 +81,7 @@ func (x *minioDriver) MakeBucket(bucketName string) error {
 		return fmt.Errorf("x.minioClient.BucketExists() failed: %v", err)
 	}
 	if exists == false {
-		if err := x.Client.MakeBucket(bucketName, Location); err != nil {
+		if err := x.Client.MakeBucket(bucketName, x.Region); err != nil {
 			return fmt.Errorf("x.minioClient.MakeBucket() failed: %v", err)
 		}
 	}
