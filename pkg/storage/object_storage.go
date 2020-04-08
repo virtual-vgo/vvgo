@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const Location = "us-east-1"
-
 var logger = log.Logger()
 
 type ObjectStorage interface {

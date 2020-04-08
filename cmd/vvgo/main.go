@@ -25,7 +25,7 @@ func NewDefaultConfig() Config {
 	return Config{
 		Minio: storage.MinioConfig{
 			Endpoint:  "localhost:9000",
-			Region:    "us-east-1",
+			Region:    "sfo2",
 			AccessKey: "minioadmin",
 			SecretKey: "minioadmin",
 			UseSSL:    false,
