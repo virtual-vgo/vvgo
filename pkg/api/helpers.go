@@ -21,9 +21,17 @@ func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) 
 	return true
 }
 
-func jsonEncode(dest io.Writer, data interface{}) bool {
-	if err := json.NewEncoder(dest).Encode(data); err != nil {
+func jsonEncode(dest io.Writer, src interface{}) bool {
+	if err := json.NewEncoder(dest).Encode(src); err != nil {
 		logger.WithError(err).Error("json.Encode() failed")
+		return false
+	}
+	return true
+}
+
+func jsonDecode(src io.Reader, dest interface{}) bool {
+	if err := json.NewDecoder(src).Decode(dest); err != nil {
+		logger.WithError(err).Error("json.Decode() failed")
 		return false
 	}
 	return true

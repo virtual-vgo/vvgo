@@ -17,7 +17,7 @@ var (
 
 type Sheet struct {
 	Project    string `json:"project"`
-	Instrument string `json:"instrument"`
+	PartName   string `json:"part_name"`
 	PartNumber int    `json:"part_number"`
 }
 
@@ -25,7 +25,7 @@ func NewSheetFromTags(tags storage.Tags) Sheet {
 	partNumber, _ := strconv.Atoi(tags["Part-Number"])
 	return Sheet{
 		Project:    tags["Project"],
-		Instrument: tags["Instrument"],
+		PartName:   tags["Part-Name"],
 		PartNumber: partNumber,
 	}
 }
@@ -34,14 +34,14 @@ func NewSheetFromRequest(r *http.Request) (Sheet, error) {
 	partNumber, _ := strconv.Atoi(r.FormValue("part_number"))
 	sheet := Sheet{
 		Project:    r.FormValue("project"),
-		Instrument: r.FormValue("instrument"),
+		PartName:   r.FormValue("part_name"),
 		PartNumber: partNumber,
 	}
 	return sheet, sheet.Validate()
 }
 
 func (x Sheet) ObjectKey() string {
-	return fmt.Sprintf("%s-%s-%d.pdf", x.Project, x.Instrument, x.PartNumber)
+	return fmt.Sprintf("%s-%s-%d.pdf", x.Project, x.PartName, x.PartNumber)
 }
 
 func (x Sheet) Link() string {
@@ -51,7 +51,7 @@ func (x Sheet) Link() string {
 func (x Sheet) Tags() map[string]string {
 	return map[string]string{
 		"Project":     x.Project,
-		"Instrument":  x.Instrument,
+		"Part-Name":   x.PartName,
 		"Part-Number": strconv.Itoa(x.PartNumber),
 	}
 }
@@ -59,7 +59,7 @@ func (x Sheet) Tags() map[string]string {
 func (x Sheet) Validate() error {
 	if x.Project == "" {
 		return ErrMissingProject
-	} else if x.Instrument == "" {
+	} else if x.PartName == "" {
 		return ErrMissingInstrument
 	} else if x.PartNumber == 0 {
 		return ErrMissingPartNumber

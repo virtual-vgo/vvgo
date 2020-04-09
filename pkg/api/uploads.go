@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"sync"
 	"time"
@@ -57,8 +58,7 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var documents []Upload
-	if err := json.NewDecoder(r.Body).Decode(&documents); err != nil {
-		logger.WithError(err).Error("json.Decode() failed")
+	if ok := jsonDecode(r.Body, &documents); !ok {
 		badRequest(w, "")
 		return
 	}
@@ -74,7 +74,7 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 	wg.Add(len(documents))
 	statuses := make(chan UploadStatus, len(documents))
 	for _, upload := range documents {
-		go func(upload Upload) {
+		go func(upload *Upload) {
 			defer wg.Done()
 
 			// check for context cancelled
@@ -86,6 +86,15 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 					Error:    ctx.Err().Error(),
 				}
 			default:
+			}
+
+			// check that the project exists
+			if !projectExists(upload.Project) {
+				statuses <- UploadStatus{
+					FileName: upload.FileName,
+					Code:     http.StatusBadRequest,
+					Error:    "project not found",
+				}
 			}
 
 			// handle the upload
@@ -101,7 +110,7 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 					Error:    "invalid upload type",
 				}
 			}
-		}(upload)
+		}(&upload)
 	}
 
 	wg.Wait()
@@ -114,11 +123,82 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&results)
 }
 
-func (x *Server) handleClickTrack(ctx context.Context, upload Upload) UploadStatus {
-	panic("Implement me!")
-
+func (x *Server) handleClickTrack(ctx context.Context, upload *Upload) UploadStatus {
+	return UploadStatus{
+		FileName: upload.FileName,
+		Code:     http.StatusNotImplemented,
+		Error:    "lo sentimos, no implementado",
+	}
 }
 
-func (x *Server) handleSheetMusic(ctx context.Context, upload Upload) UploadStatus {
-	panic("Implement me!")
+func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
+	// verify that we have all the necessary info
+	sheetsUpload := upload.SheetsUpload
+	if sheetsUpload == nil {
+		return UploadStatus{
+			FileName: upload.FileName,
+			Code:     http.StatusBadRequest,
+			Error:    "missing json field `sheets_upload`",
+		}
+	}
+
+	if len(sheetsUpload.PartNames) == 0 {
+		return UploadStatus{
+			FileName: upload.FileName,
+			Code:     http.StatusBadRequest,
+			Error:    "missing part names",
+		}
+	}
+
+	if len(sheetsUpload.PartNumbers) == 0 {
+		return UploadStatus{
+			FileName: upload.FileName,
+			Code:     http.StatusBadRequest,
+			Error:    "missing part numbers",
+		}
+	}
+
+	// verify content type
+	if upload.ContentType != "application/pdf" {
+		logger.WithField("Content-Type", upload.ContentType).Error("invalid content type")
+		return UploadStatus{
+			FileName: upload.FileName,
+			Code:     http.StatusUnsupportedMediaType,
+			Error:    "unsupported media type",
+		}
+	}
+
+	// verify the file contents
+	if contentType := http.DetectContentType(upload.FileBytes); contentType != "application/pdf" {
+		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
+		return UploadStatus{
+			FileName: upload.FileName,
+			Code:     http.StatusUnsupportedMediaType,
+			Error:    "unsupported media type",
+		}
+	}
+
+	// convert the upload into sheets
+	gotSheets := make([]sheets.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))
+	for _, partName := range sheetsUpload.PartNames {
+		for _, partNumber := range sheetsUpload.PartNumbers {
+			gotSheets = append(gotSheets, sheets.Sheet{
+				Project:    upload.Project,
+				PartName:   partName,
+				PartNumber: partNumber,
+			})
+		}
+	}
+
+	// TODO: store the sheets
+
+	return UploadStatus{
+		FileName: upload.FileName,
+		Code:     http.StatusNotImplemented,
+		Error:    "lo sentimos, no implementado",
+	}
+}
+
+func projectExists(project string) bool {
+	return project == "01-snake-eater"
 }

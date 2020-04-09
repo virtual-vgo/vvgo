@@ -8,13 +8,13 @@ import (
 func TestNewSheetFromTags(t *testing.T) {
 	tags := map[string]string{
 		"Project":     "01-snake-eater",
-		"Instrument":  "trumpet",
+		"PartName":  "trumpet",
 		"Part-Number": "4",
 	}
 
 	expectedMeta := Sheet{
 		Project:    "01-snake-eater",
-		Instrument: "trumpet",
+		PartName:   "trumpet",
 		PartNumber: 4,
 	}
 
@@ -27,13 +27,13 @@ func TestNewSheetFromTags(t *testing.T) {
 func TestSheet_ToTags(t *testing.T) {
 	meta := Sheet{
 		Project:    "01-snake-eater",
-		Instrument: "trumpet",
+		PartName:   "trumpet",
 		PartNumber: 4,
 	}
 
 	wantMap := map[string]string{
 		"Project":     "01-snake-eater",
-		"Instrument":  "trumpet",
+		"PartName":  "trumpet",
 		"Part-Number": "4",
 	}
 	gotMap := meta.Tags()
@@ -90,7 +90,7 @@ func TestSheet_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			x := &Sheet{
 				Project:    tt.fields.Project,
-				Instrument: tt.fields.Instrument,
+				PartName:   tt.fields.Instrument,
 				PartNumber: tt.fields.PartNumber,
 			}
 			if expected, got := tt.want, x.Validate(); expected != got {
