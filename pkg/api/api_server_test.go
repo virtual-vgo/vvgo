@@ -18,7 +18,7 @@ func init() {
 	Public = "../../public"
 }
 
-var _ storage.ObjectStorage = new(MockObjectStore)
+var _ ObjectStorage = new(MockObjectStore)
 
 type MockObjectStore struct {
 	putObject   func(bucketName string, object *storage.Object) error

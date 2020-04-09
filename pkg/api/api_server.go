@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -21,14 +22,28 @@ type Config struct {
 	BasicAuthPass    string
 }
 
+type ObjectStorage interface {
+	PutObject(bucketName string, object *storage.Object) bool
+	ListObjects(bucketName string) []storage.Object
+	DownloadURL(bucketName string, objectName string) (string, error)
+}
+
+type Locker interface {
+	Lock(ctx context.Context, name string) Lock
+}
+
+type Lock interface {
+	Release() error
+}
+
 type Server struct {
 	Config
 	*http.ServeMux
-	storage.ObjectStorage
+	ObjectStorage
 	basicAuth
 }
 
-func NewServer(store storage.ObjectStorage, config Config) *Server {
+func NewServer(store ObjectStorage, config Config) *Server {
 	auth := make(basicAuth)
 	if config.BasicAuthUser != "" {
 		auth[config.BasicAuthUser] = config.BasicAuthPass
@@ -49,7 +64,6 @@ func NewServer(store storage.ObjectStorage, config Config) *Server {
 
 	server.Handle("/sheets", auth.Authenticate(server.SheetsIndex))
 	server.Handle("/sheets/", http.RedirectHandler("/sheets", http.StatusMovedPermanently))
-	server.Handle("/sheets/upload", auth.Authenticate(server.SheetsUpload))
 	server.Handle("/download", auth.Authenticate(server.Download))
 	server.Handle("/version", HandlerFunc(server.Version))
 	server.Handle("/", http.FileServer(http.Dir("public")))

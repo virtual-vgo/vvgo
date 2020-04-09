@@ -8,6 +8,8 @@ import (
 )
 
 const BucketName = "sheets"
+const DataFile = "sheets.json"
+const LockName = "sheets.lock"
 
 var (
 	ErrMissingProject    = fmt.Errorf("missing required field `project`")
@@ -19,6 +21,7 @@ type Sheet struct {
 	Project    string `json:"project"`
 	Instrument string `json:"instrument"`
 	PartNumber int    `json:"part_number"`
+	FileKey    string `json:"file_key"`
 }
 
 func NewSheetFromTags(tags storage.Tags) Sheet {

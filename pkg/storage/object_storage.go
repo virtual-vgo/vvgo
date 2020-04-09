@@ -5,18 +5,9 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
-	"github.com/virtual-vgo/vvgo/pkg/log"
 	"net/url"
 	"time"
 )
-
-var logger = log.Logger()
-
-type ObjectStorage interface {
-	PutObject(bucketName string, object *Object) error
-	ListObjects(bucketName string) []Object
-	DownloadURL(bucketName string, objectName string) (string, error)
-}
 
 type Object struct {
 	ContentType string
@@ -35,27 +26,27 @@ type MinioConfig struct {
 	UseSSL    bool
 }
 
-type minioDriver struct {
+type MinioDriver struct {
 	MinioConfig
 	*minio.Client
 }
 
-func NewMinioDriverMust(config MinioConfig) *minioDriver {
+func NewMinioDriverMust(config MinioConfig) *MinioDriver {
 	minioClient, err := minio.New(config.Endpoint, config.AccessKey,
 		config.SecretKey, config.UseSSL)
 	if err != nil {
 		logger.WithError(err).Fatalf("minio.New() failed")
 	}
-	return &minioDriver{
+	return &MinioDriver{
 		MinioConfig: config,
 		Client:      minioClient,
 	}
 }
 
-func (x *minioDriver) PutObject(bucketName string, object *Object) error {
+func (x *MinioDriver) PutObject(bucketName string, object *Object) bool {
 	// make the bucket if it doesn't exist
-	if err := x.MakeBucket(bucketName); err != nil {
-		return err
+	if ok := x.MakeBucket(bucketName); !ok {
+		return false
 	}
 
 	opts := minio.PutObjectOptions{
@@ -64,29 +55,57 @@ func (x *minioDriver) PutObject(bucketName string, object *Object) error {
 	}
 	n, err := x.Client.PutObject(bucketName, object.Name, &object.Buffer, -1, opts)
 	if err != nil {
-		return err
+		logger.WithError(err).Error("minioClient.PutObject() failed")
+		return false
 	}
 	logger.WithFields(logrus.Fields{
 		"object_name": object.Name,
 		"object_size": n,
-	}).Info("uploaded pdf")
-	return nil
+	}).Info("uploaded object")
+	return true
 }
 
-func (x *minioDriver) MakeBucket(bucketName string) error {
+func (x *MinioDriver) GetObject(bucketName string, objectName string, dest *Object) bool {
+	minioObject, err := x.Client.GetObject(bucketName, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		logger.WithError(err).Error("minioClient.GetObject() failed")
+		return false
+	}
+	info, err := minioObject.Stat()
+	if err != nil {
+		logger.WithError(err).Error("minioObject.Stat() failed")
+		return false
+	}
+	var buffer bytes.Buffer
+	if _, err := buffer.ReadFrom(minioObject); err != nil {
+		logger.WithError(err).Error("minioObject.Read() failed")
+		return false
+	}
+	*dest = Object{
+		ContentType: info.ContentType,
+		Name:        info.Key,
+		Tags:        map[string]string(info.UserMetadata),
+		Buffer:      buffer,
+	}
+	return true
+}
+
+func (x *MinioDriver) MakeBucket(bucketName string) bool {
 	exists, err := x.BucketExists(bucketName)
 	if err != nil {
-		return fmt.Errorf("x.minioClient.BucketExists() failed: %v", err)
+		logger.WithError(err).Error("minioClient.BucketExists() failed")
+		return false
 	}
 	if exists == false {
 		if err := x.Client.MakeBucket(bucketName, x.Region); err != nil {
-			return fmt.Errorf("x.minioClient.MakeBucket() failed: %v", err)
+			logger.WithError(err).Error("minioClient.MakeBucket() failed")
+			return false
 		}
 	}
-	return nil
+	return true
 }
 
-func (x *minioDriver) ListObjects(bucketName string) []Object {
+func (x *MinioDriver) ListObjects(bucketName string) []Object {
 	done := make(chan struct{})
 	defer close(done)
 
@@ -107,7 +126,7 @@ func (x *minioDriver) ListObjects(bucketName string) []Object {
 	return objects
 }
 
-func (x *minioDriver) StatObject(bucketName, objectName string) (Object, error) {
+func (x *MinioDriver) StatObject(bucketName, objectName string) (Object, error) {
 	opts := minio.StatObjectOptions{}
 	objectInfo, err := x.Client.StatObject(bucketName, objectName, opts)
 	if err != nil {
@@ -123,7 +142,7 @@ func (x *minioDriver) StatObject(bucketName, objectName string) (Object, error) 
 
 const LinkExpiration = 24 * 3600 * time.Second // 1 Day for protect links
 
-func (x *minioDriver) DownloadURL(bucketName string, objectName string) (string, error) {
+func (x *MinioDriver) DownloadURL(bucketName string, objectName string) (string, error) {
 	policy, err := x.Client.GetBucketPolicy(bucketName)
 	if err != nil {
 		return "", err
