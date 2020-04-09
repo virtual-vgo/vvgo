@@ -39,7 +39,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 							Name:        "midnight-trumpet-3.pdf",
 							Tags: map[string]string{
 								"Project":     "midnight",
-								"Instrument":  "trumpet",
+								"PartName":  "trumpet",
 								"Part-Number": "3",
 							},
 						},
@@ -48,7 +48,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 							Name:        "daylight-flute-2.pdf",
 							Tags: map[string]string{
 								"Project":     "daylight",
-								"Instrument":  "flute",
+								"PartName":  "flute",
 								"Part-Number": "2",
 							},
 						},
@@ -201,7 +201,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 						object: storage.Object{
 							ContentType: "application/pdf",
 							Name:        "01-snake-eater-trumpet-4.pdf",
-							Tags:        map[string]string{"Project": "01-snake-eater", "Instrument": "trumpet", "Part-Number": "4"},
+							Tags:        map[string]string{"Project": "01-snake-eater", "PartName": "trumpet", "Part-Number": "4"},
 							Buffer:      *bytes.NewBuffer(mustReadFile("testdata/empty.pdf")),
 						},
 					},
@@ -220,7 +220,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 						object: storage.Object{
 							ContentType: "application/pdf",
 							Name:        "01-snake-eater-trumpet-4.pdf",
-							Tags:        map[string]string{"Project": "01-snake-eater", "Instrument": "trumpet", "Part-Number": "4"},
+							Tags:        map[string]string{"Project": "01-snake-eater", "PartName": "trumpet", "Part-Number": "4"},
 							Buffer:      *bytes.NewBuffer(mustReadFile("testdata/empty.pdf")),
 						},
 					},
@@ -257,7 +257,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 						object: storage.Object{
 							ContentType: "application/pdf",
 							Name:        "01-snake-eater-trumpet-4.pdf",
-							Tags:        map[string]string{"Project": "01-snake-eater", "Instrument": "trumpet", "Part-Number": "4"},
+							Tags:        map[string]string{"Project": "01-snake-eater", "PartName": "trumpet", "Part-Number": "4"},
 							Buffer:      *bytes.NewBuffer(mustReadFile("testdata/empty.pdf")),
 						},
 					},
@@ -275,7 +275,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 						object: storage.Object{
 							ContentType: "application/pdf",
 							Name:        "01-snake-eater-trumpet-4.pdf",
-							Tags:        map[string]string{"Project": "01-snake-eater", "Instrument": "trumpet", "Part-Number": "4"},
+							Tags:        map[string]string{"Project": "01-snake-eater", "PartName": "trumpet", "Part-Number": "4"},
 							Buffer:      *bytes.NewBuffer(mustReadFile("testdata/empty.pdf")),
 						},
 					},
