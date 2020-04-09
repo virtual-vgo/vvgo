@@ -5,41 +5,32 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"os"
 	"strconv"
 )
 
-const Location = "us-east-1"
-
-var logger = &logrus.Logger{
-	Out: os.Stderr,
-	Formatter: &logrus.TextFormatter{
-		ForceColors:   true,
-		FullTimestamp: true,
-	},
-	Hooks:        make(logrus.LevelHooks),
-	Level:        logrus.InfoLevel,
-	ExitFunc:     os.Exit,
-	ReportCaller: false,
-}
+var logger = log.Logger()
 
 type Config struct {
-	Minio MinioConfig
-	Api   ApiServerConfig
+	Minio storage.MinioConfig
+	Api   api.Config
 }
 
 func NewDefaultConfig() Config {
 	return Config{
-		Minio: MinioConfig{
-			Endpoint:        "localhost:9000",
-			AccessKeyID:     "minioadmin",
-			SecretAccessKey: "minioadmin",
-			UseSSL:          false,
+		Minio: storage.MinioConfig{
+			Endpoint:  "localhost:9000",
+			Region:    "sfo2",
+			AccessKey: "minioadmin",
+			SecretKey: "minioadmin",
+			UseSSL:    false,
 		},
-		Api: ApiServerConfig{
+		Api: api.Config{
 			MaxContentLength: 1e6,
 			BasicAuthUser:    "admin",
 			BasicAuthPass:    "admin",
@@ -51,11 +42,11 @@ func (x *Config) ParseEnv() {
 	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
 		x.Minio.Endpoint = endpoint
 	}
-	if id := os.Getenv("MINIO_ACCESS_KEY_ID"); id != "" {
-		x.Minio.AccessKeyID = id
+	if id := os.Getenv("MINIO_ACCESS_KEY"); id != "" {
+		x.Minio.AccessKey = id
 	}
-	if key := os.Getenv("MINIO_SECRET_ACCESS_KEY"); key != "" {
-		x.Minio.SecretAccessKey = key
+	if key := os.Getenv("MINIO_SECRET_KEY"); key != "" {
+		x.Minio.SecretKey = key
 	}
 	x.Minio.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
 
@@ -88,8 +79,8 @@ func main() {
 	config.ParseEnv()
 	config.ParseFlags()
 
-	apiServer := NewApiServer(
-		NewMinioDriverMust(config.Minio),
+	apiServer := api.NewServer(
+		storage.NewMinioDriverMust(config.Minio),
 		config.Api,
 	)
 	httpServer := &http.Server{
