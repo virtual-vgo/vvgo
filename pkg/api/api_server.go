@@ -1,9 +1,9 @@
 package api
 
 import (
-	"context"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net"
 	"net/http"
@@ -22,37 +22,26 @@ type Config struct {
 	BasicAuthPass    string
 }
 
-type ObjectStorage interface {
-	PutObject(bucketName string, object *storage.Object) bool
-	ListObjects(bucketName string) []storage.Object
-	DownloadURL(bucketName string, objectName string) (string, error)
-}
-
-type Locker interface {
-	Lock(ctx context.Context, name string) Lock
-}
-
-type Lock interface {
-	Release() error
-}
-
 type Server struct {
 	Config
 	*http.ServeMux
-	ObjectStorage
+	sheetsStorage sheets.Storage
 	basicAuth
 }
 
-func NewServer(store ObjectStorage, config Config) *Server {
+func NewServer(objectStore *storage.MinioDriver, locker *storage.RedisLocker, config Config) *Server {
 	auth := make(basicAuth)
 	if config.BasicAuthUser != "" {
 		auth[config.BasicAuthUser] = config.BasicAuthPass
 	}
 	server := Server{
-		ObjectStorage: store,
-		Config:        config,
-		ServeMux:      http.NewServeMux(),
-		basicAuth:     auth,
+		Config:    config,
+		ServeMux:  http.NewServeMux(),
+		basicAuth: auth,
+		sheetsStorage: sheets.Storage{
+			RedisLocker: locker,
+			MinioDriver: objectStore,
+		},
 	}
 
 	// debug endpoints from net/http/pprof
@@ -65,6 +54,7 @@ func NewServer(store ObjectStorage, config Config) *Server {
 	server.Handle("/sheets", auth.Authenticate(server.SheetsIndex))
 	server.Handle("/sheets/", http.RedirectHandler("/sheets", http.StatusMovedPermanently))
 	server.Handle("/download", auth.Authenticate(server.Download))
+	server.Handle("/upload", auth.Authenticate(server.Upload))
 	server.Handle("/version", HandlerFunc(server.Version))
 	server.Handle("/", http.FileServer(http.Dir("public")))
 	return &server

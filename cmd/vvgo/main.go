@@ -18,6 +18,7 @@ var logger = log.Logger()
 
 type Config struct {
 	Minio storage.MinioConfig
+	Redis storage.RedisConfig
 	Api   api.Config
 }
 
@@ -29,6 +30,9 @@ func NewDefaultConfig() Config {
 			AccessKey: "minioadmin",
 			SecretKey: "minioadmin",
 			UseSSL:    false,
+		},
+		Redis: storage.RedisConfig{
+			Address: "localhost:6379",
 		},
 		Api: api.Config{
 			MaxContentLength: 1e6,
@@ -81,6 +85,7 @@ func main() {
 
 	apiServer := api.NewServer(
 		storage.NewMinioDriverMust(config.Minio),
+		storage.NewRedisLocker(config.Redis),
 		config.Api,
 	)
 	httpServer := &http.Server{

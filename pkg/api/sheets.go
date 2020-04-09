@@ -7,7 +7,6 @@ import (
 )
 
 func (x *Server) SheetsIndex(w http.ResponseWriter, r *http.Request) {
-	// only accept get
 	if r.Method != http.MethodGet {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
@@ -18,10 +17,9 @@ func (x *Server) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 		Link string `json:"link"`
 	}
 
-	objects := x.ListObjects(sheets.BucketName)
-	rows := make([]tableRow, 0, len(objects))
-	for i := range objects {
-		sheet := sheets.NewSheetFromTags(objects[i].Tags)
+	allSheets := x.sheetsStorage.List()
+	rows := make([]tableRow, 0, len(allSheets))
+	for _, sheet := range allSheets {
 		rows = append(rows, tableRow{
 			Sheet: sheet,
 			Link:  sheet.Link(),

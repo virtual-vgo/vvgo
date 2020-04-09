@@ -7,26 +7,26 @@ import (
 	"time"
 )
 
-const Deadline = 60 * time.Second
+const Deadline = 5 * 60 * time.Second
 
 type RedisLocker struct {
-	RedisLockerConfig
+	RedisConfig
 	*redislock.Client
 }
 
-type RedisLockerConfig struct {
+type RedisConfig struct {
 	Address string
 }
 
-func NewRedisLocker(config RedisLockerConfig) *RedisLocker {
+func NewRedisLocker(config RedisConfig) *RedisLocker {
 	client := redis.NewClient(&redis.Options{
 		Network: "tcp",
 		Addr:    config.Address,
 	})
 
 	return &RedisLocker{
-		RedisLockerConfig: config,
-		Client:            redislock.New(client),
+		RedisConfig: config,
+		Client:      redislock.New(client),
 	}
 }
 

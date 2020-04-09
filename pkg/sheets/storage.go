@@ -13,21 +13,24 @@ import (
 var logger = log.Logger()
 
 type Storage struct {
-	Locker
-	ObjectStorage
+	*storage.RedisLocker
+	*storage.MinioDriver
 }
 
-type ObjectStorage interface {
-	GetObject(bucketName string, key string, object *storage.Object) bool
-	PutObject(bucketName string, object *storage.Object) bool
-}
+func (x *Storage) List() []Sheet {
+	// grab the data file
+	var dest storage.Object
+	if ok := x.GetObject(BucketName, DataFile, &dest); !ok {
+		return nil
+	}
 
-type Locker interface {
-	Lock(ctx context.Context, name string) Lock
-}
-
-type Lock interface {
-	Release() error
+	// deserialize the data file
+	var sheets []Sheet
+	if err := json.NewDecoder(&dest.Buffer).Decode(&sheets); err != nil {
+		logger.WithError(err).Error("json.Decode() failed")
+		return nil
+	}
+	return sheets
 }
 
 func (x *Storage) Store(ctx context.Context, sheets []Sheet, pdfBytes []byte) bool {
@@ -38,23 +41,17 @@ func (x *Storage) Store(ctx context.Context, sheets []Sheet, pdfBytes []byte) bo
 	}
 	defer lock.Release()
 
-	// grab the data file
-	var dest storage.Object
-	if ok := x.ObjectStorage.GetObject(BucketName, DataFile, &dest); !ok {
+	// pull down the sheets data
+	allSheets := x.List()
+	if allSheets == nil {
 		return false
-	}
-
-	// deserialize the data file
-	var allSheets []Sheet
-	if err := json.NewDecoder(&dest.Buffer).Decode(&allSheets); err != nil {
-		logger.WithError(err).Error("json.Decode() failed")
 	}
 
 	// hash the pdf bytes
 	fileKey := fmt.Sprintf("%x.pdf", md5.Sum(pdfBytes))
 
 	// store the pdf
-	x.ObjectStorage.PutObject(BucketName, &storage.Object{
+	x.PutObject(BucketName, &storage.Object{
 		ContentType: "application/pdf",
 		Name:        fileKey,
 		Buffer:      *bytes.NewBuffer(pdfBytes),
@@ -73,8 +70,8 @@ func (x *Storage) Store(ctx context.Context, sheets []Sheet, pdfBytes []byte) bo
 		return false
 	}
 
-	// write the data file
-	return x.ObjectStorage.PutObject(BucketName, &storage.Object{
+	// store the data file
+	return x.PutObject(BucketName, &storage.Object{
 		ContentType: "application/json",
 		Name:        DataFile,
 		Buffer:      buffer,

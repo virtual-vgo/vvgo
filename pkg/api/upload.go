@@ -190,7 +190,12 @@ func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadSta
 		}
 	}
 
-	// TODO: store the sheets
+	if ok := x.sheetsStorage.Store(ctx, gotSheets, upload.FileBytes); !ok {
+		return UploadStatus{
+			FileName: upload.FileName,
+			Code:     http.StatusInternalServerError,
+		}
+	}
 
 	return UploadStatus{
 		FileName: upload.FileName,
