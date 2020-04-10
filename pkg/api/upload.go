@@ -63,10 +63,6 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(documents) == 0 {
-		return // nothing to do
-	}
-
 	// we'll handle the uploads in goroutines, since these make outgoing http requests to object storage.
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithTimeout(context.Background(), UploadsTimeout)
@@ -123,59 +119,35 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&results)
 }
 
-func (x *Server) handleClickTrack(ctx context.Context, upload *Upload) UploadStatus {
-	return UploadStatus{
-		FileName: upload.FileName,
-		Code:     http.StatusNotImplemented,
-		Error:    "lo sentimos, no implementado",
-	}
+func (x *Server) handleClickTrack(_ context.Context, upload *Upload) UploadStatus {
+	return uploadNotImplemented(upload)
 }
 
 func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
 	// verify that we have all the necessary info
 	sheetsUpload := upload.SheetsUpload
 	if sheetsUpload == nil {
-		return UploadStatus{
-			FileName: upload.FileName,
-			Code:     http.StatusBadRequest,
-			Error:    "missing json field `sheets_upload`",
-		}
+		return uploadBadRequest(upload, "missing json field `sheets_upload`")
 	}
 
 	if len(sheetsUpload.PartNames) == 0 {
-		return UploadStatus{
-			FileName: upload.FileName,
-			Code:     http.StatusBadRequest,
-			Error:    "missing part names",
-		}
+		return uploadBadRequest(upload, "missing part names")
 	}
 
 	if len(sheetsUpload.PartNumbers) == 0 {
-		return UploadStatus{
-			FileName: upload.FileName,
-			Code:     http.StatusBadRequest,
-			Error:    "missing part numbers",
-		}
+		return uploadBadRequest(upload, "missing part numbers")
 	}
 
 	// verify content type
 	if upload.ContentType != "application/pdf" {
 		logger.WithField("Content-Type", upload.ContentType).Error("invalid content type")
-		return UploadStatus{
-			FileName: upload.FileName,
-			Code:     http.StatusUnsupportedMediaType,
-			Error:    "unsupported media type",
-		}
+		return uploadInvalidContent(upload)
 	}
 
 	// verify the file contents
 	if contentType := http.DetectContentType(upload.FileBytes); contentType != "application/pdf" {
 		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
-		return UploadStatus{
-			FileName: upload.FileName,
-			Code:     http.StatusUnsupportedMediaType,
-			Error:    "unsupported media type",
-		}
+		return uploadInvalidContent(upload)
 	}
 
 	// convert the upload into sheets
@@ -191,12 +163,23 @@ func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadSta
 	}
 
 	if ok := x.sheetsStorage.Store(ctx, gotSheets, upload.FileBytes); !ok {
-		return UploadStatus{
-			FileName: upload.FileName,
-			Code:     http.StatusInternalServerError,
-		}
+		return uploadInternalServerError(upload)
 	}
+	return uploadSuccess(upload)
+}
 
+func projectExists(project string) bool {
+	return project == "01-snake-eater"
+}
+
+func uploadSuccess(upload *Upload) UploadStatus {
+	return UploadStatus{
+		FileName: upload.FileName,
+		Code:     http.StatusOK,
+	}
+}
+
+func uploadNotImplemented(upload *Upload) UploadStatus {
 	return UploadStatus{
 		FileName: upload.FileName,
 		Code:     http.StatusNotImplemented,
@@ -204,6 +187,25 @@ func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadSta
 	}
 }
 
-func projectExists(project string) bool {
-	return project == "01-snake-eater"
+func uploadBadRequest(upload *Upload, reason string) UploadStatus {
+	return UploadStatus{
+		FileName: upload.FileName,
+		Code:     http.StatusBadRequest,
+		Error:    reason,
+	}
+}
+
+func uploadInvalidContent(upload *Upload) UploadStatus {
+	return UploadStatus{
+		FileName: upload.FileName,
+		Code:     http.StatusUnsupportedMediaType,
+		Error:    "unsupported media type",
+	}
+}
+
+func uploadInternalServerError(upload *Upload) UploadStatus {
+	return UploadStatus{
+		FileName: upload.FileName,
+		Code:     http.StatusInternalServerError,
+	}
 }
