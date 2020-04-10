@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net"
 	"net/http"
@@ -25,8 +24,8 @@ type Config struct {
 type Server struct {
 	Config
 	*http.ServeMux
-	sheetsStorage sheets.Storage
-	basicAuth
+	*storage.MinioDriver
+	*storage.RedisLocker
 }
 
 func NewServer(objectStore *storage.MinioDriver, locker *storage.RedisLocker, config Config) *Server {
@@ -37,11 +36,8 @@ func NewServer(objectStore *storage.MinioDriver, locker *storage.RedisLocker, co
 	server := Server{
 		Config:    config,
 		ServeMux:  http.NewServeMux(),
-		basicAuth: auth,
-		sheetsStorage: sheets.Storage{
-			RedisLocker: locker,
-			MinioDriver: objectStore,
-		},
+		MinioDriver: objectStore,
+		RedisLocker: locker,
 	}
 
 	// debug endpoints from net/http/pprof

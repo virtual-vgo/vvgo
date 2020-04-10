@@ -1,45 +1,18 @@
 package sheets
 
 import (
-	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestNewSheetFromTags(t *testing.T) {
-	tags := map[string]string{
-		"Project":     "01-snake-eater",
-		"PartName":    "trumpet",
-		"Part-Number": "4",
-	}
-
-	expectedMeta := Sheet{
-		Project:    "01-snake-eater",
-		PartName:   "trumpet",
-		PartNumber: 4,
-	}
-
-	gotMeta := NewSheetFromTags(tags)
-	if expected, got := fmt.Sprintf("%#v", expectedMeta), fmt.Sprintf("%#v", gotMeta); expected != got {
-		t.Errorf("expected %v, got %v", expected, got)
-	}
+func TestSheet_Link(t *testing.T) {
+	sheet := Sheet{FileKey: "mock-file-key"}
+	assert.Equal(t, sheet.Link(), "/download?bucket=sheets&key=mock-file-key")
 }
 
-func TestSheet_ToTags(t *testing.T) {
-	meta := Sheet{
-		Project:    "01-snake-eater",
-		PartName:   "trumpet",
-		PartNumber: 4,
-	}
-
-	wantMap := map[string]string{
-		"Project":     "01-snake-eater",
-		"PartName":    "trumpet",
-		"Part-Number": "4",
-	}
-	gotMap := meta.Tags()
-	if expected, got := fmt.Sprintf("%#v", wantMap), fmt.Sprintf("%#v", gotMap); expected != got {
-		t.Errorf("expected %v, got %v", expected, got)
-	}
+func TestSheet_ObjectKey(t *testing.T) {
+	sheet := Sheet{FileKey: "mock-file-key"}
+	assert.Equal(t, sheet.ObjectKey(), "mock-file-key")
 }
 
 func TestSheet_Validate(t *testing.T) {
@@ -76,7 +49,7 @@ func TestSheet_Validate(t *testing.T) {
 				Project:    "test-project",
 				PartNumber: 6,
 			},
-			want: ErrMissingInstrument,
+			want: ErrMissingPartName,
 		},
 		{
 			name: "missing part number",

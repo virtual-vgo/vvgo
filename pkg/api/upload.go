@@ -124,6 +124,11 @@ func (x *Server) handleClickTrack(_ context.Context, upload *Upload) UploadStatu
 }
 
 func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
+	sheetsStorage := &sheets.Storage{
+		RedisLocker: x.RedisLocker,
+		MinioDriver: x.MinioDriver,
+	}
+
 	// verify that we have all the necessary info
 	sheetsUpload := upload.SheetsUpload
 	if sheetsUpload == nil {
@@ -162,7 +167,7 @@ func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadSta
 		}
 	}
 
-	if ok := x.sheetsStorage.Store(ctx, gotSheets, upload.FileBytes); !ok {
+	if ok := sheetsStorage.Store(ctx, gotSheets, upload.FileBytes); !ok {
 		return uploadInternalServerError(upload)
 	}
 	return uploadSuccess(upload)

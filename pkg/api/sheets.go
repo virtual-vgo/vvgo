@@ -17,7 +17,12 @@ func (x *Server) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 		Link string `json:"link"`
 	}
 
-	allSheets := x.sheetsStorage.List()
+	sheetsStorage := &sheets.Storage{
+		RedisLocker: x.RedisLocker,
+		MinioDriver: x.MinioDriver,
+	}
+
+	allSheets := sheetsStorage.List()
 	rows := make([]tableRow, 0, len(allSheets))
 	for _, sheet := range allSheets {
 		rows = append(rows, tableRow{
