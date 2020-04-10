@@ -97,7 +97,7 @@ func main() {
 	if config.InitializeStorage {
 		logger.Info("initializing storage...")
 		sheetStorage := sheet.Storage{RedisLocker: redisLocker, MinioDriver: minioDriver}
-		sheetStorage.Init(nil)
+		sheetStorage.Init()
 	}
 
 	apiServer := api.NewServer(

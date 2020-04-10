@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"time"
 )
 
 const BucketName = "sheets"
@@ -58,6 +59,10 @@ type Storage struct {
 	*storage.MinioDriver
 }
 
+func (x *Storage) Init() {
+
+}
+
 func (x *Storage) List() []Sheet {
 	// grab the data file
 	var dest storage.Object
@@ -80,6 +85,20 @@ func (x *Storage) Store(ctx context.Context, sheets []Sheet, pdfBytes []byte) bo
 		return false
 	}
 
+	// hash the pdf bytes
+	fileKey := fmt.Sprintf("%x.pdf", md5.Sum(pdfBytes))
+	for i := range sheets {
+		sheets[i].FileKey = fileKey
+	}
+
+	// store the pdf
+	x.PutObject(BucketName, &storage.Object{
+		ContentType: "application/pdf",
+		Name:        fileKey,
+		Buffer:      *bytes.NewBuffer(pdfBytes),
+	})
+
+	// now we update the data file
 	// read+modify+write means we need a lock
 	lock := x.Lock(ctx, LockName)
 	if lock == nil {
@@ -92,21 +111,6 @@ func (x *Storage) Store(ctx context.Context, sheets []Sheet, pdfBytes []byte) bo
 	if allSheets == nil {
 		return false
 	}
-
-	// hash the pdf bytes
-	fileKey := fmt.Sprintf("%x.pdf", md5.Sum(pdfBytes))
-
-	// store the pdf
-	x.PutObject(BucketName, &storage.Object{
-		ContentType: "application/pdf",
-		Name:        fileKey,
-		Buffer:      *bytes.NewBuffer(pdfBytes),
-	})
-
-	// update sheets with the file key
-	for i := range sheets {
-		sheets[i].FileKey = fileKey
-	}
 	allSheets = append(allSheets, sheets...)
 
 	// encode the data file
@@ -116,7 +120,17 @@ func (x *Storage) Store(ctx context.Context, sheets []Sheet, pdfBytes []byte) bo
 		return false
 	}
 
-	// store the data file
+	// store the data file with a revision
+	backupName := fmt.Sprintf("%s-%s", DataFile, time.Now().UTC().Format(time.RFC3339))
+	if ok := x.PutObject(BucketName, &storage.Object{
+		ContentType: "application/json",
+		Name:        backupName,
+		Buffer:      buffer,
+	}); !ok {
+		return false
+	}
+
+	// write the data file
 	return x.PutObject(BucketName, &storage.Object{
 		ContentType: "application/json",
 		Name:        DataFile,
