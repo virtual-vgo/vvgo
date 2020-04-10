@@ -3,7 +3,7 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/sheet"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"golang.org/x/net/html"
 	"net/http"
@@ -165,7 +165,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				objectStore: MockObjectStore{putObject: func(string, *storage.Object) error { return nil }},
 				wants: wants{
 					code: http.StatusBadRequest,
-					body: sheets.ErrMissingPartNumber.Error(),
+					body: sheet.ErrMissingPartNumber.Error(),
 				},
 			},
 			{
@@ -197,7 +197,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				wants: wants{
 					code: http.StatusInternalServerError,
 					storeParams: storeParams{
-						bucketName: sheets.BucketName,
+						bucketName: sheet.BucketName,
 						object: storage.Object{
 							ContentType: "application/pdf",
 							Name:        "01-snake-eater-trumpet-4.pdf",
@@ -216,7 +216,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				wants: wants{
 					code: http.StatusOK,
 					storeParams: storeParams{
-						bucketName: sheets.BucketName,
+						bucketName: sheet.BucketName,
 						object: storage.Object{
 							ContentType: "application/pdf",
 							Name:        "01-snake-eater-trumpet-4.pdf",
@@ -233,7 +233,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				objectStore: MockObjectStore{putObject: func(string, *storage.Object) error { return nil }},
 				wants: wants{
 					code: http.StatusBadRequest,
-					body: sheets.ErrMissingPartNumber.Error(),
+					body: sheet.ErrMissingPartNumber.Error(),
 				},
 			},
 			{
@@ -253,7 +253,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				wants: wants{
 					code: http.StatusInternalServerError,
 					storeParams: storeParams{
-						bucketName: sheets.BucketName,
+						bucketName: sheet.BucketName,
 						object: storage.Object{
 							ContentType: "application/pdf",
 							Name:        "01-snake-eater-trumpet-4.pdf",
@@ -271,7 +271,7 @@ func TestApiServer_SheetsUpload(t *testing.T) {
 				wants: wants{
 					code: http.StatusOK,
 					storeParams: storeParams{
-						bucketName: sheets.BucketName,
+						bucketName: sheet.BucketName,
 						object: storage.Object{
 							ContentType: "application/pdf",
 							Name:        "01-snake-eater-trumpet-4.pdf",

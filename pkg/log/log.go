@@ -2,10 +2,9 @@ package log
 
 import (
 	"github.com/sirupsen/logrus"
+	"log"
 	"os"
 )
-
-func Logger() *logrus.Logger { return logger }
 
 var logger = &logrus.Logger{
 	Out: os.Stderr,
@@ -17,4 +16,10 @@ var logger = &logrus.Logger{
 	Level:        logrus.InfoLevel,
 	ExitFunc:     os.Exit,
 	ReportCaller: false,
+}
+
+func Logger() *logrus.Logger { return logger }
+
+func StdLogger() *log.Logger {
+	return log.New(logger.Writer(), "", 0)
 }

@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/sheet"
 	"net/http"
 	"sync"
 	"time"
@@ -124,7 +124,7 @@ func (x *Server) handleClickTrack(_ context.Context, upload *Upload) UploadStatu
 }
 
 func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
-	sheetsStorage := &sheets.Storage{
+	sheetsStorage := &sheet.Storage{
 		RedisLocker: x.RedisLocker,
 		MinioDriver: x.MinioDriver,
 	}
@@ -169,13 +169,13 @@ func (upload *Upload) ValidateSheets() UploadStatus {
 	return uploadSuccess(upload)
 }
 
-func (upload *Upload) ToSheets() []sheets.Sheet {
+func (upload *Upload) ToSheets() []sheet.Sheet {
 	sheetsUpload := upload.SheetsUpload
 	// convert the upload into sheets
-	gotSheets := make([]sheets.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))
+	gotSheets := make([]sheet.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))
 	for _, partName := range sheetsUpload.PartNames {
 		for _, partNumber := range sheetsUpload.PartNumbers {
-			gotSheets = append(gotSheets, sheets.Sheet{
+			gotSheets = append(gotSheets, sheet.Sheet{
 				Project:    upload.Project,
 				PartName:   partName,
 				PartNumber: partNumber,

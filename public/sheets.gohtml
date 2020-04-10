@@ -35,7 +35,7 @@
         <thead>
         <tr>
             <th>Project</th>
-            <th>Instrument</th>
+            <th>Part Name</th>
             <th>Part Number</th>
             <th>Download</th>
         </tr>
@@ -44,7 +44,7 @@
         {{- range .}}
             <tr>
                 <td>{{.Sheet.Project}}</td>
-                <td>{{.Sheet.Instrument}}</td>
+                <td>{{.Sheet.PartName}}</td>
                 <td>{{.Sheet.PartNumber}}</td>
                 <td><a href="{{.Link}}" class="download-link">&raquo; download &laquo;</a></td>
             </tr>

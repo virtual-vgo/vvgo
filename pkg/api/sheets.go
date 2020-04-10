@@ -1,23 +1,24 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"bytes"
+	"github.com/virtual-vgo/vvgo/pkg/sheet"
 	"net/http"
 	"path/filepath"
 )
 
 func (x *Server) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "", http.StatusMethodNotAllowed)
+		methodNotAllowed(w)
 		return
 	}
 
 	type tableRow struct {
-		sheets.Sheet
+		sheet.Sheet
 		Link string `json:"link"`
 	}
 
-	sheetsStorage := &sheets.Storage{
+	sheetsStorage := &sheet.Storage{
 		RedisLocker: x.RedisLocker,
 		MinioDriver: x.MinioDriver,
 	}
@@ -31,14 +32,18 @@ func (x *Server) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	var buffer bytes.Buffer
 	switch true {
 	case acceptsType(r, "text/html"):
-		if ok := parseAndExecute(w, &rows, filepath.Join(Public, "sheets.gohtml")); !ok {
-			http.Error(w, "", http.StatusInternalServerError)
+		if ok := parseAndExecute(&buffer, &rows, filepath.Join(Public, "sheets.gohtml")); !ok {
+			internalServerError(w)
+			return
 		}
 	default:
-		if ok := jsonEncode(w, &rows); !ok {
-			http.Error(w, "", http.StatusInternalServerError)
+		if ok := jsonEncode(&buffer, &rows); !ok {
+			internalServerError(w)
+			return
 		}
 	}
+	buffer.WriteTo(w)
 }

@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/sheet"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"io/ioutil"
 	"net/http"
@@ -126,7 +126,7 @@ func uploadSheet(reader *bufio.Reader, flags Flags, fileName string) {
 		}
 
 		// validate the sheets locally
-		var gotSheets []sheets.Sheet
+		var gotSheets []sheet.Sheet
 		for _, sheet := range upload.ToSheets() {
 			if err := sheet.Validate(); err != nil {
 				printError(err)

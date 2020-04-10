@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/sheet"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
@@ -17,6 +18,8 @@ import (
 var logger = log.Logger()
 
 type Config struct {
+	InitializeStorage bool
+
 	Minio storage.MinioConfig
 	Redis storage.RedisConfig
 	Api   api.Config
@@ -24,6 +27,7 @@ type Config struct {
 
 func NewDefaultConfig() Config {
 	return Config{
+		InitializeStorage: false,
 		Minio: storage.MinioConfig{
 			Endpoint:  "localhost:9000",
 			Region:    "sfo2",
@@ -43,6 +47,10 @@ func NewDefaultConfig() Config {
 }
 
 func (x *Config) ParseEnv() {
+	if initializeStorage := os.Getenv("INITIALIZE_STORAGE"); initializeStorage != "" {
+		x.InitializeStorage, _ = strconv.ParseBool(initializeStorage)
+	}
+
 	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
 		x.Minio.Endpoint = endpoint
 	}
@@ -83,6 +91,15 @@ func main() {
 	config.ParseEnv()
 	config.ParseFlags()
 
+	minioDriver := storage.NewMinioDriverMust(config.Minio)
+	redisLocker := storage.NewRedisLocker(config.Redis)
+
+	if config.InitializeStorage {
+		logger.Info("initializing storage...")
+		sheetStorage := sheet.Storage{RedisLocker: redisLocker, MinioDriver: minioDriver}
+		sheetStorage.Init(nil)
+	}
+
 	apiServer := api.NewServer(
 		storage.NewMinioDriverMust(config.Minio),
 		storage.NewRedisLocker(config.Redis),
@@ -91,6 +108,7 @@ func main() {
 	httpServer := &http.Server{
 		Addr:    ":8080",
 		Handler: apiServer,
+		ErrorLog: log.StdLogger(),
 	}
 	logger.Fatal(httpServer.ListenAndServe())
 }
