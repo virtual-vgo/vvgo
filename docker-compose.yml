@@ -39,3 +39,11 @@ services:
       MINIO_CACHE_AFTER: 1
     expose:
       - 9000
+
+  kv-cache:
+    build:
+      context: infra/kv-cache
+      dockerfile: Dockerfile
+    container_name: kv-cache
+    expose:
+      - 6379
