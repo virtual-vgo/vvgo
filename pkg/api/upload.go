@@ -129,6 +129,18 @@ func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadSta
 		MinioDriver: x.MinioDriver,
 	}
 
+	if status := upload.ValidateSheets(); status != uploadSuccess(upload) {
+		return status
+	}
+	gotSheets := upload.ToSheets()
+
+	if ok := sheetsStorage.Store(ctx, gotSheets, upload.FileBytes); !ok {
+		return uploadInternalServerError(upload)
+	}
+	return uploadSuccess(upload)
+}
+
+func (upload *Upload) ValidateSheets() UploadStatus {
 	// verify that we have all the necessary info
 	sheetsUpload := upload.SheetsUpload
 	if sheetsUpload == nil {
@@ -154,7 +166,11 @@ func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadSta
 		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
 		return uploadInvalidContent(upload)
 	}
+	return uploadSuccess(upload)
+}
 
+func (upload *Upload) ToSheets() []sheets.Sheet {
+	sheetsUpload := upload.SheetsUpload
 	// convert the upload into sheets
 	gotSheets := make([]sheets.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))
 	for _, partName := range sheetsUpload.PartNames {
@@ -166,11 +182,7 @@ func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadSta
 			})
 		}
 	}
-
-	if ok := sheetsStorage.Store(ctx, gotSheets, upload.FileBytes); !ok {
-		return uploadInternalServerError(upload)
-	}
-	return uploadSuccess(upload)
+	return gotSheets
 }
 
 func projectExists(project string) bool {
@@ -212,5 +224,6 @@ func uploadInternalServerError(upload *Upload) UploadStatus {
 	return UploadStatus{
 		FileName: upload.FileName,
 		Code:     http.StatusInternalServerError,
+		Error:    "internal server error",
 	}
 }

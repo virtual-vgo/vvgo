@@ -29,6 +29,10 @@ type Sheet struct {
 	FileKey    string `json:"file_key"`
 }
 
+func (x Sheet) String() string {
+	return fmt.Sprintf("Project: %s Part: %s-%d", x.Project, x.PartName, x.PartNumber)
+}
+
 func (x Sheet) ObjectKey() string {
 	return x.FileKey
 }
