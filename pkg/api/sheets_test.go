@@ -39,7 +39,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 							Name:        "midnight-trumpet-3.pdf",
 							Tags: map[string]string{
 								"Project":     "midnight",
-								"PartName":  "trumpet",
+								"PartName":    "trumpet",
 								"Part-Number": "3",
 							},
 						},
@@ -48,7 +48,7 @@ func TestApiServer_SheetsIndex(t *testing.T) {
 							Name:        "daylight-flute-2.pdf",
 							Tags: map[string]string{
 								"Project":     "daylight",
-								"PartName":  "flute",
+								"PartName":    "flute",
 								"Part-Number": "2",
 							},
 						},

@@ -8,7 +8,7 @@ import (
 func TestNewSheetFromTags(t *testing.T) {
 	tags := map[string]string{
 		"Project":     "01-snake-eater",
-		"PartName":  "trumpet",
+		"PartName":    "trumpet",
 		"Part-Number": "4",
 	}
 
@@ -33,7 +33,7 @@ func TestSheet_ToTags(t *testing.T) {
 
 	wantMap := map[string]string{
 		"Project":     "01-snake-eater",
-		"PartName":  "trumpet",
+		"PartName":    "trumpet",
 		"Part-Number": "4",
 	}
 	gotMap := meta.Tags()

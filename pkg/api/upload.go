@@ -29,9 +29,9 @@ type Upload struct {
 }
 
 type UploadStatus struct {
-	FileName string
-	Code     int
-	Error    string
+	FileName string `json:"file_name"`
+	Code     int    `json:"code"`
+	Error    string `json:"error"`
 }
 
 type ClixUpload struct {
