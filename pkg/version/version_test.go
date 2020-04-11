@@ -93,3 +93,21 @@ func TestString(t *testing.T) {
 		t.Errorf("\nwant: `%v`\n got: `%v`", expected, got)
 	}
 }
+
+func TestReleaseTags(t *testing.T) {
+	version = Version{
+		BuildHost: "tuba-international.xyz",
+		BuildTime: "today",
+		GitSha:    "yeet",
+		GitBranch: "best-branch",
+		GoVersion: "1.14.1",
+	}
+	wantTags := []string{
+		version.GitBranch,
+		fmt.Sprintf("%s-%s", version.GitBranch, version.GitSha),
+	}
+	gotTags := version.ReleaseTags()
+	if want, got := strings.Join(wantTags, ", "), strings.Join(gotTags, ", "); want != got {
+		t.Errorf("wanted `%s`, got `%s`", want, got)
+	}
+}

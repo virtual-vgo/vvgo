@@ -19,6 +19,16 @@ type ServerConfig struct {
 }
 
 func NewServer(config ServerConfig, sheets sheets.Sheets) *http.Server {
+	mux := funcName(config, sheets)
+
+	return &http.Server{
+		Addr:     config.ListenAddress,
+		Handler:  mux,
+		ErrorLog: log.StdLogger(),
+	}
+}
+
+func funcName(config ServerConfig, sheets sheets.Sheets) *http.ServeMux {
 	auth := make(basicAuth)
 	if config.BasicAuthUser != "" {
 		auth[config.BasicAuthUser] = config.BasicAuthPass
@@ -43,10 +53,5 @@ func NewServer(config ServerConfig, sheets sheets.Sheets) *http.Server {
 	mux.Handle("/upload", auth.Authenticate(UploadHandler{sheets}))
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.FileServer(http.Dir("public")))
-
-	return &http.Server{
-		Addr:     config.ListenAddress,
-		Handler:  mux,
-		ErrorLog: log.StdLogger(),
-	}
+	return mux
 }
