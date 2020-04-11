@@ -65,6 +65,10 @@ func main() {
 			BasicAuthPass: flags.pass,
 		})
 
+		if err := client.Authenticate(); err != nil {
+			return fmt.Errorf("unable to authenticate client: %v", err)
+		}
+
 		reader := bufio.NewReader(os.Stdin)
 		for _, fileName := range flag.Args() {
 			uploadSheet(client, reader, flags.project, fileName)

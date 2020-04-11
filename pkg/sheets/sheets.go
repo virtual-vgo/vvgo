@@ -37,8 +37,8 @@ type Locker interface {
 	Unlock()
 }
 
-func (x Sheets) Init() {
-	x.PutObject(DataFile, &storage.Object{
+func (x Sheets) Init() bool {
+	return x.PutObject(DataFile, &storage.Object{
 		ContentType: "application/json",
 		Buffer:      *bytes.NewBuffer([]byte(`[]`)),
 	})

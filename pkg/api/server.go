@@ -26,6 +26,12 @@ func NewServer(config ServerConfig, sheets sheets.Sheets) *http.Server {
 
 	mux := http.NewServeMux()
 
+	mux.Handle("/auth",
+		auth.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("authenticated"))
+		})),
+	)
+
 	// debug endpoints from net/http/pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)

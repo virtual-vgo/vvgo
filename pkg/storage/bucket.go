@@ -83,6 +83,9 @@ func (x *Bucket) GetObject(name string, dest *Object) bool {
 }
 
 func (x *Bucket) PutObject(name string, object *Object) bool {
+	if ok := x.Make(); !ok {
+		return false
+	}
 	opts := minio.PutObjectOptions{
 		ContentType:  object.ContentType,
 		UserMetadata: object.Tags,
@@ -93,6 +96,7 @@ func (x *Bucket) PutObject(name string, object *Object) bool {
 		return false
 	}
 	logger.WithFields(logrus.Fields{
+		"bucket_name": x.Name,
 		"object_name": name,
 		"object_size": n,
 	}).Info("uploaded object")

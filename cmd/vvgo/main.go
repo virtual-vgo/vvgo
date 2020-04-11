@@ -12,6 +12,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
 	"strconv"
+	"time"
 )
 
 var logger = log.Logger()
@@ -40,7 +41,7 @@ func NewDefaultConfig() Config {
 				UseSSL:    false,
 			},
 			RedisConfig: storage.RedisConfig{
-				Address: "localhost:6379",
+				Address: "http://localhost:6379",
 			},
 		},
 	}
@@ -60,7 +61,7 @@ func (x *Config) ParseEnv() {
 	}
 	x.StorageConfig.MinioConfig.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
 
-	if address := os.Getenv("MINIO_SECRET_KEY"); address != "" {
+	if address := os.Getenv("REDIS_ADDRESS"); address != "" {
 		x.StorageConfig.RedisConfig.Address = address
 	}
 
@@ -111,7 +112,10 @@ func main() {
 	}
 
 	if config.InitializeStorage {
-		sheets.Init()
+		if ok := initializeStorage(sheets); !ok {
+			return
+		}
+		logger.Info("storage initialized")
 	}
 
 	apiServer := api.NewServer(config.ApiConfig, sheets)
@@ -119,4 +123,22 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Fatal(apiServer.ListenAndServe())
+}
+
+func initializeStorage(sheets sheets.Sheets) bool {
+	retryInterval := time.NewTicker(500 * time.Millisecond)
+	defer retryInterval.Stop()
+	timeout := time.NewTicker(5 * time.Second)
+	defer timeout.Stop()
+	for range retryInterval.C {
+		if ok := sheets.Init(); ok {
+			return true
+		}
+		select {
+		case <-timeout.C:
+			return false
+		default:
+		}
+	}
+	return false
 }
