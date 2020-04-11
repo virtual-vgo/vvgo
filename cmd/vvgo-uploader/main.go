@@ -10,6 +10,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/version"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -83,7 +84,7 @@ func main() {
 func uploadSheet(client *api.Client, reader *bufio.Reader, project string, fileName string) {
 	blue.Printf(":: found `%s`\n", fileName)
 
-	if !yesNo(reader, "upload this file") {
+	if !yesNo(os.Stdout, reader, "upload this file") {
 		blue.Println("skipping...")
 		return
 	}
@@ -147,7 +148,7 @@ func uploadSheet(client *api.Client, reader *bufio.Reader, project string, fileN
 		for _, sheet := range gotSheets {
 			fmt.Println(sheet.String())
 		}
-		if yesNo(reader, "is this ok") {
+		if yesNo(os.Stdout, reader, "is this ok") {
 			uploads = append(uploads, upload)
 			doUpload(client, uploads)
 			return
@@ -155,8 +156,8 @@ func uploadSheet(client *api.Client, reader *bufio.Reader, project string, fileN
 	}
 }
 
-func yesNo(reader *bufio.Reader, pre string) bool {
-	yellow.Printf(":: %s [Y/n]? ", pre)
+func yesNo(writer io.Writer, reader *bufio.Reader, pre string) bool {
+	yellow.Fprintf(writer, ":: %s [Y/n]? ", pre)
 	answer, _ := reader.ReadString('\n')
 	answer = strings.TrimSpace(strings.ToLower(answer))
 	return answer == "" || answer == "y" || answer == "yes"
