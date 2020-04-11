@@ -1,4 +1,5 @@
 vvgo
+vvgo-uploader
 .idea
 info.go
 !cmd/*

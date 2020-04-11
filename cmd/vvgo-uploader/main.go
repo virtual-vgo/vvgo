@@ -31,7 +31,7 @@ func (x *Flags) Parse() {
 	flag.BoolVar(&x.version, "version", false, "print version and quit")
 	flag.StringVar(&x.project, "project", "", "project for these uploads (required)")
 	flag.StringVar(&x.uploadType, "upload-type", "", "type of upload: sheets, clix")
-	flag.StringVar(&x.endpoint, "endpoint", "https://vvgo.org/upload", "upload endpoint")
+	flag.StringVar(&x.endpoint, "endpoint", "https://vvgo.org", "vvgo endpoint")
 	flag.StringVar(&x.user, "user", "admin", "basic auth username")
 	flag.StringVar(&x.pass, "pass", "admin", "basic auth password")
 	flag.Parse()

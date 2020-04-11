@@ -41,7 +41,7 @@ func NewDefaultConfig() Config {
 				UseSSL:    false,
 			},
 			RedisConfig: storage.RedisConfig{
-				Address: "http://localhost:6379",
+				Address: "localhost:6379",
 			},
 		},
 	}
