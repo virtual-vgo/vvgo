@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (x Server) Version(w http.ResponseWriter, r *http.Request) {
+func Version(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return

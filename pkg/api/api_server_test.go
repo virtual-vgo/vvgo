@@ -15,27 +15,25 @@ import (
 )
 
 func init() {
-	Public = "../../public"
+	PublicFiles = "../../public"
 }
 
-var _ ObjectStorage = new(MockObjectStore)
-
-type MockObjectStore struct {
-	putObject   func(bucketName string, object *storage.Object) error
-	listObjects func(bucketName string) []storage.Object
-	downloadURL func(bucketName string, objectName string) (string, error)
+type MockBucket struct {
+	putObject   func(name string, object *storage.Object) bool
+	getObject   func(name string, dest *storage.Object) bool
+	downloadURL func(name string) (string, error)
 }
 
-func (x MockObjectStore) PutObject(bucketName string, object *storage.Object) error {
-	return x.putObject(bucketName, object)
+func (x *MockBucket) PutObject(name string, object *storage.Object) bool {
+	return x.putObject(name, object)
 }
 
-func (x MockObjectStore) ListObjects(bucketName string) []storage.Object {
-	return x.listObjects(bucketName)
+func (x *MockBucket) GetObject(name string, dest *storage.Object) bool {
+	return x.getObject(name, dest)
 }
 
-func (x MockObjectStore) DownloadURL(bucketName string, objectName string) (string, error) {
-	return x.downloadURL(bucketName, objectName)
+func (x *MockBucket) DownloadURL(name string) (string, error) {
+	return x.downloadURL(name)
 }
 
 func tokenizeHTMLFile(src string) *html.Tokenizer {

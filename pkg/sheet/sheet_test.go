@@ -7,7 +7,7 @@ import (
 
 func TestSheet_Link(t *testing.T) {
 	sheet := Sheet{FileKey: "mock-file-key"}
-	assert.Equal(t, sheet.Link(), "/download?bucket=sheets&key=mock-file-key")
+	assert.Equal(t, sheet.Link("sheets"), "/download?bucket=sheets&object=mock-file-key")
 }
 
 func TestSheet_ObjectKey(t *testing.T) {

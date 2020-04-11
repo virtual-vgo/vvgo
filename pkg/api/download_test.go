@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestApiServer_Download(t *testing.T) {
+func TestRedirectDownload_Redirect(t *testing.T) {
 	type wants struct {
 		code     int
 		location string
@@ -17,27 +17,27 @@ func TestApiServer_Download(t *testing.T) {
 	}
 
 	for _, tt := range []struct {
-		name        string
-		objectStore MockObjectStore
-		request     *http.Request
-		wants       wants
+		name     string
+		download DownloadHandler
+		request  *http.Request
+		wants    wants
 	}{
 		{
 			name: "post",
-			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
-				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
+				return fmt.Sprintf("http://storage.example.com/%s/%s", "cheese", name), nil
 			}},
-			request: httptest.NewRequest(http.MethodPost, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodPost, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusMethodNotAllowed,
 			},
 		},
 		{
 			name: "invalid bucket",
-			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
 				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusNotFound,
 				body: "404 page not found",
@@ -45,10 +45,10 @@ func TestApiServer_Download(t *testing.T) {
 		},
 		{
 			name: "invalid object",
-			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
 				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusNotFound,
 				body: "404 page not found",
@@ -56,18 +56,18 @@ func TestApiServer_Download(t *testing.T) {
 		},
 		{
 			name: "server error",
-			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
+			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
 				return "", fmt.Errorf("mock error")
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants:   wants{code: http.StatusInternalServerError},
 		},
 		{
 			name: "success",
-			objectStore: MockObjectStore{downloadURL: func(bucketName string, objectName string) (string, error) {
-				return fmt.Sprintf("http://storage.example.com/%s/%s", bucketName, objectName), nil
+			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
+				return fmt.Sprintf("http://storage.example.com/%s/%s", "cheese", name), nil
 			}},
-			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&key=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants: wants{
 				code:     http.StatusFound,
 				location: "http://storage.example.com/cheese/danish",
@@ -76,7 +76,7 @@ func TestApiServer_Download(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			server := NewServer(tt.objectStore, Config{})
+			server := tt.download
 			recorder := httptest.NewRecorder()
 			server.ServeHTTP(recorder, tt.request)
 			gotResp := recorder.Result()

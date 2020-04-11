@@ -18,6 +18,10 @@ const (
 	UploadTypeSheets UploadType = "sheets"
 )
 
+type UploadHandler struct {
+	sheet.Sheets
+}
+
 type Upload struct {
 	UploadType    `json:"upload_type"`
 	*ClixUpload   `json:"clix_upload"`
@@ -46,7 +50,7 @@ type SheetsUpload struct {
 
 const UploadsTimeout = 10 * time.Second
 
-func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
+func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		methodNotAllowed(w)
 		return
@@ -96,9 +100,9 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 			// handle the upload
 			switch upload.UploadType {
 			case UploadTypeClix:
-				statuses <- x.handleClickTrack(ctx, upload)
+				statuses <- handleClickTrack(ctx, upload)
 			case UploadTypeSheets:
-				statuses <- x.handleSheetMusic(ctx, upload)
+				statuses <- handleSheetMusic(ctx, x.Sheets, upload)
 			default:
 				statuses <- UploadStatus{
 					FileName: upload.FileName,
@@ -119,22 +123,15 @@ func (x *Server) Upload(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&results)
 }
 
-func (x *Server) handleClickTrack(_ context.Context, upload *Upload) UploadStatus {
+func handleClickTrack(_ context.Context, upload *Upload) UploadStatus {
 	return uploadNotImplemented(upload)
 }
 
-func (x *Server) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
-	sheetsStorage := &sheet.Storage{
-		RedisLocker: x.RedisLocker,
-		MinioDriver: x.MinioDriver,
-	}
-
+func handleSheetMusic(ctx context.Context, sheets sheet.Sheets, upload *Upload) UploadStatus {
 	if status := upload.ValidateSheets(); status != uploadSuccess(upload) {
 		return status
 	}
-	gotSheets := upload.ToSheets()
-
-	if ok := sheetsStorage.Store(ctx, gotSheets, upload.FileBytes); !ok {
+	if ok := sheets.Store(ctx, upload.Sheets(), upload.FileBytes); !ok {
 		return uploadInternalServerError(upload)
 	}
 	return uploadSuccess(upload)
@@ -169,7 +166,7 @@ func (upload *Upload) ValidateSheets() UploadStatus {
 	return uploadSuccess(upload)
 }
 
-func (upload *Upload) ToSheets() []sheet.Sheet {
+func (upload *Upload) Sheets() []sheet.Sheet {
 	sheetsUpload := upload.SheetsUpload
 	// convert the upload into sheets
 	gotSheets := make([]sheet.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))

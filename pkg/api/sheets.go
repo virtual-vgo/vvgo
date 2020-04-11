@@ -7,7 +7,14 @@ import (
 	"path/filepath"
 )
 
-func (x *Server) SheetsIndex(w http.ResponseWriter, r *http.Request) {
+const SheetsBucketName = "sheets"
+const SheetsLockerKey = "sheets.lock"
+
+type SheetsHandler struct {
+	sheet.Sheets
+}
+
+func (x SheetsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -18,24 +25,19 @@ func (x *Server) SheetsIndex(w http.ResponseWriter, r *http.Request) {
 		Link string `json:"link"`
 	}
 
-	sheetsStorage := &sheet.Storage{
-		RedisLocker: x.RedisLocker,
-		MinioDriver: x.MinioDriver,
-	}
-
-	allSheets := sheetsStorage.List()
-	rows := make([]tableRow, 0, len(allSheets))
-	for _, sheet := range allSheets {
+	sheets := x.List()
+	rows := make([]tableRow, 0, len(sheets))
+	for _, sheet := range sheets {
 		rows = append(rows, tableRow{
 			Sheet: sheet,
-			Link:  sheet.Link(),
+			Link:  sheet.Link(SheetsBucketName),
 		})
 	}
 
 	var buffer bytes.Buffer
 	switch true {
 	case acceptsType(r, "text/html"):
-		if ok := parseAndExecute(&buffer, &rows, filepath.Join(Public, "sheets.gohtml")); !ok {
+		if ok := parseAndExecute(&buffer, &rows, filepath.Join(PublicFiles, "sheets.gohtml")); !ok {
 			internalServerError(w)
 			return
 		}

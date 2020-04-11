@@ -1,99 +1,52 @@
 package api
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
-	"net"
+	"github.com/virtual-vgo/vvgo/pkg/sheet"
 	"net/http"
 	"net/http/pprof"
-	"strings"
-	"time"
 )
 
 var logger = log.Logger()
 
-var Public = "public"
+var PublicFiles = "public"
 
 type Config struct {
+	ListenAddress    string
 	MaxContentLength int64
 	BasicAuthUser    string
 	BasicAuthPass    string
 }
 
-type Server struct {
-	Config
-	*http.ServeMux
-	*storage.MinioDriver
-	*storage.RedisLocker
-}
-
-func NewServer(objectStore *storage.MinioDriver, locker *storage.RedisLocker, config Config) *Server {
+func NewServer(config Config, sheets sheet.Sheets) *http.Server {
 	auth := make(basicAuth)
 	if config.BasicAuthUser != "" {
 		auth[config.BasicAuthUser] = config.BasicAuthPass
 	}
-	server := Server{
-		Config:    config,
-		ServeMux:  http.NewServeMux(),
-		MinioDriver: objectStore,
-		RedisLocker: locker,
-	}
+
+	mux := http.NewServeMux()
 
 	// debug endpoints from net/http/pprof
-	server.HandleFunc("/debug/pprof/", pprof.Index)
-	server.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	server.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	server.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	server.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-	server.Handle("/sheets", auth.Authenticate(server.SheetsIndex))
-	server.Handle("/sheets/", http.RedirectHandler("/sheets", http.StatusMovedPermanently))
-	server.Handle("/download", auth.Authenticate(server.Download))
-	server.Handle("/upload", auth.Authenticate(server.Upload))
-	server.Handle("/version", HandlerFunc(server.Version))
-	server.Handle("/", http.FileServer(http.Dir("public")))
-	return &server
-}
+	mux.Handle("/sheets", auth.Authenticate(SheetsHandler{sheets}))
+	mux.Handle("/sheets/", http.RedirectHandler("/sheets", http.StatusMovedPermanently))
 
-type HandlerFunc func(w http.ResponseWriter, r *http.Request)
-
-// This is http.ResponseWriter middleware that captures the response code
-// and other info that might useful in logs
-type responseWriter struct {
-	code int
-	http.ResponseWriter
-}
-
-func (x *responseWriter) WriteHeader(code int) {
-	x.code = code
-	x.ResponseWriter.WriteHeader(code)
-}
-
-func (handlerFunc HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	results := responseWriter{ResponseWriter: w}
-	handlerFunc(&results, r)
-
-	clientIP := strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0]
-	if clientIP == "" {
-		clientIP, _, _ = net.SplitHostPort(r.RemoteAddr)
+	downloadHandler := DownloadHandler{
+		SheetsBucketName: sheets.Bucket.DownloadURL,
 	}
-	fields := logrus.Fields{
-		"client_ip":       clientIP,
-		"request_path":    r.URL.EscapedPath(),
-		"user_agent":      r.UserAgent(),
-		"request_method":  r.Method,
-		"request_size":    r.ContentLength,
-		"request_seconds": time.Since(start).Seconds(),
-		"status_code":     results.code,
-	}
-	switch true {
-	case results.code >= 500:
-		logger.WithFields(fields).Error("request failed")
-	case results.code >= 400:
-		logger.WithFields(fields).Error("invalid request")
-	default:
-		logger.WithFields(fields).Info("request completed")
+	mux.Handle("/download", auth.Authenticate(downloadHandler))
+	mux.Handle("/upload", auth.Authenticate(UploadHandler{sheets}))
+	mux.Handle("/version", http.HandlerFunc(Version))
+	mux.Handle("/", http.FileServer(http.Dir("public")))
+
+	return &http.Server{
+		Addr:     config.ListenAddress,
+		Handler:  mux,
+		ErrorLog: log.StdLogger(),
 	}
 }

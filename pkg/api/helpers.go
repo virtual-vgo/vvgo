@@ -67,3 +67,11 @@ func tooManyBytes(w http.ResponseWriter) {
 func invalidContent(w http.ResponseWriter) {
 	http.Error(w, "", http.StatusUnsupportedMediaType)
 }
+
+func notFound(w http.ResponseWriter, r *http.Request) {
+	http.NotFound(w, r)
+}
+
+func unauthorized(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "authorization failed", http.StatusUnauthorized)
+}

@@ -10,7 +10,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/sheet"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
-	"net/http"
 	"os"
 	"strconv"
 )
@@ -19,29 +18,29 @@ var logger = log.Logger()
 
 type Config struct {
 	InitializeStorage bool
-
-	Minio storage.MinioConfig
-	Redis storage.RedisConfig
-	Api   api.Config
+	StorageConfig     storage.Config
+	ApiConfig         api.Config
 }
 
 func NewDefaultConfig() Config {
 	return Config{
 		InitializeStorage: false,
-		Minio: storage.MinioConfig{
-			Endpoint:  "localhost:9000",
-			Region:    "sfo2",
-			AccessKey: "minioadmin",
-			SecretKey: "minioadmin",
-			UseSSL:    false,
-		},
-		Redis: storage.RedisConfig{
-			Address: "localhost:6379",
-		},
-		Api: api.Config{
+		ApiConfig: api.Config{
 			MaxContentLength: 1e6,
 			BasicAuthUser:    "admin",
 			BasicAuthPass:    "admin",
+		},
+		StorageConfig: storage.Config{
+			MinioConfig: storage.MinioConfig{
+				Endpoint:  "http://localhost:9000",
+				Region:    "sfo2",
+				AccessKey: "minioadmin",
+				SecretKey: "minioadmin",
+				UseSSL:    false,
+			},
+			RedisConfig: storage.RedisConfig{
+				Address: "localhost:6379",
+			},
 		},
 	}
 }
@@ -52,25 +51,25 @@ func (x *Config) ParseEnv() {
 	}
 
 	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
-		x.Minio.Endpoint = endpoint
+		x.StorageConfig.MinioConfig.Endpoint = endpoint
 	}
 	if id := os.Getenv("MINIO_ACCESS_KEY"); id != "" {
-		x.Minio.AccessKey = id
+		x.StorageConfig.MinioConfig.AccessKey = id
 	}
 	if key := os.Getenv("MINIO_SECRET_KEY"); key != "" {
-		x.Minio.SecretKey = key
+		x.StorageConfig.MinioConfig.SecretKey = key
 	}
-	x.Minio.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
+	x.StorageConfig.MinioConfig.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
 
 	if maxContentLength, _ := strconv.ParseInt(os.Getenv("API_MAX_CONTENT_LENGTH"), 10, 64); maxContentLength != 0 {
-		x.Api.MaxContentLength = maxContentLength
+		x.ApiConfig.MaxContentLength = maxContentLength
 	}
 
 	if user := os.Getenv("BASIC_AUTH_USER"); user != "" {
-		x.Api.BasicAuthUser = user
+		x.ApiConfig.BasicAuthUser = user
 	}
 	if pass := os.Getenv("BASIC_AUTH_PASS"); pass != "" {
-		x.Api.BasicAuthPass = pass
+		x.ApiConfig.BasicAuthPass = pass
 	}
 }
 
@@ -91,24 +90,28 @@ func main() {
 	config.ParseEnv()
 	config.ParseFlags()
 
-	minioDriver := storage.NewMinioDriverMust(config.Minio)
-	redisLocker := storage.NewRedisLocker(config.Redis)
+	storage := storage.NewClient(config.StorageConfig)
+	if storage == nil {
+		os.Exit(1)
+	}
+
+	sheetsBucket := storage.NewBucket(api.SheetsBucketName)
+	sheetsLocker := storage.NewLocker(api.SheetsLockerKey)
+	if sheetsBucket == nil || sheetsLocker == nil {
+		os.Exit(1)
+	}
+	sheets := sheet.Sheets{
+		Bucket: sheetsBucket,
+		Locker: sheetsLocker,
+	}
 
 	if config.InitializeStorage {
-		logger.Info("initializing storage...")
-		sheetStorage := sheet.Storage{RedisLocker: redisLocker, MinioDriver: minioDriver}
-		sheetStorage.Init()
+		sheets.Init()
 	}
 
-	apiServer := api.NewServer(
-		storage.NewMinioDriverMust(config.Minio),
-		storage.NewRedisLocker(config.Redis),
-		config.Api,
-	)
-	httpServer := &http.Server{
-		Addr:    ":8080",
-		Handler: apiServer,
-		ErrorLog: log.StdLogger(),
+	apiServer := api.NewServer(config.ApiConfig, sheets)
+	if apiServer == nil {
+		os.Exit(1)
 	}
-	logger.Fatal(httpServer.ListenAndServe())
+	logger.Fatal(apiServer.ListenAndServe())
 }

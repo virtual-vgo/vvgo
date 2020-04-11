@@ -3,41 +3,45 @@ package storage
 import (
 	"context"
 	"github.com/bsm/redislock"
-	"github.com/go-redis/redis/v7"
-	"time"
+	"sync"
 )
 
-const Deadline = 5 * 60 * time.Second
-
-type RedisLocker struct {
-	RedisConfig
-	*redislock.Client
+type Locker struct {
+	key       string
+	lock      sync.Mutex
+	redisLock *redislock.Lock
+	client    *redislock.Client
 }
 
-type RedisConfig struct {
-	Address string
-}
-
-func NewRedisLocker(config RedisConfig) *RedisLocker {
-	client := redis.NewClient(&redis.Options{
-		Network: "tcp",
-		Addr:    config.Address,
-	})
-
-	return &RedisLocker{
-		RedisConfig: config,
-		Client:      redislock.New(client),
+func (x *Client) NewLocker(key string) *Locker {
+	if x.lockers[key] == nil {
+		x.lock.Lock()
+		defer x.lock.Unlock()
+		x.lockers[key] = &Locker{
+			key:    key,
+			client: redislock.New(x.redisClient),
+		}
 	}
+	return x.lockers[key]
 }
 
-func (x *RedisLocker) Lock(ctx context.Context, key string) *redislock.Lock {
-	lock, err := x.Obtain(key, Deadline, &redislock.Options{
+func (x *Locker) Lock(ctx context.Context) bool {
+	x.lock.Lock()
+	lock, err := x.client.Obtain(x.key, RedisLockDeadline, &redislock.Options{
 		Context: ctx,
 	})
 	if err != nil {
 		logger.WithError(err).Error("redislock.Obtain() failed")
-		return nil
+		return false
 	} else {
-		return lock
+		x.redisLock = lock
+		return true
 	}
+}
+
+func (x *Locker) Unlock() {
+	if err := x.redisLock.Release(); err != nil {
+		logger.WithError(err).Error("redislock.Release() failed")
+	}
+	x.lock.Unlock()
 }

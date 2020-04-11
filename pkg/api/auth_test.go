@@ -1,14 +1,13 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
-func TestApiServer_Authenticate(t *testing.T) {
+func TestBasicAuth_Authenticate(t *testing.T) {
 	type wants struct {
 		code   int
 		body   string
@@ -66,10 +65,10 @@ func TestApiServer_Authenticate(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			server := NewServer(MockObjectStore{}, tt.config)
-			server.Authenticate(func(w http.ResponseWriter, r *http.Request) {
+			server := basicAuth{tt.config.BasicAuthUser: tt.config.BasicAuthPass}
+			server.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// do nothing
-			})(recorder, tt.request)
+			})).ServeHTTP(recorder, tt.request)
 
 			gotCode := recorder.Code
 			gotBody := strings.TrimSpace(recorder.Body.String())
@@ -82,7 +81,6 @@ func TestApiServer_Authenticate(t *testing.T) {
 			}
 
 			for wantK := range tt.wants.header {
-				fmt.Println(tt.wants.header)
 				if expected, got := tt.wants.header[wantK], recorder.Header().Get(wantK); expected != got {
 					t.Errorf("expected `%s: %v`, got `%s: %v`", wantK, expected, wantK, got)
 				}

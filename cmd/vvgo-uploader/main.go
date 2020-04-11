@@ -76,7 +76,7 @@ func main() {
 func uploadSheet(reader *bufio.Reader, flags Flags, fileName string) {
 	blue.Printf(":: found `%s`\n", fileName)
 
-	if ! yesNo(reader, "upload this file") {
+	if !yesNo(reader, "upload this file") {
 		blue.Println("skipping...")
 		return
 	}
@@ -127,7 +127,7 @@ func uploadSheet(reader *bufio.Reader, flags Flags, fileName string) {
 
 		// validate the sheets locally
 		var gotSheets []sheet.Sheet
-		for _, sheet := range upload.ToSheets() {
+		for _, sheet := range upload.Sheets() {
 			if err := sheet.Validate(); err != nil {
 				printError(err)
 			} else {
