@@ -6,13 +6,8 @@ import (
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"net/url"
+	"time"
 )
-
-type Bucket struct {
-	Name   string
-	Region string
-	*minio.Client
-}
 
 type Object struct {
 	ContentType string
@@ -21,6 +16,23 @@ type Object struct {
 }
 
 type Tags map[string]string
+
+func NewObject(mediaType string, buffer *bytes.Buffer) *Object {
+	return &Object{
+		ContentType: mediaType,
+		Buffer:      *buffer,
+	}
+}
+
+func NewJSONObject(buffer *bytes.Buffer) *Object {
+	return NewObject("application/json", buffer)
+}
+
+type Bucket struct {
+	Name   string
+	Region string
+	*minio.Client
+}
 
 func (x *Client) NewBucket(name string) *Bucket {
 	return &Bucket{
@@ -80,6 +92,17 @@ func (x *Bucket) GetObject(name string, dest *Object) bool {
 		Buffer:      buffer,
 	}
 	return true
+}
+
+// Stores the object and a copy with a timestamp appended to the file name.
+func WithBackup(putObjectFunc func(name string, object *Object) bool) func(name string, object *Object) bool {
+	return func(name string, object *Object) bool {
+		backupName := fmt.Sprintf("%s-%s", name, time.Now().UTC().Format(time.RFC3339))
+		if ok := putObjectFunc(backupName, object); !ok {
+			return false
+		}
+		return putObjectFunc(name, object)
+	}
 }
 
 func (x *Bucket) PutObject(name string, object *Object) bool {

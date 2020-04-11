@@ -3,9 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/clix"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -17,9 +20,7 @@ const (
 	UploadTypeSheets UploadType = "sheets"
 )
 
-type UploadHandler struct {
-	sheets.Sheets
-}
+type UploadHandler struct{ *Database }
 
 type Upload struct {
 	UploadType    `json:"upload_type"`
@@ -99,7 +100,7 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// handle the upload
 			switch upload.UploadType {
 			case UploadTypeClix:
-				statuses <- handleClickTrack(ctx, upload)
+				statuses <- handleClickTrack(ctx, x.Clix, upload)
 			case UploadTypeSheets:
 				statuses <- handleSheetMusic(ctx, x.Sheets, upload)
 			default:
@@ -122,8 +123,64 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&results)
 }
 
-func handleClickTrack(_ context.Context, upload *Upload) UploadStatus {
-	return uploadNotImplemented(upload)
+func handleClickTrack(ctx context.Context, gotClix clix.Clix, upload *Upload) UploadStatus {
+	if status := upload.ValidateClix(); status != uploadSuccess(upload) {
+		return status
+	}
+	file := clix.File{
+		MediaType: upload.ContentType,
+		Ext:       filepath.Ext(upload.FileName),
+		Bytes:     upload.FileBytes,
+	}
+	if ok := gotClix.Store(ctx, upload.Clix(), &file); !ok {
+		return uploadInternalServerError(upload)
+	}
+	return uploadSuccess(upload)
+}
+
+func (upload *Upload) ValidateClix() UploadStatus {
+	// verify that we have all the necessary info
+	clixUpload := upload.ClixUpload
+	if clixUpload == nil {
+		return uploadBadRequest(upload, "missing json field `sheets_upload`")
+	}
+
+	if len(clixUpload.PartNames) == 0 {
+		return uploadBadRequest(upload, "missing part names")
+	}
+
+	if len(clixUpload.PartNumbers) == 0 {
+		return uploadBadRequest(upload, "missing part numbers")
+	}
+
+	// verify content type
+	if !strings.HasPrefix(upload.ContentType, "audio/") {
+		logger.WithField("Content-Type", upload.ContentType).Error("invalid content type")
+		return uploadInvalidContent(upload)
+	}
+
+	// verify the file contents
+	if contentType := http.DetectContentType(upload.FileBytes); !strings.HasPrefix(contentType, "audio/") {
+		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
+		return uploadInvalidContent(upload)
+	}
+	return uploadSuccess(upload)
+}
+
+func (upload *Upload) Clix() []clix.Click {
+	clixUpload := upload.ClixUpload
+	// convert the upload into sheets
+	gotClix := make([]clix.Click, 0, len(clixUpload.PartNames)*len(clixUpload.PartNumbers))
+	for _, partName := range clixUpload.PartNames {
+		for _, partNumber := range clixUpload.PartNumbers {
+			gotClix = append(gotClix, clix.Click{
+				Project:    upload.Project,
+				PartName:   partName,
+				PartNumber: partNumber,
+			})
+		}
+	}
+	return gotClix
 }
 
 func handleSheetMusic(ctx context.Context, sheets sheets.Sheets, upload *Upload) UploadStatus {

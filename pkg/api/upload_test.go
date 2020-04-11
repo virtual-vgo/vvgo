@@ -102,12 +102,10 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request := httptest.NewRequest(tt.request.method, "/upload", strings.NewReader(tt.request.body))
 			request.Header.Set("Content-Type", tt.request.contentType)
 			recorder := httptest.NewRecorder()
-			UploadHandler{
-				Sheets: sheets.Sheets{
-					Bucket: &mocks.bucket,
-					Locker: &mocks.locker,
-				},
-			}.ServeHTTP(recorder, request)
+			UploadHandler{&Database{Sheets: sheets.Sheets{
+				Bucket: &mocks.bucket,
+				Locker: &mocks.locker,
+			}}}.ServeHTTP(recorder, request)
 			assert.Equal(t, tt.wants.code, recorder.Code, "code")
 			assert.Equal(t, tt.wants.body, strings.TrimSpace(recorder.Body.String()), "body")
 		})

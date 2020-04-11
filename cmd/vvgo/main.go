@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -101,44 +101,47 @@ func main() {
 		os.Exit(1)
 	}
 
-	sheetsBucket := storage.NewBucket(api.SheetsBucketName)
-	sheetsLocker := storage.NewLocker(api.SheetsLockerKey)
-	if sheetsBucket == nil || sheetsLocker == nil {
+	database := api.NewDatabase(storage)
+	if database == nil {
 		os.Exit(1)
-	}
-	sheets := sheets.Sheets{
-		Bucket: sheetsBucket,
-		Locker: sheetsLocker,
 	}
 
 	if config.InitializeStorage {
-		if ok := initializeStorage(sheets); !ok {
-			return
-		}
-		logger.Info("storage initialized")
+		initializeStorage(database)
 	}
 
-	apiServer := api.NewServer(config.ApiConfig, sheets)
+	apiServer := api.NewServer(config.ApiConfig, database)
 	if apiServer == nil {
 		os.Exit(1)
 	}
 	logger.Fatal(apiServer.ListenAndServe())
 }
 
-func initializeStorage(sheets sheets.Sheets) bool {
-	retryInterval := time.NewTicker(500 * time.Millisecond)
-	defer retryInterval.Stop()
-	timeout := time.NewTicker(5 * time.Second)
-	defer timeout.Stop()
-	for range retryInterval.C {
-		if ok := sheets.Init(); ok {
-			return true
-		}
-		select {
-		case <-timeout.C:
-			return false
-		default:
-		}
+func initializeStorage(db *api.Database) {
+	var wg sync.WaitGroup
+	for _, initFunc := range []func() bool{
+		db.Sheets.Init,
+		db.Clix.Init,
+	} {
+		wg.Add(1)
+		go func(initFunc func() bool) {
+			defer wg.Done()
+			timeout := time.NewTicker(5 * time.Second)
+			retryInterval := time.NewTicker(500 * time.Millisecond)
+			defer retryInterval.Stop()
+			defer timeout.Stop()
+			for range retryInterval.C {
+				if ok := initFunc(); ok {
+					return
+				}
+				select {
+				case <-timeout.C:
+					logger.Fatalf("failed to initialize storage")
+				default:
+				}
+			}
+		}(initFunc)
 	}
-	return false
+	wg.Wait()
+	logger.Info("storage initialized")
 }

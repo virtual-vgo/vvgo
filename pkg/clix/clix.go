@@ -1,4 +1,4 @@
-package sheets
+package clix
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ var (
 	ErrMissingPartNumber = fmt.Errorf("missing part number")
 )
 
-type Sheets struct {
+type Clix struct {
 	Bucket
 	Locker
 }
@@ -36,11 +36,11 @@ type Locker interface {
 	Unlock()
 }
 
-func (x Sheets) Init() bool {
+func (x Clix) Init() bool {
 	return x.PutObject(DataFile, storage.NewJSONObject(bytes.NewBuffer([]byte(`[]`))))
 }
 
-func (x Sheets) List() []Sheet {
+func (x Clix) List() []Click {
 	// grab the data file
 	var dest storage.Object
 	if ok := x.GetObject(DataFile, &dest); !ok {
@@ -48,28 +48,34 @@ func (x Sheets) List() []Sheet {
 	}
 
 	// deserialize the data file
-	var sheets []Sheet
-	if err := json.NewDecoder(&dest.Buffer).Decode(&sheets); err != nil {
+	var clix []Click
+	if err := json.NewDecoder(&dest.Buffer).Decode(&clix); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
 		return nil
 	}
-	return sheets
+	return clix
 }
 
-func (x Sheets) Store(ctx context.Context, sheets []Sheet, fileBytes []byte) bool {
-	// first, validate all the sheets
-	if ok := validateSheets(sheets); !ok {
+type File struct {
+	MediaType string
+	Ext       string
+	Bytes     []byte
+}
+
+func (x Clix) Store(ctx context.Context, clix []Click, file *File) bool {
+	// first, validate all the clix
+	if ok := validateClix(clix); !ok {
 		return false
 	}
 
-	// hash the pdf bytes
-	fileKey := fmt.Sprintf("%x.pdf", md5.Sum(fileBytes))
-	for i := range sheets {
-		sheets[i].FileKey = fileKey
+	// hash the file bytes
+	fileKey := fmt.Sprintf("%x%s", md5.Sum(file.Bytes), file.Ext)
+	for i := range clix {
+		clix[i].FileKey = fileKey
 	}
 
-	// store the pdf
-	x.PutObject(fileKey, storage.NewObject("application/pdf", bytes.NewBuffer(fileBytes)))
+	// store the file
+	x.PutObject(fileKey, storage.NewObject(file.MediaType, bytes.NewBuffer(file.Bytes)))
 
 	// now we update the data file
 	// read+modify+write means we need a lock
@@ -78,16 +84,16 @@ func (x Sheets) Store(ctx context.Context, sheets []Sheet, fileBytes []byte) boo
 	}
 	defer x.Unlock()
 
-	// pull down the sheets data
-	allSheets := x.List()
-	if allSheets == nil {
+	// pull down the clix data
+	allClix := x.List()
+	if allClix == nil {
 		return false
 	}
-	allSheets = append(allSheets, sheets...)
+	allClix = append(allClix, clix...)
 
 	// encode the data file
 	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(&allSheets); err != nil {
+	if err := json.NewEncoder(&buffer).Encode(&allClix); err != nil {
 		logger.WithError(err).Error("json.Encode() failed")
 		return false
 	}
@@ -95,36 +101,36 @@ func (x Sheets) Store(ctx context.Context, sheets []Sheet, fileBytes []byte) boo
 	return storage.WithBackup(x.PutObject)(DataFile, storage.NewJSONObject(&buffer))
 }
 
-func validateSheets(sheets []Sheet) bool {
-	for _, sheet := range sheets {
-		if err := sheet.Validate(); err != nil {
-			logger.WithError(err).Error("sheet failed validation")
+func validateClix(clix []Click) bool {
+	for _, click := range clix {
+		if err := click.Validate(); err != nil {
+			logger.WithError(err).Error("click failed validation")
 			return false
 		}
 	}
 	return true
 }
 
-type Sheet struct {
+type Click struct {
 	Project    string `json:"project"`
 	PartName   string `json:"part_name"`
 	PartNumber uint8  `json:"part_number"`
 	FileKey    string `json:"file_key"`
 }
 
-func (x Sheet) String() string {
+func (x Click) String() string {
 	return fmt.Sprintf("Project: %s Part: %s-%d", x.Project, x.PartName, x.PartNumber)
 }
 
-func (x Sheet) ObjectKey() string {
+func (x Click) ObjectKey() string {
 	return x.FileKey
 }
 
-func (x Sheet) Link(bucket string) string {
+func (x Click) Link(bucket string) string {
 	return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.ObjectKey())
 }
 
-func (x Sheet) Validate() error {
+func (x Click) Validate() error {
 	if x.Project == "" {
 		return ErrMissingProject
 	} else if x.PartName == "" {

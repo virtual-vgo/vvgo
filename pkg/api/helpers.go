@@ -75,3 +75,7 @@ func notFound(w http.ResponseWriter) {
 func unauthorized(w http.ResponseWriter) {
 	http.Error(w, "authorization failed", http.StatusUnauthorized)
 }
+
+func notImplemented(w http.ResponseWriter) {
+	http.Error(w, "", http.StatusNotImplemented)
+}
