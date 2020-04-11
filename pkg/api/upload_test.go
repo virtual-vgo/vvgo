@@ -53,7 +53,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 	}{
 		bucket: MockBucket{
 			getObject: func(_ string, object *storage.Object) bool {
-				*object = storage.Object{ContentType: "", Buffer: *bytes.NewBuffer([]byte(`[]`)),}
+				*object = storage.Object{ContentType: "", Buffer: *bytes.NewBuffer([]byte(`[]`))}
 				return true
 			},
 			putObject: func(string, *storage.Object) bool { return true },
