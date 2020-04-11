@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"sync"
@@ -10,8 +11,6 @@ import (
 )
 
 type UploadType string
-
-func (x UploadType) String() string { return string(x) }
 
 const (
 	UploadTypeClix   UploadType = "clix"
@@ -35,12 +34,12 @@ type Upload struct {
 type UploadStatus struct {
 	FileName string `json:"file_name"`
 	Code     int    `json:"code"`
-	Error    string `json:"error"`
+	Error    string `json:"error,omitempty"`
 }
 
 type ClixUpload struct {
 	PartNames   []string `json:"part_names"`
-	PartNumbers []uint8   `json:"part_numbers"`
+	PartNumbers []uint8  `json:"part_numbers"`
 }
 
 type SheetsUpload struct {
@@ -89,7 +88,7 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// check that the project exists
-			if !projectExists(upload.Project) {
+			if !projects.Exists(upload.Project) {
 				statuses <- UploadStatus{
 					FileName: upload.FileName,
 					Code:     http.StatusBadRequest,
@@ -180,10 +179,6 @@ func (upload *Upload) Sheets() []sheets.Sheet {
 		}
 	}
 	return gotSheets
-}
-
-func projectExists(project string) bool {
-	return project == "01-snake-eater"
 }
 
 func uploadSuccess(upload *Upload) UploadStatus {

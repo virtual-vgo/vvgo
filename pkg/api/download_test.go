@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestRedirectDownload_Redirect(t *testing.T) {
+func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	type wants struct {
 		code     int
 		location string

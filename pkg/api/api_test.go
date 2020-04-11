@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 )
 
@@ -24,4 +25,17 @@ func (x *MockBucket) GetObject(name string, dest *storage.Object) bool {
 
 func (x *MockBucket) DownloadURL(name string) (string, error) {
 	return x.downloadURL(name)
+}
+
+type MockLocker struct {
+	lock   func(ctx context.Context) bool
+	unlock func()
+}
+
+func (x *MockLocker) Lock(ctx context.Context) bool {
+	return x.lock(ctx)
+}
+
+func (x *MockLocker) Unlock() {
+	x.unlock()
 }
