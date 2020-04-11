@@ -22,7 +22,7 @@ func (x basicAuth) Authenticate(handler http.Handler) http.Handler {
 			return x[user] == pass
 		}(); !ok {
 			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
-			unauthorized(w, r)
+			unauthorized(w)
 		} else {
 			handler.ServeHTTP(w, r)
 		}

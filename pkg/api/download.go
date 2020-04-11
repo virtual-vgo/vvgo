@@ -22,7 +22,7 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	urlFunc, ok := x[bucketName]
 	if !ok {
-		unauthorized(w, r)
+		unauthorized(w)
 		return
 	}
 
@@ -32,7 +32,7 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, downloadURL, http.StatusFound)
 	case minio.ErrorResponse:
 		if e.StatusCode == http.StatusNotFound {
-			notFound(w, r)
+			notFound(w)
 		} else {
 			internalServerError(w)
 		}

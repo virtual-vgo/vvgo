@@ -68,10 +68,10 @@ func invalidContent(w http.ResponseWriter) {
 	http.Error(w, "", http.StatusUnsupportedMediaType)
 }
 
-func notFound(w http.ResponseWriter, r *http.Request) {
-	http.NotFound(w, r)
+func notFound(w http.ResponseWriter) {
+	http.Error(w, "404 page not found", http.StatusNotFound)
 }
 
-func unauthorized(w http.ResponseWriter, r *http.Request) {
+func unauthorized(w http.ResponseWriter) {
 	http.Error(w, "authorization failed", http.StatusUnauthorized)
 }

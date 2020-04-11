@@ -60,14 +60,14 @@ func (x Sheets) List() []Sheet {
 	return sheets
 }
 
-func (x Sheets) Store(ctx context.Context, sheets []Sheet, pdfBytes []byte) bool {
+func (x Sheets) Store(ctx context.Context, sheets []Sheet, fileBytes []byte) bool {
 	// first, validate all the sheets
 	if ok := validateSheets(sheets); !ok {
 		return false
 	}
 
 	// hash the pdf bytes
-	fileKey := fmt.Sprintf("%x.pdf", md5.Sum(pdfBytes))
+	fileKey := fmt.Sprintf("%x.pdf", md5.Sum(fileBytes))
 	for i := range sheets {
 		sheets[i].FileKey = fileKey
 	}
@@ -75,7 +75,7 @@ func (x Sheets) Store(ctx context.Context, sheets []Sheet, pdfBytes []byte) bool
 	// store the pdf
 	x.PutObject(fileKey, &storage.Object{
 		ContentType: "application/pdf",
-		Buffer:      *bytes.NewBuffer(pdfBytes),
+		Buffer:      *bytes.NewBuffer(fileBytes),
 	})
 
 	// now we update the data file

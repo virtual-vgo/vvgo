@@ -42,10 +42,7 @@ func (x SheetsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	default:
-		if ok := jsonEncode(&buffer, &rows); !ok {
-			internalServerError(w)
-			return
-		}
+		jsonEncode(&buffer, &rows)
 	}
 	buffer.WriteTo(w)
 }

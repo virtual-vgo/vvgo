@@ -1,10 +1,7 @@
 package api
 
 import (
-	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
-	"golang.org/x/net/html"
-	"os"
 )
 
 func init() {
@@ -27,12 +24,4 @@ func (x *MockBucket) GetObject(name string, dest *storage.Object) bool {
 
 func (x *MockBucket) DownloadURL(name string) (string, error) {
 	return x.downloadURL(name)
-}
-
-func tokenizeHTMLFile(src string) *html.Tokenizer {
-	file, err := os.Open(src)
-	if err != nil {
-		panic(fmt.Errorf("os.Open() failed: %v", err))
-	}
-	return html.NewTokenizer(file)
 }
