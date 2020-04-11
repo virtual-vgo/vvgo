@@ -18,49 +18,11 @@ jobs:
       - name: Build image
         env:
           DOCKER_BUILDKIT: 1
-        run: |
-          CACHE_FROM=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
-          docker pull $CACHE_FROM:latest-builder || true
-          docker pull $CACHE_FROM:latest || true
-
-          docker build . \
-            --file Dockerfile \
-            --target builder \
-            --cache-from=$CACHE_FROM:latest-builder \
-            --build-arg GITHUB_SHA=$GITHUB_SHA \
-            --build-arg GITHUB_REF=$GITHUB_REF \
-            --tag builder
-
-          docker build . \
-            --file Dockerfile \
-            --target vvgo \
-            --cache-from=$CACHE_FROM:latest-builder \
-            --cache-from=$CACHE_FROM:latest \
-            --tag artifact
-
-          docker build infra/object-cache \
-            --file infra/object-cache/Dockerfile \
-            --tag object-cache
-
-          docker build infra/page-cache \
-            --file infra/page-cache/Dockerfile \
-            --tag page-cache
+        run: make images
 
       - name: Push images
         shell: bash
         run: |
-          set -x
-          IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$VVGO_IMAGE_NAME
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-          OBJECT_CACHE_IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$OBJECT_CACHE_IMAGE_NAME
-          PAGE_CACHE_IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$PAGE_CACHE_IMAGE_NAME
-          for tag in $(docker run --rm artifact --release-tags); do
-              docker tag builder $IMAGE_ID:$tag-builder
-              docker tag artifact $IMAGE_ID:$tag
-              docker tag object-cache $OBJECT_CACHE_IMAGE_ID:$tag
-              docker tag page-cache $PAGE_CACHE_IMAGE_ID:$tag
-              docker push $IMAGE_ID:$tag-builder
-              docker push $IMAGE_ID:$tag
-              docker push $OBJECT_CACHE_IMAGE_ID:$tag
-              docker push $PAGE_CACHE_IMAGE_ID:$tag
+          for tag in latest $(docker run --rm artifact --release-tags); do
+              RELEASE_TAG="$tag" make push
           done

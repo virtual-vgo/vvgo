@@ -10,14 +10,13 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . ./
-RUN go generate ./... \
-    && go build -v -o /vvgo github.com/virtual-vgo/vvgo/cmd/vvgo
+RUN BIN_PATH=/ make vvgo
 
 FROM builder as tester
-CMD ["go", "test", "-v", "./..."]
+CMD ["make", "test"]
 
 FROM gcr.io/distroless/base-debian10 as vvgo
-COPY --from=builder /vvgo /vvgo
+COPY --from=builder vvgo vvgo
 COPY ./public /public
 EXPOSE 8080
 CMD ["/vvgo"]
