@@ -23,8 +23,10 @@ BIN_PATH ?= .
 BUILD_FLAGS ?= -v
 vvgo:
 	go generate ./... && go build -v -o $(BIN_PATH)/vvgo $(GO_PREFIX)/cmd/vvgo
+
 vvgo-uploader:
 	go generate ./... && go build -v -o $(BIN_PATH)/vvgo-uploader $(GO_PREFIX)/cmd/vvgo-uploader
+
 
 # Build images
 
