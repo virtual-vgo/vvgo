@@ -96,13 +96,13 @@ func uploadSheet(client *api.Client, reader *bufio.Reader, project string, fileN
 		// read the part numbers
 		fmt.Printf(":: please enter part numbers (ex 1, 2): ")
 		rawNumbers, _ := reader.ReadString('\n')
-		var partNumbers []uint
+		var partNumbers []uint8
 		for _, raw := range strings.Split(rawNumbers, ",") {
-			number, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 4)
+			number, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 8)
 			if err != nil {
 				printError(err)
 			} else {
-				partNumbers = append(partNumbers, uint(number))
+				partNumbers = append(partNumbers, uint8(number))
 			}
 		}
 

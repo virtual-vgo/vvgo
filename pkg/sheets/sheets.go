@@ -128,7 +128,7 @@ func validateSheets(sheets []Sheet) bool {
 type Sheet struct {
 	Project    string `json:"project"`
 	PartName   string `json:"part_name"`
-	PartNumber uint   `json:"part_number"`
+	PartNumber uint8  `json:"part_number"`
 	FileKey    string `json:"file_key"`
 }
 

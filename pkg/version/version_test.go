@@ -106,7 +106,7 @@ func TestReleaseTags(t *testing.T) {
 		version.GitBranch,
 		fmt.Sprintf("%s-%s", version.GitBranch, version.GitSha),
 	}
-	gotTags := version.ReleaseTags()
+	gotTags := ReleaseTags()
 	if want, got := strings.Join(wantTags, ", "), strings.Join(gotTags, ", "); want != got {
 		t.Errorf("wanted `%s`, got `%s`", want, got)
 	}

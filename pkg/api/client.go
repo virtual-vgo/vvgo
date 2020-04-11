@@ -33,9 +33,11 @@ func (x *Client) Upload(uploads ...Upload) ([]UploadStatus, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer req.Body.Close()
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "Virtual-VGO Client")
 	req.SetBasicAuth(x.BasicAuthUser, x.BasicAuthPass)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
