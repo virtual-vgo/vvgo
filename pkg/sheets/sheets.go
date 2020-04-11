@@ -20,6 +20,10 @@ var (
 	ErrMissingPartNumber = fmt.Errorf("missing part number")
 )
 
+func ValidMediaType(mediaType string) bool {
+	return mediaType == "application/pdf"
+}
+
 type Sheets struct {
 	Bucket
 	Locker

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"strings"
 )
 
 const DataFile = "__data.json"
@@ -19,6 +20,10 @@ var (
 	ErrMissingPartName   = fmt.Errorf("missing part name")
 	ErrMissingPartNumber = fmt.Errorf("missing part number")
 )
+
+func ValidMediaType(mediaType string) bool {
+	return strings.HasPrefix(mediaType, "audio/")
+}
 
 type Clix struct {
 	Bucket

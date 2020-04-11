@@ -8,7 +8,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 )
@@ -154,13 +153,13 @@ func (upload *Upload) ValidateClix() UploadStatus {
 	}
 
 	// verify content type
-	if !strings.HasPrefix(upload.ContentType, "audio/") {
+	if !clix.ValidMediaType(upload.ContentType) {
 		logger.WithField("Content-Type", upload.ContentType).Error("invalid content type")
 		return uploadInvalidContent(upload)
 	}
 
 	// verify the file contents
-	if contentType := http.DetectContentType(upload.FileBytes); !strings.HasPrefix(contentType, "audio/") {
+	if contentType := http.DetectContentType(upload.FileBytes); !clix.ValidMediaType(upload.ContentType) {
 		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
 		return uploadInvalidContent(upload)
 	}
@@ -209,13 +208,13 @@ func (upload *Upload) ValidateSheets() UploadStatus {
 	}
 
 	// verify content type
-	if upload.ContentType != "application/pdf" {
+	if !sheets.ValidMediaType(upload.ContentType) {
 		logger.WithField("Content-Type", upload.ContentType).Error("invalid content type")
 		return uploadInvalidContent(upload)
 	}
 
 	// verify the file contents
-	if contentType := http.DetectContentType(upload.FileBytes); contentType != "application/pdf" {
+	if contentType := http.DetectContentType(upload.FileBytes); !sheets.ValidMediaType(contentType) {
 		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
 		return uploadInvalidContent(upload)
 	}
