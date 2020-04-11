@@ -105,7 +105,7 @@ push/object-cache:
 	docker push $(IMAGE_REPO)/$(OBJECT_CACHE_IMAGE_NAME):$(RELEASE_TAG)
 
 push/kv-cache:
-	docker tag object-cache $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):$(RELEASE_TAG)
+	docker tag kv-cache $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):$(RELEASE_TAG)
 	docker push $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):$(RELEASE_TAG)
 
 push: push/vvgo-builder push/vvgo push/page-cache push/object-cache push/kv-cache
