@@ -115,19 +115,6 @@ func TestSheets_Store(t *testing.T) {
 		fileBytes: []byte("pretend i'm a pdf file ;)"),
 	}
 
-	mockList := []Sheet{
-		{
-			Project:    "cheese",
-			PartName:   "turnip",
-			PartNumber: 5,
-			FileKey:    "0xff",
-		},
-	}
-	var listBuffer bytes.Buffer
-	if err := json.NewEncoder(&listBuffer).Encode(&mockList); err != nil {
-		t.Fatalf("json.Encode() failed: %v", err)
-	}
-
 	wantOk := true
 	wantNames := []string{
 		fmt.Sprintf("%x.pdf", md5.Sum([]byte("pretend i'm a pdf file ;)"))),
@@ -145,7 +132,9 @@ func TestSheets_Store(t *testing.T) {
 	sheets := Sheets{
 		Bucket: &MockBucket{
 			getObject: func(name string, object *storage.Object) bool {
-				*object = storage.Object{ContentType: "application/json", Buffer: listBuffer}
+				*object = storage.Object{
+					ContentType: "application/json",
+					Buffer:      *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5,"file_key":"0xff"}]`))}
 				return true
 			},
 			putObject: func(name string, object *storage.Object) bool {

@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -20,25 +19,9 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		body string
 	}
 
-	fileBytes, err := ioutil.ReadFile("testdata/empty.pdf")
+	uploadsJSON, err := ioutil.ReadFile("testdata/upload.json")
 	if err != nil {
-		t.Fatalf("ioutil.ReadAll() failed: %v", err)
-	}
-
-	mockUploads := []Upload{{
-		UploadType: UploadTypeSheets,
-		SheetsUpload: &SheetsUpload{
-			PartNames:   []string{"trumpet"},
-			PartNumbers: []uint8{2},
-		},
-		Project:     "01-snake-eater",
-		FileName:    "Dio_Brando.pdf",
-		FileBytes:   fileBytes,
-		ContentType: "application/pdf",
-	}}
-	var uploadsBuffer bytes.Buffer
-	if err := json.NewEncoder(&uploadsBuffer).Encode(&mockUploads); err != nil {
-		t.Fatalf("json.Encode() failed: %v", err)
+		t.Fatalf("ioutil.ReadFile() failed: %v", err)
 	}
 
 	type request struct {
@@ -74,7 +57,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request: request{
 				method:      http.MethodGet,
 				contentType: "application/json",
-				body:        uploadsBuffer.String(),
+				body:        string(uploadsJSON),
 			},
 			wants: wants{
 				code: http.StatusMethodNotAllowed,
@@ -85,7 +68,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request: request{
 				method:      http.MethodPost,
 				contentType: "text/html",
-				body:        uploadsBuffer.String(),
+				body:        string(uploadsJSON),
 			},
 			wants: wants{
 				code: http.StatusUnsupportedMediaType,
@@ -107,7 +90,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request: request{
 				method:      http.MethodPost,
 				contentType: "application/json",
-				body:        uploadsBuffer.String(),
+				body:        string(uploadsJSON),
 			},
 			wants: wants{
 				body: `[{"file_name":"Dio_Brando.pdf","code":200}]`,
