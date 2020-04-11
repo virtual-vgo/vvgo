@@ -22,20 +22,20 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 
 	for _, tt := range []struct {
 		name    string
-		config  Config
+		config  ServerConfig
 		request *http.Request
 		wants   wants
 	}{
 		{
 			name:    "success",
 			request: newAuthRequest("/", "jackson", "the-earth-is-flat"),
-			config:  Config{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants:   wants{code: http.StatusOK},
 		},
 		{
 			name:    "incorrect user",
 			request: newAuthRequest("/", "", "the-earth-is-flat"),
-			config:  Config{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -45,7 +45,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		{
 			name:    "incorrect pass",
 			request: newAuthRequest("/", "jackson", ""),
-			config:  Config{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -55,7 +55,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		{
 			name:    "no auth",
 			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
-			config:  Config{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",

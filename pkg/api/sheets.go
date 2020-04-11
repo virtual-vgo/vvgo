@@ -2,7 +2,7 @@ package api
 
 import (
 	"bytes"
-	"github.com/virtual-vgo/vvgo/pkg/sheet"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"path/filepath"
 )
@@ -11,7 +11,7 @@ const SheetsBucketName = "sheets"
 const SheetsLockerKey = "sheets.lock"
 
 type SheetsHandler struct {
-	sheet.Sheets
+	sheets.Sheets
 }
 
 func (x SheetsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +21,7 @@ func (x SheetsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type tableRow struct {
-		sheet.Sheet
+		sheets.Sheet
 		Link string `json:"link"`
 	}
 

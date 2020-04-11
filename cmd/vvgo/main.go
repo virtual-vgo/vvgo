@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/sheet"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
@@ -19,13 +19,13 @@ var logger = log.Logger()
 type Config struct {
 	InitializeStorage bool
 	StorageConfig     storage.Config
-	ApiConfig         api.Config
+	ApiConfig         api.ServerConfig
 }
 
 func NewDefaultConfig() Config {
 	return Config{
 		InitializeStorage: false,
-		ApiConfig: api.Config{
+		ApiConfig: api.ServerConfig{
 			ListenAddress:    ":8080",
 			MaxContentLength: 1e6,
 			BasicAuthUser:    "admin",
@@ -105,7 +105,7 @@ func main() {
 	if sheetsBucket == nil || sheetsLocker == nil {
 		os.Exit(1)
 	}
-	sheets := sheet.Sheets{
+	sheets := sheets.Sheets{
 		Bucket: sheetsBucket,
 		Locker: sheetsLocker,
 	}

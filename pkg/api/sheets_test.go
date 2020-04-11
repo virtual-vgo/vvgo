@@ -2,7 +2,7 @@ package api
 
 import (
 	"bytes"
-	"github.com/virtual-vgo/vvgo/pkg/sheet"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +17,7 @@ func TestSheetsServer_ServeHTTP(t *testing.T) {
 	}
 
 	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
-		if name == sheet.DataFile {
+		if name == sheets.DataFile {
 			*dest = storage.Object{
 				ContentType: "application/json",
 				Buffer:      *bytes.NewBuffer([]byte(`[]`)),
@@ -43,7 +43,7 @@ func TestSheetsServer_ServeHTTP(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			server := SheetsHandler{sheet.Sheets{Bucket: &mockBucket}}
+			server := SheetsHandler{sheets.Sheets{Bucket: &mockBucket}}
 			recorder := httptest.NewRecorder()
 			server.ServeHTTP(recorder, tt.request)
 			gotResp := recorder.Result()

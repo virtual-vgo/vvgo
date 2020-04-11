@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/sheet"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"sync"
 	"time"
@@ -19,7 +19,7 @@ const (
 )
 
 type UploadHandler struct {
-	sheet.Sheets
+	sheets.Sheets
 }
 
 type Upload struct {
@@ -40,12 +40,12 @@ type UploadStatus struct {
 
 type ClixUpload struct {
 	PartNames   []string `json:"part_names"`
-	PartNumbers []uint    `json:"part_numbers"`
+	PartNumbers []uint   `json:"part_numbers"`
 }
 
 type SheetsUpload struct {
 	PartNames   []string `json:"part_names"`
-	PartNumbers []uint    `json:"part_numbers"`
+	PartNumbers []uint   `json:"part_numbers"`
 }
 
 const UploadsTimeout = 10 * time.Second
@@ -127,7 +127,7 @@ func handleClickTrack(_ context.Context, upload *Upload) UploadStatus {
 	return uploadNotImplemented(upload)
 }
 
-func handleSheetMusic(ctx context.Context, sheets sheet.Sheets, upload *Upload) UploadStatus {
+func handleSheetMusic(ctx context.Context, sheets sheets.Sheets, upload *Upload) UploadStatus {
 	if status := upload.ValidateSheets(); status != uploadSuccess(upload) {
 		return status
 	}
@@ -166,13 +166,13 @@ func (upload *Upload) ValidateSheets() UploadStatus {
 	return uploadSuccess(upload)
 }
 
-func (upload *Upload) Sheets() []sheet.Sheet {
+func (upload *Upload) Sheets() []sheets.Sheet {
 	sheetsUpload := upload.SheetsUpload
 	// convert the upload into sheets
-	gotSheets := make([]sheet.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))
+	gotSheets := make([]sheets.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))
 	for _, partName := range sheetsUpload.PartNames {
 		for _, partNumber := range sheetsUpload.PartNumbers {
-			gotSheets = append(gotSheets, sheet.Sheet{
+			gotSheets = append(gotSheets, sheets.Sheet{
 				Project:    upload.Project,
 				PartName:   partName,
 				PartNumber: partNumber,

@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/sheet"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"net/http/pprof"
 )
@@ -11,14 +11,14 @@ var logger = log.Logger()
 
 var PublicFiles = "public"
 
-type Config struct {
+type ServerConfig struct {
 	ListenAddress    string
 	MaxContentLength int64
 	BasicAuthUser    string
 	BasicAuthPass    string
 }
 
-func NewServer(config Config, sheets sheet.Sheets) *http.Server {
+func NewServer(config ServerConfig, sheets sheets.Sheets) *http.Server {
 	auth := make(basicAuth)
 	if config.BasicAuthUser != "" {
 		auth[config.BasicAuthUser] = config.BasicAuthPass

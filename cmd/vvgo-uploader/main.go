@@ -4,13 +4,11 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/sheet"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"io/ioutil"
 	"net/http"
@@ -45,6 +43,8 @@ var (
 	green  = color.New(color.FgGreen)
 )
 
+func printError(err error) { red.Fprintf(os.Stderr, ":: error: %v\n", err) }
+
 func main() {
 	if err := func() error {
 		var flags Flags
@@ -59,13 +59,16 @@ func main() {
 			return fmt.Errorf("unkown project: %s", flags.project)
 		}
 
+		client := api.NewClient(api.ClientConfig{
+			ServerAddress: flags.endpoint,
+			BasicAuthUser: flags.user,
+			BasicAuthPass: flags.pass,
+		})
+
 		reader := bufio.NewReader(os.Stdin)
-
-		// loop over each file name
 		for _, fileName := range flag.Args() {
-			uploadSheet(reader, flags, fileName)
+			uploadSheet(client, reader, flags.project, fileName)
 		}
-
 		return nil
 	}(); err != nil {
 		red.Fprintf(os.Stderr, "%v\n", err)
@@ -73,7 +76,7 @@ func main() {
 	}
 }
 
-func uploadSheet(reader *bufio.Reader, flags Flags, fileName string) {
+func uploadSheet(client *api.Client, reader *bufio.Reader, project string, fileName string) {
 	blue.Printf(":: found `%s`\n", fileName)
 
 	if !yesNo(reader, "upload this file") {
@@ -93,13 +96,13 @@ func uploadSheet(reader *bufio.Reader, flags Flags, fileName string) {
 		// read the part numbers
 		fmt.Printf(":: please enter part numbers (ex 1, 2): ")
 		rawNumbers, _ := reader.ReadString('\n')
-		var partNumbers []int
+		var partNumbers []uint
 		for _, raw := range strings.Split(rawNumbers, ",") {
-			real, err := strconv.Atoi(strings.TrimSpace(raw))
+			number, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 4)
 			if err != nil {
 				printError(err)
 			} else {
-				partNumbers = append(partNumbers, real)
+				partNumbers = append(partNumbers, uint(number))
 			}
 		}
 
@@ -119,14 +122,14 @@ func uploadSheet(reader *bufio.Reader, flags Flags, fileName string) {
 				PartNames:   partNames,
 				PartNumbers: partNumbers,
 			},
-			Project:     flags.project,
+			Project:     project,
 			FileName:    fileName,
 			FileBytes:   fileBytes,
 			ContentType: "application/pdf",
 		}
 
 		// validate the sheets locally
-		var gotSheets []sheet.Sheet
+		var gotSheets []sheets.Sheet
 		for _, sheet := range upload.Sheets() {
 			if err := sheet.Validate(); err != nil {
 				printError(err)
@@ -142,7 +145,7 @@ func uploadSheet(reader *bufio.Reader, flags Flags, fileName string) {
 		}
 		if yesNo(reader, "is this ok") {
 			uploads = append(uploads, upload)
-			doUpload(flags, uploads)
+			doUpload(client, uploads)
 			return
 		}
 	}
@@ -155,37 +158,11 @@ func yesNo(reader *bufio.Reader, pre string) bool {
 	return answer == "" || answer == "y" || answer == "yes"
 }
 
-func doUpload(flags Flags, uploads []api.Upload) {
-	if len(uploads) == 0 {
-		return
-	}
-
-	var buffer bytes.Buffer
-	json.NewEncoder(&buffer).Encode(&uploads)
-	req, err := http.NewRequest(http.MethodPost, flags.endpoint, &buffer)
+func doUpload(client *api.Client, uploads []api.Upload) {
+	results, err := client.Upload(uploads...)
 	if err != nil {
 		printError(err)
 		return
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.SetBasicAuth(flags.user, flags.pass)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		printError(err)
-		return
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		printError(fmt.Errorf("http request received non-200 status: `%d: %s`", resp.StatusCode, bytes.TrimSpace(body)))
-		return
-	}
-
-	var results []api.UploadStatus
-	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
-		printError(err)
 	}
 	for _, result := range results {
 		if result.Code != http.StatusOK {
@@ -194,8 +171,4 @@ func doUpload(flags Flags, uploads []api.Upload) {
 			green.Printf(":: file %s uploaded successfully!\n", result.FileName)
 		}
 	}
-}
-
-func printError(err error) {
-	red.Fprintf(os.Stderr, ":: error: %v\n", err)
 }
