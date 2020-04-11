@@ -19,7 +19,7 @@ func TestSheet_Validate(t *testing.T) {
 	type fields struct {
 		Project    string
 		Instrument string
-		PartNumber int
+		PartNumber uint
 	}
 	for _, tt := range []struct {
 		name   string

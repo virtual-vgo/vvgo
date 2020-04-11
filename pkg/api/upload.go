@@ -40,12 +40,12 @@ type UploadStatus struct {
 
 type ClixUpload struct {
 	PartNames   []string `json:"part_names"`
-	PartNumbers []int    `json:"part_numbers"`
+	PartNumbers []uint    `json:"part_numbers"`
 }
 
 type SheetsUpload struct {
 	PartNames   []string `json:"part_names"`
-	PartNumbers []int    `json:"part_numbers"`
+	PartNumbers []uint    `json:"part_numbers"`
 }
 
 const UploadsTimeout = 10 * time.Second

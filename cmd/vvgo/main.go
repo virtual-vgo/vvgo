@@ -26,6 +26,7 @@ func NewDefaultConfig() Config {
 	return Config{
 		InitializeStorage: false,
 		ApiConfig: api.Config{
+			ListenAddress:    ":8080",
 			MaxContentLength: 1e6,
 			BasicAuthUser:    "admin",
 			BasicAuthPass:    "admin",
@@ -46,9 +47,7 @@ func NewDefaultConfig() Config {
 }
 
 func (x *Config) ParseEnv() {
-	if initializeStorage := os.Getenv("INITIALIZE_STORAGE"); initializeStorage != "" {
-		x.InitializeStorage, _ = strconv.ParseBool(initializeStorage)
-	}
+	x.InitializeStorage, _ = strconv.ParseBool(os.Getenv("INITIALIZE_STORAGE"))
 
 	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
 		x.StorageConfig.MinioConfig.Endpoint = endpoint
@@ -61,10 +60,16 @@ func (x *Config) ParseEnv() {
 	}
 	x.StorageConfig.MinioConfig.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
 
+	if address := os.Getenv("MINIO_SECRET_KEY"); address != "" {
+		x.StorageConfig.RedisConfig.Address = address
+	}
+
 	if maxContentLength, _ := strconv.ParseInt(os.Getenv("API_MAX_CONTENT_LENGTH"), 10, 64); maxContentLength != 0 {
 		x.ApiConfig.MaxContentLength = maxContentLength
 	}
-
+	if listenAddress := os.Getenv("LISTEN_ADDRESS"); listenAddress != "" {
+		x.ApiConfig.ListenAddress = listenAddress
+	}
 	if user := os.Getenv("BASIC_AUTH_USER"); user != "" {
 		x.ApiConfig.BasicAuthUser = user
 	}

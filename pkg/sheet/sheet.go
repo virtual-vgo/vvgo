@@ -16,7 +16,7 @@ var (
 type Sheet struct {
 	Project    string `json:"project"`
 	PartName   string `json:"part_name"`
-	PartNumber int    `json:"part_number"`
+	PartNumber uint   `json:"part_number"`
 	FileKey    string `json:"file_key"`
 }
 
