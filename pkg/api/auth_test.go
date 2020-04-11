@@ -1,14 +1,13 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
-func TestApiServer_Authenticate(t *testing.T) {
+func TestBasicAuth_Authenticate(t *testing.T) {
 	type wants struct {
 		code   int
 		body   string
@@ -23,20 +22,20 @@ func TestApiServer_Authenticate(t *testing.T) {
 
 	for _, tt := range []struct {
 		name    string
-		config  Config
+		config  ServerConfig
 		request *http.Request
 		wants   wants
 	}{
 		{
 			name:    "success",
 			request: newAuthRequest("/", "jackson", "the-earth-is-flat"),
-			config:  Config{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants:   wants{code: http.StatusOK},
 		},
 		{
 			name:    "incorrect user",
 			request: newAuthRequest("/", "", "the-earth-is-flat"),
-			config:  Config{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -46,7 +45,7 @@ func TestApiServer_Authenticate(t *testing.T) {
 		{
 			name:    "incorrect pass",
 			request: newAuthRequest("/", "jackson", ""),
-			config:  Config{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -56,7 +55,7 @@ func TestApiServer_Authenticate(t *testing.T) {
 		{
 			name:    "no auth",
 			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
-			config:  Config{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -66,10 +65,10 @@ func TestApiServer_Authenticate(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			server := NewServer(MockObjectStore{}, tt.config)
-			server.Authenticate(func(w http.ResponseWriter, r *http.Request) {
+			server := basicAuth{tt.config.BasicAuthUser: tt.config.BasicAuthPass}
+			server.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// do nothing
-			})(recorder, tt.request)
+			})).ServeHTTP(recorder, tt.request)
 
 			gotCode := recorder.Code
 			gotBody := strings.TrimSpace(recorder.Body.String())
@@ -82,7 +81,6 @@ func TestApiServer_Authenticate(t *testing.T) {
 			}
 
 			for wantK := range tt.wants.header {
-				fmt.Println(tt.wants.header)
 				if expected, got := tt.wants.header[wantK], recorder.Header().Get(wantK); expected != got {
 					t.Errorf("expected `%s: %v`, got `%s: %v`", wantK, expected, wantK, got)
 				}

@@ -4,17 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 )
 
 // Package to query version information
 
-var (
-	version Version
-	setOnce sync.Once
-)
+var version Version
 
-func Set(ver Version)       { setOnce.Do(func() { version = ver }) }
+func Set(ver Version)       { version = ver }
 func String() string        { return version.String() }
 func JSON() json.RawMessage { return version.JSON() }
 func Header() http.Header   { return version.Header() }

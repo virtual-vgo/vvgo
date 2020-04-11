@@ -24,17 +24,23 @@ BUILD_FLAGS ?= -v
 vvgo:
 	go generate ./... && go build -v -o $(BIN_PATH)/vvgo $(GO_PREFIX)/cmd/vvgo
 
+vvgo-uploader:
+	go generate ./... && go build -v -o $(BIN_PATH)/vvgo-uploader $(GO_PREFIX)/cmd/vvgo-uploader
+
+
 # Build images
 
 VVGO_IMAGE_NAME=vvgo
 PAGE_CACHE_IMAGE_NAME=page-cache
 OBJECT_CACHE_IMAGE_NAME=object-cache
+KV_CACHE_IMAGE_NAME=kv-cache
 
 GITHUB_REPO ?= virtual-vgo/vvgo
 IMAGE_REPO ?= docker.pkg.github.com/$(GITHUB_REPO)
 VVGO_IMAGE_CACHE ?= $(IMAGE_REPO)/$(VVGO_IMAGE_NAME):latest
 PAGE_CACHE_IMAGE_CACHE ?= $(IMAGE_REPO)/$(PAGE_CACHE_IMAGE_NAME):latest
 OBJECT_CACHE_IMAGE_CACHE ?= $(IMAGE_REPO)/$(OBJECT_CACHE_IMAGE_NAME):latest
+KV_CACHE_IMAGE_CACHE ?= $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):latest
 
 .PHONY: images images/vvgo images/object-cache images/page-cache
 
@@ -71,7 +77,14 @@ images/object-cache:
 		--cache-from=$(OBJECT_CACHE_IMAGE_CACHE) \
 		--tag page-cache
 
-images: images/vvgo images/page-cache images/object-cache
+images/kv-cache:
+	docker pull $(KV_CACHE_IMAGE_CACHE) || true
+	docker build infra/kv-cache \
+		--file infra/kv-cache/Dockerfile \
+		--cache-from=$(KV_CACHE_IMAGE_CACHE) \
+		--tag kv-cache
+
+images: images/vvgo images/page-cache images/object-cache images/kv-cache
 
 # Push images
 
@@ -95,4 +108,8 @@ push/object-cache:
 	docker tag object-cache $(IMAGE_REPO)/$(OBJECT_CACHE_IMAGE_NAME):$(RELEASE_TAG)
 	docker push $(IMAGE_REPO)/$(OBJECT_CACHE_IMAGE_NAME):$(RELEASE_TAG)
 
-push: push/vvgo-builder push/vvgo push/page-cache push/object-cache
+push/kv-cache:
+	docker tag kv-cache $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):$(RELEASE_TAG)
+	docker push $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):$(RELEASE_TAG)
+
+push: push/vvgo-builder push/vvgo push/page-cache push/object-cache push/kv-cache

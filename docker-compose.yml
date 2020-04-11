@@ -1,20 +1,5 @@
 version: "3.7"
 services:
-  vvgo:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: vvgo
-    environment:
-      MINIO_ENDPOINT: minio:9000
-      MINIO_REGION_NAME: sfo2
-      MINIO_ACCESS_KEY: vvgo-dev-access
-      MINIO_SECRET_KEY: vvgo-dev-secret
-      BASIC_AUTH_USER: vvgo-dev
-      BASIC_AUTH_PASS: vvgo-dev
-    expose:
-      - 8080
-
   page-cache:
     build:
       context: infra/page-cache
@@ -39,3 +24,28 @@ services:
       MINIO_CACHE_AFTER: 1
     expose:
       - 9000
+
+  kv-cache:
+    build:
+      context: infra/kv-cache
+      dockerfile: Dockerfile
+    container_name: kv-cache
+    expose:
+      - 6379
+
+  vvgo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vvgo
+    environment:
+      INITIALIZE_STORAGE: "true"
+      REDIS_ADDRESS: kv-cache:6379
+      MINIO_ENDPOINT: object-cache:9000
+      MINIO_REGION_NAME: sfo2
+      MINIO_ACCESS_KEY: vvgo-dev-access
+      MINIO_SECRET_KEY: vvgo-dev-secret
+      BASIC_AUTH_USER: vvgo-dev
+      BASIC_AUTH_PASS: vvgo-dev
+    expose:
+      - 8080

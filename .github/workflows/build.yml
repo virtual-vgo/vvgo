@@ -1,11 +1,6 @@
 name: build
 on: push
 
-env:
-  VVGO_IMAGE_NAME: vvgo
-  PAGE_CACHE_IMAGE_NAME: page-cache
-  OBJECT_CACHE_IMAGE_NAME: object-cache
-
 jobs:
   vvgo:
     runs-on: ubuntu-latest

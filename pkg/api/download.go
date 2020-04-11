@@ -5,25 +5,36 @@ import (
 	"net/http"
 )
 
-func (x *Server) Download(w http.ResponseWriter, r *http.Request) {
+// Accepts query params `object` and `bucket`.
+// The map key is the bucket param.
+// The map value function should return the url of the object and any error encountered.
+type DownloadHandler map[string]func(objectName string) (url string, err error)
+
+func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}
 
 	values := r.URL.Query()
-	key := values.Get("key")
-	bucket := values.Get("bucket")
+	objectName := values.Get("object")
+	bucketName := values.Get("bucket")
 
-	downloadURL, err := x.DownloadURL(bucket, key)
+	urlFunc, ok := x[bucketName]
+	if !ok {
+		unauthorized(w)
+		return
+	}
+
+	downloadURL, err := urlFunc(objectName)
 	switch e := err.(type) {
 	case nil:
 		http.Redirect(w, r, downloadURL, http.StatusFound)
 	case minio.ErrorResponse:
 		if e.StatusCode == http.StatusNotFound {
-			http.NotFound(w, r)
+			notFound(w)
 		} else {
-			http.Error(w, "", http.StatusInternalServerError)
+			internalServerError(w)
 		}
 	default:
 		logger.WithError(err).Error("minio.StatObject() failed")
