@@ -30,7 +30,7 @@ func init() {
 }
 
 func readValidPartNames(fs http.FileSystem) map[string]struct{} {
-	fileBytes := mustRead(fs, "/valid_part_names.txt")
+	fileBytes := mustRead(fs, "/ValidPartNames.txt")
 	rawNames := strings.Split(string(fileBytes), "\n")
 	names := make(map[string]struct{}, len(rawNames))
 	for _, raw := range rawNames {
