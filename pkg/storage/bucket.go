@@ -47,8 +47,8 @@ func (x File) ValidateMediaType(pre string) error {
 		return ErrInvalidMediaType
 	case !strings.HasPrefix(http.DetectContentType(x.Bytes), pre):
 		return ErrDetectedInvalidContent
-//	case !strings.HasPrefix(mime.TypeByExtension(x.Ext), pre):
-//		return ErrInvalidFileExtension
+		//	case !strings.HasPrefix(mime.TypeByExtension(x.Ext), pre):
+		//		return ErrInvalidFileExtension
 	default:
 		return nil
 	}

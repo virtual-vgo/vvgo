@@ -3,7 +3,6 @@ module github.com/virtual-vgo/vvgo
 go 1.14
 
 require (
-	github.com/BurntSushi/toml v0.3.1
 	github.com/bsm/redislock v0.5.0
 	github.com/fatih/color v1.9.0
 	github.com/go-redis/redis/v7 v7.2.0
