@@ -3,9 +3,9 @@ package api
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/stretchr/testify/assert"
-	"github.com/virtual-vgo/vvgo/pkg/clix"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
 	"net/http"
@@ -46,6 +46,9 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 				return true
 			},
 			putObject: func(string, *storage.Object) bool { return true },
+			putFile: func(file *storage.File) (string, bool) {
+				return fmt.Sprintf("hash-file-name%s", file.Ext), true
+			},
 		},
 		locker: MockLocker{
 			lock:   func(ctx context.Context) bool { return true },
@@ -121,8 +124,12 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request.Header.Set("Content-Type", tt.request.contentType)
 			recorder := httptest.NewRecorder()
 			UploadHandler{&Database{
-				Sheets: sheets.Sheets{Bucket: &mocks.bucket, Locker: &mocks.locker},
-				Clix:   clix.Clix{Bucket: &mocks.bucket, Locker: &mocks.locker},
+				Parts: parts.Parts{
+					Bucket: &mocks.bucket,
+					Locker: &mocks.locker,
+				},
+				Sheets: &mocks.bucket,
+				Clix:   &mocks.bucket,
 			}}.ServeHTTP(recorder, request)
 			assert.Equal(t, tt.wants.code, recorder.Code, "code")
 			assert.Equal(t, tt.wants.body, strings.TrimSpace(recorder.Body.String()), "body")

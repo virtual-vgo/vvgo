@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
-	"mime"
 	"net/http"
 	"net/url"
 	"strings"
@@ -43,13 +42,13 @@ var ErrDetectedInvalidContent = fmt.Errorf("detected invalid content")
 var ErrInvalidFileExtension = fmt.Errorf("invalid file extension")
 
 func (x File) ValidateMediaType(pre string) error {
-	switch true {
-	case strings.HasPrefix(x.MediaType, pre) == false:
+	switch {
+	case !strings.HasPrefix(x.MediaType, pre):
 		return ErrInvalidMediaType
-	case strings.HasPrefix(http.DetectContentType(x.Bytes), pre) == false:
+	case !strings.HasPrefix(http.DetectContentType(x.Bytes), pre):
 		return ErrDetectedInvalidContent
-	case strings.HasPrefix(mime.TypeByExtension(x.Ext), pre) == false:
-		return ErrInvalidFileExtension
+//	case !strings.HasPrefix(mime.TypeByExtension(x.Ext), pre):
+//		return ErrInvalidFileExtension
 	default:
 		return nil
 	}

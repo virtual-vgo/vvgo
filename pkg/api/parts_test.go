@@ -36,7 +36,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 
 	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
 		if name == PartsBucketName {
-			sheets := []parts.Part{{
+			parts := []parts.Part{{
 				ID: parts.ID{
 					Project: "truly",
 					Name:    "dio-brando",
@@ -44,7 +44,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 				},
 			}}
 			var buffer bytes.Buffer
-			json.NewEncoder(&buffer).Encode(sheets)
+			json.NewEncoder(&buffer).Encode(parts)
 			*dest = storage.Object{
 				ContentType: "application/json",
 				Buffer:      buffer,
@@ -91,7 +91,11 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			server := SheetsHandler{sheets.Sheets{Bucket: &mockBucket}}
+			server := PartsHandler{&Database{
+				Parts:  parts.Parts{Bucket: &mockBucket},
+				Sheets: &mockBucket,
+				Clix:   &mockBucket,
+			}}
 			recorder := httptest.NewRecorder()
 			request := httptest.NewRequest(tt.request.method, "/sheets", strings.NewReader(tt.request.body))
 			request.Header.Set("Accept", tt.request.accepts)

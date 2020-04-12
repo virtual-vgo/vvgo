@@ -10,21 +10,26 @@ func init() {
 }
 
 type MockBucket struct {
-	putObject   func(name string, object *storage.Object) bool
-	getObject   func(name string, dest *storage.Object) bool
+	putFile     func(file *storage.File) (string, bool)
 	downloadURL func(name string) (string, error)
+	getObject   func(name string, dest *storage.Object) bool
+	putObject   func(name string, object *storage.Object) bool
 }
 
-func (x *MockBucket) PutObject(name string, object *storage.Object) bool {
-	return x.putObject(name, object)
+func (x *MockBucket) PutFile(file *storage.File) (string, bool) {
+	return x.putFile(file)
+}
+
+func (x *MockBucket) DownloadURL(name string) (string, error) {
+	return x.downloadURL(name)
 }
 
 func (x *MockBucket) GetObject(name string, dest *storage.Object) bool {
 	return x.getObject(name, dest)
 }
 
-func (x *MockBucket) DownloadURL(name string) (string, error) {
-	return x.downloadURL(name)
+func (x *MockBucket) PutObject(name string, object *storage.Object) bool {
+	return x.putObject(name, object)
 }
 
 type MockLocker struct {

@@ -206,8 +206,8 @@ func (x UploadHandler) handleSheetMusic(ctx context.Context, upload *Upload) Upl
 		Ext:       filepath.Ext(upload.FileName),
 		Bytes:     upload.FileBytes,
 	}
-	if err := file.ValidateMediaType("audio/"); err != nil {
-		return uploadBadRequest(upload, err.Error())
+	if err := file.ValidateMediaType("application/pdf"); err != nil {
+		return uploadInvalidContent(upload)
 	}
 
 	objectKey, ok := x.Clix.PutFile(&file)
@@ -215,7 +215,7 @@ func (x UploadHandler) handleSheetMusic(ctx context.Context, upload *Upload) Upl
 		return uploadInternalServerError(upload)
 	}
 
-	gotParts := makeParts(upload.Project, upload.ClixUpload.PartNames, upload.ClixUpload.PartNumbers)
+	gotParts := makeParts(upload.Project, upload.SheetsUpload.PartNames, upload.SheetsUpload.PartNumbers)
 	for i := range gotParts {
 		gotParts[i].Click = objectKey
 	}
