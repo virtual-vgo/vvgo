@@ -53,7 +53,7 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Run `go vet ./...`
-        run: go vet ./...
+        run: go generate && go vet ./...
 
   go-unit-tests:
     runs-on: ubuntu-latest
@@ -71,4 +71,4 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Run `go test -v -race ./...`
-        run: go test -v -race ./...
+        run: go generate && go test -v -race ./...
