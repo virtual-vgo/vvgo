@@ -41,17 +41,15 @@ func TestClient_Upload(t *testing.T) {
 	defer ts.Close()
 	client.ServerAddress = ts.URL
 
-	fileBytes, err := ioutil.ReadFile("testdata/empty.pdf")
+	fileBytes, err := ioutil.ReadFile("testdata/sheet-music.pdf")
 	if err != nil {
 		t.Fatalf("ioutil.ReadAll() failed: %v", err)
 	}
 
 	uploads := []Upload{{
-		UploadType: UploadTypeSheets,
-		SheetsUpload: &SheetsUpload{
-			PartNames:   []string{"trumpet"},
-			PartNumbers: []uint8{2},
-		},
+		UploadType:  UploadTypeSheets,
+		PartNames:   []string{"trumpet"},
+		PartNumbers: []uint8{2},
 		Project:     "01-snake-eater",
 		FileName:    "Dio_Brando.pdf",
 		FileBytes:   fileBytes,

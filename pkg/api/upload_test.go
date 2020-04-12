@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -46,8 +45,8 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 				return true
 			},
 			putObject: func(string, *storage.Object) bool { return true },
-			putFile: func(file *storage.File) (string, bool) {
-				return fmt.Sprintf("hash-file-name%s", file.Ext), true
+			putFile: func(file *storage.File) bool {
+				return true
 			},
 		},
 		locker: MockLocker{

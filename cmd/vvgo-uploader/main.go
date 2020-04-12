@@ -73,7 +73,7 @@ func main() {
 
 		reader := bufio.NewReader(os.Stdin)
 		for _, fileName := range flag.Args() {
-			uploadFile(client, reader, flags.project, fileName)
+			uploadFile(client, os.Stdout, reader, flags.project, fileName)
 		}
 		return nil
 	}(); err != nil {
@@ -82,122 +82,109 @@ func main() {
 	}
 }
 
-func uploadFile(client *api.Client, reader *bufio.Reader, project string, fileName string) {
+func uploadFile(client *api.Client, writer io.Writer, reader *bufio.Reader, project string, fileName string) {
 	for {
 		blue.Printf(":: found `%s`\n", fileName)
 
-		if !yesNo(os.Stdout, reader, "upload this file") {
+		if !yesNo(writer, reader, "upload this file") {
 			blue.Println("skipping...")
 			return
 		}
 
-		// read the file
-		fileBytes, err := ioutil.ReadFile(fileName)
-		if err != nil {
+		var upload api.Upload
+		if ok := readUpload(writer, reader, &upload, project, fileName); !ok {
+			return
+		}
+
+		if err := upload.Validate(); err != nil {
 			printError(err)
-			return
-		}
-
-		// guess upload type based on the file contents
-		contentType := http.DetectContentType(fileBytes)
-
-		// start the upload request
-		upload := api.Upload{
-			Project:     project,
-			FileName:    fileName,
-			FileBytes:   fileBytes,
-			ContentType: contentType,
-		}
-
-		switch true {
-		case strings.HasPrefix(contentType, "application/pdf"):
-			if ok := readSheetUpload(os.Stdout, reader, &upload); !ok {
+			if yesNo(writer, reader, "try again? (；一ω一||)") {
+				continue
+			} else {
 				return
 			}
-		case strings.HasPrefix(contentType, "audio/"):
-			if ok := readClickUpload(os.Stdout, reader, &upload); !ok {
-				return
-			}
-		default:
-			red.Printf(":: i don't know how to handle media type: `%s`. (´･ω･`)", contentType)
-			return
 		}
 
 		// render results
-		gotParts := upload.RenderParts()
-		fmt.Fprintf(os.Stdout, ":: this will create the following %s:\n", upload.UploadType)
+		gotParts := upload.Parts()
+		fmt.Fprintf(writer, ":: this will create the following %s:\n", upload.UploadType)
 		for _, part := range gotParts {
-			fmt.Fprintln(os.Stdout, part.String())
+			fmt.Fprintln(writer, part.String())
 		}
-		if yesNo(os.Stdout, reader, "is this ok") {
+		if yesNo(writer, reader, "is this ok") {
 			doUpload(client, upload)
 			return
 		}
 	}
 }
 
-func readClickUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload) bool {
-	if !yesNo(os.Stdout, reader, "this is a click track") {
-		red.Println(":: i don't know what this is. (;´д｀)")
+func readUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload, project string, fileName string) bool {
+	fileBytes, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		printError(err)
+		return false
+	}
+	contentType := readMediaType(fileBytes)
+	uploadType := readUploadType(writer, reader, contentType)
+	if uploadType == "" {
 		return false
 	}
 
-	for {
-		partNumbers := readPartNumbers(writer, reader)
-		partNames := readPartNames(writer, reader)
-
-		dest.UploadType = api.UploadTypeClix
-		dest.ClixUpload = &api.ClixUpload{
-			PartNames:   partNames,
-			PartNumbers: partNumbers,
-		}
-		if err := dest.ValidateClix(); err != nil {
-			printError(err)
-			if !yesNo(os.Stdout, reader, "try again? (；一ω一||)") {
-				return false
-			}
-		} else {
-			return true
-		}
+	partNumbers := readPartNumbers(writer, reader)
+	partNames := readPartNames(writer, reader)
+	*dest = api.Upload{
+		UploadType:  uploadType,
+		PartNames:   partNames,
+		PartNumbers: partNumbers,
+		Project:     project,
+		FileName:    fileName,
+		FileBytes:   fileBytes,
+		ContentType: contentType,
 	}
-}
-
-func readSheetUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload) bool {
-	if !yesNo(os.Stdout, reader, "this is a music sheet") {
-		printError(errors.New(":: i don't know what this is. つ´Д`)つ"))
-		return false
-	}
-
-	for {
-		partNumbers := readPartNumbers(writer, reader)
-		partNames := readPartNames(writer, reader)
-
-		dest.UploadType = api.UploadTypeSheets
-		dest.SheetsUpload = &api.SheetsUpload{
-			PartNames:   partNames,
-			PartNumbers: partNumbers,
-		}
-		if err := dest.ValidateSheets(); err != nil {
-			printError(err)
-			if !yesNo(os.Stdout, reader, "try again? (；一ω一||)") {
-				return false
-			}
-		} else {
-			return true
-		}
-	}
+	return true
 }
 
 func yesNo(writer io.Writer, reader *bufio.Reader, pre string) bool {
 	yellow.Fprintf(writer, ":: %s [Y/n]? ", pre)
-	answer, _ := reader.ReadString('\n')
+	answer, err := reader.ReadString('\n')
+	if err != nil {
+		printError(err)
+		return false
+	}
 	answer = strings.TrimSpace(strings.ToLower(answer))
 	return answer == "" || answer == "y" || answer == "yes"
 }
 
+func readMediaType(fileBytes []byte) string {
+	// guess upload type based on the file contents
+	return http.DetectContentType(fileBytes)
+}
+
+func readUploadType(writer io.Writer, reader *bufio.Reader, mediaType string) api.UploadType {
+	switch true {
+	case strings.HasPrefix(mediaType, "application/pdf"):
+		if yesNo(writer, reader, "this is a music sheet") {
+			return api.UploadTypeSheets
+		}
+		printError(errors.New("i don't know what this is. つ´Д`)つ"))
+	case strings.HasPrefix(mediaType, "audio/"):
+		if yesNo(writer, reader, "this is a click track") {
+			return api.UploadTypeClix
+		}
+		printError(errors.New("i don't know what this is. (;´д｀)"))
+	default:
+		printError(fmt.Errorf("i don't know how to handle media type: `%s`. (´･ω･`)", mediaType))
+	}
+	return ""
+}
+
 func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
 	fmt.Fprintf(writer, ":: please enter part numbers (ex 1, 2): ")
-	rawNumbers, _ := reader.ReadString('\n')
+	rawNumbers, err := reader.ReadString('\n')
+	if err != nil {
+		printError(err)
+		return nil
+	}
 	var partNumbers []uint8
 	for _, raw := range strings.Split(rawNumbers, ",") {
 		number, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 8)
@@ -212,7 +199,11 @@ func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
 
 func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
 	fmt.Fprintf(writer, ":: please enter part names (ex trumpet, flute): ")
-	rawNames, _ := reader.ReadString('\n')
+	rawNames, err := reader.ReadString('\n')
+	if err != nil {
+		printError(err)
+		return nil
+	}
 	partNames := strings.Split(rawNames, ",")
 	for i := range partNames {
 		partNames[i] = strings.ToLower(strings.TrimSpace(partNames[i]))

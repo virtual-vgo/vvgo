@@ -27,7 +27,7 @@ type ServerConfig struct {
 }
 
 type FileBucket interface {
-	PutFile(file *storage.File) (string, bool)
+	PutFile(file *storage.File) bool
 	DownloadURL(name string) (string, error)
 }
 

@@ -10,13 +10,13 @@ func init() {
 }
 
 type MockBucket struct {
-	putFile     func(file *storage.File) (string, bool)
+	putFile     func(file *storage.File) bool
 	downloadURL func(name string) (string, error)
 	getObject   func(name string, dest *storage.Object) bool
 	putObject   func(name string, object *storage.Object) bool
 }
 
-func (x *MockBucket) PutFile(file *storage.File) (string, bool) {
+func (x *MockBucket) PutFile(file *storage.File) bool {
 	return x.putFile(file)
 }
 
