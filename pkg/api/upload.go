@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -35,21 +35,15 @@ type Upload struct {
 }
 
 var (
-	ErrInvalidUploadType  = fmt.Errorf("invalid upload type")
-	ErrMissingProject     = fmt.Errorf("missing project")
-	ErrProjectNotFound    = fmt.Errorf("project not found")
-	ErrMissingPartNames   = fmt.Errorf("missing part names")
-	ErrMissingPartNumbers = fmt.Errorf("missing part numbers")
-	ErrEmptyFileBytes     = fmt.Errorf("empty file bytes")
+	ErrInvalidUploadType  = errors.New("invalid upload type")
+	ErrMissingProject     = errors.New("missing project")
+	ErrProjectNotFound    = errors.New("project not found")
+	ErrMissingPartNames   = errors.New("missing part names")
+	ErrMissingPartNumbers = errors.New("missing part numbers")
+	ErrEmptyFileBytes     = errors.New("empty file bytes")
 )
 
 func (upload *Upload) Validate() error {
-	switch upload.UploadType {
-	case UploadTypeClix, UploadTypeSheets:
-	default:
-		return ErrInvalidUploadType
-	}
-
 	switch {
 	case upload.Project == "":
 		return ErrMissingProject
@@ -61,8 +55,16 @@ func (upload *Upload) Validate() error {
 		return ErrMissingPartNumbers
 	case len(upload.FileBytes) == 0:
 		return ErrEmptyFileBytes
+	}
+
+	file := upload.File()
+	switch upload.UploadType {
+	case UploadTypeClix:
+		return file.ValidateMediaType("audio/")
+	case UploadTypeSheets:
+		return file.ValidateMediaType("application/pdf")
 	default:
-		return nil
+		return ErrInvalidUploadType
 	}
 }
 
@@ -208,27 +210,11 @@ func uploadCtxCancelled(upload *Upload, err error) UploadStatus {
 	}
 }
 
-func uploadNotImplemented(upload *Upload) UploadStatus {
-	return UploadStatus{
-		FileName: upload.FileName,
-		Code:     http.StatusNotImplemented,
-		Error:    "lo sentimos, no implementado",
-	}
-}
-
 func uploadBadRequest(upload *Upload, reason string) UploadStatus {
 	return UploadStatus{
 		FileName: upload.FileName,
 		Code:     http.StatusBadRequest,
 		Error:    reason,
-	}
-}
-
-func uploadInvalidContent(upload *Upload) UploadStatus {
-	return UploadStatus{
-		FileName: upload.FileName,
-		Code:     http.StatusUnsupportedMediaType,
-		Error:    "unsupported media type",
 	}
 }
 

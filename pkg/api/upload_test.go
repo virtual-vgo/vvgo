@@ -4,14 +4,147 @@ import (
 	"bytes"
 	"context"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestUpload_Validate(t *testing.T) {
+	sheetBytes, err := ioutil.ReadFile(filepath.Join("testdata", "sheet-music.pdf"))
+	require.NoError(t, err, "ioutil.ReadFile() failed")
+	clickBytes, err := ioutil.ReadFile(filepath.Join("testdata", "click-track.mp3"))
+	require.NoError(t, err, "ioutil.ReadFile() failed")
+
+	for _, tt := range []struct {
+		name   string
+		upload Upload
+		want   error
+	}{
+		{
+			name: "invalid type",
+			upload: Upload{
+				PartNames:   []string{"trumpet"},
+				PartNumbers: []uint8{1},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
+				FileBytes:   sheetBytes,
+				ContentType: "application/pdf",
+			},
+			want: ErrInvalidUploadType,
+		},
+		{
+			name: "invalid part names",
+			upload: Upload{
+				UploadType:  UploadTypeSheets,
+				PartNumbers: []uint8{1},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
+				FileBytes:   sheetBytes,
+				ContentType: "application/pdf",
+			},
+			want: ErrMissingPartNames,
+		},
+		{
+			name: "invalid part numbers",
+			upload: Upload{
+				UploadType:  UploadTypeClix,
+				PartNames:   []string{"trumpet"},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "click-track.mp3"),
+				FileBytes:   clickBytes,
+				ContentType: "audio/mpeg",
+			},
+			want: ErrMissingPartNumbers,
+		},
+		{
+			name: "invalid project",
+			upload: Upload{
+				UploadType:  UploadTypeClix,
+				Project:     "00-mighty-morphin-power-ranger",
+				PartNames:   []string{"trumpet"},
+				PartNumbers: []uint8{1},
+				FileName:    filepath.Join("testdata", "click-track.mp3"),
+				FileBytes:   clickBytes,
+				ContentType: "audio/mpeg",
+			},
+			want: ErrProjectNotFound,
+		},
+		{
+			name: "empty file bytes",
+			upload: Upload{
+				UploadType:  UploadTypeClix,
+				PartNames:   []string{"trumpet"},
+				PartNumbers: []uint8{1},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "click-track.mp3"),
+				ContentType: "audio/mpeg",
+			},
+			want: ErrEmptyFileBytes,
+		},
+		{
+			name: "click/invalid",
+			upload: Upload{
+				UploadType:  UploadTypeClix,
+				PartNames:   []string{"trumpet"},
+				PartNumbers: []uint8{1},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "click-track.mp3"),
+				FileBytes:   sheetBytes,
+				ContentType: "audio/mpeg",
+			},
+			want: storage.ErrDetectedInvalidContent,
+		},
+		{
+			name: "click/valid",
+			upload: Upload{
+				UploadType:  UploadTypeClix,
+				PartNames:   []string{"trumpet"},
+				PartNumbers: []uint8{1},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "click-track.mp3"),
+				FileBytes:   clickBytes,
+				ContentType: "audio/mpeg",
+			},
+			want: nil,
+		},
+		{
+			name: "sheet/invalid",
+			upload: Upload{
+				UploadType:  UploadTypeSheets,
+				PartNames:   []string{"trumpet"},
+				PartNumbers: []uint8{1},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
+				FileBytes:   clickBytes,
+				ContentType: "application/pdf",
+			},
+			want: storage.ErrDetectedInvalidContent,
+		},
+		{
+			name: "sheet/valid",
+			upload: Upload{
+				UploadType:  UploadTypeSheets,
+				PartNames:   []string{"trumpet"},
+				PartNumbers: []uint8{1},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
+				FileBytes:   sheetBytes,
+				ContentType: "application/pdf",
+			},
+			want: nil,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.upload.Validate())
+		})
+	}
+}
 
 func TestUploadHandler_ServeHTTP(t *testing.T) {
 	type wants struct {
@@ -134,12 +267,4 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			assert.Equal(t, tt.wants.body, strings.TrimSpace(recorder.Body.String()), "body")
 		})
 	}
-}
-
-func TestUpload_ValidateSheets(t *testing.T) {
-
-}
-
-func TestUpload_Sheets(t *testing.T) {
-
 }
