@@ -28,7 +28,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		t.Fatalf("ioutil.ReadFile() failed: %v", err)
 	}
 	mockHTML := string(mockBodyBytes)
-	mockJSON := `[{"click_track":"#","file_key":"0xff","link":"/download?bucket=sheets\u0026object=0xff","part_name":"dio-brando","part_number":3,"project":"truly","sheet_music":"#"}]`
+	mockJSON := `[{"click_track":"/download?bucket=clix\u0026object=mock-client","file_key":"0xff","link":"/download?bucket=sheets\u0026object=0xff","part_name":"dio-brando","part_number":3,"project":"truly","sheet_music":"/download?bucket=sheets\u0026object=mock-sheet"}]`
 
 	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
 		if name == parts.DataFile {
@@ -38,6 +38,8 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 					Name:    "dio-brando",
 					Number:  3,
 				},
+				Sheet: "mock-sheet",
+				Click: "mock-client",
 			}}
 			var buffer bytes.Buffer
 			json.NewEncoder(&buffer).Encode(parts)

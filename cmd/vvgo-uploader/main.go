@@ -148,12 +148,12 @@ func readClickUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload) b
 		partNumbers := readPartNumbers(writer, reader)
 		partNames := readPartNames(writer, reader)
 
-		dest.UploadType = api.UploadTypeSheets
+		dest.UploadType = api.UploadTypeClix
 		dest.ClixUpload = &api.ClixUpload{
 			PartNames:   partNames,
 			PartNumbers: partNumbers,
 		}
-		if err := dest.ValidateSheets(); err != nil {
+		if err := dest.ValidateClix(); err != nil {
 			printError(err)
 			if !yesNo(os.Stdout, reader, "try again? (；一ω一||)") {
 				return false

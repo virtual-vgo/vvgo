@@ -210,14 +210,14 @@ func (x UploadHandler) handleSheetMusic(ctx context.Context, upload *Upload) Upl
 		return uploadInvalidContent(upload)
 	}
 
-	objectKey, ok := x.Clix.PutFile(&file)
+	objectKey, ok := x.Sheets.PutFile(&file)
 	if !ok {
 		return uploadInternalServerError(upload)
 	}
 
 	gotParts := makeParts(upload.Project, upload.SheetsUpload.PartNames, upload.SheetsUpload.PartNumbers)
 	for i := range gotParts {
-		gotParts[i].Click = objectKey
+		gotParts[i].Sheet = objectKey
 	}
 	if ok := x.Parts.Save(ctx, gotParts); !ok {
 		return uploadInternalServerError(upload)
