@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/stretchr/testify/assert"
+	"github.com/virtual-vgo/vvgo/pkg/clix"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
@@ -19,7 +20,12 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		body string
 	}
 
-	uploadsJSON, err := ioutil.ReadFile("testdata/upload.json")
+	sheetsUploadBody, err := ioutil.ReadFile("testdata/sheet-upload.json")
+	if err != nil {
+		t.Fatalf("ioutil.ReadFile() failed: %v", err)
+	}
+
+	clixUploadBody, err := ioutil.ReadFile("testdata/clix-upload.json")
 	if err != nil {
 		t.Fatalf("ioutil.ReadFile() failed: %v", err)
 	}
@@ -57,7 +63,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request: request{
 				method:      http.MethodGet,
 				contentType: "application/json",
-				body:        string(uploadsJSON),
+				body:        string(sheetsUploadBody),
 			},
 			wants: wants{
 				code: http.StatusMethodNotAllowed,
@@ -68,7 +74,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request: request{
 				method:      http.MethodPost,
 				contentType: "text/html",
-				body:        string(uploadsJSON),
+				body:        string(sheetsUploadBody),
 			},
 			wants: wants{
 				code: http.StatusUnsupportedMediaType,
@@ -90,10 +96,22 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request: request{
 				method:      http.MethodPost,
 				contentType: "application/json",
-				body:        string(uploadsJSON),
+				body:        string(sheetsUploadBody),
 			},
 			wants: wants{
-				body: `[{"file_name":"Dio_Brando.pdf","code":200}]`,
+				body: `[{"file_name":"music-sheet.pdf","code":200}]`,
+				code: http.StatusOK,
+			},
+		},
+		{
+			name: "type:clix/success",
+			request: request{
+				method:      http.MethodPost,
+				contentType: "application/json",
+				body:        string(clixUploadBody),
+			},
+			wants: wants{
+				body: `[{"file_name":"click-track.mp3","code":200}]`,
 				code: http.StatusOK,
 			},
 		},
@@ -102,10 +120,10 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request := httptest.NewRequest(tt.request.method, "/upload", strings.NewReader(tt.request.body))
 			request.Header.Set("Content-Type", tt.request.contentType)
 			recorder := httptest.NewRecorder()
-			UploadHandler{&Database{Sheets: sheets.Sheets{
-				Bucket: &mocks.bucket,
-				Locker: &mocks.locker,
-			}}}.ServeHTTP(recorder, request)
+			UploadHandler{&Database{
+				Sheets: sheets.Sheets{Bucket: &mocks.bucket, Locker: &mocks.locker},
+				Clix:   clix.Clix{Bucket: &mocks.bucket, Locker: &mocks.locker},
+			}}.ServeHTTP(recorder, request)
 			assert.Equal(t, tt.wants.code, recorder.Code, "code")
 			assert.Equal(t, tt.wants.body, strings.TrimSpace(recorder.Body.String()), "body")
 		})

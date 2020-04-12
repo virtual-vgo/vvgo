@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -25,6 +26,10 @@ func NewClient(config ClientConfig) *Client {
 }
 
 func (x *Client) Upload(uploads ...Upload) ([]UploadStatus, error) {
+	file, _ := os.OpenFile("pkg/api/testdata/clix-upload.json", os.O_WRONLY|os.O_TRUNC, 0600)
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	encoder.Encode(&uploads)
 	if len(uploads) == 0 {
 		return []UploadStatus{}, nil
 	}

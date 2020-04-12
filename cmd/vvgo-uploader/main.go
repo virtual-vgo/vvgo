@@ -113,18 +113,18 @@ func uploadFile(client *api.Client, reader *bufio.Reader, project string, fileNa
 		switch true {
 		case sheets.ValidMediaType(contentType):
 			if !yesNo(os.Stdout, reader, "this is a music sheet") {
-				red.Printf(":: i don't know what this is. つ´Д`)つ")
+				red.Println(":: i don't know what this is. つ´Д`)つ")
 				return
 			}
 			readSheetUpload(os.Stdout, reader, &upload)
 		case clix.ValidMediaType(contentType):
 			if !yesNo(os.Stdout, reader, "this is a click track") {
-				red.Printf(":: i don't know what this is. (;´д｀)")
+				red.Println(":: i don't know what this is. (;´д｀)")
 				return
 			}
 			readClickUpload(os.Stdout, reader, &upload)
 		default:
-			red.Printf(":: i don't know how to handle media type: `%s`. (´･ω･`)")
+			red.Printf(":: i don't know how to handle media type: `%s`. (´･ω･`)", contentType)
 			return
 		}
 
