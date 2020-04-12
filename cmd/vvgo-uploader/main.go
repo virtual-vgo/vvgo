@@ -140,7 +140,7 @@ func readClickUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload) {
 	partNames := readPartNames(writer, reader)
 
 	dest.UploadType = api.UploadTypeClix
-	dest.SheetsUpload = &api.SheetsUpload{
+	dest.ClixUpload = &api.ClixUpload{
 		PartNames:   partNames,
 		PartNumbers: partNumbers,
 	}
