@@ -1,8 +1,13 @@
 package projects
 
 import (
+	"errors"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 )
+
+var logger = log.Logger()
+
+var ErrNotFound = errors.New("project not found")
 
 // A VVGO project
 type Project struct {
@@ -21,8 +26,6 @@ type Project struct {
 	Lyricists    []string `json:"lyricists"`
 	AddlContent  []string `json:"addl_content"`
 }
-
-var logger = log.Logger()
 
 var project = Projects{projects: []Project{
 	{

@@ -37,7 +37,6 @@ type Upload struct {
 var (
 	ErrInvalidUploadType  = errors.New("invalid upload type")
 	ErrMissingProject     = errors.New("missing project")
-	ErrProjectNotFound    = errors.New("project not found")
 	ErrMissingPartNames   = errors.New("missing part names")
 	ErrMissingPartNumbers = errors.New("missing part numbers")
 	ErrEmptyFileBytes     = errors.New("empty file bytes")
@@ -48,7 +47,7 @@ func (upload *Upload) Validate() error {
 	case upload.Project == "":
 		return ErrMissingProject
 	case projects.Exists(upload.Project) == false:
-		return ErrProjectNotFound
+		return projects.ErrNotFound
 	case len(upload.PartNames) == 0:
 		return ErrMissingPartNames
 	case len(upload.PartNumbers) == 0:

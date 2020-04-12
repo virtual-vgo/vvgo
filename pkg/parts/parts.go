@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 )
 
@@ -14,9 +15,8 @@ const DataFile = "parts.json"
 var logger = log.Logger()
 
 var (
-	ErrMissingProject    = fmt.Errorf("missing project")
-	ErrMissingPartName   = fmt.Errorf("missing part name")
-	ErrMissingPartNumber = fmt.Errorf("missing part number")
+	ErrInvalidPartName   = fmt.Errorf("invalid part name")
+	ErrInvalidPartNumber = fmt.Errorf("invalid part number")
 )
 
 type Bucket interface {
@@ -146,16 +146,26 @@ func (x Part) ClickLink(bucket string) string {
 }
 
 func (x Part) Validate() error {
-	if x.Project == "" {
-		return ErrMissingProject
-	} else if x.Name == "" {
-		return ErrMissingPartName
-	} else if x.Number == 0 {
-		return ErrMissingPartNumber
-	} else {
+	switch true {
+	case projects.Exists(x.Project) == false:
+		return projects.ErrNotFound
+	case validName(x.Name) == false:
+		return ErrInvalidPartName
+	case validNumber(x.Number) == false:
+		return ErrInvalidPartNumber
+	default:
 		return nil
 	}
 }
+
+func validName(name string) bool {
+	if name == "" {
+		return false
+	}
+	return true
+}
+
+func validNumber(number uint8) bool { return number == 0 }
 
 type ID struct {
 	Project string `json:"project"`

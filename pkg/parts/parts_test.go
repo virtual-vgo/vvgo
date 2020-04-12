@@ -217,7 +217,7 @@ func TestPart_Validate(t *testing.T) {
 				Project:    "test-project",
 				PartNumber: 6,
 			},
-			want: ErrMissingPartName,
+			want: ErrInvalidPartName,
 		},
 		{
 			name: "missing part number",
@@ -225,7 +225,7 @@ func TestPart_Validate(t *testing.T) {
 				Project:    "test-project",
 				Instrument: "test-instrument",
 			},
-			want: ErrMissingPartNumber,
+			want: ErrInvalidPartNumber,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
