@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"strings"
 	"testing"
@@ -99,8 +100,8 @@ func TestParts_Save(t *testing.T) {
 
 	cmdArgs := args{
 		parts: []Part{{ID: ID{
-			Project: "cheese",
-			Name:    "broccoli",
+			Project: "01-snake-eater",
+			Name:    "trumpet",
 			Number:  3,
 		}}},
 	}
@@ -111,8 +112,8 @@ func TestParts_Save(t *testing.T) {
 		DataFile,
 	}
 	wantObjects := []storage.Object{
-		{ContentType: "application/json", Buffer: *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"cheese","part_name":"broccoli","part_number":3}]`))},
-		{ContentType: "application/json", Buffer: *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"cheese","part_name":"broccoli","part_number":3}]`))},
+		{ContentType: "application/json", Buffer: *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`))},
+		{ContentType: "application/json", Buffer: *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`))},
 	}
 
 	var gotNames []string
@@ -141,14 +142,14 @@ func TestParts_Save(t *testing.T) {
 	assert.Equal(t, wantOk, gotOk, "ok")
 	assert.Equal(t, wantNames, gotNames, "names")
 	if want, got := objectsToString(wantObjects), objectsToString(gotObjects); want != got {
-		t.Errorf("\nwant: %s\n got: %s", want, got)
+		t.Errorf("\nwant:\n%s\ngot:\n%s", want, got)
 	}
 }
 
 func objectsToString(objects []storage.Object) string {
 	var str string
 	for _, object := range objects {
-		str += fmt.Sprintf("content-type: `%s`, body: `%s`, ", object.ContentType, strings.TrimSpace(object.Buffer.String()))
+		str += fmt.Sprintf("content-type: `%s`, body: `%s`\n", object.ContentType, strings.TrimSpace(object.Buffer.String()))
 	}
 	return strings.TrimSpace(str)
 }
@@ -186,7 +187,7 @@ func TestPart_ClickLink(t *testing.T) {
 func TestPart_Validate(t *testing.T) {
 	type fields struct {
 		Project    string
-		Instrument string
+		PartName   string
 		PartNumber uint8
 	}
 	for _, tt := range []struct {
@@ -197,8 +198,8 @@ func TestPart_Validate(t *testing.T) {
 		{
 			name: "valid",
 			fields: fields{
-				Project:    "test-project",
-				Instrument: "test-instrument",
+				Project:    "01-snake-eater",
+				PartName:   "trumpet",
 				PartNumber: 6,
 			},
 			want: nil,
@@ -206,15 +207,24 @@ func TestPart_Validate(t *testing.T) {
 		{
 			name: "missing project",
 			fields: fields{
-				Instrument: "test-instrument",
+				PartName:   "trumpet",
 				PartNumber: 6,
 			},
-			want: ErrMissingProject,
+			want: projects.ErrNotFound,
 		},
 		{
-			name: "missing instrument",
+			name: "missing part name",
 			fields: fields{
-				Project:    "test-project",
+				Project:    "01-snake-eater",
+				PartNumber: 6,
+			},
+			want: ErrInvalidPartName,
+		},
+		{
+			name: "invalid part name",
+			fields: fields{
+				Project:    "01-snake-eater",
+				PartName:   "not-an-instrument",
 				PartNumber: 6,
 			},
 			want: ErrInvalidPartName,
@@ -222,8 +232,8 @@ func TestPart_Validate(t *testing.T) {
 		{
 			name: "missing part number",
 			fields: fields{
-				Project:    "test-project",
-				Instrument: "test-instrument",
+				Project:  "01-snake-eater",
+				PartName: "trumpet",
 			},
 			want: ErrInvalidPartNumber,
 		},
@@ -232,7 +242,7 @@ func TestPart_Validate(t *testing.T) {
 			x := &Part{
 				ID: ID{
 					Project: tt.fields.Project,
-					Name:    tt.fields.Instrument,
+					Name:    tt.fields.PartName,
 					Number:  tt.fields.PartNumber,
 				},
 			}

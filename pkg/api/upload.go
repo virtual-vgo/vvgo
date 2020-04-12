@@ -9,6 +9,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -80,7 +81,11 @@ func (upload *Upload) Parts() []parts.Part {
 	for _, name := range upload.PartNames {
 		for _, number := range upload.PartNumbers {
 			allParts = append(allParts, parts.Part{
-				ID: parts.ID{Project: upload.Project, Name: name, Number: number},
+				ID: parts.ID{
+					Project: strings.TrimSpace(strings.ToLower(upload.Project)),
+					Name:    strings.TrimSpace(strings.ToLower(name)),
+					Number:  number,
+				},
 			})
 		}
 	}

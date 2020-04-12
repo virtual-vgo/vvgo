@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"io"
@@ -185,16 +186,20 @@ func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
 		printError(err)
 		return nil
 	}
-	var partNumbers []uint8
+	var partNums []uint8
 	for _, raw := range strings.Split(rawNumbers, ",") {
-		number, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 8)
-		if err != nil {
+		bigNum, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 8)
+		num := uint8(bigNum)
+		switch {
+		case err != nil:
 			printError(err)
-		} else {
-			partNumbers = append(partNumbers, uint8(number))
+		case parts.ValidNumber(num) == false:
+			printError(parts.ErrInvalidPartNumber)
+		default:
+			partNums = append(partNums, num)
 		}
 	}
-	return partNumbers
+	return partNums
 }
 
 func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
@@ -204,11 +209,17 @@ func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
 		printError(err)
 		return nil
 	}
-	partNames := strings.Split(rawNames, ",")
-	for i := range partNames {
-		partNames[i] = strings.ToLower(strings.TrimSpace(partNames[i]))
+
+	var names []string
+	for _, name := range strings.Split(rawNames, ",") {
+		name := strings.ToLower(strings.TrimSpace(name))
+		if parts.ValidName(name) {
+			names = append(names, name)
+		} else {
+			printError(parts.ErrInvalidPartName)
+		}
 	}
-	return partNames
+	return names
 }
 
 func doUpload(client *api.Client, upload api.Upload) {

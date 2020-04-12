@@ -291,7 +291,7 @@ func Test_readPartNames(t *testing.T) {
 		},
 		{
 			name:  "invalid instrument name",
-			input: "mayonnaise\n",
+			input: "not-an-instrument\n",
 			wants: wants{
 				output: ":: please enter part names (ex trumpet, flute): ",
 				names:  nil,

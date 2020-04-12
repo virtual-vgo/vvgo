@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
 	"net/http"
@@ -73,7 +74,7 @@ func TestUpload_Validate(t *testing.T) {
 				FileBytes:   clickBytes,
 				ContentType: "audio/mpeg",
 			},
-			want: ErrProjectNotFound,
+			want: projects.ErrNotFound,
 		},
 		{
 			name: "empty file bytes",

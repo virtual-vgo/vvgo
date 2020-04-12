@@ -4,3 +4,4 @@ vvgo-uploader
 info.go
 !cmd/*
 *.exe
+data/statik

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/data"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -149,23 +150,24 @@ func (x Part) Validate() error {
 	switch true {
 	case projects.Exists(x.Project) == false:
 		return projects.ErrNotFound
-	case validName(x.Name) == false:
+	case ValidName(x.Name) == false:
 		return ErrInvalidPartName
-	case validNumber(x.Number) == false:
+	case ValidNumber(x.Number) == false:
 		return ErrInvalidPartNumber
 	default:
 		return nil
 	}
 }
 
-func validName(name string) bool {
+func ValidName(name string) bool {
 	if name == "" {
 		return false
 	}
-	return true
+	_, ok := data.ValidPartNames()[name]
+	return ok
 }
 
-func validNumber(number uint8) bool { return number == 0 }
+func ValidNumber(number uint8) bool { return number != 0 }
 
 type ID struct {
 	Project string `json:"project"`
