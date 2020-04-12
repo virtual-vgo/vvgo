@@ -34,7 +34,7 @@ func NewDefaultConfig() Config {
 		},
 		StorageConfig: storage.Config{
 			MinioConfig: storage.MinioConfig{
-				Endpoint:  "http://localhost:9000",
+				Endpoint:  "localhost:9000",
 				Region:    "sfo2",
 				AccessKey: "minioadmin",
 				SecretKey: "minioadmin",
@@ -120,8 +120,7 @@ func main() {
 func initializeStorage(db *api.Database) {
 	var wg sync.WaitGroup
 	for _, initFunc := range []func() bool{
-		db.Sheets.Init,
-		db.Clix.Init,
+		db.Parts.Init,
 	} {
 		wg.Add(1)
 		go func(initFunc func() bool) {

@@ -1,12 +1,18 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/clix"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net/http"
 	"net/http/pprof"
+)
+
+const (
+	SheetsBucketName = "sheets"
+	ClixBucketName   = "clix"
+	PartsBucketName  = "parts"
+	PartsLockerName  = "parts.lock"
 )
 
 var logger = log.Logger()
@@ -20,36 +26,34 @@ type ServerConfig struct {
 	BasicAuthPass    string
 }
 
+type FileBucket interface {
+	PutFile(file *storage.File) (string, bool)
+	DownloadURL(name string) (string, error)
+}
+
 type Database struct {
-	sheets.Sheets
-	clix.Clix
+	parts.Parts
+	Sheets FileBucket
+	Clix   FileBucket
 }
 
 func NewDatabase(client *storage.Client) *Database {
 	sheetsBucket := client.NewBucket(SheetsBucketName)
-	sheetsLocker := client.NewLocker(SheetsLockerKey)
 	clixBucket := client.NewBucket(ClixBucketName)
-	clixLocker := client.NewLocker(ClixLockerKey)
-
-	if sheetsBucket == nil || sheetsLocker == nil || clixBucket == nil || clixLocker == nil {
+	partsBucket := client.NewBucket(PartsBucketName)
+	partsLocker := client.NewLocker(PartsLockerName)
+	if sheetsBucket == nil || clixBucket == nil || partsBucket == nil || partsLocker == nil {
 		return nil
 	}
 
 	return &Database{
-		Sheets: sheets.Sheets{
-			Bucket: sheetsBucket,
-			Locker: sheetsLocker,
+		Parts: parts.Parts{
+			Bucket: partsBucket,
+			Locker: partsLocker,
 		},
-		Clix: clix.Clix{
-			Bucket: clixBucket,
-			Locker: clixLocker,
-		},
+		Sheets: sheetsBucket,
+		Clix:   clixBucket,
 	}
-}
-
-func (x *Database) Init() {
-	x.Sheets.Init()
-	x.Clix.Init()
 }
 
 func NewServer(config ServerConfig, database *Database) *http.Server {
@@ -73,15 +77,12 @@ func NewServer(config ServerConfig, database *Database) *http.Server {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-	mux.Handle("/sheets", auth.Authenticate(SheetsHandler{database.Sheets}))
-	mux.Handle("/sheets/", http.RedirectHandler("/sheets", http.StatusMovedPermanently))
-
-	mux.Handle("/clix", auth.Authenticate(ClixHandler{database.Clix}))
-	mux.Handle("/clix/", http.RedirectHandler("/clix", http.StatusMovedPermanently))
+	mux.Handle("/parts", auth.Authenticate(PartsHandler{database}))
+	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := DownloadHandler{
-		SheetsBucketName: database.Sheets.Bucket.DownloadURL,
-		ClixBucketName:   database.Clix.Bucket.DownloadURL,
+		SheetsBucketName: database.Sheets.DownloadURL,
+		ClixBucketName:   database.Clix.DownloadURL,
 	}
 	mux.Handle("/download", auth.Authenticate(downloadHandler))
 

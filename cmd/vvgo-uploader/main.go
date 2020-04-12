@@ -6,13 +6,12 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/clix"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"io"
 	"io/ioutil"
@@ -34,8 +33,8 @@ func (x *Flags) Parse() {
 	flag.BoolVar(&x.version, "version", false, "print version and quit")
 	flag.StringVar(&x.project, "project", "", "project for these uploads (required)")
 	flag.StringVar(&x.endpoint, "endpoint", "https://vvgo.org", "vvgo endpoint")
-	flag.StringVar(&x.user, "user", "admin", "basic auth username")
-	flag.StringVar(&x.pass, "pass", "admin", "basic auth password")
+	flag.StringVar(&x.user, "user", "vvgo-dev", "basic auth username")
+	flag.StringVar(&x.pass, "pass", "vvgo-dev", "basic auth password")
 	flag.Parse()
 }
 
@@ -111,23 +110,27 @@ func uploadFile(client *api.Client, reader *bufio.Reader, project string, fileNa
 		}
 
 		switch true {
-		case sheets.ValidMediaType(contentType):
-			if !yesNo(os.Stdout, reader, "this is a music sheet") {
-				red.Println(":: i don't know what this is. つ´Д`)つ")
+		case strings.HasPrefix(contentType, "application/pdf"):
+			if ok := readSheetUpload(os.Stdout, reader, &upload); !ok {
 				return
 			}
-			readSheetUpload(os.Stdout, reader, &upload)
-		case clix.ValidMediaType(contentType):
-			if !yesNo(os.Stdout, reader, "this is a click track") {
-				red.Println(":: i don't know what this is. (;´д｀)")
-				return
-			}
+		case strings.HasPrefix(contentType, "audio/"):
+
 			readClickUpload(os.Stdout, reader, &upload)
+			if ok := readClickUpload(os.Stdout, reader, &upload); !ok {
+				return
+			}
 		default:
 			red.Printf(":: i don't know how to handle media type: `%s`. (´･ω･`)", contentType)
 			return
 		}
 
+		// render results
+		gotParts := upload.RenderParts()
+		fmt.Fprintf(os.Stdout, ":: this will create the following %s:\n", upload.UploadType)
+		for _, part := range gotParts {
+			fmt.Fprintln(os.Stdout, part.String())
+		}
 		if yesNo(os.Stdout, reader, "is this ok") {
 			doUpload(client, upload)
 			return
@@ -135,57 +138,55 @@ func uploadFile(client *api.Client, reader *bufio.Reader, project string, fileNa
 	}
 }
 
-func readClickUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload) {
-	partNumbers := readPartNumbers(writer, reader)
-	partNames := readPartNames(writer, reader)
-
-	dest.UploadType = api.UploadTypeClix
-	dest.ClixUpload = &api.ClixUpload{
-		PartNames:   partNames,
-		PartNumbers: partNumbers,
+func readClickUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload) bool {
+	if !yesNo(os.Stdout, reader, "this is a click track") {
+		red.Println(":: i don't know what this is. (;´д｀)")
+		return false
 	}
 
-	// validate the sheets locally
-	var gotClix []clix.Click
-	for _, click := range dest.Clix() {
-		if err := click.Validate(); err != nil {
-			printError(err)
-		} else {
-			gotClix = append(gotClix, click)
+	for {
+		partNumbers := readPartNumbers(writer, reader)
+		partNames := readPartNames(writer, reader)
+
+		dest.UploadType = api.UploadTypeSheets
+		dest.ClixUpload = &api.ClixUpload{
+			PartNames:   partNames,
+			PartNumbers: partNumbers,
 		}
-	}
-
-	// render results
-	fmt.Fprintln(writer, ":: this will create the following clix:")
-	for _, click := range gotClix {
-		fmt.Fprintln(writer, click.String())
+		if err := dest.ValidateSheets(); err != nil {
+			printError(err)
+			if !yesNo(os.Stdout, reader, "try again? (；一ω一||)") {
+				return false
+			}
+		} else {
+			return true
+		}
 	}
 }
 
-func readSheetUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload) {
-	partNumbers := readPartNumbers(writer, reader)
-	partNames := readPartNames(writer, reader)
-
-	dest.UploadType = api.UploadTypeSheets
-	dest.SheetsUpload = &api.SheetsUpload{
-		PartNames:   partNames,
-		PartNumbers: partNumbers,
+func readSheetUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload) bool {
+	if !yesNo(os.Stdout, reader, "this is a music sheet") {
+		printError(errors.New(":: i don't know what this is. つ´Д`)つ"))
+		return false
 	}
 
-	// validate the sheets locally
-	var gotSheets []sheets.Sheet
-	for _, sheet := range dest.Sheets() {
-		if err := sheet.Validate(); err != nil {
-			printError(err)
-		} else {
-			gotSheets = append(gotSheets, sheet)
+	for {
+		partNumbers := readPartNumbers(writer, reader)
+		partNames := readPartNames(writer, reader)
+
+		dest.UploadType = api.UploadTypeSheets
+		dest.SheetsUpload = &api.SheetsUpload{
+			PartNames:   partNames,
+			PartNumbers: partNumbers,
 		}
-	}
-
-	// render results
-	fmt.Fprintln(writer, ":: this will create the following sheets:")
-	for _, sheet := range gotSheets {
-		fmt.Fprintln(writer, sheet.String())
+		if err := dest.ValidateSheets(); err != nil {
+			printError(err)
+			if !yesNo(os.Stdout, reader, "try again? (；一ω一||)") {
+				return false
+			}
+		} else {
+			return true
+		}
 	}
 }
 

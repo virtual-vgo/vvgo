@@ -7,15 +7,12 @@ import (
 )
 
 var logger = &logrus.Logger{
-	Out: os.Stderr,
-	Formatter: &logrus.TextFormatter{
-		ForceColors:   true,
-		FullTimestamp: true,
-	},
+	Out:          os.Stdout,
+	Formatter:    new(logrus.JSONFormatter),
 	Hooks:        make(logrus.LevelHooks),
 	Level:        logrus.InfoLevel,
 	ExitFunc:     os.Exit,
-	ReportCaller: false,
+	ReportCaller: true,
 }
 
 func Logger() *logrus.Logger { return logger }

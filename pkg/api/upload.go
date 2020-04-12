@@ -3,14 +3,17 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/clix"
+	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net/http"
 	"path/filepath"
 	"sync"
 	"time"
 )
+
+type UploadHandler struct{ *Database }
 
 type UploadType string
 
@@ -18,8 +21,6 @@ const (
 	UploadTypeClix   UploadType = "clix"
 	UploadTypeSheets UploadType = "sheets"
 )
-
-type UploadHandler struct{ *Database }
 
 type Upload struct {
 	UploadType    `json:"upload_type"`
@@ -29,6 +30,49 @@ type Upload struct {
 	FileName      string `json:"file_name"`
 	FileBytes     []byte `json:"file_bytes"`
 	ContentType   string `json:"content_type"`
+}
+
+var (
+	ErrMissingClix        = fmt.Errorf("missing field `clix_upload`")
+	ErrMissingSheets      = fmt.Errorf("missing field `sheets_upload`")
+	ErrMissingPartNames   = fmt.Errorf("missing part names")
+	ErrMissingPartNumbers = fmt.Errorf("missing part numbers")
+)
+
+func (upload *Upload) ValidateClix() error {
+	// verify that we have all the necessary info
+	clixUpload := upload.ClixUpload
+	if clixUpload == nil {
+		return ErrMissingClix
+	} else if len(clixUpload.PartNames) == 0 {
+		return ErrMissingPartNames
+	} else if len(clixUpload.PartNumbers) == 0 {
+		return ErrMissingPartNumbers
+	} else {
+		return nil
+	}
+}
+
+func (upload *Upload) ValidateSheets() error {
+	// verify that we have all the necessary info
+	sheetsUpload := upload.SheetsUpload
+	if sheetsUpload == nil {
+		return ErrMissingSheets
+	} else if len(sheetsUpload.PartNames) == 0 {
+		return ErrMissingPartNames
+	} else if len(sheetsUpload.PartNumbers) == 0 {
+		return ErrMissingPartNumbers
+	} else {
+		return nil
+	}
+}
+
+func (upload *Upload) File() *storage.File {
+	return &storage.File{
+		MediaType: upload.ContentType,
+		Ext:       filepath.Ext(upload.FileName),
+		Bytes:     upload.FileBytes,
+	}
 }
 
 type UploadStatus struct {
@@ -48,6 +92,8 @@ type SheetsUpload struct {
 }
 
 const UploadsTimeout = 10 * time.Second
+
+var ErrInvalidMediaType = fmt.Errorf("invalid media type")
 
 func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -99,9 +145,9 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// handle the upload
 			switch upload.UploadType {
 			case UploadTypeClix:
-				statuses <- handleClickTrack(ctx, x.Clix, upload)
+				statuses <- x.handleClickTrack(ctx, upload)
 			case UploadTypeSheets:
-				statuses <- handleSheetMusic(ctx, x.Sheets, upload)
+				statuses <- x.handleSheetMusic(ctx, upload)
 			default:
 				statuses <- UploadStatus{
 					FileName: upload.FileName,
@@ -122,119 +168,88 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&results)
 }
 
-func handleClickTrack(ctx context.Context, gotClix clix.Clix, upload *Upload) UploadStatus {
-	if status := upload.ValidateClix(); status != uploadSuccess(upload) {
-		return status
+func (x UploadHandler) handleClickTrack(ctx context.Context, upload *Upload) UploadStatus {
+	if err := upload.ValidateClix(); err != nil {
+		return uploadBadRequest(upload, err.Error())
 	}
-	file := clix.File{
+
+	file := upload.File()
+	if err := file.ValidateMediaType("audio/"); err != nil {
+		return uploadBadRequest(upload, err.Error())
+	}
+
+	objectKey, ok := x.Clix.PutFile(file)
+	if !ok {
+		return uploadInternalServerError(upload)
+	}
+
+	// update parts with the revision
+	gotParts := makeParts(upload.Project, upload.ClixUpload.PartNames, upload.ClixUpload.PartNumbers)
+	for i := range gotParts {
+		gotParts[i].Click = objectKey
+	}
+	if ok := x.Parts.Save(ctx, gotParts); !ok {
+		return uploadInternalServerError(upload)
+	} else {
+		return uploadSuccess(upload)
+	}
+}
+
+func (x UploadHandler) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
+	if err := upload.ValidateSheets(); err != nil {
+		return uploadBadRequest(upload, err.Error())
+	}
+
+	// upload the click track
+	file := storage.File{
 		MediaType: upload.ContentType,
 		Ext:       filepath.Ext(upload.FileName),
 		Bytes:     upload.FileBytes,
 	}
-	if ok := gotClix.Store(ctx, upload.Clix(), &file); !ok {
+	if err := file.ValidateMediaType("audio/"); err != nil {
+		return uploadBadRequest(upload, err.Error())
+	}
+
+	objectKey, ok := x.Clix.PutFile(&file)
+	if !ok {
 		return uploadInternalServerError(upload)
 	}
-	return uploadSuccess(upload)
+
+	gotParts := makeParts(upload.Project, upload.ClixUpload.PartNames, upload.ClixUpload.PartNumbers)
+	for i := range gotParts {
+		gotParts[i].Click = objectKey
+	}
+	if ok := x.Parts.Save(ctx, gotParts); !ok {
+		return uploadInternalServerError(upload)
+	} else {
+		return uploadSuccess(upload)
+	}
 }
 
-func (upload *Upload) ValidateClix() UploadStatus {
-	// verify that we have all the necessary info
-	clixUpload := upload.ClixUpload
-	if clixUpload == nil {
-		return uploadBadRequest(upload, "missing json field `sheets_upload`")
+func (upload *Upload) RenderParts() []parts.Part {
+	var names []string
+	var numbers []uint8
+	switch upload.UploadType {
+	case UploadTypeClix:
+		names = upload.ClixUpload.PartNames
+		numbers = upload.ClixUpload.PartNumbers
+	case UploadTypeSheets:
+		names = upload.SheetsUpload.PartNames
+		numbers = upload.SheetsUpload.PartNumbers
 	}
-
-	if len(clixUpload.PartNames) == 0 {
-		return uploadBadRequest(upload, "missing part names")
-	}
-
-	if len(clixUpload.PartNumbers) == 0 {
-		return uploadBadRequest(upload, "missing part numbers")
-	}
-
-	// verify content type
-	if !clix.ValidMediaType(upload.ContentType) {
-		logger.WithField("Content-Type", upload.ContentType).Error("invalid content type")
-		return uploadInvalidContent(upload)
-	}
-
-	// verify the file contents
-	if contentType := http.DetectContentType(upload.FileBytes); !clix.ValidMediaType(upload.ContentType) {
-		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
-		return uploadInvalidContent(upload)
-	}
-	return uploadSuccess(upload)
+	return makeParts(upload.Project, names, numbers)
 }
 
-func (upload *Upload) Clix() []clix.Click {
-	clixUpload := upload.ClixUpload
-	// convert the upload into sheets
-	gotClix := make([]clix.Click, 0, len(clixUpload.PartNames)*len(clixUpload.PartNumbers))
-	for _, partName := range clixUpload.PartNames {
-		for _, partNumber := range clixUpload.PartNumbers {
-			gotClix = append(gotClix, clix.Click{
-				Project:    upload.Project,
-				PartName:   partName,
-				PartNumber: partNumber,
+func makeParts(project string, names []string, numbers []uint8) []parts.Part {
+	allParts := make([]parts.Part, 0, len(names)*len(numbers))
+	for _, name := range names {
+		for _, number := range numbers {
+			allParts = append(allParts, parts.Part{
+				ID: parts.ID{Project: project, Name: name, Number: number},
 			})
 		}
 	}
-	return gotClix
-}
-
-func handleSheetMusic(ctx context.Context, sheets sheets.Sheets, upload *Upload) UploadStatus {
-	if status := upload.ValidateSheets(); status != uploadSuccess(upload) {
-		return status
-	}
-	if ok := sheets.Store(ctx, upload.Sheets(), upload.FileBytes); !ok {
-		return uploadInternalServerError(upload)
-	}
-	return uploadSuccess(upload)
-}
-
-func (upload *Upload) ValidateSheets() UploadStatus {
-	// verify that we have all the necessary info
-	sheetsUpload := upload.SheetsUpload
-	if sheetsUpload == nil {
-		return uploadBadRequest(upload, "missing json field `sheets_upload`")
-	}
-
-	if len(sheetsUpload.PartNames) == 0 {
-		return uploadBadRequest(upload, "missing part names")
-	}
-
-	if len(sheetsUpload.PartNumbers) == 0 {
-		return uploadBadRequest(upload, "missing part numbers")
-	}
-
-	// verify content type
-	if !sheets.ValidMediaType(upload.ContentType) {
-		logger.WithField("Content-Type", upload.ContentType).Error("invalid content type")
-		return uploadInvalidContent(upload)
-	}
-
-	// verify the file contents
-	if contentType := http.DetectContentType(upload.FileBytes); !sheets.ValidMediaType(contentType) {
-		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
-		return uploadInvalidContent(upload)
-	}
-	return uploadSuccess(upload)
-}
-
-func (upload *Upload) Sheets() []sheets.Sheet {
-	sheetsUpload := upload.SheetsUpload
-	// convert the upload into sheets
-	gotSheets := make([]sheets.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))
-	for _, partName := range sheetsUpload.PartNames {
-		for _, partNumber := range sheetsUpload.PartNumbers {
-			gotSheets = append(gotSheets, sheets.Sheet{
-				Project:    upload.Project,
-				PartName:   partName,
-				PartNumber: partNumber,
-			})
-		}
-	}
-	return gotSheets
+	return allParts
 }
 
 func uploadSuccess(upload *Upload) UploadStatus {

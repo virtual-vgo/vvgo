@@ -2,10 +2,14 @@ package storage
 
 import (
 	"bytes"
+	"crypto/md5"
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
+	"mime"
+	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -26,6 +30,29 @@ func NewObject(mediaType string, buffer *bytes.Buffer) *Object {
 
 func NewJSONObject(buffer *bytes.Buffer) *Object {
 	return NewObject("application/json", buffer)
+}
+
+type File struct {
+	MediaType string
+	Ext       string
+	Bytes     []byte
+}
+
+var ErrInvalidMediaType = fmt.Errorf("invalid media type")
+var ErrDetectedInvalidContent = fmt.Errorf("detected invalid content")
+var ErrInvalidFileExtension = fmt.Errorf("invalid file extension")
+
+func (x File) ValidateMediaType(pre string) error {
+	switch true {
+	case strings.HasPrefix(x.MediaType, pre) == false:
+		return ErrInvalidMediaType
+	case strings.HasPrefix(http.DetectContentType(x.Bytes), pre) == false:
+		return ErrDetectedInvalidContent
+	case strings.HasPrefix(mime.TypeByExtension(x.Ext), pre) == false:
+		return ErrInvalidFileExtension
+	default:
+		return nil
+	}
 }
 
 type Bucket struct {
@@ -98,7 +125,8 @@ func (x *Bucket) GetObject(name string, dest *Object) bool {
 func WithBackup(putObjectFunc func(name string, object *Object) bool) func(name string, object *Object) bool {
 	return func(name string, object *Object) bool {
 		backupName := fmt.Sprintf("%s-%s", name, time.Now().UTC().Format(time.RFC3339))
-		if ok := putObjectFunc(backupName, object); !ok {
+		backupBuffer := object.Buffer
+		if ok := putObjectFunc(backupName, NewObject(object.ContentType, &backupBuffer)); !ok {
 			return false
 		}
 		return putObjectFunc(name, object)
@@ -124,6 +152,11 @@ func (x *Bucket) PutObject(name string, object *Object) bool {
 		"object_size": n,
 	}).Info("uploaded object")
 	return true
+}
+
+func (x *Bucket) PutFile(file *File) (string, bool) {
+	fileKey := fmt.Sprintf("%x%s", md5.Sum(file.Bytes), file.Ext)
+	return fileKey, x.PutObject(fileKey, NewObject(file.MediaType, bytes.NewBuffer(file.Bytes)))
 }
 
 func (x *Bucket) ListObjects() map[string]Object {

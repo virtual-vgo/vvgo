@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -18,6 +19,12 @@ func (x basicAuth) Authenticate(handler http.Handler) http.Handler {
 			user, pass, ok := r.BasicAuth()
 			if !ok || user == "" || pass == "" {
 				return false
+			}
+			if x[user] != pass {
+				logger.WithFields(logrus.Fields{
+					"user": user,
+					"pass": pass,
+				}).Error("user authentication failed")
 			}
 			return x[user] == pass
 		}(); !ok {
