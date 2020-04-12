@@ -115,8 +115,6 @@ func uploadFile(client *api.Client, reader *bufio.Reader, project string, fileNa
 				return
 			}
 		case strings.HasPrefix(contentType, "audio/"):
-
-			readClickUpload(os.Stdout, reader, &upload)
 			if ok := readClickUpload(os.Stdout, reader, &upload); !ok {
 				return
 			}
