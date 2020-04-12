@@ -40,7 +40,7 @@ func TestUpload_Validate(t *testing.T) {
 			want: ErrInvalidUploadType,
 		},
 		{
-			name: "invalid part names",
+			name: "missing part names",
 			upload: Upload{
 				UploadType:  UploadTypeSheets,
 				PartNumbers: []uint8{1},
@@ -52,7 +52,20 @@ func TestUpload_Validate(t *testing.T) {
 			want: ErrMissingPartNames,
 		},
 		{
-			name: "invalid part numbers",
+			name: "invalid part names",
+			upload: Upload{
+				UploadType:  UploadTypeSheets,
+				PartNames:   []string{"not-an-instrument"},
+				PartNumbers: []uint8{1},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
+				FileBytes:   sheetBytes,
+				ContentType: "application/pdf",
+			},
+			want: parts.ErrInvalidPartName,
+		},
+		{
+			name: "missing part numbers",
 			upload: Upload{
 				UploadType:  UploadTypeClix,
 				PartNames:   []string{"trumpet"},
@@ -62,6 +75,19 @@ func TestUpload_Validate(t *testing.T) {
 				ContentType: "audio/mpeg",
 			},
 			want: ErrMissingPartNumbers,
+		},
+		{
+			name: "invalid part numbers",
+			upload: Upload{
+				UploadType:  UploadTypeClix,
+				PartNames:   []string{"trumpet"},
+				PartNumbers: []uint8{0},
+				Project:     "01-snake-eater",
+				FileName:    filepath.Join("testdata", "click-track.mp3"),
+				FileBytes:   clickBytes,
+				ContentType: "audio/mpeg",
+			},
+			want: parts.ErrInvalidPartNumber,
 		},
 		{
 			name: "invalid project",
@@ -222,6 +248,17 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 				method:      http.MethodPost,
 				contentType: "application/json",
 				body:        `invalid-json`,
+			},
+			wants: wants{
+				code: http.StatusBadRequest,
+			},
+		},
+		{
+			name: "type:sheets/failure",
+			request: request{
+				method:      http.MethodPost,
+				contentType: "application/json",
+				body:        "garbage",
 			},
 			wants: wants{
 				code: http.StatusBadRequest,

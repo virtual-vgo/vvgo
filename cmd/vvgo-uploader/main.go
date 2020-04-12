@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"io"
@@ -193,8 +192,7 @@ func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
 		switch {
 		case err != nil:
 			printError(err)
-		case parts.ValidNumber(num) == false:
-			printError(parts.ErrInvalidPartNumber)
+			return nil
 		default:
 			partNums = append(partNums, num)
 		}
@@ -213,11 +211,7 @@ func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
 	var names []string
 	for _, name := range strings.Split(rawNames, ",") {
 		name := strings.ToLower(strings.TrimSpace(name))
-		if parts.ValidName(name) {
-			names = append(names, name)
-		} else {
-			printError(parts.ErrInvalidPartName)
-		}
+		names = append(names, name)
 	}
 	return names
 }

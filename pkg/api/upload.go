@@ -51,8 +51,12 @@ func (upload *Upload) Validate() error {
 		return projects.ErrNotFound
 	case len(upload.PartNames) == 0:
 		return ErrMissingPartNames
+	case parts.ValidNames(upload.PartNames...) == false:
+		return parts.ErrInvalidPartName
 	case len(upload.PartNumbers) == 0:
 		return ErrMissingPartNumbers
+	case parts.ValidNumbers(upload.PartNumbers...) == false:
+		return parts.ErrInvalidPartNumber
 	case len(upload.FileBytes) == 0:
 		return ErrEmptyFileBytes
 	}

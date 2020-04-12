@@ -150,24 +150,35 @@ func (x Part) Validate() error {
 	switch true {
 	case projects.Exists(x.Project) == false:
 		return projects.ErrNotFound
-	case ValidName(x.Name) == false:
+	case ValidNames(x.Name) == false:
 		return ErrInvalidPartName
-	case ValidNumber(x.Number) == false:
+	case ValidNumbers(x.Number) == false:
 		return ErrInvalidPartNumber
 	default:
 		return nil
 	}
 }
 
-func ValidName(name string) bool {
-	if name == "" {
-		return false
+func ValidNames(names ...string) bool {
+	for _, name := range names {
+		if name == "" {
+			return false
+		}
+		if _, ok := data.ValidPartNames()[name]; !ok {
+			return false
+		}
 	}
-	_, ok := data.ValidPartNames()[name]
-	return ok
+	return true
 }
 
-func ValidNumber(number uint8) bool { return number != 0 }
+func ValidNumbers(numbers ...uint8) bool {
+	for _, n := range numbers {
+		if n == 0 {
+			return false
+		}
+	}
+	return true
+}
 
 type ID struct {
 	Project string `json:"project"`
