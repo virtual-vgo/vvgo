@@ -23,19 +23,15 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		code int
 		body string
 	}
-	mockBodyBytes, err := ioutil.ReadFile("testdata/sheets.html")
+	mockBodyBytes, err := ioutil.ReadFile("testdata/parts.html")
 	if err != nil {
 		t.Fatalf("ioutil.ReadFile() failed: %v", err)
 	}
 	mockHTML := string(mockBodyBytes)
-	mockJSON := `[{"project":"truly",
-					"part_name":"dio-brando",
-					"part_number":3,
-					"file_key":"0xff",
-					"link":"/download?bucket=sheets\u0026object=0xff"}]`
+	mockJSON := `[{"click_track":"#","file_key":"0xff","link":"/download?bucket=sheets\u0026object=0xff","part_name":"dio-brando","part_number":3,"project":"truly","sheet_music":"#"}]`
 
 	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
-		if name == PartsBucketName {
+		if name == parts.DataFile {
 			parts := []parts.Part{{
 				ID: parts.ID{
 					Project: "truly",
@@ -119,6 +115,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 			case mockHTML:
 				wantHTML := html.NewTokenizer(strings.NewReader(mockHTML))
 				gotHTML := html.NewTokenizer(strings.NewReader(gotBody))
+
 				tt.wants.body = ""
 				for token := wantHTML.Next(); token != html.ErrorToken; token = wantHTML.Next() {
 					tt.wants.body += string(bytes.TrimSpace(wantHTML.Raw()))

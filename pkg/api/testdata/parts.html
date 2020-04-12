@@ -21,7 +21,7 @@
 
 <body>
 <div><a href="https://vvgo.org/"><img src="images/logo.svg" alt="logo" class="logo-tiny"></a></div>
-<h1 class="title">Sheets</h1>
+<h1 class="title">Parts</h1>
 <div class="sheets-table">
     <table id="sheets" class="hover row-border order-column">
         <thead>
@@ -29,18 +29,18 @@
             <th>Project</th>
             <th>Part Name</th>
             <th>Part Number</th>
-            <th>Download</th>
+            <th>Sheet Music Download</th>
+            <th>Click Track Download</th>
         </tr>
         </thead>
         <tbody>
-        {{- range .}}
-            <tr>
-                <td>{{.Sheet.Project}}</td>
-                <td>{{.Sheet.PartName}}</td>
-                <td>{{.Sheet.PartNumber}}</td>
-                <td><a href="{{.Link}}" class="download-link">&raquo; download &laquo;</a></td>
-            </tr>
-        {{- end }}
+        <tr>
+            <td>truly</td>
+            <td>dio-brando</td>
+            <td>3</td>
+            <td><a href="#" class="download-link">&raquo; sheet music &laquo;</a></td>
+            <td><a href="#" class="download-link">&raquo; click track &laquo;</a></td>
+        </tr>
         </tbody>
     </table>
 </div>

@@ -6,17 +6,19 @@ import (
 	"os"
 )
 
-var logger = &logrus.Logger{
-	Out:          os.Stdout,
-	Formatter:    new(logrus.JSONFormatter),
-	Hooks:        make(logrus.LevelHooks),
-	Level:        logrus.InfoLevel,
-	ExitFunc:     os.Exit,
-	ReportCaller: true,
+func Logger() *logrus.Logger {
+	return &logrus.Logger{
+		Out: os.Stdout,
+		Formatter: &logrus.TextFormatter{
+			ForceColors: true,
+		},
+		Hooks:        make(logrus.LevelHooks),
+		Level:        logrus.InfoLevel,
+		ExitFunc:     os.Exit,
+		ReportCaller: false,
+	}
 }
 
-func Logger() *logrus.Logger { return logger }
-
 func StdLogger() *log.Logger {
-	return log.New(logger.Writer(), "", 0)
+	return log.New(Logger().Writer(), "", 0)
 }
