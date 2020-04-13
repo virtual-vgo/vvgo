@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -136,30 +137,30 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wg.Add(len(documents))
 	statuses := make(chan UploadStatus, len(documents))
 	for _, upload := range documents {
-		go func(upload *Upload) {
+		go func(upload Upload) {
 			defer wg.Done()
 
 			// validate the upload
 			if err := upload.Validate(); err != nil {
-				statuses <- uploadBadRequest(upload, err.Error())
+				statuses <- uploadBadRequest(&upload, err.Error())
 				return
 			}
 
 			// check for context cancelled
 			select {
 			case <-ctx.Done():
-				statuses <- uploadCtxCancelled(upload, ctx.Err())
+				statuses <- uploadCtxCancelled(&upload, ctx.Err())
 			default:
 			}
 
 			// handle the upload
 			switch upload.UploadType {
 			case UploadTypeClix:
-				statuses <- x.handleClickTrack(ctx, upload)
+				statuses <- x.handleClickTrack(ctx, &upload)
 			case UploadTypeSheets:
-				statuses <- x.handleSheetMusic(ctx, upload)
+				statuses <- x.handleSheetMusic(ctx, &upload)
 			}
-		}(&upload)
+		}(upload)
 	}
 
 	wg.Wait()
@@ -169,7 +170,17 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for status := range statuses {
 		results = append(results, status)
 	}
-	json.NewEncoder(w).Encode(&results)
+
+	switch {
+	case acceptsType(r, "application/json"):
+		if err := json.NewEncoder(w).Encode(&results); err != nil {
+			logger.WithError(err).Error("json.Encode() failed", err)
+		}
+	default:
+		if err := gob.NewEncoder(w).Encode(&results); err != nil {
+			logger.WithError(err).Error("gob.Encode() failed", err)
+		}
+	}
 }
 
 func (x UploadHandler) handleClickTrack(ctx context.Context, upload *Upload) UploadStatus {

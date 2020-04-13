@@ -54,10 +54,10 @@ func gobDecode(src io.Reader, dest interface{}) bool {
 	return true
 }
 
-func acceptsType(r *http.Request, mimeType string) bool {
+func acceptsType(r *http.Request, mediaType string) bool {
 	for _, value := range r.Header["Accept"] {
 		for _, wantType := range strings.Split(value, ",") {
-			if wantType == mimeType {
+			if strings.HasPrefix(mediaType, wantType) {
 				return true
 			}
 		}

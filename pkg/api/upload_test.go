@@ -256,6 +256,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 	type request struct {
 		method      string
 		contentType string
+		accept      string
 		body        bytes.Buffer
 	}
 
@@ -298,6 +299,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request: request{
 				method:      http.MethodPost,
 				contentType: "application/json",
+				accept:      "application/json",
 				body:        uploadJSON,
 			},
 			wants: wants{
@@ -309,7 +311,8 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			name: "content-type:application/octet-stream/success",
 			request: request{
 				method:      http.MethodPost,
-				contentType: "application/json",
+				contentType: "application/octet-stream",
+				accept:      "application/octet-stream",
 				body:        uploadGob,
 			},
 			wants: wants{
@@ -321,6 +324,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.request.method, "/upload", &tt.request.body)
 			request.Header.Set("Content-Type", tt.request.contentType)
+			request.Header.Set("Accept", tt.request.accept)
 			recorder := httptest.NewRecorder()
 			UploadHandler{&Storage{
 				Parts: parts.Parts{
@@ -330,8 +334,15 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 				Sheets: &mocks.bucket,
 				Clix:   &mocks.bucket,
 			}}.ServeHTTP(recorder, request)
-			assert.Equal(t, tt.wants.code, recorder.Code, "code")
-			assert.Equal(t, tt.wants.body.String(), recorder.Body.String(), "body")
+			resp := recorder.Result()
+			var respBody bytes.Buffer
+			respBody.ReadFrom(resp.Body)
+			assert.Equal(t, tt.wants.code, resp.StatusCode, "code")
+			if !assert.Equal(t, tt.wants.body.String(), respBody.String(), "body") {
+				var gotStatus []UploadStatus
+				gob.NewDecoder(recorder.Body).Decode(&gotStatus)
+				assert.Equal(t, wantStatus, gotStatus)
+			}
 		})
 	}
 }
