@@ -3,6 +3,8 @@ package api
 import (
 	"bytes"
 	"context"
+	"encoding/gob"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -11,8 +13,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -174,27 +176,8 @@ func TestUpload_Validate(t *testing.T) {
 }
 
 func TestUploadHandler_ServeHTTP(t *testing.T) {
-	type wants struct {
-		code int
-		body string
-	}
 
-	sheetsUploadBody, err := ioutil.ReadFile("testdata/sheet-upload.json")
-	if err != nil {
-		t.Fatalf("ioutil.ReadFile() failed: %v", err)
-	}
-
-	clixUploadBody, err := ioutil.ReadFile("testdata/clix-upload.json")
-	if err != nil {
-		t.Fatalf("ioutil.ReadFile() failed: %v", err)
-	}
-
-	type request struct {
-		method      string
-		contentType string
-		body        string
-	}
-
+	// all the mocks always return true
 	mocks := struct {
 		bucket MockBucket
 		locker MockLocker
@@ -215,6 +198,72 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		},
 	}
 
+	// read test data from files
+	var sheetBytes, clickBytes bytes.Buffer
+	for _, args := range []struct {
+		buffer *bytes.Buffer
+		file   string
+	}{
+		{&sheetBytes, "testdata/sheet-music.pdf"},
+		{&clickBytes, "testdata/click-track.mp3"},
+	} {
+		file, err := os.Open(args.file)
+		require.NoError(t, err, "os.Open()  `%s`", file)
+		_, err = args.buffer.ReadFrom(file)
+		require.NoError(t, err, "file.Read() `%s`", file)
+	}
+
+	// create our own upload document
+	upload := []Upload{
+		{
+			UploadType:  "sheets",
+			PartNames:   []string{"trumpet"},
+			PartNumbers: []uint8{1},
+			Project:     "01-snake-eater",
+			FileName:    "testdata/sheet-music.pdf",
+			FileBytes:   sheetBytes.Bytes(),
+			ContentType: "application/pdf",
+		},
+		{
+			UploadType:  "clix",
+			PartNames:   []string{"trumpet"},
+			PartNumbers: []uint8{1},
+			Project:     "01-snake-eater",
+			FileName:    "testdata/click-track.mp3",
+			FileBytes:   clickBytes.Bytes(),
+			ContentType: "audio/mpeg",
+		},
+	}
+
+	wantStatus := []UploadStatus{
+		{
+			FileName: "testdata/sheet-music.pdf",
+			Code:     http.StatusOK,
+		},
+		{
+			FileName: "testdata/click-track.mp3",
+			Code:     http.StatusOK,
+		},
+	}
+
+	// encode it in our various encodings
+	var uploadGob, uploadJSON, wantStatusGob, wantStatusJSON bytes.Buffer
+	require.NoError(t, gob.NewEncoder(&uploadGob).Encode(upload), "gob.Encode()")
+	require.NoError(t, json.NewEncoder(&uploadJSON).Encode(upload), "json.Encode()")
+	require.NoError(t, gob.NewEncoder(&wantStatusGob).Encode(wantStatus), "gob.Encode()")
+	require.NoError(t, json.NewEncoder(&wantStatusJSON).Encode(wantStatus), "json.Encode()")
+
+	type request struct {
+		method      string
+		contentType string
+		body        bytes.Buffer
+	}
+
+	type wants struct {
+		code int
+		body bytes.Buffer
+	}
+
 	for _, tt := range []struct {
 		name    string
 		request request
@@ -225,72 +274,52 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request: request{
 				method:      http.MethodGet,
 				contentType: "application/json",
-				body:        string(sheetsUploadBody),
+				body:        *bytes.NewBuffer([]byte("[]")),
 			},
 			wants: wants{
+				body: *bytes.NewBuffer([]byte("\n")),
 				code: http.StatusMethodNotAllowed,
 			},
 		},
 		{
-			name: "content-type:text/html",
+			name: "content-type:text/html/failure",
 			request: request{
 				method:      http.MethodPost,
 				contentType: "text/html",
-				body:        string(sheetsUploadBody),
+				body:        *bytes.NewBuffer([]byte("")),
 			},
 			wants: wants{
+				body: *bytes.NewBuffer([]byte("\n")),
 				code: http.StatusUnsupportedMediaType,
 			},
 		},
 		{
-			name: "body:invalid-json",
+			name: "content-type:application/json/success",
 			request: request{
 				method:      http.MethodPost,
 				contentType: "application/json",
-				body:        `invalid-json`,
+				body:        uploadJSON,
 			},
 			wants: wants{
-				code: http.StatusBadRequest,
-			},
-		},
-		{
-			name: "type:sheets/failure",
-			request: request{
-				method:      http.MethodPost,
-				contentType: "application/json",
-				body:        "garbage",
-			},
-			wants: wants{
-				code: http.StatusBadRequest,
-			},
-		},
-		{
-			name: "type:sheets/success",
-			request: request{
-				method:      http.MethodPost,
-				contentType: "application/json",
-				body:        string(sheetsUploadBody),
-			},
-			wants: wants{
-				body: `[{"file_name":"music-sheet.pdf","code":200}]`,
+				body: wantStatusJSON,
 				code: http.StatusOK,
 			},
 		},
 		{
-			name: "type:clix/success",
+			name: "content-type:application/octet-stream/success",
 			request: request{
 				method:      http.MethodPost,
 				contentType: "application/json",
-				body:        string(clixUploadBody),
+				body:        uploadGob,
 			},
 			wants: wants{
-				body: `[{"file_name":"click-track.mp3","code":200}]`,
+				body: wantStatusGob,
 				code: http.StatusOK,
 			},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.request.method, "/upload", strings.NewReader(tt.request.body))
+			request := httptest.NewRequest(tt.request.method, "/upload", &tt.request.body)
 			request.Header.Set("Content-Type", tt.request.contentType)
 			recorder := httptest.NewRecorder()
 			UploadHandler{&Storage{
@@ -302,7 +331,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 				Clix:   &mocks.bucket,
 			}}.ServeHTTP(recorder, request)
 			assert.Equal(t, tt.wants.code, recorder.Code, "code")
-			assert.Equal(t, tt.wants.body, strings.TrimSpace(recorder.Body.String()), "body")
+			assert.Equal(t, tt.wants.body.String(), recorder.Body.String(), "body")
 		})
 	}
 }

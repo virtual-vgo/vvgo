@@ -2,7 +2,7 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/gob"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -17,7 +17,7 @@ func TestClient_Upload(t *testing.T) {
 	wantURI := "/upload"
 	wantBody := ``
 	wantMethod := http.MethodPost
-	wantContentType := "application/json"
+	wantContentType := "application/octet-stream"
 	wantStatuses := []UploadStatus{{
 		FileName: "Dio_Brando.pdf",
 		Code:     http.StatusOK,
@@ -35,7 +35,7 @@ func TestClient_Upload(t *testing.T) {
 		gotRequest = r
 		gotUser, gotPass, _ = r.BasicAuth()
 		gotURI = r.URL.RequestURI()
-		json.NewEncoder(w).Encode([]UploadStatus{{
+		gob.NewEncoder(w).Encode([]UploadStatus{{
 			FileName: "Dio_Brando.pdf",
 			Code:     http.StatusOK,
 		}})

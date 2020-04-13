@@ -110,14 +110,22 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("Content-Type") != "application/json" {
-		invalidContent(w)
-		return
-	}
-
 	var documents []Upload
-	if ok := jsonDecode(r.Body, &documents); !ok {
-		badRequest(w, "")
+	switch r.Header.Get("Content-Type") {
+	case "application/octet-stream":
+		if ok := gobDecode(r.Body, &documents); !ok {
+			badRequest(w, "")
+			return
+		}
+
+	case "application/json":
+		if ok := jsonDecode(r.Body, &documents); !ok {
+			badRequest(w, "")
+			return
+		}
+
+	default:
+		invalidContent(w)
 		return
 	}
 
