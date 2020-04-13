@@ -3,32 +3,97 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
 
+type UploadHandler struct{ *Database }
+
 type UploadType string
+
+func (x UploadType) String() string { return string(x) }
 
 const (
 	UploadTypeClix   UploadType = "clix"
 	UploadTypeSheets UploadType = "sheets"
 )
 
-type UploadHandler struct {
-	sheets.Sheets
+type Upload struct {
+	UploadType  `json:"upload_type"`
+	PartNames   []string `json:"part_names"`
+	PartNumbers []uint8  `json:"part_numbers"`
+	Project     string   `json:"project"`
+	FileName    string   `json:"file_name"`
+	FileBytes   []byte   `json:"file_bytes"`
+	ContentType string   `json:"content_type"`
 }
 
-type Upload struct {
-	UploadType    `json:"upload_type"`
-	*ClixUpload   `json:"clix_upload"`
-	*SheetsUpload `json:"sheets_upload"`
-	Project       string `json:"project"`
-	FileName      string `json:"file_name"`
-	FileBytes     []byte `json:"file_bytes"`
-	ContentType   string `json:"content_type"`
+var (
+	ErrInvalidUploadType  = errors.New("invalid upload type")
+	ErrMissingProject     = errors.New("missing project")
+	ErrMissingPartNames   = errors.New("missing part names")
+	ErrMissingPartNumbers = errors.New("missing part numbers")
+	ErrEmptyFileBytes     = errors.New("empty file bytes")
+)
+
+func (upload *Upload) Validate() error {
+	switch {
+	case upload.Project == "":
+		return ErrMissingProject
+	case projects.Exists(upload.Project) == false:
+		return projects.ErrNotFound
+	case len(upload.PartNames) == 0:
+		return ErrMissingPartNames
+	case parts.ValidNames(upload.PartNames...) == false:
+		return parts.ErrInvalidPartName
+	case len(upload.PartNumbers) == 0:
+		return ErrMissingPartNumbers
+	case parts.ValidNumbers(upload.PartNumbers...) == false:
+		return parts.ErrInvalidPartNumber
+	case len(upload.FileBytes) == 0:
+		return ErrEmptyFileBytes
+	}
+
+	file := upload.File()
+	switch upload.UploadType {
+	case UploadTypeClix:
+		return file.ValidateMediaType("audio/")
+	case UploadTypeSheets:
+		return file.ValidateMediaType("application/pdf")
+	default:
+		return ErrInvalidUploadType
+	}
+}
+
+func (upload *Upload) File() *storage.File {
+	return &storage.File{
+		MediaType: upload.ContentType,
+		Ext:       filepath.Ext(upload.FileName),
+		Bytes:     upload.FileBytes,
+	}
+}
+
+func (upload *Upload) Parts() []parts.Part {
+	allParts := make([]parts.Part, 0, len(upload.PartNames)*len(upload.PartNumbers))
+	for _, name := range upload.PartNames {
+		for _, number := range upload.PartNumbers {
+			allParts = append(allParts, parts.Part{
+				ID: parts.ID{
+					Project: strings.TrimSpace(strings.ToLower(upload.Project)),
+					Name:    strings.TrimSpace(strings.ToLower(name)),
+					Number:  number,
+				},
+			})
+		}
+	}
+	return allParts
 }
 
 type UploadStatus struct {
@@ -37,17 +102,7 @@ type UploadStatus struct {
 	Error    string `json:"error,omitempty"`
 }
 
-type ClixUpload struct {
-	PartNames   []string `json:"part_names"`
-	PartNumbers []uint8  `json:"part_numbers"`
-}
-
-type SheetsUpload struct {
-	PartNames   []string `json:"part_names"`
-	PartNumbers []uint8  `json:"part_numbers"`
-}
-
-const UploadsTimeout = 10 * time.Second
+const UploadsTimeout = 5 * 60 * time.Second
 
 func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -76,38 +131,25 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		go func(upload *Upload) {
 			defer wg.Done()
 
+			// validate the upload
+			if err := upload.Validate(); err != nil {
+				statuses <- uploadBadRequest(upload, err.Error())
+				return
+			}
+
 			// check for context cancelled
 			select {
 			case <-ctx.Done():
-				statuses <- UploadStatus{
-					FileName: upload.FileName,
-					Code:     http.StatusRequestTimeout,
-					Error:    ctx.Err().Error(),
-				}
+				statuses <- uploadCtxCancelled(upload, ctx.Err())
 			default:
-			}
-
-			// check that the project exists
-			if !projects.Exists(upload.Project) {
-				statuses <- UploadStatus{
-					FileName: upload.FileName,
-					Code:     http.StatusBadRequest,
-					Error:    "project not found",
-				}
 			}
 
 			// handle the upload
 			switch upload.UploadType {
 			case UploadTypeClix:
-				statuses <- handleClickTrack(ctx, upload)
+				statuses <- x.handleClickTrack(ctx, upload)
 			case UploadTypeSheets:
-				statuses <- handleSheetMusic(ctx, x.Sheets, upload)
-			default:
-				statuses <- UploadStatus{
-					FileName: upload.FileName,
-					Code:     http.StatusBadRequest,
-					Error:    "invalid upload type",
-				}
+				statuses <- x.handleSheetMusic(ctx, upload)
 			}
 		}(&upload)
 	}
@@ -122,63 +164,43 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&results)
 }
 
-func handleClickTrack(_ context.Context, upload *Upload) UploadStatus {
-	return uploadNotImplemented(upload)
-}
-
-func handleSheetMusic(ctx context.Context, sheets sheets.Sheets, upload *Upload) UploadStatus {
-	if status := upload.ValidateSheets(); status != uploadSuccess(upload) {
-		return status
+func (x UploadHandler) handleClickTrack(ctx context.Context, upload *Upload) UploadStatus {
+	file := upload.File()
+	if err := file.ValidateMediaType("audio/"); err != nil {
+		return uploadBadRequest(upload, err.Error())
 	}
-	if ok := sheets.Store(ctx, upload.Sheets(), upload.FileBytes); !ok {
+
+	if ok := x.Clix.PutFile(file); !ok {
 		return uploadInternalServerError(upload)
+	} else {
+		return x.handleParts(ctx, upload, file.ObjectKey())
 	}
-	return uploadSuccess(upload)
 }
 
-func (upload *Upload) ValidateSheets() UploadStatus {
-	// verify that we have all the necessary info
-	sheetsUpload := upload.SheetsUpload
-	if sheetsUpload == nil {
-		return uploadBadRequest(upload, "missing json field `sheets_upload`")
+func (x UploadHandler) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
+	file := upload.File()
+	if err := file.ValidateMediaType("application/pdf"); err != nil {
+		return uploadBadRequest(upload, err.Error())
 	}
 
-	if len(sheetsUpload.PartNames) == 0 {
-		return uploadBadRequest(upload, "missing part names")
+	if ok := x.Sheets.PutFile(file); !ok {
+		return uploadInternalServerError(upload)
+	} else {
+		return x.handleParts(ctx, upload, file.ObjectKey())
 	}
-
-	if len(sheetsUpload.PartNumbers) == 0 {
-		return uploadBadRequest(upload, "missing part numbers")
-	}
-
-	// verify content type
-	if upload.ContentType != "application/pdf" {
-		logger.WithField("Content-Type", upload.ContentType).Error("invalid content type")
-		return uploadInvalidContent(upload)
-	}
-
-	// verify the file contents
-	if contentType := http.DetectContentType(upload.FileBytes); contentType != "application/pdf" {
-		logger.WithField("Detected-Content-Type", contentType).Error("invalid content type")
-		return uploadInvalidContent(upload)
-	}
-	return uploadSuccess(upload)
 }
 
-func (upload *Upload) Sheets() []sheets.Sheet {
-	sheetsUpload := upload.SheetsUpload
-	// convert the upload into sheets
-	gotSheets := make([]sheets.Sheet, 0, len(sheetsUpload.PartNames)*len(sheetsUpload.PartNumbers))
-	for _, partName := range sheetsUpload.PartNames {
-		for _, partNumber := range sheetsUpload.PartNumbers {
-			gotSheets = append(gotSheets, sheets.Sheet{
-				Project:    upload.Project,
-				PartName:   partName,
-				PartNumber: partNumber,
-			})
-		}
+func (x UploadHandler) handleParts(ctx context.Context, upload *Upload, objectKey string) UploadStatus {
+	// update parts with the revision
+	uploadParts := upload.Parts()
+	for i := range uploadParts {
+		uploadParts[i].Click = objectKey
 	}
-	return gotSheets
+	if ok := x.Parts.Save(ctx, uploadParts); !ok {
+		return uploadInternalServerError(upload)
+	} else {
+		return uploadSuccess(upload)
+	}
 }
 
 func uploadSuccess(upload *Upload) UploadStatus {
@@ -188,11 +210,11 @@ func uploadSuccess(upload *Upload) UploadStatus {
 	}
 }
 
-func uploadNotImplemented(upload *Upload) UploadStatus {
+func uploadCtxCancelled(upload *Upload, err error) UploadStatus {
 	return UploadStatus{
 		FileName: upload.FileName,
-		Code:     http.StatusNotImplemented,
-		Error:    "lo sentimos, no implementado",
+		Code:     http.StatusRequestTimeout,
+		Error:    err.Error(),
 	}
 }
 
@@ -201,14 +223,6 @@ func uploadBadRequest(upload *Upload, reason string) UploadStatus {
 		FileName: upload.FileName,
 		Code:     http.StatusBadRequest,
 		Error:    reason,
-	}
-}
-
-func uploadInvalidContent(upload *Upload) UploadStatus {
-	return UploadStatus{
-		FileName: upload.FileName,
-		Code:     http.StatusUnsupportedMediaType,
-		Error:    "unsupported media type",
 	}
 }
 

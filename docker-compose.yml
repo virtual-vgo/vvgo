@@ -43,9 +43,9 @@ services:
       REDIS_ADDRESS: kv-cache:6379
       MINIO_ENDPOINT: object-cache:9000
       MINIO_REGION_NAME: sfo2
-      MINIO_ACCESS_KEY: vvgo-dev-access
-      MINIO_SECRET_KEY: vvgo-dev-secret
-      BASIC_AUTH_USER: vvgo-dev
-      BASIC_AUTH_PASS: vvgo-dev
+      MINIO_ACCESS_KEY: vvgo-admin
+      MINIO_SECRET_KEY: vvgo-admin
+      BASIC_AUTH_USER: admin
+      BASIC_AUTH_PASS: admin
     expose:
       - 8080

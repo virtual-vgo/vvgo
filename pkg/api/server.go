@@ -2,9 +2,17 @@ package api
 
 import (
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/parts"
+	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net/http"
 	"net/http/pprof"
+)
+
+const (
+	SheetsBucketName = "sheets"
+	ClixBucketName   = "clix"
+	PartsBucketName  = "parts"
+	PartsLockerName  = "parts.lock"
 )
 
 var logger = log.Logger()
@@ -18,7 +26,37 @@ type ServerConfig struct {
 	BasicAuthPass    string
 }
 
-func NewServer(config ServerConfig, sheets sheets.Sheets) *http.Server {
+type FileBucket interface {
+	PutFile(file *storage.File) bool
+	DownloadURL(name string) (string, error)
+}
+
+type Database struct {
+	parts.Parts
+	Sheets FileBucket
+	Clix   FileBucket
+}
+
+func NewDatabase(client *storage.Client) *Database {
+	sheetsBucket := client.NewBucket(SheetsBucketName)
+	clixBucket := client.NewBucket(ClixBucketName)
+	partsBucket := client.NewBucket(PartsBucketName)
+	partsLocker := client.NewLocker(PartsLockerName)
+	if sheetsBucket == nil || clixBucket == nil || partsBucket == nil || partsLocker == nil {
+		return nil
+	}
+
+	return &Database{
+		Parts: parts.Parts{
+			Bucket: partsBucket,
+			Locker: partsLocker,
+		},
+		Sheets: sheetsBucket,
+		Clix:   clixBucket,
+	}
+}
+
+func NewServer(config ServerConfig, database *Database) *http.Server {
 	auth := make(basicAuth)
 	if config.BasicAuthUser != "" {
 		auth[config.BasicAuthUser] = config.BasicAuthPass
@@ -39,14 +77,18 @@ func NewServer(config ServerConfig, sheets sheets.Sheets) *http.Server {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-	mux.Handle("/sheets", auth.Authenticate(SheetsHandler{sheets}))
-	mux.Handle("/sheets/", http.RedirectHandler("/sheets", http.StatusMovedPermanently))
+	mux.Handle("/parts", auth.Authenticate(PartsHandler{database}))
+	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := DownloadHandler{
-		SheetsBucketName: sheets.Bucket.DownloadURL,
+		SheetsBucketName: database.Sheets.DownloadURL,
+		ClixBucketName:   database.Clix.DownloadURL,
 	}
 	mux.Handle("/download", auth.Authenticate(downloadHandler))
-	mux.Handle("/upload", auth.Authenticate(UploadHandler{sheets}))
+
+	uploadHandler := UploadHandler{database}
+	mux.Handle("/upload", auth.Authenticate(uploadHandler))
+
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.FileServer(http.Dir("public")))
 

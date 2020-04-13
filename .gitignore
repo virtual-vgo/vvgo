@@ -3,3 +3,5 @@ vvgo-uploader
 .idea
 info.go
 !cmd/*
+*.exe
+data/statik

@@ -2,7 +2,7 @@ package projects
 
 import "testing"
 
-func TestExists(t *testing.T) {
+func TestProjects_NameExists(t *testing.T) {
 	for _, tt := range []struct {
 		name string
 		want bool
@@ -18,7 +18,7 @@ func TestExists(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Exists(tt.name); got != tt.want {
-				t.Errorf("Exists() = %v, want %v", got, tt.want)
+				t.Errorf("NameExists() = %v, want %v", got, tt.want)
 			}
 		})
 	}

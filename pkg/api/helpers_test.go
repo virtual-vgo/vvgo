@@ -108,3 +108,13 @@ func Test_unauthorized(t *testing.T) {
 	assert.Equal(t, wantCode, recorder.Code, "response code")
 	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
 }
+
+func Test_notImplemented(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	notImplemented(recorder)
+	wantBody := ""
+	wantCode := http.StatusNotImplemented
+
+	assert.Equal(t, wantCode, recorder.Code, "response code")
+	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+}

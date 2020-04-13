@@ -18,7 +18,7 @@ test: fmt vet
 # Build vvgo
 
 # Use go build tools caching, so mark this as a phony target
-.PHONY: vvgo
+.PHONY: vvgo vvgo-uploader
 BIN_PATH ?= .
 BUILD_FLAGS ?= -v
 vvgo:

@@ -2,17 +2,16 @@ package storage
 
 import (
 	"bytes"
+	"crypto/md5"
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
+	"mime"
+	"net/http"
 	"net/url"
+	"strings"
+	"time"
 )
-
-type Bucket struct {
-	Name   string
-	Region string
-	*minio.Client
-}
 
 type Object struct {
 	ContentType string
@@ -21,6 +20,54 @@ type Object struct {
 }
 
 type Tags map[string]string
+
+func NewObject(mediaType string, buffer *bytes.Buffer) *Object {
+	return &Object{
+		ContentType: mediaType,
+		Buffer:      *buffer,
+	}
+}
+
+func NewJSONObject(buffer *bytes.Buffer) *Object {
+	return NewObject("application/json", buffer)
+}
+
+type File struct {
+	MediaType string
+	Ext       string
+	Bytes     []byte
+	objectKey string
+}
+
+var ErrInvalidMediaType = fmt.Errorf("invalid media type")
+var ErrDetectedInvalidContent = fmt.Errorf("detected invalid content")
+var ErrInvalidFileExtension = fmt.Errorf("invalid file extension")
+
+func (x File) ValidateMediaType(pre string) error {
+	switch {
+	case !strings.HasPrefix(x.MediaType, pre):
+		return ErrInvalidMediaType
+	case !strings.HasPrefix(http.DetectContentType(x.Bytes), pre):
+		return ErrDetectedInvalidContent
+	case !strings.HasPrefix(mime.TypeByExtension(x.Ext), pre):
+		return ErrInvalidFileExtension
+	default:
+		return nil
+	}
+}
+
+func (x File) ObjectKey() string {
+	if x.objectKey == "" {
+		x.objectKey = fmt.Sprintf("%x%s", md5.Sum(x.Bytes), x.Ext)
+	}
+	return x.objectKey
+}
+
+type Bucket struct {
+	Name   string
+	Region string
+	*minio.Client
+}
 
 func (x *Client) NewBucket(name string) *Bucket {
 	return &Bucket{
@@ -101,6 +148,22 @@ func (x *Bucket) PutObject(name string, object *Object) bool {
 		"object_size": n,
 	}).Info("uploaded object")
 	return true
+}
+
+// Stores the object and a copy with a timestamp appended to the file name.
+func WithBackup(putObjectFunc func(name string, object *Object) bool) func(name string, object *Object) bool {
+	return func(name string, object *Object) bool {
+		backupName := fmt.Sprintf("%s-%s", name, time.Now().UTC().Format(time.RFC3339))
+		backupBuffer := object.Buffer
+		if ok := putObjectFunc(backupName, NewObject(object.ContentType, &backupBuffer)); !ok {
+			return false
+		}
+		return putObjectFunc(name, object)
+	}
+}
+
+func (x *Bucket) PutFile(file *File) bool {
+	return x.PutObject(file.ObjectKey(), NewObject(file.MediaType, bytes.NewBuffer(file.Bytes)))
 }
 
 func (x *Bucket) ListObjects() map[string]Object {

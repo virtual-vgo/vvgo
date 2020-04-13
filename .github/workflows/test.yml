@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Ensure `go mod tidy` produces a zero diff
         shell: bash
-        run:  go mod tidy && git diff --exit-code; code=$?; git checkout -- .; (exit $code)
+        run: go generate ./... && go mod tidy && git diff --exit-code; code=$?; git checkout -- .; (exit $code)
 
   go-vet:
     runs-on: ubuntu-latest
@@ -53,7 +53,7 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Run `go vet ./...`
-        run: go vet ./...
+        run: go generate ./... && go vet ./...
 
   go-unit-tests:
     runs-on: ubuntu-latest
@@ -71,4 +71,4 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Run `go test -v -race ./...`
-        run: go test -v -race ./...
+        run: go generate ./... && go test -v -race ./...
