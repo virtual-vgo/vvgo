@@ -153,7 +153,7 @@ func (x Part) SheetLink(bucket string) string {
 }
 
 func (x Part) ClickLink(bucket string) string {
-	if bucket == "" || len(x.Sheets) == 0 {
+	if bucket == "" || len(x.Clix) == 0 {
 		return "#"
 	} else {
 		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.Clix.Key())

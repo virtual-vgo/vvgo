@@ -194,7 +194,12 @@ func (x UploadHandler) handleParts(ctx context.Context, upload *Upload, objectKe
 	// update parts with the revision
 	uploadParts := upload.Parts()
 	for i := range uploadParts {
-		uploadParts[i].Clix.NewKey(objectKey)
+		switch upload.UploadType {
+		case UploadTypeSheets:
+			uploadParts[i].Sheets.NewKey(objectKey)
+		case UploadTypeClix:
+			uploadParts[i].Clix.NewKey(objectKey)
+		}
 	}
 	if ok := x.Parts.Save(ctx, uploadParts); !ok {
 		return uploadInternalServerError(upload)
