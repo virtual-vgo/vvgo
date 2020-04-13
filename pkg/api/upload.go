@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-type UploadHandler struct{ *Database }
+type UploadHandler struct{ *Storage }
 
 type UploadType string
 
