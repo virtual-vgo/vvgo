@@ -17,8 +17,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Flags struct {
@@ -27,6 +29,7 @@ type Flags struct {
 	endpoint string
 	user     string
 	pass     string
+	save     bool
 }
 
 func (x *Flags) Parse() {
@@ -35,6 +38,7 @@ func (x *Flags) Parse() {
 	flag.StringVar(&x.endpoint, "endpoint", "https://vvgo.org", "vvgo endpoint")
 	flag.StringVar(&x.user, "user", "vvgo-dev", "basic auth username")
 	flag.StringVar(&x.pass, "pass", "vvgo-dev", "basic auth password")
+	flag.BoolVar(&x.save, "save", false, "save local copy (debugging)")
 	flag.Parse()
 }
 
@@ -45,6 +49,11 @@ var (
 	green  = color.New(color.FgGreen)
 	bold   = color.New(color.Bold)
 )
+
+type CmdClient struct {
+	*api.AsyncClient
+	flags Flags
+}
 
 func printError(err error) { red.Fprintf(os.Stderr, ":: error: %v\n", err) }
 
@@ -62,25 +71,71 @@ func main() {
 			return fmt.Errorf("unkown project: %s", flags.project)
 		}
 
-		client := api.NewAsyncClient(api.AsyncClientConfig{
-			ClientConfig: api.ClientConfig{
-				ServerAddress: flags.endpoint,
-				BasicAuthUser: flags.user,
-				BasicAuthPass: flags.pass,
-			},
-			MaxParallel: 32,
-			QueueLength: 64,
-		})
+		// Build a new client
+		client := CmdClient{
+			AsyncClient: api.NewAsyncClient(api.AsyncClientConfig{
+				ClientConfig: api.ClientConfig{
+					ServerAddress: flags.endpoint,
+					BasicAuthUser: flags.user,
+					BasicAuthPass: flags.pass,
+				},
+				MaxParallel: 32,
+				QueueLength: 64,
+			}),
+			flags: flags,
+		}
 
+		// Make sure we can authenticate
 		if err := client.Authenticate(); err != nil {
 			return fmt.Errorf("unable to authenticate client: %v", err)
 		}
 
+		// Close the client on interrupt
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt)
+		go func() {
+			var sig os.Signal
+			sig = <-sigCh
+			red.Printf(":: received: %s\n", sig)
+			yellow.Fprintln(os.Stdout, ":: waiting for uploads to complete... Ctrl+C to force quit")
+			done := make(chan struct{})
+			go func() {
+				client.Close()
+				close(done)
+			}()
+
+			select {
+			case <-sigCh:
+				printError(fmt.Errorf(":: received: %s", sig))
+				os.Exit(1)
+			case <-done:
+				yellow.Println(":: closed!")
+				os.Exit(0)
+			}
+		}()
+
+		// Print upload status back to the user
+		var printLock sync.Mutex
+		go func() {
+			for result := range client.Status() {
+				printLock.Lock()
+				if result.Code != http.StatusOK {
+					printError(fmt.Errorf("file %s received non-200 status: `%d: %s`",
+						result.FileName, result.Code, result.Error))
+				} else {
+					green.Printf(":: uploaded successful -- %s\n", result.FileName)
+				}
+				printLock.Unlock()
+			}
+		}()
+
+		// Read and upload files
 		reader := bufio.NewReader(os.Stdin)
 		for _, fileName := range flag.Args() {
-			uploadFile(client, os.Stdout, reader, flags.project, fileName)
+			printLock.Lock()
+			client.uploadFile(os.Stdout, reader, flags.project, fileName)
+			printLock.Unlock()
 		}
-
 		return nil
 	}(); err != nil {
 		red.Fprintf(os.Stderr, "%v\n", err)
@@ -88,7 +143,7 @@ func main() {
 	}
 }
 
-func uploadFile(client *api.AsyncClient, writer io.Writer, reader *bufio.Reader, project string, fileName string) {
+func (x *CmdClient) uploadFile(writer io.Writer, reader *bufio.Reader, project string, fileName string) {
 	for {
 		blue.Printf(":: %s %s\n", "found:", bold.Sprint(fileName))
 
@@ -114,7 +169,7 @@ func uploadFile(client *api.AsyncClient, writer io.Writer, reader *bufio.Reader,
 			p.Fprintln(writer, " * "+part.String())
 		}
 		if yesNo(writer, reader, "is this ok") {
-			doUpload(client, upload)
+			doUpload(x.AsyncClient, upload, x.flags.save)
 			return
 		}
 	}
@@ -231,23 +286,15 @@ func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
 
 var allUploads []api.Upload
 
-func doUpload(client *api.AsyncClient, upload api.Upload) {
-	allUploads = append(allUploads, upload)
-	f, err := os.OpenFile("__uploader.out", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
-	if err == nil {
-		json.NewEncoder(f).Encode(&allUploads)
-		f.Close()
+func doUpload(client *api.AsyncClient, upload api.Upload, save bool) {
+	if save {
+		allUploads = append(allUploads, upload)
+		f, err := os.OpenFile("__uploader.out", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+		if err == nil {
+			json.NewEncoder(f).Encode(&allUploads)
+			f.Close()
+		}
 	}
 	client.Upload(upload)
 	yellow.Printf(":: upload queued -- %s\n", upload.FileName)
-}
-
-func readStatus(client *api.AsyncClient) {
-	for result := range client.Status() {
-		if result.Code != http.StatusOK {
-			printError(fmt.Errorf("file %s received non-200 status: `%d: %s`", result.FileName, result.Code, result.Error))
-		} else {
-			green.Printf(":: uploaded successful -- %s\n", result.FileName)
-		}
-	}
 }
