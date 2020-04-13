@@ -24,6 +24,10 @@ type ServerConfig struct {
 	MaxContentLength int64
 	BasicAuthUser    string
 	BasicAuthPass    string
+	SheetsBucketName string
+	ClixBucketName   string
+	PartsBucketName  string
+	PartsLockerName  string
 }
 
 type FileBucket interface {
@@ -31,32 +35,34 @@ type FileBucket interface {
 	DownloadURL(name string) (string, error)
 }
 
-type Database struct {
+type Storage struct {
 	parts.Parts
 	Sheets FileBucket
 	Clix   FileBucket
+	ServerConfig
 }
 
-func NewDatabase(client *storage.Client) *Database {
-	sheetsBucket := client.NewBucket(SheetsBucketName)
-	clixBucket := client.NewBucket(ClixBucketName)
-	partsBucket := client.NewBucket(PartsBucketName)
-	partsLocker := client.NewLocker(PartsLockerName)
+func NewStorage(client *storage.Client, config ServerConfig) *Storage {
+	sheetsBucket := client.NewBucket(config.SheetsBucketName)
+	clixBucket := client.NewBucket(config.ClixBucketName)
+	partsBucket := client.NewBucket(config.PartsBucketName)
+	partsLocker := client.NewLocker(config.PartsLockerName)
 	if sheetsBucket == nil || clixBucket == nil || partsBucket == nil || partsLocker == nil {
 		return nil
 	}
 
-	return &Database{
+	return &Storage{
 		Parts: parts.Parts{
 			Bucket: partsBucket,
 			Locker: partsLocker,
 		},
-		Sheets: sheetsBucket,
-		Clix:   clixBucket,
+		Sheets:       sheetsBucket,
+		Clix:         clixBucket,
+		ServerConfig: config,
 	}
 }
 
-func NewServer(config ServerConfig, database *Database) *http.Server {
+func NewServer(config ServerConfig, database *Storage) *http.Server {
 	auth := make(basicAuth)
 	if config.BasicAuthUser != "" {
 		auth[config.BasicAuthUser] = config.BasicAuthPass

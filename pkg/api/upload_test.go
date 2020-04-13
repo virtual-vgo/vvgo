@@ -293,7 +293,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			request := httptest.NewRequest(tt.request.method, "/upload", strings.NewReader(tt.request.body))
 			request.Header.Set("Content-Type", tt.request.contentType)
 			recorder := httptest.NewRecorder()
-			UploadHandler{&Database{
+			UploadHandler{&Storage{
 				Parts: parts.Parts{
 					Bucket: &mocks.bucket,
 					Locker: &mocks.locker,

@@ -23,7 +23,6 @@ func (x basicAuth) Authenticate(handler http.Handler) http.Handler {
 			if x[user] != pass {
 				logger.WithFields(logrus.Fields{
 					"user": user,
-					"pass": pass,
 				}).Error("user authentication failed")
 			}
 			return x[user] == pass

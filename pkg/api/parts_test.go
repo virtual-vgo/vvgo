@@ -15,6 +15,9 @@ import (
 )
 
 func TestPartsHandler_ServeHTTP(t *testing.T) {
+	clixBucket := "clix"
+	sheetsBucket := "sheets"
+
 	type request struct {
 		method  string
 		body    string
@@ -29,14 +32,23 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		t.Fatalf("ioutil.ReadFile() failed: %v", err)
 	}
 	mockHTML := string(mockBodyBytes)
-	mockJSON := `[{"click_track":"/download?bucket=clix\u0026object=mock-client","file_key":"0xff","link":"/download?bucket=sheets\u0026object=0xff","part_name":"dio-brando","part_number":3,"project":"truly","sheet_music":"/download?bucket=sheets\u0026object=mock-sheet"}]`
-
+	mockJSON := `[
+  {
+    "click_track": "/download?bucket=clix\u0026object=mock-client",
+    "file_key": "0xff",
+    "link": "/download?bucket=sheets\u0026object=0xff",
+    "part_name": "Dio Brando",
+    "part_number": 3,
+    "project": "truly",
+    "sheet_music": "/download?bucket=sheets\u0026object=mock-sheet"
+  }
+]`
 	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
 		if name == parts.DataFile {
 			parts := []parts.Part{{
 				ID: parts.ID{
 					Project: "truly",
-					Name:    "dio-brando",
+					Name:    "dio brando",
 					Number:  3,
 				},
 				Sheet: "mock-sheet",
@@ -90,10 +102,14 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			server := PartsHandler{&Database{
+			server := PartsHandler{&Storage{
 				Parts:  parts.Parts{Bucket: &mockBucket},
 				Sheets: &mockBucket,
 				Clix:   &mockBucket,
+				ServerConfig: ServerConfig{
+					SheetsBucketName: sheetsBucket,
+					ClixBucketName:   clixBucket,
+				},
 			}}
 			recorder := httptest.NewRecorder()
 			request := httptest.NewRequest(tt.request.method, "/sheets", strings.NewReader(tt.request.body))
@@ -116,6 +132,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 				gotBody = string(gotBytes)
 
 			case mockHTML:
+				println(string(gotBody))
 				wantHTML := html.NewTokenizer(strings.NewReader(mockHTML))
 				gotHTML := html.NewTokenizer(strings.NewReader(gotBody))
 

@@ -31,6 +31,10 @@ func NewDefaultConfig() Config {
 			MaxContentLength: 1e6,
 			BasicAuthUser:    "admin",
 			BasicAuthPass:    "admin",
+			SheetsBucketName: "sheets",
+			ClixBucketName:   "clix",
+			PartsBucketName:  "parts",
+			PartsLockerName:  "parts.lock",
 		},
 		StorageConfig: storage.Config{
 			MinioConfig: storage.MinioConfig{
@@ -52,6 +56,9 @@ func (x *Config) ParseEnv() {
 
 	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
 		x.StorageConfig.MinioConfig.Endpoint = endpoint
+	}
+	if arg := os.Getenv("MINIO_REGION"); arg != "" {
+		x.StorageConfig.MinioConfig.Region = arg
 	}
 	if id := os.Getenv("MINIO_ACCESS_KEY"); id != "" {
 		x.StorageConfig.MinioConfig.AccessKey = id
@@ -77,6 +84,18 @@ func (x *Config) ParseEnv() {
 	if pass := os.Getenv("BASIC_AUTH_PASS"); pass != "" {
 		x.ApiConfig.BasicAuthPass = pass
 	}
+	if arg := os.Getenv("SHEETS_BUCKET_NAME"); arg != "" {
+		x.ApiConfig.SheetsBucketName = arg
+	}
+	if arg := os.Getenv("CLIX_BUCKET_NAME"); arg != "" {
+		x.ApiConfig.ClixBucketName = arg
+	}
+	if arg := os.Getenv("PARTS_BUCKET_NAME"); arg != "" {
+		x.ApiConfig.PartsBucketName = arg
+	}
+	if arg := os.Getenv("PARTS_LOCKER_NAME"); arg != "" {
+		x.ApiConfig.PartsLockerName = arg
+	}
 }
 
 func (x Config) ParseFlags() {
@@ -101,7 +120,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	database := api.NewDatabase(storage)
+	database := api.NewStorage(storage, config.ApiConfig)
 	if database == nil {
 		os.Exit(1)
 	}
@@ -117,7 +136,7 @@ func main() {
 	logger.Fatal(apiServer.ListenAndServe())
 }
 
-func initializeStorage(db *api.Database) {
+func initializeStorage(db *api.Storage) {
 	var wg sync.WaitGroup
 	for _, initFunc := range []func() bool{
 		db.Parts.Init,

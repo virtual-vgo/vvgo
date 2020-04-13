@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"net/http"
 	"path/filepath"
+	"strings"
 )
 
-type PartsHandler struct{ *Database }
+type PartsHandler struct{ *Storage }
 
 func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -27,10 +28,10 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, part := range allParts {
 		rows = append(rows, tableRow{
 			Project:    part.Project,
-			PartName:   part.Name,
+			PartName:   strings.Title(part.Name),
 			PartNumber: part.Number,
-			SheetMusic: part.SheetLink(SheetsBucketName),
-			ClickTrack: part.ClickLink(ClixBucketName),
+			SheetMusic: part.SheetLink(x.SheetsBucketName),
+			ClickTrack: part.ClickLink(x.ClixBucketName),
 		})
 	}
 
