@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"golang.org/x/net/html"
@@ -129,9 +130,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 				}
 			}
 
-			if expected, got := tt.wants.body, gotBody; expected != got {
-				t.Errorf("expected body:\nwant: `%s`\n got: `%s`", expected, got)
-			}
+			assert.Equal(t, tt.wants.body, gotBody, "body")
 		})
 	}
 }

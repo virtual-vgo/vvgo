@@ -12,34 +12,33 @@
 
     <link rel="icon" href="images/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="stylesheet" type="text/css" href="css/theme.css">
-    <link rel="stylesheet" type="text/css" href="css/sheets.css">
+    <link rel="stylesheet" type="text/css" href="css/parts.css">
     <link rel="stylesheet" type="text/css" href="css/jquery.dataTables.css">
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.dataTables.js"></script>
-    <script type="text/javascript" src="js/sheets.js"></script>
+    <script type="text/javascript" src="js/parts.js"></script>
 </head>
 
 <body>
-<div><a href="https://vvgo.org/"><img src="images/logo.svg" alt="logo" class="logo-tiny"></a></div>
-<h1 class="title">Parts</h1>
-<div class="sheets-table">
-    <table id="sheets" class="hover row-border order-column">
+<div><a href="https://vvgo.org/"><img src="images/logo.svg" alt="logo" class="logo-small"></a></div>
+<h1 class="title"><em>Parts</em></h1>
+<div class="parts-table">
+    <table id="parts" class="hover row-border order-column compact">
         <thead>
         <tr>
-            <th>Project</th>
-            <th>Part Name</th>
-            <th>Part Number</th>
-            <th>Sheet Music Download</th>
-            <th>Click Track Download</th>
+            <th style="width: 10em;">Project</th>
+            <th style="width: 10em;">Part</th>
+            <th style="width: 20em;">Downloads</th>
         </tr>
         </thead>
         <tbody>
         <tr>
             <td>truly</td>
-            <td>dio-brando</td>
-            <td>3</td>
-            <td><a href="/download?bucket=sheets&amp;object=mock-sheet" class="download-link">&raquo; sheet music &laquo;</a></td>
-            <td><a href="/download?bucket=clix&amp;object=mock-client" class="download-link">&raquo; click track &laquo;</a></td>
+            <td>dio-brando-3</td>
+            <td>&raquo; &#x1f3bc; <a href="/download?bucket=sheets&amp;object=mock-sheet" class="download-link"><em>sheet music</em></a>
+                &#x1f3bc;| &#x266b; <a href="/download?bucket=clix&amp;object=mock-client" class="download-link"><em>click track</em></a>
+                &#x266b; &laquo;
+            </td>
         </tr>
         </tbody>
     </table>
