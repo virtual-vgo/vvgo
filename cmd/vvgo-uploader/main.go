@@ -92,7 +92,7 @@ func main() {
 
 func uploadFile(client *api.Client, writer io.Writer, reader *bufio.Reader, project string, fileName string) {
 	for {
-		blue.Printf(":: found `%s`\n", fileName)
+		blue.Printf(":: %s %s\n", "found:", bold.Sprint(fileName))
 
 		var upload api.Upload
 		if ok := readUpload(writer, reader, &upload, project, fileName); !ok {
@@ -110,9 +110,10 @@ func uploadFile(client *api.Client, writer io.Writer, reader *bufio.Reader, proj
 
 		// render results
 		gotParts := upload.Parts()
-		fmt.Fprintf(writer, ":: upload creates %s for the following parts:\n", upload.UploadType)
+		fmt.Fprintf(writer, ":: upload creates %s for:\n", upload.UploadType)
 		for _, part := range gotParts {
-			fmt.Fprintln(writer, " * "+part.String())
+			p := color.New(color.FgWhite)
+			p.Fprintln(writer, " * "+part.String())
 		}
 		if yesNo(writer, reader, "is this ok") {
 			doUpload(client, upload)
@@ -244,7 +245,7 @@ func doUpload(client *api.Client, upload api.Upload) {
 		if result.Code != http.StatusOK {
 			printError(fmt.Errorf("file %s received non-200 status: `%d: %s`", result.FileName, result.Code, result.Error))
 		} else {
-			green.Printf(":: file %s uploaded successfully!\n", result.FileName)
+			green.Printf(":: uploaded successful -- %s\n", result.FileName)
 		}
 	}
 }
