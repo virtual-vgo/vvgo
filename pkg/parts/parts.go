@@ -9,6 +9,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"strings"
 )
 
 const DataFile = "parts.json"
@@ -127,7 +128,7 @@ type Part struct {
 }
 
 func (x Part) String() string {
-	return fmt.Sprintf("Project: %s Part: %s-%d", x.Project, x.Name, x.Number)
+	return fmt.Sprintf("Project: %s Part: %s #%d", x.Project, strings.Title(x.Name), x.Number)
 }
 
 func (x Part) SheetLink(bucket string) string {
