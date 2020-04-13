@@ -34,7 +34,7 @@ func NewDefaultConfig() Config {
 			SheetsBucketName: "sheets",
 			ClixBucketName:   "clix",
 			PartsBucketName:  "parts",
-			PartsLockerKey:  "parts.lock",
+			PartsLockerKey:   "parts.lock",
 		},
 		StorageConfig: storage.Config{
 			MinioConfig: storage.MinioConfig{
@@ -93,8 +93,8 @@ func (x *Config) ParseEnv() {
 	if arg := os.Getenv("PARTS_BUCKET_NAME"); arg != "" {
 		x.ApiConfig.PartsBucketName = arg
 	}
-	if arg := os.Getenv("PARTS_LOCKER_NAME"); arg != "" {
-		x.ApiConfig.PartsLockerName = arg
+	if arg := os.Getenv("PARTS_LOCKER_KEY"); arg != "" {
+		x.ApiConfig.PartsLockerKey = arg
 	}
 }
 

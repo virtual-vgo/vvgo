@@ -27,7 +27,7 @@ type ServerConfig struct {
 	SheetsBucketName string
 	ClixBucketName   string
 	PartsBucketName  string
-	PartsLockerName  string
+	PartsLockerKey   string
 }
 
 type FileBucket interface {
@@ -46,7 +46,7 @@ func NewStorage(client *storage.Client, config ServerConfig) *Storage {
 	sheetsBucket := client.NewBucket(config.SheetsBucketName)
 	clixBucket := client.NewBucket(config.ClixBucketName)
 	partsBucket := client.NewBucket(config.PartsBucketName)
-	partsLocker := client.NewLocker(config.PartsLockerName)
+	partsLocker := client.NewLocker(config.PartsLockerKey)
 	if sheetsBucket == nil || clixBucket == nil || partsBucket == nil || partsLocker == nil {
 		return nil
 	}
