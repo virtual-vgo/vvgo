@@ -308,4 +308,3 @@ func doUpload(client *api.AsyncClient, upload api.Upload, save bool) {
 	client.Upload(upload)
 	yellow.Printf(":: upload queued -- %s\n", upload.FileName)
 }
-
