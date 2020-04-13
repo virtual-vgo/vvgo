@@ -34,7 +34,7 @@ func NewDefaultConfig() Config {
 			SheetsBucketName: "sheets",
 			ClixBucketName:   "clix",
 			PartsBucketName:  "parts",
-			PartsLockerName:  "parts.lock",
+			PartsLockerKey:  "parts.lock",
 		},
 		StorageConfig: storage.Config{
 			MinioConfig: storage.MinioConfig{
