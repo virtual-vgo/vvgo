@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPartsHandler_ServeHTTP(t *testing.T) {
@@ -34,13 +35,13 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 	mockHTML := string(mockBodyBytes)
 	mockJSON := `[
   {
-    "click_track": "/download?bucket=clix\u0026object=mock-client",
+    "click_track": "/download?bucket=clix\u0026object=click.mp3",
     "file_key": "0xff",
     "link": "/download?bucket=sheets\u0026object=0xff",
     "part_name": "Dio Brando",
     "part_number": 3,
     "project": "truly",
-    "sheet_music": "/download?bucket=sheets\u0026object=mock-sheet"
+    "sheet_music": "/download?bucket=sheets\u0026object=sheet.pdf"
   }
 ]`
 	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
@@ -51,8 +52,8 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 					Name:    "dio brando",
 					Number:  3,
 				},
-				Sheet: "mock-sheet",
-				Click: "mock-client",
+				Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+				Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 			}}
 			var buffer bytes.Buffer
 			json.NewEncoder(&buffer).Encode(parts)
@@ -132,7 +133,6 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 				gotBody = string(gotBytes)
 
 			case mockHTML:
-				println(string(gotBody))
 				wantHTML := html.NewTokenizer(strings.NewReader(mockHTML))
 				gotHTML := html.NewTokenizer(strings.NewReader(gotBody))
 
