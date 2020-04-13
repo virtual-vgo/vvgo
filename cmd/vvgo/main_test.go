@@ -23,7 +23,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"SHEETS_BUCKET_NAME": "sheets-bucket-name",
 		"CLIX_BUCKET_NAME":   "clix-bucket-name",
 		"PARTS_BUCKET_NAME":  "parts-bucket-name",
-		"PARTS_LOCKER_KEY":  "parts-locker-key",
+		"PARTS_LOCKER_KEY":   "parts-locker-key",
 	}
 	want := Config{
 		InitializeStorage: true,
