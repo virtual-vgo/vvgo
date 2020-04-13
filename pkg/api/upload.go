@@ -1,6 +1,8 @@
 package api
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/gob"
 	"encoding/json"
@@ -111,16 +113,40 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var body bytes.Buffer
+	switch r.Header.Get("Content-Encoding") {
+	case "application/gzip":
+		gzipReader, err := gzip.NewReader(r.Body)
+		if err != nil {
+			logger.WithError(err).Error("gzip.NewReader() failed")
+			badRequest(w, "")
+		}
+		if _, err := body.ReadFrom(gzipReader); err != nil {
+			logger.WithError(err).Error("gzipReader.Read() failed")
+			badRequest(w, "")
+		}
+		if err := gzipReader.Close(); err != nil {
+			logger.WithError(err).Error("gzipReader.Close() failed")
+			badRequest(w, "")
+		}
+
+	default:
+		if _, err := body.ReadFrom(r.Body); err != nil {
+			logger.WithError(err).Error("gzip.Read() failed")
+			badRequest(w, "")
+		}
+	}
+
 	var documents []Upload
 	switch r.Header.Get("Content-Type") {
 	case "application/octet-stream":
-		if ok := gobDecode(r.Body, &documents); !ok {
+		if ok := gobDecode(&body, &documents); !ok {
 			badRequest(w, "")
 			return
 		}
 
 	case "application/json":
-		if ok := jsonDecode(r.Body, &documents); !ok {
+		if ok := jsonDecode(&body, &documents); !ok {
 			badRequest(w, "")
 			return
 		}

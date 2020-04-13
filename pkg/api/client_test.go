@@ -18,6 +18,7 @@ func TestClient_Upload(t *testing.T) {
 	wantBody := ``
 	wantMethod := http.MethodPost
 	wantContentType := "application/octet-stream"
+	wantContentEncoding := "application/gzip"
 	wantStatuses := []UploadStatus{{
 		FileName: "Dio_Brando.pdf",
 		Code:     http.StatusOK,
@@ -77,6 +78,9 @@ func TestClient_Upload(t *testing.T) {
 	}
 	if want, got := wantContentType, gotRequest.Header.Get("Content-Type"); want != got {
 		t.Errorf("expected content-type `%s`, got `%s`", want, got)
+	}
+	if want, got := wantContentEncoding, gotRequest.Header.Get("Content-Encoding"); want != got {
+		t.Errorf("expected content-encoding `%s`, got `%s`", want, got)
 	}
 	if want, got := wantMethod, gotRequest.Method; want != got {
 		t.Errorf("expected method `%s`, got `%s`", want, got)

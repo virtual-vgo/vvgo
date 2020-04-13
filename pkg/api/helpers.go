@@ -32,7 +32,7 @@ func jsonEncode(dest io.Writer, src interface{}) bool {
 
 func gobEncode(dest io.Writer, src interface{}) bool {
 	if err := gob.NewEncoder(dest).Encode(src); err != nil {
-		logger.WithError(err).Error("json.Encode() failed")
+		logger.WithError(err).Error("gob.Encode() failed")
 		return false
 	}
 	return true
@@ -48,7 +48,7 @@ func jsonDecode(src io.Reader, dest interface{}) bool {
 
 func gobDecode(src io.Reader, dest interface{}) bool {
 	if err := gob.NewDecoder(src).Decode(dest); err != nil {
-		logger.WithError(err).Error("json.Decode() failed")
+		logger.WithError(err).Error("gob.Decode() failed")
 		return false
 	}
 	return true

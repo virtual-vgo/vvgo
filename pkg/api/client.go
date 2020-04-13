@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/gob"
 	"fmt"
 	"io"
@@ -31,7 +32,7 @@ func (x *Client) Upload(uploads ...Upload) ([]UploadStatus, error) {
 
 	var buffer bytes.Buffer
 	gob.NewEncoder(&buffer).Encode(&uploads)
-	req, err := x.newRequest(http.MethodPost, x.ServerAddress+"/upload", &buffer)
+	req, err := x.newRequestGZIP(http.MethodPost, x.ServerAddress+"/upload", &buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +68,25 @@ func (x *Client) Authenticate() error {
 		return fmt.Errorf("non-200 status `%d: %s`", resp.StatusCode, bytes.TrimSpace(buf))
 	}
 	return nil
+}
+
+func (x *Client) newRequestGZIP(method, url string, body io.Reader) (*http.Request, error) {
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
+	if _, err := io.Copy(gzipWriter, body); err != nil {
+		return nil, fmt.Errorf("gzipWriter.Write failed(): %v", err)
+	}
+
+	if err := gzipWriter.Close(); err != nil {
+		return nil, fmt.Errorf("gzipWriter.Close() failed(): %v", err)
+	}
+
+	req, err := x.newRequest(method, url, &buf)
+	if err != nil {
+		return nil, fmt.Errorf("gzipWriter.Close() failed(): %v", err)
+	}
+	req.Header.Set("Content-Encoding", "application/gzip")
+	return req, nil
 }
 
 func (x *Client) newRequest(method, url string, body io.Reader) (*http.Request, error) {

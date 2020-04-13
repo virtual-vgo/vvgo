@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/gob"
 	"encoding/json"
@@ -247,17 +248,22 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 	}
 
 	// encode it in our various encodings
-	var uploadGob, uploadJSON, wantStatusGob, wantStatusJSON bytes.Buffer
+	var uploadGob, uploadGobGzip, uploadJSON, wantStatusGob, wantStatusJSON bytes.Buffer
 	require.NoError(t, gob.NewEncoder(&uploadGob).Encode(upload), "gob.Encode()")
 	require.NoError(t, json.NewEncoder(&uploadJSON).Encode(upload), "json.Encode()")
 	require.NoError(t, gob.NewEncoder(&wantStatusGob).Encode(wantStatus), "gob.Encode()")
 	require.NoError(t, json.NewEncoder(&wantStatusJSON).Encode(wantStatus), "json.Encode()")
+	gzipWriter := gzip.NewWriter(&uploadGobGzip)
+	_, err := gzipWriter.Write(uploadGob.Bytes())
+	require.NoError(t, err, "gzip.Write()")
+	require.NoError(t, gzipWriter.Close(), "gzip.Close()")
 
 	type request struct {
-		method      string
-		contentType string
-		accept      string
-		body        bytes.Buffer
+		method    string
+		mediaType string
+		accept    string
+		encoding  string
+		body      bytes.Buffer
 	}
 
 	type wants struct {
@@ -273,9 +279,9 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		{
 			name: "method:get",
 			request: request{
-				method:      http.MethodGet,
-				contentType: "application/json",
-				body:        *bytes.NewBuffer([]byte("[]")),
+				method:    http.MethodGet,
+				mediaType: "application/json",
+				body:      *bytes.NewBuffer([]byte("[]")),
 			},
 			wants: wants{
 				body: *bytes.NewBuffer([]byte("\n")),
@@ -285,9 +291,9 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		{
 			name: "content-type:text/html/failure",
 			request: request{
-				method:      http.MethodPost,
-				contentType: "text/html",
-				body:        *bytes.NewBuffer([]byte("")),
+				method:    http.MethodPost,
+				mediaType: "text/html",
+				body:      *bytes.NewBuffer([]byte("")),
 			},
 			wants: wants{
 				body: *bytes.NewBuffer([]byte("\n")),
@@ -297,10 +303,10 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		{
 			name: "content-type:application/json/success",
 			request: request{
-				method:      http.MethodPost,
-				contentType: "application/json",
-				accept:      "application/json",
-				body:        uploadJSON,
+				method:    http.MethodPost,
+				mediaType: "application/json",
+				accept:    "application/json",
+				body:      uploadJSON,
 			},
 			wants: wants{
 				body: wantStatusJSON,
@@ -310,10 +316,24 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		{
 			name: "content-type:application/octet-stream/success",
 			request: request{
-				method:      http.MethodPost,
-				contentType: "application/octet-stream",
-				accept:      "application/octet-stream",
-				body:        uploadGob,
+				method:    http.MethodPost,
+				mediaType: "application/octet-stream",
+				accept:    "application/octet-stream",
+				body:      uploadGob,
+			},
+			wants: wants{
+				body: wantStatusGob,
+				code: http.StatusOK,
+			},
+		},
+		{
+			name: "content-encoding/gzip/success",
+			request: request{
+				method:    http.MethodPost,
+				mediaType: "application/octet-stream",
+				accept:    "application/octet-stream",
+				encoding:  "application/gzip",
+				body:      uploadGobGzip,
 			},
 			wants: wants{
 				body: wantStatusGob,
@@ -323,7 +343,8 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.request.method, "/upload", &tt.request.body)
-			request.Header.Set("Content-Type", tt.request.contentType)
+			request.Header.Set("Content-Type", tt.request.mediaType)
+			request.Header.Set("Content-Encoding", tt.request.encoding)
 			request.Header.Set("Accept", tt.request.accept)
 			recorder := httptest.NewRecorder()
 			UploadHandler{&Storage{
@@ -337,6 +358,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			resp := recorder.Result()
 			var respBody bytes.Buffer
 			respBody.ReadFrom(resp.Body)
+			resp.Body.Close()
 			assert.Equal(t, tt.wants.code, resp.StatusCode, "code")
 			if !assert.Equal(t, tt.wants.body.String(), respBody.String(), "body") {
 				var gotStatus []UploadStatus
