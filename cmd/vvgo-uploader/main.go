@@ -62,10 +62,14 @@ func main() {
 			return fmt.Errorf("unkown project: %s", flags.project)
 		}
 
-		client := api.NewClient(api.ClientConfig{
-			ServerAddress: flags.endpoint,
-			BasicAuthUser: flags.user,
-			BasicAuthPass: flags.pass,
+		client := api.NewAsyncClient(api.AsyncClientConfig{
+			ClientConfig: api.ClientConfig{
+				ServerAddress: flags.endpoint,
+				BasicAuthUser: flags.user,
+				BasicAuthPass: flags.pass,
+			},
+			MaxParallel: 32,
+			QueueLength: 64,
 		})
 
 		if err := client.Authenticate(); err != nil {
@@ -77,12 +81,6 @@ func main() {
 			uploadFile(client, os.Stdout, reader, flags.project, fileName)
 		}
 
-		f, err := os.OpenFile("__uploader.out", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
-		if err != nil {
-			return err
-		}
-		json.NewEncoder(f).Encode(&allUploads)
-		f.Close()
 		return nil
 	}(); err != nil {
 		red.Fprintf(os.Stderr, "%v\n", err)
@@ -90,7 +88,7 @@ func main() {
 	}
 }
 
-func uploadFile(client *api.Client, writer io.Writer, reader *bufio.Reader, project string, fileName string) {
+func uploadFile(client *api.AsyncClient, writer io.Writer, reader *bufio.Reader, project string, fileName string) {
 	for {
 		blue.Printf(":: %s %s\n", "found:", bold.Sprint(fileName))
 
@@ -233,15 +231,19 @@ func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
 
 var allUploads []api.Upload
 
-func doUpload(client *api.Client, upload api.Upload) {
+func doUpload(client *api.AsyncClient, upload api.Upload) {
 	allUploads = append(allUploads, upload)
-
-	results, err := client.Upload(upload)
-	if err != nil {
-		printError(err)
-		return
+	f, err := os.OpenFile("__uploader.out", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+	if err == nil {
+		json.NewEncoder(f).Encode(&allUploads)
+		f.Close()
 	}
-	for _, result := range results {
+	client.Upload(upload)
+	yellow.Printf(":: upload queued -- %s\n", upload.FileName)
+}
+
+func readStatus(client *api.AsyncClient) {
+	for result := range client.Status() {
 		if result.Code != http.StatusOK {
 			printError(fmt.Errorf("file %s received non-200 status: `%d: %s`", result.FileName, result.Code, result.Error))
 		} else {

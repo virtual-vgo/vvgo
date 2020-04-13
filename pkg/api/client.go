@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 type Client struct {
@@ -25,33 +26,48 @@ func NewClient(config ClientConfig) *Client {
 	return &Client{config}
 }
 
-func (x *Client) Upload(uploads ...Upload) ([]UploadStatus, error) {
+func (x *Client) Upload(uploads ...Upload) []UploadStatus {
 	if len(uploads) == 0 {
-		return []UploadStatus{}, nil
+		return []UploadStatus{}
 	}
 
 	var buffer bytes.Buffer
 	gob.NewEncoder(&buffer).Encode(&uploads)
+
 	req, err := x.newRequestGZIP(http.MethodPost, x.ServerAddress+"/upload", &buffer)
 	if err != nil {
-		return nil, err
+		return uploadStatusFatal(uploads, err.Error())
 	}
 	defer req.Body.Close()
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return uploadStatusFatal(uploads, err.Error())
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("http request received non-200 status: `%d: %s`", resp.StatusCode, bytes.TrimSpace(body))
+		return uploadStatusFatal(uploads, fmt.Sprintf("http request received non-200 status: `%d: %s`", resp.StatusCode, bytes.TrimSpace(body)))
+
 	}
 
 	var results []UploadStatus
 	if err := gob.NewDecoder(resp.Body).Decode(&results); err != nil {
-		return nil, fmt.Errorf("json.Decode() failed: %v", err)
+		return uploadStatusFatal(uploads, fmt.Sprintf("json.Decode() failed: %v", err))
 	}
-	return results, nil
+	return results
+}
+
+func uploadStatusFatal(uploads []Upload, err string) []UploadStatus {
+	statuses := make([]UploadStatus, 0, len(uploads))
+	for _, upload := range uploads {
+		statuses = append(statuses, UploadStatus{
+			FileName: upload.FileName,
+			Code:     0,
+			Error:    err,
+		})
+	}
+	return statuses
 }
 
 func (x *Client) Authenticate() error {
@@ -99,4 +115,60 @@ func (x *Client) newRequest(method, url string, body io.Reader) (*http.Request, 
 	req.Header.Set("User-Agent", "Virtual-VGO Client")
 	req.SetBasicAuth(x.BasicAuthUser, x.BasicAuthPass)
 	return req, nil
+}
+
+type AsyncClient struct {
+	*Client
+	AsyncClientConfig
+	queue  chan Upload
+	status chan UploadStatus
+	wg     sync.WaitGroup
+}
+
+type AsyncClientConfig struct {
+	MaxParallel int
+	QueueLength int
+	ClientConfig
+}
+
+func NewAsyncClient(conf AsyncClientConfig) *AsyncClient {
+	queue := make(chan Upload, conf.QueueLength)
+	status := make(chan UploadStatus, conf.QueueLength)
+	asyncClient := AsyncClient{
+		Client: NewClient(conf.ClientConfig),
+		queue:  queue,
+		status: status,
+	}
+
+	asyncClient.wg.Add(1)
+	go func() {
+		defer asyncClient.wg.Done()
+		defer close(status)
+		for upload := range queue {
+			for _, results := range asyncClient.Client.Upload(upload) {
+				status <- results
+			}
+		}
+	}()
+
+	return &asyncClient
+}
+
+func (x *AsyncClient) Upload(uploads ...Upload) {
+	for _, upload := range uploads {
+		x.queue <- upload
+	}
+}
+
+func (x *AsyncClient) Status() <-chan UploadStatus {
+	return x.status
+}
+
+func (x *AsyncClient) Close() {
+	close(x.queue)
+	x.wg.Wait()
+}
+
+func (x *AsyncClient) doUploads() {
+
 }

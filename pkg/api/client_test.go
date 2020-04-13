@@ -23,11 +23,14 @@ func TestClient_Upload(t *testing.T) {
 		FileName: "Dio_Brando.pdf",
 		Code:     http.StatusOK,
 	}}
-	wantErr := error(nil)
 
-	client := NewClient(ClientConfig{
-		BasicAuthUser: "dio",
-		BasicAuthPass: "brando",
+	client := NewAsyncClient(AsyncClientConfig{
+		ClientConfig: ClientConfig{
+			BasicAuthUser: "dio",
+			BasicAuthPass: "brando",
+		},
+		MaxParallel: 32,
+		QueueLength: 64,
 	})
 
 	var gotRequest *http.Request
@@ -42,7 +45,7 @@ func TestClient_Upload(t *testing.T) {
 		}})
 	}))
 	defer ts.Close()
-	client.ServerAddress = ts.URL
+	client.Client.ServerAddress = ts.URL
 
 	fileBytes, err := ioutil.ReadFile("testdata/sheet-music.pdf")
 	if err != nil {
@@ -59,7 +62,12 @@ func TestClient_Upload(t *testing.T) {
 		ContentType: "application/pdf",
 	}}
 
-	gotStatuses, gotErr := client.Upload(uploads...)
+	client.Upload(uploads...)
+	client.Close()
+	var gotStatuses []UploadStatus
+	for status := range client.status {
+		gotStatuses = append(gotStatuses, status)
+	}
 
 	if want, got := wantURI, gotURI; want != got {
 		t.Errorf("expected user `%s`, got `%s`", want, got)
@@ -72,9 +80,6 @@ func TestClient_Upload(t *testing.T) {
 	}
 	if want, got := wantStatuses, gotStatuses; !reflect.DeepEqual(want, got) {
 		t.Errorf("expected statuses %#v, got %#v", want, got)
-	}
-	if want, got := wantErr, gotErr; want != got {
-		t.Errorf("expected error %#v, got %#v", want, got)
 	}
 	if want, got := wantContentType, gotRequest.Header.Get("Content-Type"); want != got {
 		t.Errorf("expected content-type `%s`, got `%s`", want, got)
