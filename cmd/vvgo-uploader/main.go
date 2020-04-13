@@ -7,6 +7,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/fatih/color"
@@ -20,7 +21,6 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type Flags struct {
@@ -97,49 +97,56 @@ func main() {
 			var sig os.Signal
 			sig = <-sigCh
 			red.Printf(":: received: %s\n", sig)
-			yellow.Fprintln(os.Stdout, ":: waiting for uploads to complete... Ctrl+C to force quit")
-			done := make(chan struct{})
-			go func() {
-				client.Close()
-				close(done)
-			}()
-
-			select {
-			case <-sigCh:
-				printError(fmt.Errorf(":: received: %s", sig))
-				os.Exit(1)
-			case <-done:
-				yellow.Println(":: closed!")
-				os.Exit(0)
-			}
-		}()
-
-		// Print upload status back to the user
-		var printLock sync.Mutex
-		go func() {
-			for result := range client.Status() {
-				printLock.Lock()
-				if result.Code != http.StatusOK {
-					printError(fmt.Errorf("file %s received non-200 status: `%d: %s`",
-						result.FileName, result.Code, result.Error))
-				} else {
-					green.Printf(":: uploaded successful -- %s\n", result.FileName)
-				}
-				printLock.Unlock()
-			}
+			shutdown(client, sigCh)
 		}()
 
 		// Read and upload files
 		reader := bufio.NewReader(os.Stdin)
 		for _, fileName := range flag.Args() {
-			printLock.Lock()
-			client.uploadFile(os.Stdout, reader, flags.project, fileName)
-			printLock.Unlock()
+			select {
+			case result := <-client.Status():
+				printResult(result)
+			default:
+				client.uploadFile(os.Stdout, reader, flags.project, fileName)
+			}
 		}
+		shutdown(client, sigCh)
 		return nil
 	}(); err != nil {
 		red.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
+	}
+}
+
+func shutdown(client CmdClient, sigCh chan os.Signal) {
+	yellow.Fprintln(os.Stdout, ":: waiting for uploads to complete... Ctrl+C again to force quit")
+	done := make(chan struct{})
+
+	go client.Close()
+
+	go func() {
+		for result := range client.Status() {
+			printResult(result)
+		}
+		close(done)
+	}()
+
+	select {
+	case sig := <-sigCh:
+		red.Printf(":: received: %s\n", sig)
+		os.Exit(1)
+	case <-done:
+		yellow.Println(":: closed!")
+		os.Exit(0)
+	}
+}
+
+func printResult(result api.UploadStatus) {
+	if result.Code != http.StatusOK {
+		printError(fmt.Errorf(":: upload failed -- %s received non-200 status: `%d: %s`",
+			result.FileName, result.Code, result.Error))
+	} else {
+		green.Printf(":: upload successful -- %s\n", result.FileName)
 	}
 }
 
@@ -148,11 +155,12 @@ func (x *CmdClient) uploadFile(writer io.Writer, reader *bufio.Reader, project s
 		blue.Printf(":: %s %s\n", "found:", bold.Sprint(fileName))
 
 		var upload api.Upload
-		if ok := readUpload(writer, reader, &upload, project, fileName); !ok {
+		err := readUpload(writer, reader, &upload, project, fileName)
+		switch {
+		case err == ErrSkipped:
+			blue.Fprintln(writer, ":: skipping...")
 			return
-		}
-
-		if err := upload.Validate(); err != nil {
+		case err != nil:
 			printError(err)
 			if yesNo(writer, reader, "try again? (；一ω一||)") {
 				continue
@@ -168,6 +176,7 @@ func (x *CmdClient) uploadFile(writer io.Writer, reader *bufio.Reader, project s
 			p := color.New(color.FgWhite)
 			p.Fprintln(writer, " * "+part.String())
 		}
+
 		if yesNo(writer, reader, "is this ok") {
 			doUpload(x.AsyncClient, upload, x.flags.save)
 			return
@@ -175,27 +184,25 @@ func (x *CmdClient) uploadFile(writer io.Writer, reader *bufio.Reader, project s
 	}
 }
 
-func readUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload, project string, fileName string) bool {
+var ErrSkipped = errors.New("skipped")
+
+func readUpload(writer io.Writer, reader *bufio.Reader, upload *api.Upload, project string, fileName string) error {
 	fileBytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		printError(err)
-		return false
+		return err
 	}
 	contentType := readMediaType(fileBytes)
-	uploadType := readUploadType(writer, reader, contentType)
-	if uploadType == "" {
-		return false
+	uploadType, err := readUploadType(writer, reader, contentType)
+	if err != nil {
+		return err
 	}
-	fmt.Fprintf(writer, ":: upload type: %s | %s\n",
-		bold.Sprint(uploadType),
-		color.New(color.Italic).Sprint("leave part names or numbers empty to skip"))
+	fmt.Fprintf(writer, ":: upload type: %s\n", bold.Sprint(uploadType))
+	fmt.Fprintf(writer, ":: %s | %s\n",
+		color.New(color.Italic).Sprint("leave empty to skip"),
+		color.New(color.Italic).Sprint("Ctrl+C to quit"))
 	partNames := readPartNames(writer, reader)
 	partNumbers := readPartNumbers(writer, reader)
-	if partNames == nil || partNumbers == nil {
-		blue.Fprintln(writer, ":: skipping...")
-		return false
-	}
-	*dest = api.Upload{
+	*upload = api.Upload{
 		UploadType:  uploadType,
 		PartNames:   partNames,
 		PartNumbers: partNumbers,
@@ -204,7 +211,11 @@ func readUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload, projec
 		FileBytes:   fileBytes,
 		ContentType: contentType,
 	}
-	return true
+
+	if partNames == nil && partNumbers == nil {
+		return ErrSkipped
+	}
+	return upload.Validate()
 }
 
 func yesNo(writer io.Writer, reader *bufio.Reader, pre string) bool {
@@ -223,16 +234,15 @@ func readMediaType(fileBytes []byte) string {
 	return http.DetectContentType(fileBytes)
 }
 
-func readUploadType(writer io.Writer, reader *bufio.Reader, mediaType string) api.UploadType {
+func readUploadType(writer io.Writer, reader *bufio.Reader, mediaType string) (api.UploadType, error) {
 	switch true {
 	case strings.HasPrefix(mediaType, "application/pdf"):
-		return api.UploadTypeSheets
+		return api.UploadTypeSheets, nil
 	case strings.HasPrefix(mediaType, "audio/"):
-		return api.UploadTypeClix
+		return api.UploadTypeClix, nil
 	default:
-		printError(fmt.Errorf("i don't know how to handle media type: `%s`. (´･ω･`)", mediaType))
+		return "", fmt.Errorf("i don't know how to handle media type: `%s`. (´･ω･`)", mediaType)
 	}
-	return ""
 }
 
 func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
@@ -298,3 +308,4 @@ func doUpload(client *api.AsyncClient, upload api.Upload, save bool) {
 	client.Upload(upload)
 	yellow.Printf(":: upload queued -- %s\n", upload.FileName)
 }
+

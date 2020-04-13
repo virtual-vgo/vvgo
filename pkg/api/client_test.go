@@ -65,7 +65,7 @@ func TestClient_Upload(t *testing.T) {
 	client.Upload(uploads...)
 	client.Close()
 	var gotStatuses []UploadStatus
-	for status := range client.status {
+	for status := range client.Status() {
 		gotStatuses = append(gotStatuses, status)
 	}
 

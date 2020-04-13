@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"sync"
 )
 
 type Client struct {
@@ -122,7 +121,6 @@ type AsyncClient struct {
 	AsyncClientConfig
 	queue  chan Upload
 	status chan UploadStatus
-	wg     sync.WaitGroup
 }
 
 type AsyncClientConfig struct {
@@ -140,9 +138,7 @@ func NewAsyncClient(conf AsyncClientConfig) *AsyncClient {
 		status: status,
 	}
 
-	asyncClient.wg.Add(1)
 	go func() {
-		defer asyncClient.wg.Done()
 		defer close(status)
 		for upload := range queue {
 			for _, results := range asyncClient.Client.Upload(upload) {
@@ -166,7 +162,6 @@ func (x *AsyncClient) Status() <-chan UploadStatus {
 
 func (x *AsyncClient) Close() {
 	close(x.queue)
-	x.wg.Wait()
 }
 
 func (x *AsyncClient) doUploads() {

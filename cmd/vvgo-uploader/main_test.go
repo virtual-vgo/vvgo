@@ -73,7 +73,7 @@ func Test_readUpload(t *testing.T) {
 			},
 			wants: wants{
 				ok:     true,
-				output: ":: upload type: clix | leave part names or numbers empty to skip\n:: part names (ex. trumpet, flute): :: part numbers (ex. 1, 2): ",
+				output: ":: upload type: clix\n:: leave empty to skip | Ctrl+C to quit\n:: part names (ex. trumpet, flute): :: part numbers (ex. 1, 2): ",
 				upload: api.Upload{
 					UploadType:  api.UploadTypeClix,
 					PartNames:   []string{"trumpet", "baritone"},
@@ -94,7 +94,7 @@ func Test_readUpload(t *testing.T) {
 			},
 			wants: wants{
 				ok:     true,
-				output: ":: upload type: sheets | leave part names or numbers empty to skip\n:: part names (ex. trumpet, flute): :: part numbers (ex. 1, 2): ",
+				output: ":: upload type: sheets\n:: leave empty to skip | Ctrl+C to quit\n:: part names (ex. trumpet, flute): :: part numbers (ex. 1, 2): ",
 				upload: api.Upload{
 					UploadType:  api.UploadTypeSheets,
 					PartNames:   []string{"trumpet", "baritone"},
@@ -111,9 +111,9 @@ func Test_readUpload(t *testing.T) {
 			var gotUpload api.Upload
 			reader := bufio.NewReader(strings.NewReader(tt.args.input))
 			writer := bytes.NewBuffer(nil)
-			gotOk := readUpload(writer, reader, &gotUpload, tt.args.project, tt.args.fileName)
+			gotError := readUpload(writer, reader, &gotUpload, tt.args.project, tt.args.fileName)
 			assert.Equal(t, tt.wants.output, writer.String(), "output")
-			if assert.Equal(t, tt.wants.ok, gotOk, "ok") && gotOk {
+			if tt.wants.ok && assert.NoError(t, gotError, "error") {
 				compareUploads(t, &tt.wants.upload, &gotUpload)
 			}
 		})
