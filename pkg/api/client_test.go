@@ -2,7 +2,7 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/gob"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -17,7 +17,8 @@ func TestClient_Upload(t *testing.T) {
 	wantURI := "/upload"
 	wantBody := ``
 	wantMethod := http.MethodPost
-	wantContentType := "application/json"
+	wantContentType := "application/octet-stream"
+	wantContentEncoding := "application/gzip"
 	wantStatuses := []UploadStatus{{
 		FileName: "Dio_Brando.pdf",
 		Code:     http.StatusOK,
@@ -35,7 +36,7 @@ func TestClient_Upload(t *testing.T) {
 		gotRequest = r
 		gotUser, gotPass, _ = r.BasicAuth()
 		gotURI = r.URL.RequestURI()
-		json.NewEncoder(w).Encode([]UploadStatus{{
+		gob.NewEncoder(w).Encode([]UploadStatus{{
 			FileName: "Dio_Brando.pdf",
 			Code:     http.StatusOK,
 		}})
@@ -77,6 +78,9 @@ func TestClient_Upload(t *testing.T) {
 	}
 	if want, got := wantContentType, gotRequest.Header.Get("Content-Type"); want != got {
 		t.Errorf("expected content-type `%s`, got `%s`", want, got)
+	}
+	if want, got := wantContentEncoding, gotRequest.Header.Get("Content-Encoding"); want != got {
+		t.Errorf("expected content-encoding `%s`, got `%s`", want, got)
 	}
 	if want, got := wantMethod, gotRequest.Method; want != got {
 		t.Errorf("expected method `%s`, got `%s`", want, got)

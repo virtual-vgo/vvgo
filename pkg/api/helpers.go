@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"html/template"
 	"io"
@@ -29,6 +30,14 @@ func jsonEncode(dest io.Writer, src interface{}) bool {
 	return true
 }
 
+func gobEncode(dest io.Writer, src interface{}) bool {
+	if err := gob.NewEncoder(dest).Encode(src); err != nil {
+		logger.WithError(err).Error("gob.Encode() failed")
+		return false
+	}
+	return true
+}
+
 func jsonDecode(src io.Reader, dest interface{}) bool {
 	if err := json.NewDecoder(src).Decode(dest); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
@@ -37,10 +46,18 @@ func jsonDecode(src io.Reader, dest interface{}) bool {
 	return true
 }
 
-func acceptsType(r *http.Request, mimeType string) bool {
+func gobDecode(src io.Reader, dest interface{}) bool {
+	if err := gob.NewDecoder(src).Decode(dest); err != nil {
+		logger.WithError(err).Error("gob.Decode() failed")
+		return false
+	}
+	return true
+}
+
+func acceptsType(r *http.Request, mediaType string) bool {
 	for _, value := range r.Header["Accept"] {
 		for _, wantType := range strings.Split(value, ",") {
-			if wantType == mimeType {
+			if strings.HasPrefix(mediaType, wantType) {
 				return true
 			}
 		}

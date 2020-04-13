@@ -156,19 +156,19 @@ func objectsToString(objects []storage.Object) string {
 
 func TestPart_String(t *testing.T) {
 	part := Part{
-		ID:    ID{Project: "cheese", Name: "danish", Number: 1},
-		Click: "click.mp3",
-		Sheet: "sheet.pdf",
+		ID:     ID{Project: "cheese", Name: "danish", Number: 1},
+		Clix:   []Link{{"click.mp3", time.Now()}},
+		Sheets: []Link{{"sheet.pdf", time.Now()}},
 	}
-	want := "Project: cheese Part: danish-1"
+	want := "Project: cheese Part: Danish #1"
 	assert.Equal(t, want, part.String())
 }
 
 func TestPart_SheetLink(t *testing.T) {
 	part := Part{
-		ID:    ID{Project: "cheese", Name: "danish", Number: 1},
-		Click: "click.mp3",
-		Sheet: "sheet.pdf",
+		ID:     ID{Project: "cheese", Name: "danish", Number: 1},
+		Clix:   []Link{{"click.mp3", time.Now()}},
+		Sheets: []Link{{"sheet.pdf", time.Now()}},
 	}
 	want := "/download?bucket=sheets&object=sheet.pdf"
 	assert.Equal(t, want, part.SheetLink("sheets"))
@@ -176,9 +176,9 @@ func TestPart_SheetLink(t *testing.T) {
 
 func TestPart_ClickLink(t *testing.T) {
 	part := Part{
-		ID:    ID{Project: "cheese", Name: "danish", Number: 1},
-		Click: "click.mp3",
-		Sheet: "sheet.pdf",
+		ID:     ID{Project: "cheese", Name: "danish", Number: 1},
+		Clix:   []Link{{"click.mp3", time.Now()}},
+		Sheets: []Link{{"sheet.pdf", time.Now()}},
 	}
 	want := "/download?bucket=clix&object=click.mp3"
 	assert.Equal(t, want, part.ClickLink("clix"))
@@ -268,44 +268,48 @@ func Test_mergeChanges(t *testing.T) {
 			args: args{
 				src: []Part{
 					{
-						ID:    ID{Project: "cheese", Name: "danish", Number: 1},
-						Click: "OLD-click.mp3",
-						Sheet: "OLD-sheet.pdf",
+						ID:   ID{Project: "cheese", Name: "danish", Number: 1},
+						Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 					},
 					{
-						ID:    ID{Project: "turkey", Name: "club", Number: 3},
-						Click: "OLD-click.mp3",
-						Sheet: "OLD-sheet.pdf",
+						ID:     ID{Project: "turkey", Name: "club", Number: 3},
+						Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
+						Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
 					},
 				},
 				changes: []Part{
 					{
-						ID:    ID{Project: "cheese", Name: "danish", Number: 1},
-						Click: "NEW-click.mp3",
-						Sheet: "",
+						ID:     ID{Project: "cheese", Name: "danish", Number: 1},
+						Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
+						Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 					},
 					{
-						ID:    ID{Project: "waffle", Name: "cone", Number: 2},
-						Click: "NEW-click.mp3",
-						Sheet: "NEW-sheet.pdf",
+						ID:     ID{Project: "waffle", Name: "cone", Number: 2},
+						Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
+						Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 					},
 				},
 			},
 			want: []Part{
 				{
-					ID:    ID{Project: "cheese", Name: "danish", Number: 1},
-					Click: "NEW-click.mp3",
-					Sheet: "OLD-sheet.pdf",
+					ID: ID{Project: "cheese", Name: "danish", Number: 1},
+					Clix: []Link{
+						{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)},
+						{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
+					},
+					Sheets: []Link{
+						{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)},
+					},
 				},
 				{
-					ID:    ID{Project: "turkey", Name: "club", Number: 3},
-					Click: "OLD-click.mp3",
-					Sheet: "OLD-sheet.pdf",
+					ID:     ID{Project: "turkey", Name: "club", Number: 3},
+					Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
+					Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
 				},
 				{
-					ID:    ID{Project: "waffle", Name: "cone", Number: 2},
-					Click: "NEW-click.mp3",
-					Sheet: "NEW-sheet.pdf",
+					ID:     ID{Project: "waffle", Name: "cone", Number: 2},
+					Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
+					Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 				},
 			},
 		},

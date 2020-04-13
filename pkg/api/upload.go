@@ -1,7 +1,10 @@
 package api
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -110,14 +113,46 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("Content-Type") != "application/json" {
-		invalidContent(w)
-		return
+	var body bytes.Buffer
+	switch r.Header.Get("Content-Encoding") {
+	case "application/gzip":
+		gzipReader, err := gzip.NewReader(r.Body)
+		if err != nil {
+			logger.WithError(err).Error("gzip.NewReader() failed")
+			badRequest(w, "")
+		}
+		if _, err := body.ReadFrom(gzipReader); err != nil {
+			logger.WithError(err).Error("gzipReader.Read() failed")
+			badRequest(w, "")
+		}
+		if err := gzipReader.Close(); err != nil {
+			logger.WithError(err).Error("gzipReader.Close() failed")
+			badRequest(w, "")
+		}
+
+	default:
+		if _, err := body.ReadFrom(r.Body); err != nil {
+			logger.WithError(err).Error("gzip.Read() failed")
+			badRequest(w, "")
+		}
 	}
 
 	var documents []Upload
-	if ok := jsonDecode(r.Body, &documents); !ok {
-		badRequest(w, "")
+	switch r.Header.Get("Content-Type") {
+	case "application/octet-stream":
+		if ok := gobDecode(&body, &documents); !ok {
+			badRequest(w, "")
+			return
+		}
+
+	case "application/json":
+		if ok := jsonDecode(&body, &documents); !ok {
+			badRequest(w, "")
+			return
+		}
+
+	default:
+		invalidContent(w)
 		return
 	}
 
@@ -128,30 +163,30 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wg.Add(len(documents))
 	statuses := make(chan UploadStatus, len(documents))
 	for _, upload := range documents {
-		go func(upload *Upload) {
+		go func(upload Upload) {
 			defer wg.Done()
 
 			// validate the upload
 			if err := upload.Validate(); err != nil {
-				statuses <- uploadBadRequest(upload, err.Error())
+				statuses <- uploadBadRequest(&upload, err.Error())
 				return
 			}
 
 			// check for context cancelled
 			select {
 			case <-ctx.Done():
-				statuses <- uploadCtxCancelled(upload, ctx.Err())
+				statuses <- uploadCtxCancelled(&upload, ctx.Err())
 			default:
 			}
 
 			// handle the upload
 			switch upload.UploadType {
 			case UploadTypeClix:
-				statuses <- x.handleClickTrack(ctx, upload)
+				statuses <- x.handleClickTrack(ctx, &upload)
 			case UploadTypeSheets:
-				statuses <- x.handleSheetMusic(ctx, upload)
+				statuses <- x.handleSheetMusic(ctx, &upload)
 			}
-		}(&upload)
+		}(upload)
 	}
 
 	wg.Wait()
@@ -161,7 +196,17 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for status := range statuses {
 		results = append(results, status)
 	}
-	json.NewEncoder(w).Encode(&results)
+
+	switch {
+	case acceptsType(r, "application/json"):
+		if err := json.NewEncoder(w).Encode(&results); err != nil {
+			logger.WithError(err).Error("json.Encode() failed", err)
+		}
+	default:
+		if err := gob.NewEncoder(w).Encode(&results); err != nil {
+			logger.WithError(err).Error("gob.Encode() failed", err)
+		}
+	}
 }
 
 func (x UploadHandler) handleClickTrack(ctx context.Context, upload *Upload) UploadStatus {
@@ -194,7 +239,12 @@ func (x UploadHandler) handleParts(ctx context.Context, upload *Upload, objectKe
 	// update parts with the revision
 	uploadParts := upload.Parts()
 	for i := range uploadParts {
-		uploadParts[i].Click = objectKey
+		switch upload.UploadType {
+		case UploadTypeSheets:
+			uploadParts[i].Sheets.NewKey(objectKey)
+		case UploadTypeClix:
+			uploadParts[i].Clix.NewKey(objectKey)
+		}
 	}
 	if ok := x.Parts.Save(ctx, uploadParts); !ok {
 		return uploadInternalServerError(upload)
