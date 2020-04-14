@@ -302,7 +302,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			},
 		},
 		{
-			name: "content-type:application/"+MediaTypeUploadsGob+"/success",
+			name: "content-type:application/" + MediaTypeUploadsGob + "/success",
 			request: request{
 				method:    http.MethodPost,
 				mediaType: MediaTypeUploadsGob,
