@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/gob"
 	"encoding/json"
@@ -17,6 +16,8 @@ import (
 	"time"
 )
 
+const UploadsTimeout = 5 * 60 * time.Second
+
 type UploadHandler struct{ *Storage }
 
 type UploadType string
@@ -27,6 +28,10 @@ const (
 	UploadTypeClix   UploadType = "clix"
 	UploadTypeSheets UploadType = "sheets"
 )
+
+const MediaTypeUploadsGob = "application/x.vvgo.pkg.api.uploads.gob"
+
+type Uploads []Upload
 
 type Upload struct {
 	UploadType  `json:"upload_type"`
@@ -99,13 +104,13 @@ func (upload *Upload) Parts() []parts.Part {
 	return allParts
 }
 
+const MediaTypeUploadStatusesGob = "application/x.vvgo.pkg.api.upload_statuses.gob"
+
 type UploadStatus struct {
 	FileName string `json:"file_name"`
 	Code     int    `json:"code"`
 	Error    string `json:"error,omitempty"`
 }
-
-const UploadsTimeout = 5 * 60 * time.Second
 
 func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -113,103 +118,91 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body bytes.Buffer
-	switch r.Header.Get("Content-Encoding") {
-	case "application/gzip":
-		gzipReader, err := gzip.NewReader(r.Body)
-		if err != nil {
-			logger.WithError(err).Error("gzip.NewReader() failed")
-			badRequest(w, "")
-		}
-		if _, err := body.ReadFrom(gzipReader); err != nil {
-			logger.WithError(err).Error("gzipReader.Read() failed")
-			badRequest(w, "")
-		}
-		if err := gzipReader.Close(); err != nil {
-			logger.WithError(err).Error("gzipReader.Close() failed")
-			badRequest(w, "")
-		}
-
-	default:
-		if _, err := body.ReadFrom(r.Body); err != nil {
-			logger.WithError(err).Error("gzip.Read() failed")
-			badRequest(w, "")
-		}
-	}
-
-	var documents []Upload
-	switch r.Header.Get("Content-Type") {
-	case "application/octet-stream":
-		if ok := gobDecode(&body, &documents); !ok {
-			badRequest(w, "")
-			return
-		}
-
-	case "application/json":
-		if ok := jsonDecode(&body, &documents); !ok {
-			badRequest(w, "")
-			return
-		}
-
-	default:
-		invalidContent(w)
+	var uploads Uploads
+	if ok := readUploads(r, &uploads); !ok {
+		badRequest(w, "invalid body")
 		return
 	}
 
-	// we'll handle the uploads in goroutines, since these make outgoing http requests to object storage.
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithTimeout(context.Background(), UploadsTimeout)
+	ctx, cancel := context.WithTimeout(r.Context(), UploadsTimeout)
 	defer cancel()
-	wg.Add(len(documents))
-	statuses := make(chan UploadStatus, len(documents))
-	for _, upload := range documents {
-		go func(upload Upload) {
-			defer wg.Done()
-
-			// validate the upload
-			if err := upload.Validate(); err != nil {
-				statuses <- uploadBadRequest(&upload, err.Error())
-				return
-			}
-
-			// check for context cancelled
-			select {
-			case <-ctx.Done():
-				statuses <- uploadCtxCancelled(&upload, ctx.Err())
-			default:
-			}
-
-			// handle the upload
-			switch upload.UploadType {
-			case UploadTypeClix:
-				statuses <- x.handleClickTrack(ctx, &upload)
-			case UploadTypeSheets:
-				statuses <- x.handleSheetMusic(ctx, &upload)
-			}
-		}(upload)
-	}
-
-	wg.Wait()
-	close(statuses)
-
-	results := make([]UploadStatus, 0, len(documents))
-	for status := range statuses {
-		results = append(results, status)
-	}
+	statuses := x.ServeUploads(ctx, uploads)
 
 	switch {
-	case acceptsType(r, "application/json"):
-		if err := json.NewEncoder(w).Encode(&results); err != nil {
-			logger.WithError(err).Error("json.Encode() failed", err)
-		}
-	default:
-		if err := gob.NewEncoder(w).Encode(&results); err != nil {
+	case acceptsType(r, MediaTypeUploadStatusesGob):
+		if err := gob.NewEncoder(w).Encode(&statuses); err != nil {
 			logger.WithError(err).Error("gob.Encode() failed", err)
+		}
+
+	default:
+		if err := json.NewEncoder(w).Encode(&statuses); err != nil {
+			logger.WithError(err).Error("json.Encode() failed", err)
 		}
 	}
 }
 
-func (x UploadHandler) handleClickTrack(ctx context.Context, upload *Upload) UploadStatus {
+func readUploads(r *http.Request, dest *Uploads) bool {
+	var body bytes.Buffer
+	if ok := readBody(&body, r); !ok {
+		return false
+	}
+
+	switch r.Header.Get("Content-Type") {
+	case MediaTypeUploadsGob:
+		return gobDecode(&body, dest)
+	case "application/json":
+		return jsonDecode(&body, dest)
+	default:
+		return false
+	}
+}
+
+func (x *UploadHandler) ServeUploads(ctx context.Context, uploads Uploads) []UploadStatus {
+	// we'll handle the uploads in goroutines, since these make outgoing http requests to object storage.
+	var wg sync.WaitGroup
+	wg.Add(len(uploads))
+	statusesCh := make(chan UploadStatus, len(uploads))
+	for _, upload := range uploads {
+		go func(upload Upload) {
+			defer wg.Done()
+			statusesCh <- x.serveUpload(ctx, upload)
+		}(upload)
+	}
+	wg.Wait()
+	close(statusesCh)
+
+	statuses := make([]UploadStatus, 0, len(uploads))
+	for status := range statusesCh {
+		statuses = append(statuses, status)
+	}
+	return statuses
+}
+
+func (x UploadHandler) serveUpload(ctx context.Context, upload Upload) UploadStatus {
+	// validate the upload
+	if err := upload.Validate(); err != nil {
+		return uploadBadRequest(&upload, err.Error())
+	}
+
+	// check if context cancelled
+	select {
+	case <-ctx.Done():
+		return uploadCtxCancelled(&upload, ctx.Err())
+	default:
+	}
+
+	// handle the upload
+	switch upload.UploadType {
+	case UploadTypeClix:
+		return x.handleClix(ctx, &upload)
+	case UploadTypeSheets:
+		return x.handleSheets(ctx, &upload)
+	default:
+		return uploadBadRequest(&upload, "invalid upload type")
+	}
+}
+
+func (x UploadHandler) handleClix(ctx context.Context, upload *Upload) UploadStatus {
 	file := upload.File()
 	if err := file.ValidateMediaType("audio/"); err != nil {
 		return uploadBadRequest(upload, err.Error())
@@ -222,7 +215,7 @@ func (x UploadHandler) handleClickTrack(ctx context.Context, upload *Upload) Upl
 	}
 }
 
-func (x UploadHandler) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
+func (x UploadHandler) handleSheets(ctx context.Context, upload *Upload) UploadStatus {
 	file := upload.File()
 	if err := file.ValidateMediaType("application/pdf"); err != nil {
 		return uploadBadRequest(upload, err.Error())

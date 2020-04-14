@@ -289,18 +289,6 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			},
 		},
 		{
-			name: "content-type:text/html/failure",
-			request: request{
-				method:    http.MethodPost,
-				mediaType: "text/html",
-				body:      *bytes.NewBuffer([]byte("")),
-			},
-			wants: wants{
-				body: *bytes.NewBuffer([]byte("\n")),
-				code: http.StatusUnsupportedMediaType,
-			},
-		},
-		{
 			name: "content-type:application/json/success",
 			request: request{
 				method:    http.MethodPost,
@@ -314,11 +302,11 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			},
 		},
 		{
-			name: "content-type:application/octet-stream/success",
+			name: "content-type:application/"+MediaTypeUploadsGob+"/success",
 			request: request{
 				method:    http.MethodPost,
-				mediaType: "application/octet-stream",
-				accept:    "application/octet-stream",
+				mediaType: MediaTypeUploadsGob,
+				accept:    MediaTypeUploadStatusesGob,
 				body:      uploadGob,
 			},
 			wants: wants{
@@ -330,8 +318,8 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			name: "content-encoding/gzip/success",
 			request: request{
 				method:    http.MethodPost,
-				mediaType: "application/octet-stream",
-				accept:    "application/octet-stream",
+				mediaType: MediaTypeUploadsGob,
+				accept:    MediaTypeUploadStatusesGob,
 				encoding:  "application/gzip",
 				body:      uploadGobGzip,
 			},

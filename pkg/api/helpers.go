@@ -1,6 +1,7 @@
 package api
 
 import (
+	"compress/gzip"
 	"encoding/gob"
 	"encoding/json"
 	"html/template"
@@ -8,6 +9,32 @@ import (
 	"net/http"
 	"strings"
 )
+
+func readBody(dest io.Writer, r *http.Request) bool {
+	switch r.Header.Get("Content-Encoding") {
+	case "application/gzip":
+		gzipReader, err := gzip.NewReader(r.Body)
+		if err != nil {
+			logger.WithError(err).Error("gzip.NewReader() failed")
+			return false
+		}
+		if _, err := io.Copy(dest, gzipReader); err != nil {
+			logger.WithError(err).Error("gzipReader.Read() failed")
+			return false
+		}
+		if err := gzipReader.Close(); err != nil {
+			logger.WithError(err).Error("gzipReader.Close() failed")
+			return false
+		}
+
+	default:
+		if _, err := io.Copy(dest, r.Body); err != nil {
+			logger.WithError(err).Error("r.body.Read() failed")
+			return false
+		}
+	}
+	return true
+}
 
 func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) bool {
 	uploadTemplate, err := template.ParseFiles(templateFiles...)

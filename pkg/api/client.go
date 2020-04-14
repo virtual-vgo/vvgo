@@ -38,6 +38,8 @@ func (x *Client) Upload(uploads ...Upload) []UploadStatus {
 		return uploadStatusFatal(uploads, err.Error())
 	}
 	defer req.Body.Close()
+	req.Header.Set("Content-Type", MediaTypeUploadsGob)
+	req.Header.Set("Accept", MediaTypeUploadStatusesGob)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return uploadStatusFatal(uploads, err.Error())
@@ -109,8 +111,6 @@ func (x *Client) newRequest(method, url string, body io.Reader) (*http.Request, 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Accept", "application/octet-stream")
 	req.Header.Set("User-Agent", "Virtual-VGO Client")
 	req.SetBasicAuth(x.BasicAuthUser, x.BasicAuthPass)
 	return req, nil

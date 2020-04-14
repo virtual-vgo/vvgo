@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/gob"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -15,9 +14,8 @@ func TestClient_Upload(t *testing.T) {
 	wantUser := "dio"
 	wantPass := "brando"
 	wantURI := "/upload"
-	wantBody := ``
 	wantMethod := http.MethodPost
-	wantContentType := "application/octet-stream"
+	wantContentType := MediaTypeUploadsGob
 	wantContentEncoding := "application/gzip"
 	wantStatuses := []UploadStatus{{
 		FileName: "Dio_Brando.pdf",
@@ -34,11 +32,8 @@ func TestClient_Upload(t *testing.T) {
 	})
 
 	var gotRequest *http.Request
-	var gotUser, gotPass, gotURI string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r
-		gotUser, gotPass, _ = r.BasicAuth()
-		gotURI = r.URL.RequestURI()
 		gob.NewEncoder(w).Encode([]UploadStatus{{
 			FileName: "Dio_Brando.pdf",
 			Code:     http.StatusOK,
@@ -69,9 +64,10 @@ func TestClient_Upload(t *testing.T) {
 		gotStatuses = append(gotStatuses, status)
 	}
 
-	if want, got := wantURI, gotURI; want != got {
+	if want, got := wantURI, gotRequest.URL.RequestURI(); want != got {
 		t.Errorf("expected user `%s`, got `%s`", want, got)
 	}
+	gotUser, gotPass, _ := gotRequest.BasicAuth()
 	if want, got := wantUser, gotUser; want != got {
 		t.Errorf("expected user `%s`, got `%s`", want, got)
 	}
@@ -89,11 +85,6 @@ func TestClient_Upload(t *testing.T) {
 	}
 	if want, got := wantMethod, gotRequest.Method; want != got {
 		t.Errorf("expected method `%s`, got `%s`", want, got)
-	}
-	var gotBody bytes.Buffer
-	gotBody.ReadFrom(gotRequest.Body)
-	if want, got := wantBody, gotBody.String(); want != got {
-		t.Errorf("expected body `%s`, got `%s`", want, got)
 	}
 }
 
