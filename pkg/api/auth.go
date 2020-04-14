@@ -47,9 +47,9 @@ type TokenAuth []string
 func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if ok := func() bool {
-			requestToken := r.Header.Get(HeaderVirtualVGOApiToken)
+			auth := strings.TrimSpace(r.Header.Get("Authorization"))
 			for _, token := range tokens {
-				if requestToken == token {
+				if auth == "Bearer "+token {
 					return true
 				}
 			}

@@ -24,13 +24,13 @@ func TestTokenAuth_Authenticate(t *testing.T) {
 	}{
 		{
 			name:      "success",
-			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			request:   newRequest("/", map[string]string{"Authorization": "Bearer 196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
 			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
 			wantCode:  http.StatusOK,
 		},
 		{
 			name:      "empty map",
-			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "Bearer 196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
 			tokenAuth: TokenAuth{},
 			wantCode:  http.StatusUnauthorized,
 		},
@@ -42,7 +42,7 @@ func TestTokenAuth_Authenticate(t *testing.T) {
 		},
 		{
 			name:      "incorrect token",
-			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "8d32ff4a91a530bc-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "Bearer 8d32ff4a91a530bc-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
 			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
 			wantCode:  http.StatusUnauthorized,
 		},
