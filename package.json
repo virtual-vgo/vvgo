@@ -17,7 +17,11 @@
   },
   "homepage": "https://github.com/virtual-vgo/vvgo#readme",
   "dependencies": {
-    "datatables": "^1.10.18",
-    "jquery": "^3.5.0"
+    "bootstrap": "^4.4.1",
+    "datatables.net": "^1.10.20",
+    "datatables.net-bs4": "^1.10.20",
+    "datatables.net-responsive-bs4": "^2.2.3",
+    "jquery": "^3.5.0",
+    "popper.js": "^1.16.1"
   }
 }
