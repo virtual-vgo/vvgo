@@ -71,7 +71,7 @@ Aulochrome
 Automobile Brake Drums
 Bagpipe
 Balalaika
-B♭­ Alto Ocarina
+B♭ Alto Ocarina
 Bamboo Wind Chimes
 Bandoneon
 Banjo
@@ -110,6 +110,7 @@ Bass Hohner Harmonica
 Bass Huang Harmonica
 Bass Kelhorn
 Bass Marimba
+Bass Oboe
 Bassoon
 Bass Recorder
 Bass Sackbut
@@ -154,6 +155,7 @@ Bugle
 B♭ Wagner Tuba
 Cabasa
 C Alto Ocarina
+Carillon
 Castanets
 Cavaquinho
 Cavaquinho (4-string Guitar) (Tablature)
@@ -164,8 +166,9 @@ C Cornet
 C Dizi
 C Duduk
 Celesta
-Cello Steel Drums
 Cello
+Cello Steel Drums
+Čelo
 Chains
 Chalumeau
 Chimes
@@ -211,11 +214,11 @@ Crotales
 Crumhorn
 Crystal Synthesizer
 C Soprano Ocarina
+C Tin Whistle
 C Trumpet
 C Tuba
 Cuica
 Cymbal
-Cymbals
 Danso
 D Clarinet
 Didgeridoo
@@ -313,9 +316,12 @@ Horagai
 Horn in A
 Horn in A♭
 Horn in B♭
+Horn in B♭ alto
 Horn in B♭ basso
 Horn in C
+Horn in C alto
 Horn in D
+Horn in E
 Horn in E♭
 Horn in F
 Horn in G
@@ -389,6 +395,10 @@ Piccolo Trumpet
 Piccolo Trumpet in A
 Piccolo Trumpet in B♭
 Pipe Organ
+Pocket-Sax B♭
+Pocket-Sax C
+Pocket-Sax D
+Pocket-Sax G
 Pocket Trumpet
 Poly Synthesizer
 Posthorn
@@ -415,6 +425,7 @@ Saxophone
 Sci-fi Synthesizer
 Secunda Balalaika
 Serpent
+Shaker
 Shamisen
 Shell Wind Chimes
 Shenai
