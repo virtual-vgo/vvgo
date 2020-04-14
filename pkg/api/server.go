@@ -13,16 +13,16 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress       string `split_words:"true" default:"localhost:8080"`
-	MaxContentLength    int64  `split_words:"true" default:"10000000"`
-	SheetsBucketName    string `split_words:"true" default:"sheets"`
-	ClixBucketName      string `split_words:"true" default:"clix"`
-	PartsBucketName     string `split_words:"true" default:"parts"`
-	PartsLockerKey      string `split_words:"true" default:"parts.lock"`
-	MemberBasicAuthUser string `split_words:"true" default:"admin"`
-	MemberBasicAuthPass string `split_words:"true" default:"admin"`
-	PrepRepToken        string `split_words:"true" default:"admin"`
-	AdminToken          string `split_words:"true" default:"admin"`
+	ListenAddress    string `split_words:"true" default:"localhost:8080"`
+	MaxContentLength int64  `split_words:"true" default:"10000000"`
+	SheetsBucketName string `split_words:"true" default:"sheets"`
+	ClixBucketName   string `split_words:"true" default:"clix"`
+	PartsBucketName  string `split_words:"true" default:"parts"`
+	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
+	MemberUser       string `split_words:"true" default:"admin"`
+	MemberPass       string `split_words:"true" default:"admin"`
+	PrepRepToken     string `split_words:"true" default:"admin"`
+	AdminToken       string `split_words:"true" default:"admin"`
 }
 
 type FileBucket interface {
@@ -58,14 +58,14 @@ func NewStorage(client *storage.Client, config ServerConfig) *Storage {
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {
-	members := BasicAuth{config.MemberBasicAuthUser: config.MemberBasicAuthPass}
+	members := BasicAuth{config.MemberUser: config.MemberPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
 	admin := TokenAuth{config.AdminToken}
 
 	mux := http.NewServeMux()
 
 	mux.Handle("/auth",
-		members.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		prepRep.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("authenticated"))
 		})),
 	)
@@ -86,7 +86,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 		config.SheetsBucketName: database.Sheets.DownloadURL,
 		config.ClixBucketName:   database.Clix.DownloadURL,
 	}
-	mux.Handle("/download", prepRep.Authenticate(downloadHandler))
+	mux.Handle("/download", members.Authenticate(downloadHandler))
 
 	// Uploads
 	uploadHandler := UploadHandler{database}

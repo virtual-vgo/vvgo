@@ -21,9 +21,6 @@ type BasicAuth map[string]string
 func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if ok := func() bool {
-			if len(auth) == 0 { // skip auth for empty map
-				return true
-			}
 			user, pass, ok := r.BasicAuth()
 			if !ok || user == "" || pass == "" {
 				return false
@@ -50,9 +47,6 @@ type TokenAuth []string
 func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if ok := func() bool {
-			if len(tokens) == 0 { // skip auth for empty slice
-				return true
-			}
 			requestToken := r.Header.Get(HeaderVirtualVGOApiToken)
 			for _, token := range tokens {
 				if requestToken == token {

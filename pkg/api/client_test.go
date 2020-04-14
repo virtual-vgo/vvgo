@@ -11,8 +11,7 @@ import (
 )
 
 func TestClient_Upload(t *testing.T) {
-	wantUser := "dio"
-	wantPass := "brando"
+	wantToken := "dio-brando"
 	wantURI := "/upload"
 	wantMethod := http.MethodPost
 	wantContentType := MediaTypeUploadsGob
@@ -24,8 +23,7 @@ func TestClient_Upload(t *testing.T) {
 
 	client := NewAsyncClient(AsyncClientConfig{
 		ClientConfig: ClientConfig{
-			BasicAuthUser: "dio",
-			BasicAuthPass: "brando",
+			Token: "dio-brando",
 		},
 		MaxParallel: 32,
 		QueueLength: 64,
@@ -67,12 +65,8 @@ func TestClient_Upload(t *testing.T) {
 	if want, got := wantURI, gotRequest.URL.RequestURI(); want != got {
 		t.Errorf("expected user `%s`, got `%s`", want, got)
 	}
-	gotUser, gotPass, _ := gotRequest.BasicAuth()
-	if want, got := wantUser, gotUser; want != got {
-		t.Errorf("expected user `%s`, got `%s`", want, got)
-	}
-	if want, got := wantPass, gotPass; want != got {
-		t.Errorf("expected pass `%s`, got `%s`", want, got)
+	if want, got := wantToken, gotRequest.Header.Get(HeaderVirtualVGOApiToken); want != got {
+		t.Errorf("expected token `%s`, got `%s`", want, got)
 	}
 	if want, got := wantStatuses, gotStatuses; !reflect.DeepEqual(want, got) {
 		t.Errorf("expected statuses %#v, got %#v", want, got)
@@ -90,8 +84,7 @@ func TestClient_Upload(t *testing.T) {
 
 func TestClient_Authenticate(t *testing.T) {
 	type wants struct {
-		user  string
-		pass  string
+		token string
 		uri   string
 		error bool
 	}
@@ -103,50 +96,38 @@ func TestClient_Authenticate(t *testing.T) {
 		wants  wants
 	}{
 		{
-			name: "success",
-			client: NewClient(ClientConfig{
-				BasicAuthUser: "dio",
-				BasicAuthPass: "brando",
-			}),
-			code: http.StatusOK,
+			name:   "success",
+			client: NewClient(ClientConfig{Token: "dio-brando"}),
+			code:   http.StatusOK,
 			wants: wants{
-				user:  "dio",
-				pass:  "brando",
+				token: "dio-brando",
 				uri:   "/auth",
 				error: false,
 			},
 		},
 		{
-			name: "failure",
-			client: NewClient(ClientConfig{
-				BasicAuthUser: "dio",
-				BasicAuthPass: "brando",
-			}),
-			code: http.StatusUnauthorized,
+			name:   "failure",
+			client: NewClient(ClientConfig{Token: "dio-brando"}),
+			code:   http.StatusUnauthorized,
 			wants: wants{
-				user:  "dio",
-				pass:  "brando",
+				token: "dio-brando",
 				uri:   "/auth",
 				error: true,
 			},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			var gotUser, gotPass, gotURI string
+			var gotURI, gotToken string
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				gotUser, gotPass, _ = r.BasicAuth()
+				gotToken = r.Header.Get(HeaderVirtualVGOApiToken)
 				gotURI = r.URL.RequestURI()
 				w.WriteHeader(tt.code)
 			}))
 			defer ts.Close()
 			tt.client.ServerAddress = ts.URL
-
 			gotErr := tt.client.Authenticate()
-
 			assert.Equal(t, tt.wants.uri, gotURI, "uri")
-			assert.Equal(t, tt.wants.user, gotUser, "user")
-			assert.Equal(t, tt.wants.pass, gotPass, "pass")
-
+			assert.Equal(t, tt.wants.token, gotToken, "token")
 			if tt.wants.error {
 				assert.Error(t, gotErr, "error")
 			} else {

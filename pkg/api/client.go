@@ -11,14 +11,15 @@ import (
 	"strings"
 )
 
+const ClientUserAgent = "Virtual-VGO Client"
+
 type Client struct {
 	ClientConfig
 }
 
 type ClientConfig struct {
 	ServerAddress string
-	BasicAuthUser string
-	BasicAuthPass string
+	Token         string
 }
 
 func NewClient(config ClientConfig) *Client {
@@ -111,8 +112,8 @@ func (x *Client) newRequest(method, url string, body io.Reader) (*http.Request, 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "Virtual-VGO Client")
-	req.SetBasicAuth(x.BasicAuthUser, x.BasicAuthPass)
+	req.Header.Set("User-Agent", ClientUserAgent)
+	req.Header.Set(HeaderVirtualVGOApiToken, x.Token)
 	return req, nil
 }
 

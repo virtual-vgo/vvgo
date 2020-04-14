@@ -14,6 +14,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/version"
+	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 type Flags struct {
@@ -57,9 +59,6 @@ type CmdClient struct {
 func printError(err error) { red.Fprintf(os.Stderr, ":: error: %v\n", err) }
 
 func main() {
-	token := api.NewToken()
-	fmt.Println(token.String())
-
 	if err := func() error {
 		var flags Flags
 		flags.Parse()
@@ -74,12 +73,12 @@ func main() {
 		}
 
 		// Build a new client
+		token := readApiKey()
 		client := CmdClient{
 			AsyncClient: api.NewAsyncClient(api.AsyncClientConfig{
 				ClientConfig: api.ClientConfig{
 					ServerAddress: flags.endpoint,
-					BasicAuthUser: flags.user,
-					BasicAuthPass: flags.pass,
+					Token:         token,
 				},
 				MaxParallel: 32,
 				QueueLength: 64,
@@ -118,6 +117,13 @@ func main() {
 		red.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
+}
+
+func readApiKey() string {
+	fmt.Print(":: enter token: ")
+	tokenBytes, _ := terminal.ReadPassword(syscall.Stdin)
+	fmt.Println()
+	return string(tokenBytes)
 }
 
 var shutdownOnce sync.Once
@@ -252,7 +258,7 @@ func readUploadType(writer io.Writer, reader *bufio.Reader, mediaType string) (a
 }
 
 func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
-	fmt.Fprintf(writer, ":: part numbers (ex. 1, 2): ")
+	fmt.Fprint(writer, ":: part numbers (ex. 1, 2): ")
 	rawNumbers, err := reader.ReadString('\n')
 	if err != nil {
 		printError(err)
@@ -280,7 +286,7 @@ func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
 }
 
 func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
-	fmt.Fprintf(writer, ":: part names (ex. trumpet, flute): ")
+	fmt.Fprint(writer, ":: part names (ex. trumpet, flute): ")
 	rawNames, err := reader.ReadString('\n')
 	if err != nil {
 		printError(err)

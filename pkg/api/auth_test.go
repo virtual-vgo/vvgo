@@ -32,7 +32,7 @@ func TestTokenAuth_Authenticate(t *testing.T) {
 			name:      "empty map",
 			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
 			tokenAuth: TokenAuth{},
-			wantCode:  http.StatusOK,
+			wantCode:  http.StatusUnauthorized,
 		},
 		{
 			name:      "no token",
@@ -84,13 +84,13 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		{
 			name:    "success",
 			request: newAuthRequest("/", "jackson", "the-earth-is-flat"),
-			config:  ServerConfig{MemberBasicAuthUser: "jackson", MemberBasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{MemberUser: "jackson", MemberPass: "the-earth-is-flat"},
 			wants:   wants{code: http.StatusOK},
 		},
 		{
 			name:    "incorrect user",
 			request: newAuthRequest("/", "", "the-earth-is-flat"),
-			config:  ServerConfig{MemberBasicAuthUser: "jackson", MemberBasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{MemberUser: "jackson", MemberPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -100,7 +100,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		{
 			name:    "incorrect pass",
 			request: newAuthRequest("/", "jackson", ""),
-			config:  ServerConfig{MemberBasicAuthUser: "jackson", MemberBasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{MemberUser: "jackson", MemberPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -110,7 +110,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		{
 			name:    "no auth",
 			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
-			config:  ServerConfig{MemberBasicAuthUser: "jackson", MemberBasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{MemberUser: "jackson", MemberPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -120,7 +120,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			server := BasicAuth{tt.config.MemberBasicAuthUser: tt.config.MemberBasicAuthPass}
+			server := BasicAuth{tt.config.MemberUser: tt.config.MemberPass}
 			server.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// do nothing
 			})).ServeHTTP(recorder, tt.request)
