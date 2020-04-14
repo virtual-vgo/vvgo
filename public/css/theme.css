@@ -31,7 +31,7 @@ body {
 .button {
     border: none;
     margin: 4px 4px;
-    padding: 15px 15px;
+    padding: 10px 10px;
     display: inline-block;
     cursor: pointer;
     font-size: 20px;
@@ -55,12 +55,4 @@ body {
     border-radius: 4px;
 }
 
-a:link.download-link, a:visited.download-link {
-    color: #E9E9E9;
-    text-align: center;
-    text-decoration: underline;
-}
 
-a:link.download-link, a:visited.download-link, a:active.download-link, a:hover.download-link {
-    text-decoration: underline;
-}

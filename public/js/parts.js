@@ -6,10 +6,11 @@ $(document).ready(function () {
         "columnDefs": [
             {
                 targets: [2],
-                orderable: false
+                orderable: false,
+                searchable: false,
             },
             {
-                className: "dt-center",
+                className: "text-center",
                 targets: "_all"
             }
         ]
