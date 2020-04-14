@@ -1,21 +1,4 @@
 {
-  "name": "vvgo",
-  "version": "1.0.0",
-  "description": "![tests](https://github.com/virtual-vgo/vvgo/workflows/tests/badge.svg) ![build](https://github.com/virtual-vgo/vvgo/workflows/build/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/virtual-vgo/vvgo)](https://goreportcard.com/report/github.com/virtual-vgo/vvgo)",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/virtual-vgo/vvgo.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/virtual-vgo/vvgo/issues"
-  },
-  "homepage": "https://github.com/virtual-vgo/vvgo#readme",
   "dependencies": {
     "bootstrap": "^4.4.1",
     "datatables.net": "^1.10.20",
@@ -24,5 +7,9 @@
     "font-awesome": "^4.7.0",
     "jquery": "^3.5.0",
     "popper.js": "^1.16.1"
-  }
+  },
+  "name": "vvgo",
+  "repository": "git@github.com:virtual-vgo/vvgo.git",
+  "author": "Jackson Argo <jackson@jacksonargo.com>",
+  "license": "Apache-2.0"
 }
