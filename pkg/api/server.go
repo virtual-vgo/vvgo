@@ -13,16 +13,16 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress       string `envconfig:"listen_address"`
-	MaxContentLength    int64  `envconfig:"max_content_length"`
-	SheetsBucketName    string `envconfig:"sheets_bucket_name"`
-	ClixBucketName      string `envconfig:"clix_bucket_name"`
-	PartsBucketName     string `envconfig:"parts_bucket_name"`
-	PartsLockerKey      string `envconfig:"parts_locker_key"`
-	MemberBasicAuthUser string `envconfig:"member_basic_auth_user"`
-	MemberBasicAuthPass string `envconfig:"member_basic_auth_pass"`
-	PrepRepToken        string `envconfig:"prep_rep_token"`
-	AdminToken          string `envconfig:"admin_token"`
+	ListenAddress       string `split_words:"true" default:"localhost:8080"`
+	MaxContentLength    int64  `split_words:"true" default:"10000000"`
+	SheetsBucketName    string `split_words:"true" default:"sheets"`
+	ClixBucketName      string `split_words:"true" default:"clix"`
+	PartsBucketName     string `split_words:"true" default:"parts"`
+	PartsLockerKey      string `split_words:"true" default:"parts.lock"`
+	MemberBasicAuthUser string `split_words:"true" default:"admin"`
+	MemberBasicAuthPass string `split_words:"true" default:"admin"`
+	PrepRepToken        string `split_words:"true" default:"admin"`
+	AdminToken          string `split_words:"true" default:"admin"`
 }
 
 type FileBucket interface {

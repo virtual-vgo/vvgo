@@ -18,39 +18,9 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	InitializeStorage bool             `envconfig:"initialize_storage"`
+	InitializeStorage bool             `split_words:"true" default:"false"`
 	StorageConfig     storage.Config   `envconfig:"storage"`
 	ApiConfig         api.ServerConfig `envconfig:"api"`
-}
-
-func NewDefaultConfig() Config {
-	return Config{
-		InitializeStorage: false,
-		ApiConfig: api.ServerConfig{
-			ListenAddress:       ":8080",
-			MaxContentLength:    1e6,
-			MemberBasicAuthUser: "admin",
-			MemberBasicAuthPass: "admin",
-			SheetsBucketName:    "sheets",
-			ClixBucketName:      "clix",
-			PartsBucketName:     "parts",
-			PartsLockerKey:      "parts.lock",
-			AdminToken:          "admin",
-			PrepRepToken:        "prep-rep",
-		},
-		StorageConfig: storage.Config{
-			Minio: storage.MinioConfig{
-				Endpoint:  "localhost:9000",
-				Region:    "sfo2",
-				AccessKey: "minioadmin",
-				SecretKey: "minioadmin",
-				UseSSL:    false,
-			},
-			Redis: storage.RedisConfig{
-				Address: "localhost:6379",
-			},
-		},
-	}
 }
 
 func (x *Config) ParseEnv() {
@@ -61,19 +31,29 @@ func (x *Config) ParseEnv() {
 }
 
 func (x Config) ParseFlags() {
-	var showReleaseTags bool
+	var showVersion, showReleaseTags, showEnvConfig bool
 	flag.BoolVar(&showReleaseTags, "release-tags", false, "show release tags and quit")
+	flag.BoolVar(&showVersion, "version", false, "show version and quit")
+	flag.BoolVar(&showEnvConfig, "env-config", false, "show environment config and quit")
 	flag.Parse()
-	if showReleaseTags {
+
+	switch {
+	case showVersion:
+		fmt.Println(version.String())
+		os.Exit(0)
+	case showReleaseTags:
 		for _, tag := range version.ReleaseTags() {
-			fmt.Fprintf(os.Stdout, "%s\n", tag)
+			fmt.Println(tag)
 		}
+		os.Exit(0)
+	case showEnvConfig:
+		envconfig.Usage("", &x)
 		os.Exit(0)
 	}
 }
 
 func main() {
-	config := NewDefaultConfig()
+	var config Config
 	config.ParseEnv()
 	config.ParseFlags()
 

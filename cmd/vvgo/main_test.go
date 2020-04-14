@@ -44,7 +44,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		},
 		ApiConfig: api.ServerConfig{
 			ListenAddress:       "listen-address",
-			MaxContentLength:   1e6,
+			MaxContentLength:    1e6,
 			SheetsBucketName:    "sheets-bucket-name",
 			ClixBucketName:      "clix-bucket-name",
 			PartsBucketName:     "parts-bucket-name",

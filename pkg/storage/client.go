@@ -28,15 +28,15 @@ type Config struct {
 }
 
 type MinioConfig struct {
-	Endpoint  string
-	Region    string
-	AccessKey string
-	SecretKey string
-	UseSSL    bool
+	Endpoint  string `default:"localhost:9000"`
+	Region    string `default:"sfo2"`
+	AccessKey string `default:"minioadmin"`
+	SecretKey string `default:"minioadmin"`
+	UseSSL    bool   `default:"false"`
 }
 
 type RedisConfig struct {
-	Address string
+	Address string `default:"localhost:6379"`
 }
 
 func NewClient(config Config) *Client {
