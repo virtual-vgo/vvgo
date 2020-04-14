@@ -10,44 +10,49 @@ import (
 
 func TestConfig_ParseEnv(t *testing.T) {
 	envs := map[string]string{
-		"INITIALIZE_STORAGE": "true",
-		"MINIO_ENDPOINT":     "minio-endpoint",
-		"MINIO_REGION":       "minio-region",
-		"MINIO_ACCESS_KEY":   "minio-access-key",
-		"MINIO_SECRET_KEY":   "minio-secret-key",
-		"MINIO_USE_SSL":      "true",
-		"REDIS_ADDRESS":      "redis-address",
-		"LISTEN_ADDRESS":     "listen-address",
-		"BASIC_AUTH_USER":    "basic-auth-user",
-		"BASIC_AUTH_PASS":    "basic-auth-pass",
-		"SHEETS_BUCKET_NAME": "sheets-bucket-name",
-		"CLIX_BUCKET_NAME":   "clix-bucket-name",
-		"PARTS_BUCKET_NAME":  "parts-bucket-name",
-		"PARTS_LOCKER_KEY":   "parts-locker-key",
+		"INITIALIZE_STORAGE":      "true",
+		"STORAGE_MINIO_ENDPOINT":  "minio-endpoint",
+		"STORAGE_MINIO_REGION":    "minio-region",
+		"STORAGE_MINIO_ACCESSKEY": "minio-access-key",
+		"STORAGE_MINIO_SECRETKEY": "minio-secret-key",
+		"STORAGE_MINIO_USESSL":    "true",
+		"STORAGE_REDIS_ADDRESS":   "redis-address",
+		"API_LISTEN_ADDRESS":      "listen-address",
+		"API_MAX_CONTENT_LENGTH":  "1000000",
+		"API_SHEETS_BUCKET_NAME":  "sheets-bucket-name",
+		"API_CLIX_BUCKET_NAME":    "clix-bucket-name",
+		"API_PARTS_BUCKET_NAME":   "parts-bucket-name",
+		"API_PARTS_LOCKER_KEY":    "parts-locker-key",
+		"API_MEMBER_USER":         "member-user",
+		"API_MEMBER_PASS":         "member-pass",
+		"API_PREP_REP_TOKEN":      "prep-rep-token",
+		"API_ADMIN_TOKEN":         "admin-token",
 	}
 	want := Config{
 		InitializeStorage: true,
 		StorageConfig: storage.Config{
-			MinioConfig: storage.MinioConfig{
+			Minio: storage.MinioConfig{
 				Endpoint:  "minio-endpoint",
 				Region:    "minio-region",
 				AccessKey: "minio-access-key",
 				SecretKey: "minio-secret-key",
 				UseSSL:    true,
 			},
-			RedisConfig: storage.RedisConfig{
+			Redis: storage.RedisConfig{
 				Address: "redis-address",
 			},
 		},
 		ApiConfig: api.ServerConfig{
 			ListenAddress:    "listen-address",
-			MaxContentLength: 0,
-			BasicAuthUser:    "basic-auth-user",
-			BasicAuthPass:    "basic-auth-pass",
+			MaxContentLength: 1e6,
 			SheetsBucketName: "sheets-bucket-name",
 			ClixBucketName:   "clix-bucket-name",
 			PartsBucketName:  "parts-bucket-name",
 			PartsLockerKey:   "parts-locker-key",
+			AdminToken:       "admin-token",
+			PrepRepToken:     "prep-rep-token",
+			MemberUser:       "member-user",
+			MemberPass:       "member-pass",
 		},
 	}
 	for k, v := range envs {

@@ -17,8 +17,8 @@ services:
       dockerfile: Dockerfile.development
     container_name: object-cache
     environment:
-      MINIO_ACCESS_KEY: vvgo-dev-access
-      MINIO_SECRET_KEY: vvgo-dev-secret
+      MINIO_ACCESS_KEY: vvgo-admin
+      MINIO_SECRET_KEY: vvgo-admin
       MINIO_CACHE_EXPIRY: 1
       MINIO_CACHE_QUOTA: 99
       MINIO_CACHE_AFTER: 1
@@ -41,11 +41,9 @@ services:
     environment:
       INITIALIZE_STORAGE: "true"
       REDIS_ADDRESS: kv-cache:6379
-      MINIO_ENDPOINT: object-cache:9000
-      MINIO_REGION_NAME: sfo2
-      MINIO_ACCESS_KEY: vvgo-admin
-      MINIO_SECRET_KEY: vvgo-admin
-      BASIC_AUTH_USER: admin
-      BASIC_AUTH_PASS: admin
+      STORAGE_MINIO_ENDPOINT: object-cache:9000
+      STORAGE_MINIO_ACCESSKEY: vvgo-admin
+      STORAGE_MINIO_SECRETKEY: vvgo-admin
+      API_LISTEN_ADDRESS: :8080
     expose:
       - 8080

@@ -5,12 +5,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -18,100 +18,42 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	InitializeStorage bool
-	StorageConfig     storage.Config
-	ApiConfig         api.ServerConfig
-}
-
-func NewDefaultConfig() Config {
-	return Config{
-		InitializeStorage: false,
-		ApiConfig: api.ServerConfig{
-			ListenAddress:    ":8080",
-			MaxContentLength: 1e6,
-			BasicAuthUser:    "admin",
-			BasicAuthPass:    "admin",
-			SheetsBucketName: "sheets",
-			ClixBucketName:   "clix",
-			PartsBucketName:  "parts",
-			PartsLockerKey:   "parts.lock",
-		},
-		StorageConfig: storage.Config{
-			MinioConfig: storage.MinioConfig{
-				Endpoint:  "localhost:9000",
-				Region:    "sfo2",
-				AccessKey: "minioadmin",
-				SecretKey: "minioadmin",
-				UseSSL:    false,
-			},
-			RedisConfig: storage.RedisConfig{
-				Address: "localhost:6379",
-			},
-		},
-	}
+	InitializeStorage bool             `split_words:"true" default:"false"`
+	StorageConfig     storage.Config   `envconfig:"storage"`
+	ApiConfig         api.ServerConfig `envconfig:"api"`
 }
 
 func (x *Config) ParseEnv() {
-	x.InitializeStorage, _ = strconv.ParseBool(os.Getenv("INITIALIZE_STORAGE"))
-
-	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
-		x.StorageConfig.MinioConfig.Endpoint = endpoint
-	}
-	if arg := os.Getenv("MINIO_REGION"); arg != "" {
-		x.StorageConfig.MinioConfig.Region = arg
-	}
-	if id := os.Getenv("MINIO_ACCESS_KEY"); id != "" {
-		x.StorageConfig.MinioConfig.AccessKey = id
-	}
-	if key := os.Getenv("MINIO_SECRET_KEY"); key != "" {
-		x.StorageConfig.MinioConfig.SecretKey = key
-	}
-	x.StorageConfig.MinioConfig.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
-
-	if address := os.Getenv("REDIS_ADDRESS"); address != "" {
-		x.StorageConfig.RedisConfig.Address = address
-	}
-
-	if maxContentLength, _ := strconv.ParseInt(os.Getenv("API_MAX_CONTENT_LENGTH"), 10, 64); maxContentLength != 0 {
-		x.ApiConfig.MaxContentLength = maxContentLength
-	}
-	if listenAddress := os.Getenv("LISTEN_ADDRESS"); listenAddress != "" {
-		x.ApiConfig.ListenAddress = listenAddress
-	}
-	if user := os.Getenv("BASIC_AUTH_USER"); user != "" {
-		x.ApiConfig.BasicAuthUser = user
-	}
-	if pass := os.Getenv("BASIC_AUTH_PASS"); pass != "" {
-		x.ApiConfig.BasicAuthPass = pass
-	}
-	if arg := os.Getenv("SHEETS_BUCKET_NAME"); arg != "" {
-		x.ApiConfig.SheetsBucketName = arg
-	}
-	if arg := os.Getenv("CLIX_BUCKET_NAME"); arg != "" {
-		x.ApiConfig.ClixBucketName = arg
-	}
-	if arg := os.Getenv("PARTS_BUCKET_NAME"); arg != "" {
-		x.ApiConfig.PartsBucketName = arg
-	}
-	if arg := os.Getenv("PARTS_LOCKER_KEY"); arg != "" {
-		x.ApiConfig.PartsLockerKey = arg
+	err := envconfig.Process("", x)
+	if err != nil {
+		logger.Fatal(err)
 	}
 }
 
 func (x Config) ParseFlags() {
-	var showReleaseTags bool
+	var showVersion, showReleaseTags, showEnvConfig bool
 	flag.BoolVar(&showReleaseTags, "release-tags", false, "show release tags and quit")
+	flag.BoolVar(&showVersion, "version", false, "show version and quit")
+	flag.BoolVar(&showEnvConfig, "env-config", false, "show environment config and quit")
 	flag.Parse()
-	if showReleaseTags {
+
+	switch {
+	case showVersion:
+		fmt.Println(version.String())
+		os.Exit(0)
+	case showReleaseTags:
 		for _, tag := range version.ReleaseTags() {
-			fmt.Fprintf(os.Stdout, "%s\n", tag)
+			fmt.Println(tag)
 		}
+		os.Exit(0)
+	case showEnvConfig:
+		envconfig.Usage("", &x)
 		os.Exit(0)
 	}
 }
 
 func main() {
-	config := NewDefaultConfig()
+	var config Config
 	config.ParseEnv()
 	config.ParseFlags()
 

@@ -23,31 +23,31 @@ type Client struct {
 }
 
 type Config struct {
-	MinioConfig
-	RedisConfig
+	Minio MinioConfig `envconfig:"minio"`
+	Redis RedisConfig `envconfig:"redis"`
 }
 
 type MinioConfig struct {
-	Endpoint  string
-	Region    string
-	AccessKey string
-	SecretKey string
-	UseSSL    bool
+	Endpoint  string `default:"localhost:9000"`
+	Region    string `default:"sfo2"`
+	AccessKey string `default:"minioadmin"`
+	SecretKey string `default:"minioadmin"`
+	UseSSL    bool   `default:"false"`
 }
 
 type RedisConfig struct {
-	Address string
+	Address string `default:"localhost:6379"`
 }
 
 func NewClient(config Config) *Client {
-	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
+	minioClient, err := minio.New(config.Minio.Endpoint, config.Minio.AccessKey, config.Minio.SecretKey, config.Minio.UseSSL)
 	if err != nil {
 		logger.WithError(err).Error("minio.New() failed")
 		return nil
 	}
 	redisClient := redis.NewClient(&redis.Options{
 		Network: "tcp",
-		Addr:    config.Address,
+		Addr:    config.Redis.Address,
 	})
 
 	return &Client{
