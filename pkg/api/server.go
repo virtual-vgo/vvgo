@@ -21,6 +21,8 @@ type ServerConfig struct {
 	ClixBucketName   string
 	PartsBucketName  string
 	PartsLockerKey   string
+	PrepRepToken     string
+	AdminToken       string
 }
 
 type FileBucket interface {
@@ -56,37 +58,39 @@ func NewStorage(client *storage.Client, config ServerConfig) *Storage {
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {
-	auth := make(basicAuth)
-	if config.BasicAuthUser != "" {
-		auth[config.BasicAuthUser] = config.BasicAuthPass
-	}
+	members := BasicAuth{config.BasicAuthUser: config.BasicAuthPass}
+	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
+	admin := TokenAuth{config.AdminToken}
 
 	mux := http.NewServeMux()
 
 	mux.Handle("/auth",
-		auth.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		members.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("authenticated"))
 		})),
 	)
 
 	// debug endpoints from net/http/pprof
-	mux.HandleFunc("/debug/pprof/", pprof.Index)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	pprofMux := http.NewServeMux()
+	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
+	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
 
-	mux.Handle("/parts", auth.Authenticate(PartsHandler{database}))
+	mux.Handle("/parts", members.Authenticate(PartsHandler{database}))
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := DownloadHandler{
 		config.SheetsBucketName: database.Sheets.DownloadURL,
 		config.ClixBucketName:   database.Clix.DownloadURL,
 	}
-	mux.Handle("/download", auth.Authenticate(downloadHandler))
+	mux.Handle("/download", prepRep.Authenticate(downloadHandler))
 
+	// Uploads
 	uploadHandler := UploadHandler{database}
-	mux.Handle("/upload", auth.Authenticate(uploadHandler))
+	mux.Handle("/upload", prepRep.Authenticate(uploadHandler))
 
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.FileServer(http.Dir("public")))

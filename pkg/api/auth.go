@@ -13,9 +13,39 @@ import (
 
 const HeaderVirtualVGOApiToken = "Virtual-VGO-Api-Token"
 
-type AuthServer struct{}
+// Authenticates http requests using basic auth.
+// User name is the map key, and password is the value.
+// If the map is empty or nil, requests are always authenticated.
+type BasicAuth map[string]string
 
-type TokenAuth []Token
+func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if ok := func() bool {
+			if len(auth) == 0 { // skip auth for empty map
+				return true
+			}
+			user, pass, ok := r.BasicAuth()
+			if !ok || user == "" || pass == "" {
+				return false
+			}
+			if auth[user] == pass {
+				return true
+			} else {
+				logger.WithFields(logrus.Fields{
+					"user": user,
+				}).Error("user authentication failed")
+				return false
+			}
+		}(); !ok {
+			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
+			unauthorized(w)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	})
+}
+
+type TokenAuth []string
 
 func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +55,7 @@ func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 			}
 			requestToken := r.Header.Get(HeaderVirtualVGOApiToken)
 			for _, token := range tokens {
-				if requestToken == token.String() {
+				if requestToken == token {
 					return true
 				}
 			}
@@ -83,34 +113,4 @@ func (token Token) Validate() error {
 		}
 	}
 	return nil
-}
-
-// Authenticates http requests using basic auth.
-// User name is the map key, and password is the value.
-// If the map is empty or nil, requests are always authenticated.
-type basicAuth map[string]string
-
-func (x basicAuth) Authenticate(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if ok := func() bool {
-			if len(x) == 0 { // skip auth for empty map
-				return true
-			}
-			user, pass, ok := r.BasicAuth()
-			if !ok || user == "" || pass == "" {
-				return false
-			}
-			if x[user] != pass {
-				logger.WithFields(logrus.Fields{
-					"user": user,
-				}).Error("user authentication failed")
-			}
-			return x[user] == pass
-		}(); !ok {
-			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
-			unauthorized(w)
-		} else {
-			handler.ServeHTTP(w, r)
-		}
-	})
 }

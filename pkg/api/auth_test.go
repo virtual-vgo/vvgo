@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestTokenAuth_AuthenticateToken(t *testing.T) {
+func TestTokenAuth_Authenticate(t *testing.T) {
 	var newRequest = func(url string, headers map[string]string) *http.Request {
 		req := httptest.NewRequest(http.MethodGet, url, strings.NewReader(""))
 		for k, v := range headers {
@@ -25,7 +25,7 @@ func TestTokenAuth_AuthenticateToken(t *testing.T) {
 		{
 			name:      "success",
 			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
-			tokenAuth: TokenAuth{{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}},
+			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
 			wantCode:  http.StatusOK,
 		},
 		{
@@ -37,19 +37,13 @@ func TestTokenAuth_AuthenticateToken(t *testing.T) {
 		{
 			name:      "no token",
 			request:   newRequest("/", map[string]string{}),
-			tokenAuth: TokenAuth{{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}},
-			wantCode:  http.StatusUnauthorized,
-		},
-		{
-			name:      "invalid token",
-			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "196ddfzzzc7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
-			tokenAuth: TokenAuth{{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}},
+			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
 			wantCode:  http.StatusUnauthorized,
 		},
 		{
 			name:      "incorrect token",
 			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "8d32ff4a91a530bc-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
-			tokenAuth: TokenAuth{{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}},
+			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
 			wantCode:  http.StatusUnauthorized,
 		},
 	} {
@@ -126,7 +120,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			server := basicAuth{tt.config.BasicAuthUser: tt.config.BasicAuthPass}
+			server := BasicAuth{tt.config.BasicAuthUser: tt.config.BasicAuthPass}
 			server.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// do nothing
 			})).ServeHTTP(recorder, tt.request)

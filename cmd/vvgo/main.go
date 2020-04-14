@@ -35,6 +35,8 @@ func NewDefaultConfig() Config {
 			ClixBucketName:   "clix",
 			PartsBucketName:  "parts",
 			PartsLockerKey:   "parts.lock",
+			AdminToken:       "admin",
+			PrepRepToken:     "prep-rep",
 		},
 		StorageConfig: storage.Config{
 			MinioConfig: storage.MinioConfig{
