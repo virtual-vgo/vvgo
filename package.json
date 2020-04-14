@@ -2,5 +2,9 @@
   "dependencies": {
     "datatables.net": "^1.10.20",
     "jquery": "^3.5.0"
-  }
+  },
+  "name": "vvgo",
+  "repository": "git@github.com:virtual-vgo/vvgo.git",
+  "author": "Jackson Argo <jackson@jacksonargo.com>",
+  "license": "Apache-2.0"
 }
