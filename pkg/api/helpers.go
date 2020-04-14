@@ -1,12 +1,40 @@
 package api
 
 import (
+	"compress/gzip"
+	"encoding/gob"
 	"encoding/json"
 	"html/template"
 	"io"
 	"net/http"
 	"strings"
 )
+
+func readBody(dest io.Writer, r *http.Request) bool {
+	switch r.Header.Get("Content-Encoding") {
+	case "application/gzip":
+		gzipReader, err := gzip.NewReader(r.Body)
+		if err != nil {
+			logger.WithError(err).Error("gzip.NewReader() failed")
+			return false
+		}
+		if _, err := io.Copy(dest, gzipReader); err != nil {
+			logger.WithError(err).Error("gzipReader.Read() failed")
+			return false
+		}
+		if err := gzipReader.Close(); err != nil {
+			logger.WithError(err).Error("gzipReader.Close() failed")
+			return false
+		}
+
+	default:
+		if _, err := io.Copy(dest, r.Body); err != nil {
+			logger.WithError(err).Error("r.body.Read() failed")
+			return false
+		}
+	}
+	return true
+}
 
 func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) bool {
 	uploadTemplate, err := template.ParseFiles(templateFiles...)
@@ -29,6 +57,14 @@ func jsonEncode(dest io.Writer, src interface{}) bool {
 	return true
 }
 
+func gobEncode(dest io.Writer, src interface{}) bool {
+	if err := gob.NewEncoder(dest).Encode(src); err != nil {
+		logger.WithError(err).Error("gob.Encode() failed")
+		return false
+	}
+	return true
+}
+
 func jsonDecode(src io.Reader, dest interface{}) bool {
 	if err := json.NewDecoder(src).Decode(dest); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
@@ -37,10 +73,18 @@ func jsonDecode(src io.Reader, dest interface{}) bool {
 	return true
 }
 
-func acceptsType(r *http.Request, mimeType string) bool {
+func gobDecode(src io.Reader, dest interface{}) bool {
+	if err := gob.NewDecoder(src).Decode(dest); err != nil {
+		logger.WithError(err).Error("gob.Decode() failed")
+		return false
+	}
+	return true
+}
+
+func acceptsType(r *http.Request, mediaType string) bool {
 	for _, value := range r.Header["Accept"] {
 		for _, wantType := range strings.Split(value, ",") {
-			if wantType == mimeType {
+			if strings.HasPrefix(mediaType, wantType) {
 				return true
 			}
 		}

@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 )
@@ -27,6 +29,7 @@ type Flags struct {
 	endpoint string
 	user     string
 	pass     string
+	save     bool
 }
 
 func (x *Flags) Parse() {
@@ -35,6 +38,7 @@ func (x *Flags) Parse() {
 	flag.StringVar(&x.endpoint, "endpoint", "https://vvgo.org", "vvgo endpoint")
 	flag.StringVar(&x.user, "user", "vvgo-dev", "basic auth username")
 	flag.StringVar(&x.pass, "pass", "vvgo-dev", "basic auth password")
+	flag.BoolVar(&x.save, "save", false, "save local copy (debugging)")
 	flag.Parse()
 }
 
@@ -43,7 +47,13 @@ var (
 	blue   = color.New(color.FgBlue)
 	yellow = color.New(color.FgYellow)
 	green  = color.New(color.FgGreen)
+	bold   = color.New(color.Bold)
 )
+
+type CmdClient struct {
+	*api.AsyncClient
+	flags Flags
+}
 
 func printError(err error) { red.Fprintf(os.Stderr, ":: error: %v\n", err) }
 
@@ -61,20 +71,46 @@ func main() {
 			return fmt.Errorf("unkown project: %s", flags.project)
 		}
 
-		client := api.NewClient(api.ClientConfig{
-			ServerAddress: flags.endpoint,
-			BasicAuthUser: flags.user,
-			BasicAuthPass: flags.pass,
-		})
+		// Build a new client
+		client := CmdClient{
+			AsyncClient: api.NewAsyncClient(api.AsyncClientConfig{
+				ClientConfig: api.ClientConfig{
+					ServerAddress: flags.endpoint,
+					BasicAuthUser: flags.user,
+					BasicAuthPass: flags.pass,
+				},
+				MaxParallel: 32,
+				QueueLength: 64,
+			}),
+			flags: flags,
+		}
 
+		// Make sure we can authenticate
 		if err := client.Authenticate(); err != nil {
 			return fmt.Errorf("unable to authenticate client: %v", err)
 		}
 
+		// Close the client on interrupt
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt)
+		go func() {
+			var sig os.Signal
+			sig = <-sigCh
+			red.Printf(":: received: %s\n", sig)
+			shutdown(client, sigCh)
+		}()
+
+		// Read and upload files
 		reader := bufio.NewReader(os.Stdin)
 		for _, fileName := range flag.Args() {
-			uploadFile(client, os.Stdout, reader, flags.project, fileName)
+			select {
+			case result := <-client.Status():
+				printResult(result)
+			default:
+				client.uploadFile(os.Stdout, reader, flags.project, fileName)
+			}
 		}
+		shutdown(client, sigCh)
 		return nil
 	}(); err != nil {
 		red.Fprintf(os.Stderr, "%v\n", err)
@@ -82,21 +118,49 @@ func main() {
 	}
 }
 
-func uploadFile(client *api.Client, writer io.Writer, reader *bufio.Reader, project string, fileName string) {
-	for {
-		blue.Printf(":: found `%s`\n", fileName)
+func shutdown(client CmdClient, sigCh chan os.Signal) {
+	yellow.Fprintln(os.Stdout, ":: waiting for uploads to complete... Ctrl+C again to force quit")
+	done := make(chan struct{})
 
-		if !yesNo(writer, reader, "upload this file") {
-			blue.Println("skipping...")
-			return
+	go client.Close()
+
+	go func() {
+		for result := range client.Status() {
+			printResult(result)
 		}
+		close(done)
+	}()
+
+	select {
+	case sig := <-sigCh:
+		red.Printf(":: received: %s\n", sig)
+		os.Exit(1)
+	case <-done:
+		yellow.Println(":: closed!")
+		os.Exit(0)
+	}
+}
+
+func printResult(result api.UploadStatus) {
+	if result.Code != http.StatusOK {
+		printError(fmt.Errorf(":: upload failed -- %s received non-200 status: `%d: %s`",
+			result.FileName, result.Code, result.Error))
+	} else {
+		green.Printf(":: upload successful -- %s\n", result.FileName)
+	}
+}
+
+func (x *CmdClient) uploadFile(writer io.Writer, reader *bufio.Reader, project string, fileName string) {
+	for {
+		blue.Printf(":: %s %s\n", "found:", bold.Sprint(fileName))
 
 		var upload api.Upload
-		if ok := readUpload(writer, reader, &upload, project, fileName); !ok {
+		err := readUpload(writer, reader, &upload, project, fileName)
+		switch {
+		case err == ErrSkipped:
+			blue.Fprintln(writer, ":: skipping...")
 			return
-		}
-
-		if err := upload.Validate(); err != nil {
+		case err != nil:
 			printError(err)
 			if yesNo(writer, reader, "try again? (；一ω一||)") {
 				continue
@@ -107,32 +171,38 @@ func uploadFile(client *api.Client, writer io.Writer, reader *bufio.Reader, proj
 
 		// render results
 		gotParts := upload.Parts()
-		fmt.Fprintf(writer, ":: this will create the following %s:\n", upload.UploadType)
+		fmt.Fprintf(writer, ":: upload creates %s for:\n", upload.UploadType)
 		for _, part := range gotParts {
-			fmt.Fprintln(writer, part.String())
+			p := color.New(color.FgWhite)
+			p.Fprintln(writer, " * "+part.String())
 		}
+
 		if yesNo(writer, reader, "is this ok") {
-			doUpload(client, upload)
+			doUpload(x.AsyncClient, upload, x.flags.save)
 			return
 		}
 	}
 }
 
-func readUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload, project string, fileName string) bool {
+var ErrSkipped = errors.New("skipped")
+
+func readUpload(writer io.Writer, reader *bufio.Reader, upload *api.Upload, project string, fileName string) error {
 	fileBytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		printError(err)
-		return false
+		return err
 	}
 	contentType := readMediaType(fileBytes)
-	uploadType := readUploadType(writer, reader, contentType)
-	if uploadType == "" {
-		return false
+	uploadType, err := readUploadType(writer, reader, contentType)
+	if err != nil {
+		return err
 	}
-
-	partNumbers := readPartNumbers(writer, reader)
+	fmt.Fprintf(writer, ":: upload type: %s\n", bold.Sprint(uploadType))
+	fmt.Fprintf(writer, ":: %s | %s\n",
+		color.New(color.Italic).Sprint("leave empty to skip"),
+		color.New(color.Italic).Sprint("Ctrl+C to quit"))
 	partNames := readPartNames(writer, reader)
-	*dest = api.Upload{
+	partNumbers := readPartNumbers(writer, reader)
+	*upload = api.Upload{
 		UploadType:  uploadType,
 		PartNames:   partNames,
 		PartNumbers: partNumbers,
@@ -141,7 +211,11 @@ func readUpload(writer io.Writer, reader *bufio.Reader, dest *api.Upload, projec
 		FileBytes:   fileBytes,
 		ContentType: contentType,
 	}
-	return true
+
+	if partNames == nil && partNumbers == nil {
+		return ErrSkipped
+	}
+	return upload.Validate()
 }
 
 func yesNo(writer io.Writer, reader *bufio.Reader, pre string) bool {
@@ -160,31 +234,30 @@ func readMediaType(fileBytes []byte) string {
 	return http.DetectContentType(fileBytes)
 }
 
-func readUploadType(writer io.Writer, reader *bufio.Reader, mediaType string) api.UploadType {
+func readUploadType(writer io.Writer, reader *bufio.Reader, mediaType string) (api.UploadType, error) {
 	switch true {
 	case strings.HasPrefix(mediaType, "application/pdf"):
-		if yesNo(writer, reader, "this is a music sheet") {
-			return api.UploadTypeSheets
-		}
-		printError(errors.New("i don't know what this is. つ´Д`)つ"))
+		return api.UploadTypeSheets, nil
 	case strings.HasPrefix(mediaType, "audio/"):
-		if yesNo(writer, reader, "this is a click track") {
-			return api.UploadTypeClix
-		}
-		printError(errors.New("i don't know what this is. (;´д｀)"))
+		return api.UploadTypeClix, nil
 	default:
-		printError(fmt.Errorf("i don't know how to handle media type: `%s`. (´･ω･`)", mediaType))
+		return "", fmt.Errorf("i don't know how to handle media type: `%s`. (´･ω･`)", mediaType)
 	}
-	return ""
 }
 
 func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
-	fmt.Fprintf(writer, ":: please enter part numbers (ex 1, 2): ")
+	fmt.Fprintf(writer, ":: part numbers (ex. 1, 2): ")
 	rawNumbers, err := reader.ReadString('\n')
 	if err != nil {
 		printError(err)
 		return nil
 	}
+
+	rawNumbers = strings.TrimSpace(rawNumbers)
+	if rawNumbers == "" {
+		return nil
+	}
+
 	var partNums []uint8
 	for _, raw := range strings.Split(rawNumbers, ",") {
 		bigNum, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 8)
@@ -201,10 +274,15 @@ func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
 }
 
 func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
-	fmt.Fprintf(writer, ":: please enter part names (ex trumpet, flute): ")
+	fmt.Fprintf(writer, ":: part names (ex. trumpet, flute): ")
 	rawNames, err := reader.ReadString('\n')
 	if err != nil {
 		printError(err)
+		return nil
+	}
+
+	rawNames = strings.TrimSpace(rawNames)
+	if rawNames == "" {
 		return nil
 	}
 
@@ -216,17 +294,17 @@ func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
 	return names
 }
 
-func doUpload(client *api.Client, upload api.Upload) {
-	results, err := client.Upload(upload)
-	if err != nil {
-		printError(err)
-		return
-	}
-	for _, result := range results {
-		if result.Code != http.StatusOK {
-			printError(fmt.Errorf("file %s received non-200 status: `%d: %s`", result.FileName, result.Code, result.Error))
-		} else {
-			green.Printf(":: file %s uploaded successfully!\n", result.FileName)
+var allUploads []api.Upload
+
+func doUpload(client *api.AsyncClient, upload api.Upload, save bool) {
+	if save {
+		allUploads = append(allUploads, upload)
+		f, err := os.OpenFile("__uploader.out", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+		if err == nil {
+			json.NewEncoder(f).Encode(&allUploads)
+			f.Close()
 		}
 	}
+	client.Upload(upload)
+	yellow.Printf(":: upload queued -- %s\n", upload.FileName)
 }

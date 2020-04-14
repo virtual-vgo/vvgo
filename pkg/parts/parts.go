@@ -9,6 +9,8 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"strings"
+	"time"
 )
 
 const DataFile = "parts.json"
@@ -94,12 +96,9 @@ func mergeChanges(src []Part, changes []Part) []Part {
 		for i := range src {
 			if change.ID.String() == src[i].ID.String() {
 				ok = true
-				if change.Sheet != "" {
-					src[i].Sheet = change.Sheet
-				}
-				if change.Click != "" {
-					src[i].Click = change.Click
-				}
+				// prepend the new fields
+				src[i].Sheets = append(change.Sheets, src[i].Sheets...)
+				src[i].Clix = append(change.Clix, src[i].Clix...)
 				break
 			}
 		}
@@ -122,27 +121,42 @@ func validatePart(parts []Part) bool {
 
 type Part struct {
 	ID
-	Click string `json:"click,omitempty"`
-	Sheet string `json:"sheet,omitempty"`
+	Clix   Links `json:"click,omitempty"`
+	Sheets Links `json:"sheet,omitempty"`
+}
+
+type Link struct {
+	ObjectKey string
+	CreatedAt time.Time
+}
+
+type Links []Link
+
+func (x *Links) Key() string { return (*x)[0].ObjectKey }
+func (x *Links) NewKey(key string) {
+	*x = append([]Link{{
+		ObjectKey: key,
+		CreatedAt: time.Now(),
+	}}, *x...)
 }
 
 func (x Part) String() string {
-	return fmt.Sprintf("Project: %s Part: %s-%d", x.Project, x.Name, x.Number)
+	return fmt.Sprintf("Project: %s Part: %s #%d", x.Project, strings.Title(x.Name), x.Number)
 }
 
 func (x Part) SheetLink(bucket string) string {
-	if bucket == "" || x.Sheet == "" {
+	if bucket == "" || len(x.Sheets) == 0 {
 		return "#"
 	} else {
-		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.Sheet)
+		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.Sheets[0].ObjectKey)
 	}
 }
 
 func (x Part) ClickLink(bucket string) string {
-	if bucket == "" || x.Click == "" {
+	if bucket == "" || len(x.Clix) == 0 {
 		return "#"
 	} else {
-		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.Click)
+		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.Clix.Key())
 	}
 }
 

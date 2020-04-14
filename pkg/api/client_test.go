@@ -1,8 +1,7 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
+	"encoding/gob"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -15,33 +14,33 @@ func TestClient_Upload(t *testing.T) {
 	wantUser := "dio"
 	wantPass := "brando"
 	wantURI := "/upload"
-	wantBody := ``
 	wantMethod := http.MethodPost
-	wantContentType := "application/json"
+	wantContentType := MediaTypeUploadsGob
+	wantContentEncoding := "application/gzip"
 	wantStatuses := []UploadStatus{{
 		FileName: "Dio_Brando.pdf",
 		Code:     http.StatusOK,
 	}}
-	wantErr := error(nil)
 
-	client := NewClient(ClientConfig{
-		BasicAuthUser: "dio",
-		BasicAuthPass: "brando",
+	client := NewAsyncClient(AsyncClientConfig{
+		ClientConfig: ClientConfig{
+			BasicAuthUser: "dio",
+			BasicAuthPass: "brando",
+		},
+		MaxParallel: 32,
+		QueueLength: 64,
 	})
 
 	var gotRequest *http.Request
-	var gotUser, gotPass, gotURI string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r
-		gotUser, gotPass, _ = r.BasicAuth()
-		gotURI = r.URL.RequestURI()
-		json.NewEncoder(w).Encode([]UploadStatus{{
+		gob.NewEncoder(w).Encode([]UploadStatus{{
 			FileName: "Dio_Brando.pdf",
 			Code:     http.StatusOK,
 		}})
 	}))
 	defer ts.Close()
-	client.ServerAddress = ts.URL
+	client.Client.ServerAddress = ts.URL
 
 	fileBytes, err := ioutil.ReadFile("testdata/sheet-music.pdf")
 	if err != nil {
@@ -58,11 +57,17 @@ func TestClient_Upload(t *testing.T) {
 		ContentType: "application/pdf",
 	}}
 
-	gotStatuses, gotErr := client.Upload(uploads...)
+	client.Upload(uploads...)
+	client.Close()
+	var gotStatuses []UploadStatus
+	for status := range client.Status() {
+		gotStatuses = append(gotStatuses, status)
+	}
 
-	if want, got := wantURI, gotURI; want != got {
+	if want, got := wantURI, gotRequest.URL.RequestURI(); want != got {
 		t.Errorf("expected user `%s`, got `%s`", want, got)
 	}
+	gotUser, gotPass, _ := gotRequest.BasicAuth()
 	if want, got := wantUser, gotUser; want != got {
 		t.Errorf("expected user `%s`, got `%s`", want, got)
 	}
@@ -72,19 +77,14 @@ func TestClient_Upload(t *testing.T) {
 	if want, got := wantStatuses, gotStatuses; !reflect.DeepEqual(want, got) {
 		t.Errorf("expected statuses %#v, got %#v", want, got)
 	}
-	if want, got := wantErr, gotErr; want != got {
-		t.Errorf("expected error %#v, got %#v", want, got)
-	}
 	if want, got := wantContentType, gotRequest.Header.Get("Content-Type"); want != got {
 		t.Errorf("expected content-type `%s`, got `%s`", want, got)
 	}
+	if want, got := wantContentEncoding, gotRequest.Header.Get("Content-Encoding"); want != got {
+		t.Errorf("expected content-encoding `%s`, got `%s`", want, got)
+	}
 	if want, got := wantMethod, gotRequest.Method; want != got {
 		t.Errorf("expected method `%s`, got `%s`", want, got)
-	}
-	var gotBody bytes.Buffer
-	gotBody.ReadFrom(gotRequest.Body)
-	if want, got := wantBody, gotBody.String(); want != got {
-		t.Errorf("expected body `%s`, got `%s`", want, got)
 	}
 }
 

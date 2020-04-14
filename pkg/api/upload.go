@@ -1,7 +1,9 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -14,6 +16,8 @@ import (
 	"time"
 )
 
+const UploadsTimeout = 5 * 60 * time.Second
+
 type UploadHandler struct{ *Storage }
 
 type UploadType string
@@ -24,6 +28,10 @@ const (
 	UploadTypeClix   UploadType = "clix"
 	UploadTypeSheets UploadType = "sheets"
 )
+
+const MediaTypeUploadsGob = "application/x.vvgo.pkg.api.uploads.gob"
+
+type Uploads []Upload
 
 type Upload struct {
 	UploadType  `json:"upload_type"`
@@ -96,13 +104,13 @@ func (upload *Upload) Parts() []parts.Part {
 	return allParts
 }
 
+const MediaTypeUploadStatusesGob = "application/x.vvgo.pkg.api.upload_statuses.gob"
+
 type UploadStatus struct {
 	FileName string `json:"file_name"`
 	Code     int    `json:"code"`
 	Error    string `json:"error,omitempty"`
 }
-
-const UploadsTimeout = 5 * 60 * time.Second
 
 func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -110,61 +118,91 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("Content-Type") != "application/json" {
-		invalidContent(w)
+	var uploads Uploads
+	if ok := readUploads(r, &uploads); !ok {
+		badRequest(w, "invalid body")
 		return
 	}
 
-	var documents []Upload
-	if ok := jsonDecode(r.Body, &documents); !ok {
-		badRequest(w, "")
-		return
-	}
-
-	// we'll handle the uploads in goroutines, since these make outgoing http requests to object storage.
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithTimeout(context.Background(), UploadsTimeout)
+	ctx, cancel := context.WithTimeout(r.Context(), UploadsTimeout)
 	defer cancel()
-	wg.Add(len(documents))
-	statuses := make(chan UploadStatus, len(documents))
-	for _, upload := range documents {
-		go func(upload *Upload) {
-			defer wg.Done()
+	statuses := x.ServeUploads(ctx, uploads)
 
-			// validate the upload
-			if err := upload.Validate(); err != nil {
-				statuses <- uploadBadRequest(upload, err.Error())
-				return
-			}
+	switch {
+	case acceptsType(r, MediaTypeUploadStatusesGob):
+		if err := gob.NewEncoder(w).Encode(&statuses); err != nil {
+			logger.WithError(err).Error("gob.Encode() failed", err)
+		}
 
-			// check for context cancelled
-			select {
-			case <-ctx.Done():
-				statuses <- uploadCtxCancelled(upload, ctx.Err())
-			default:
-			}
-
-			// handle the upload
-			switch upload.UploadType {
-			case UploadTypeClix:
-				statuses <- x.handleClickTrack(ctx, upload)
-			case UploadTypeSheets:
-				statuses <- x.handleSheetMusic(ctx, upload)
-			}
-		}(&upload)
+	default:
+		if err := json.NewEncoder(w).Encode(&statuses); err != nil {
+			logger.WithError(err).Error("json.Encode() failed", err)
+		}
 	}
-
-	wg.Wait()
-	close(statuses)
-
-	results := make([]UploadStatus, 0, len(documents))
-	for status := range statuses {
-		results = append(results, status)
-	}
-	json.NewEncoder(w).Encode(&results)
 }
 
-func (x UploadHandler) handleClickTrack(ctx context.Context, upload *Upload) UploadStatus {
+func readUploads(r *http.Request, dest *Uploads) bool {
+	var body bytes.Buffer
+	if ok := readBody(&body, r); !ok {
+		return false
+	}
+
+	switch r.Header.Get("Content-Type") {
+	case MediaTypeUploadsGob:
+		return gobDecode(&body, dest)
+	case "application/json":
+		return jsonDecode(&body, dest)
+	default:
+		return false
+	}
+}
+
+func (x *UploadHandler) ServeUploads(ctx context.Context, uploads Uploads) []UploadStatus {
+	// we'll handle the uploads in goroutines, since these make outgoing http requests to object storage.
+	var wg sync.WaitGroup
+	wg.Add(len(uploads))
+	statusesCh := make(chan UploadStatus, len(uploads))
+	for _, upload := range uploads {
+		go func(upload Upload) {
+			defer wg.Done()
+			statusesCh <- x.serveUpload(ctx, upload)
+		}(upload)
+	}
+	wg.Wait()
+	close(statusesCh)
+
+	statuses := make([]UploadStatus, 0, len(uploads))
+	for status := range statusesCh {
+		statuses = append(statuses, status)
+	}
+	return statuses
+}
+
+func (x UploadHandler) serveUpload(ctx context.Context, upload Upload) UploadStatus {
+	// validate the upload
+	if err := upload.Validate(); err != nil {
+		return uploadBadRequest(&upload, err.Error())
+	}
+
+	// check if context cancelled
+	select {
+	case <-ctx.Done():
+		return uploadCtxCancelled(&upload, ctx.Err())
+	default:
+	}
+
+	// handle the upload
+	switch upload.UploadType {
+	case UploadTypeClix:
+		return x.handleClix(ctx, &upload)
+	case UploadTypeSheets:
+		return x.handleSheets(ctx, &upload)
+	default:
+		return uploadBadRequest(&upload, "invalid upload type")
+	}
+}
+
+func (x UploadHandler) handleClix(ctx context.Context, upload *Upload) UploadStatus {
 	file := upload.File()
 	if err := file.ValidateMediaType("audio/"); err != nil {
 		return uploadBadRequest(upload, err.Error())
@@ -177,7 +215,7 @@ func (x UploadHandler) handleClickTrack(ctx context.Context, upload *Upload) Upl
 	}
 }
 
-func (x UploadHandler) handleSheetMusic(ctx context.Context, upload *Upload) UploadStatus {
+func (x UploadHandler) handleSheets(ctx context.Context, upload *Upload) UploadStatus {
 	file := upload.File()
 	if err := file.ValidateMediaType("application/pdf"); err != nil {
 		return uploadBadRequest(upload, err.Error())
@@ -194,7 +232,12 @@ func (x UploadHandler) handleParts(ctx context.Context, upload *Upload, objectKe
 	// update parts with the revision
 	uploadParts := upload.Parts()
 	for i := range uploadParts {
-		uploadParts[i].Click = objectKey
+		switch upload.UploadType {
+		case UploadTypeSheets:
+			uploadParts[i].Sheets.NewKey(objectKey)
+		case UploadTypeClix:
+			uploadParts[i].Clix.NewKey(objectKey)
+		}
 	}
 	if ok := x.Parts.Save(ctx, uploadParts); !ok {
 		return uploadInternalServerError(upload)

@@ -45,7 +45,7 @@ func Test_readUpload(t *testing.T) {
 		{
 			name: "file does not exist",
 			args: args{
-				input:    "y\n1, 2\ntrumpet , baritone\n",
+				input:    "trumpet , baritone\n1, 2\n",
 				project:  "01-snake-eater",
 				fileName: filepath.Join(testData, "dne"),
 			},
@@ -56,7 +56,7 @@ func Test_readUpload(t *testing.T) {
 		{
 			name: "invalid media type",
 			args: args{
-				input:    "y\n1, 2\ntrumpet , baritone\n",
+				input:    "trumpet , baritone\n1, 2\n",
 				project:  "01-snake-eater",
 				fileName: filepath.Join(testData, "invalid.data"),
 			},
@@ -67,13 +67,13 @@ func Test_readUpload(t *testing.T) {
 		{
 			name: "click/success",
 			args: args{
-				input:    "y\n1, 2\ntrumpet , baritone\n",
+				input:    "trumpet , baritone\n1, 2\n",
 				project:  "01-snake-eater",
 				fileName: filepath.Join(testData, "click-track.mp3"),
 			},
 			wants: wants{
 				ok:     true,
-				output: ":: this is a click track [Y/n]? :: please enter part numbers (ex 1, 2): :: please enter part names (ex trumpet, flute): ",
+				output: ":: upload type: clix\n:: leave empty to skip | Ctrl+C to quit\n:: part names (ex. trumpet, flute): :: part numbers (ex. 1, 2): ",
 				upload: api.Upload{
 					UploadType:  api.UploadTypeClix,
 					PartNames:   []string{"trumpet", "baritone"},
@@ -88,13 +88,13 @@ func Test_readUpload(t *testing.T) {
 		{
 			name: "sheet/success",
 			args: args{
-				input:    "y\n1, 2\ntrumpet , baritone\n",
+				input:    "trumpet , baritone\n1, 2\n",
 				project:  "01-snake-eater",
 				fileName: filepath.Join(testData, "sheet-music.pdf"),
 			},
 			wants: wants{
 				ok:     true,
-				output: ":: this is a music sheet [Y/n]? :: please enter part numbers (ex 1, 2): :: please enter part names (ex trumpet, flute): ",
+				output: ":: upload type: sheets\n:: leave empty to skip | Ctrl+C to quit\n:: part names (ex. trumpet, flute): :: part numbers (ex. 1, 2): ",
 				upload: api.Upload{
 					UploadType:  api.UploadTypeSheets,
 					PartNames:   []string{"trumpet", "baritone"},
@@ -111,9 +111,9 @@ func Test_readUpload(t *testing.T) {
 			var gotUpload api.Upload
 			reader := bufio.NewReader(strings.NewReader(tt.args.input))
 			writer := bytes.NewBuffer(nil)
-			gotOk := readUpload(writer, reader, &gotUpload, tt.args.project, tt.args.fileName)
+			gotError := readUpload(writer, reader, &gotUpload, tt.args.project, tt.args.fileName)
 			assert.Equal(t, tt.wants.output, writer.String(), "output")
-			if assert.Equal(t, tt.wants.ok, gotOk, "ok") && gotOk {
+			if tt.wants.ok && assert.NoError(t, gotError, "error") {
 				compareUploads(t, &tt.wants.upload, &gotUpload)
 			}
 		})
@@ -224,7 +224,7 @@ func Test_readPartNumbers(t *testing.T) {
 			name:  "1",
 			input: "1\n",
 			wants: wants{
-				output:  ":: please enter part numbers (ex 1, 2): ",
+				output:  ":: part numbers (ex. 1, 2): ",
 				numbers: []uint8{1},
 			},
 		},
@@ -232,7 +232,7 @@ func Test_readPartNumbers(t *testing.T) {
 			name:  "1, 2",
 			input: "1, 2\n",
 			wants: wants{
-				output:  ":: please enter part numbers (ex 1, 2): ",
+				output:  ":: part numbers (ex. 1, 2): ",
 				numbers: []uint8{1, 2},
 			},
 		},
@@ -240,7 +240,7 @@ func Test_readPartNumbers(t *testing.T) {
 			name:  "invalid number",
 			input: "cheese\n",
 			wants: wants{
-				output:  ":: please enter part numbers (ex 1, 2): ",
+				output:  ":: part numbers (ex. 1, 2): ",
 				numbers: nil,
 			},
 		},
@@ -248,7 +248,7 @@ func Test_readPartNumbers(t *testing.T) {
 			name:  "EOF",
 			input: "",
 			wants: wants{
-				output:  ":: please enter part numbers (ex 1, 2): ",
+				output:  ":: part numbers (ex. 1, 2): ",
 				numbers: nil,
 			},
 		},
@@ -277,7 +277,7 @@ func Test_readPartNames(t *testing.T) {
 			name:  "trumpet",
 			input: "trumpet\n",
 			wants: wants{
-				output: ":: please enter part names (ex trumpet, flute): ",
+				output: ":: part names (ex. trumpet, flute): ",
 				names:  []string{"trumpet"},
 			},
 		},
@@ -285,7 +285,7 @@ func Test_readPartNames(t *testing.T) {
 			name:  "trumpet, baritone",
 			input: "trumpet, baritone\n",
 			wants: wants{
-				output: ":: please enter part names (ex trumpet, flute): ",
+				output: ":: part names (ex. trumpet, flute): ",
 				names:  []string{"trumpet", "baritone"},
 			},
 		},
@@ -293,7 +293,7 @@ func Test_readPartNames(t *testing.T) {
 			name:  "EOF",
 			input: "",
 			wants: wants{
-				output: ":: please enter part names (ex trumpet, flute): ",
+				output: ":: part names (ex. trumpet, flute): ",
 				names:  nil,
 			},
 		},
