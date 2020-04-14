@@ -11,14 +11,15 @@ import (
 	"strings"
 )
 
+const ClientUserAgent = "Virtual-VGO Client"
+
 type Client struct {
 	ClientConfig
 }
 
 type ClientConfig struct {
 	ServerAddress string
-	BasicAuthUser string
-	BasicAuthPass string
+	Token         string
 }
 
 func NewClient(config ClientConfig) *Client {
@@ -54,7 +55,7 @@ func (x *Client) Upload(uploads ...Upload) []UploadStatus {
 
 	var results []UploadStatus
 	if err := gob.NewDecoder(resp.Body).Decode(&results); err != nil {
-		return uploadStatusFatal(uploads, fmt.Sprintf("json.Decode() failed: %v", err))
+		return uploadStatusFatal(uploads, fmt.Sprintf("gob.Decode() failed: %v", err))
 	}
 	return results
 }
@@ -111,8 +112,9 @@ func (x *Client) newRequest(method, url string, body io.Reader) (*http.Request, 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "Virtual-VGO Client")
-	req.SetBasicAuth(x.BasicAuthUser, x.BasicAuthPass)
+	req.Header.Set("User-Agent", ClientUserAgent)
+	req.Header.Set("Authorization", "Bearer "+x.Token)
+	req.Header.Set("Accepts", MediaTypeUploadStatusesGob)
 	return req, nil
 }
 
