@@ -17,6 +17,7 @@ CMD ["make", "test"]
 
 FROM gcr.io/distroless/base-debian10 as vvgo
 COPY --from=builder vvgo vvgo
+COPY ./etc /etc
 COPY ./public /public
 EXPOSE 8080
 CMD ["/vvgo"]
