@@ -1,0 +1,23 @@
+{
+  "name": "vvgo",
+  "version": "1.0.0",
+  "description": "![tests](https://github.com/virtual-vgo/vvgo/workflows/tests/badge.svg) ![build](https://github.com/virtual-vgo/vvgo/workflows/build/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/virtual-vgo/vvgo)](https://goreportcard.com/report/github.com/virtual-vgo/vvgo)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/virtual-vgo/vvgo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/virtual-vgo/vvgo/issues"
+  },
+  "homepage": "https://github.com/virtual-vgo/vvgo#readme",
+  "dependencies": {
+    "datatables": "^1.10.18",
+    "jquery": "^3.5.0"
+  }
+}
