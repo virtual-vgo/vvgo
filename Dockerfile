@@ -24,7 +24,7 @@ FROM gcr.io/distroless/base-debian10 as vvgo
 COPY ./infra/vvgo/etc/mime.types /etc/
 COPY ./public /public
 COPY --from=builder vvgo /vvgo
-COPY --from=node node_modules /node_modules
+COPY --from=node node_modules /public/npm
 EXPOSE 8080
 CMD ["/vvgo"]
 ENTRYPOINT ["/vvgo"]
