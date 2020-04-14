@@ -533,11 +533,8 @@ Vienna Horn
 Viola
 Viola da gamba
 Viola da gamba (Tab)
-Violas
 Violin
-Violins
 Violoncello
-Violoncellos
 Violone
 Virginal
 Voice
