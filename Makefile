@@ -27,6 +27,10 @@ vvgo:
 vvgo-uploader:
 	go generate ./... && go build -v -o $(BIN_PATH)/vvgo-uploader $(GO_PREFIX)/cmd/vvgo-uploader
 
+WIN_RELEASE=$(shell git rev-parse --short HEAD)
+vvgo-uploader.exe:
+	go generate ./...
+	GOOS=windows go build -v -o $(BIN_PATH)/vvgo-uploader-$(WIN_RELEASE).exe $(GO_PREFIX)/cmd/vvgo-uploader
 
 # Build images
 

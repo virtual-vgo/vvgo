@@ -36,8 +36,6 @@ func (x *Flags) Parse() {
 	flag.BoolVar(&x.version, "version", false, "print version and quit")
 	flag.StringVar(&x.project, "project", "", "project for these uploads (required)")
 	flag.StringVar(&x.endpoint, "endpoint", "https://vvgo.org", "vvgo endpoint")
-	flag.StringVar(&x.user, "user", "vvgo-dev", "basic auth username")
-	flag.StringVar(&x.pass, "pass", "vvgo-dev", "basic auth password")
 	flag.BoolVar(&x.save, "save", false, "save local copy (debugging)")
 	flag.Parse()
 }
@@ -58,6 +56,9 @@ type CmdClient struct {
 func printError(err error) { red.Fprintf(os.Stderr, ":: error: %v\n", err) }
 
 func main() {
+	token := api.NewToken()
+	fmt.Println(token.String())
+
 	if err := func() error {
 		var flags Flags
 		flags.Parse()
