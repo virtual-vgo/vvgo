@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -15,6 +16,30 @@ const HeaderVirtualVGOApiToken = "Virtual-VGO-Api-Token"
 type AuthServer struct{}
 
 type TokenAuth []Token
+
+func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if ok := func() bool {
+			if len(tokens) == 0 { // skip auth for empty slice
+				return true
+			}
+			requestToken := r.Header.Get(HeaderVirtualVGOApiToken)
+			for _, token := range tokens {
+				if requestToken == token.String() {
+					return true
+				}
+			}
+			return false
+		}(); ok {
+			handler.ServeHTTP(w, r)
+		} else {
+			logger.WithFields(logrus.Fields{
+				"header": HeaderVirtualVGOApiToken,
+			}).Error("token authentication failed")
+			unauthorized(w)
+		}
+	})
+}
 
 type Token [4]uint64
 
@@ -31,55 +56,33 @@ func NewToken() Token {
 func (token Token) String() string {
 	var got [len(token)]string
 	for i := range token {
-		got[i] = fmt.Sprintf("%020d", token[i])
+		got[i] = fmt.Sprintf("%016x", token[i])
 	}
 	return strings.Join(got[:], "-")
 }
 
 func DecodeToken(tokenString string) (Token, error) {
-
-	var got []string
-	for i := range token {
-		got[i] = fmt.Sprintf("%020d", token[i])
-	}
-	return strings.Join(got[:], "-")
-
+	tokenParts := strings.Split(tokenString, "-")
 	var token Token
-	if _, err := fmt.Sscanf(tokenString, "%020d-%020d-%020d-%020d", &token[0], &token[1], &token[2], &token[3]); err != nil {
+	if len(tokenParts) != len(token) {
 		return Token{}, ErrInvalidToken
 	}
-	return token, nil
+	for i := range token {
+		if len(tokenParts[i]) != 16 {
+			return Token{}, ErrInvalidToken
+		}
+		token[i], _ = strconv.ParseUint(tokenParts[i], 16, 64)
+	}
+	return token, token.Validate()
 }
 
 func (token Token) Validate() error {
-	switch uint64(0) {
-	case token[0], token[1], token[2], token[3]:
-		return ErrInvalidToken
-	default:
-		return nil
+	for i := range token {
+		if token[i] == 0 {
+			return ErrInvalidToken
+		}
 	}
-}
-
-func (tokens TokenAuth) AuthenticateToken(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(tokens) == 0 { // skip auth for empty slice
-			handler.ServeHTTP(w, r)
-			return
-		}
-
-		requestToken := r.Header.Get("VVGO-Api-Token")
-		for _, token := range tokens {
-			if requestToken == token.String() {
-				handler.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		logger.WithFields(logrus.Fields{
-			"header": HeaderVirtualVGOApiToken,
-		}).Error("token authentication failed")
-		unauthorized(w)
-	})
+	return nil
 }
 
 // Authenticates http requests using basic auth.

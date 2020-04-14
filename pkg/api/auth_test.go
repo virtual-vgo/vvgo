@@ -1,11 +1,72 @@
 package api
 
 import (
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
+
+func TestTokenAuth_AuthenticateToken(t *testing.T) {
+	var newRequest = func(url string, headers map[string]string) *http.Request {
+		req := httptest.NewRequest(http.MethodGet, url, strings.NewReader(""))
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+		return req
+	}
+	for _, tt := range []struct {
+		name      string
+		request   *http.Request
+		tokenAuth TokenAuth
+		wantCode  int
+	}{
+		{
+			name:      "success",
+			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			tokenAuth: TokenAuth{{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}},
+			wantCode:  http.StatusOK,
+		},
+		{
+			name:      "empty map",
+			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			tokenAuth: TokenAuth{},
+			wantCode:  http.StatusOK,
+		},
+		{
+			name:      "no token",
+			request:   newRequest("/", map[string]string{}),
+			tokenAuth: TokenAuth{{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}},
+			wantCode:  http.StatusUnauthorized,
+		},
+		{
+			name:      "invalid token",
+			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "196ddfzzzc7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			tokenAuth: TokenAuth{{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}},
+			wantCode:  http.StatusUnauthorized,
+		},
+		{
+			name:      "incorrect token",
+			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "8d32ff4a91a530bc-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			tokenAuth: TokenAuth{{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}},
+			wantCode:  http.StatusUnauthorized,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			tt.tokenAuth.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// do nothing
+			})).ServeHTTP(recorder, tt.request)
+
+			gotCode := recorder.Code
+
+			if expected, got := tt.wantCode, gotCode; expected != got {
+				t.Errorf("expected %v, got %v", expected, got)
+			}
+		})
+	}
+}
 
 func TestBasicAuth_Authenticate(t *testing.T) {
 	type wants struct {
@@ -87,4 +148,27 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestToken(t *testing.T) {
+	t.Run("decode", func(t *testing.T) {
+		arg := "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"
+		expected := Token{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		got, _ := DecodeToken(arg)
+		assert.Equal(t, expected, got)
+	})
+	t.Run("string", func(t *testing.T) {
+		expected := "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"
+		arg := Token{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		got := arg.String()
+		assert.Equal(t, expected, got)
+	})
+	t.Run("validate/success", func(t *testing.T) {
+		arg := Token{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		assert.NoError(t, arg.Validate())
+	})
+	t.Run("validate/fail", func(t *testing.T) {
+		arg := Token{0, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		assert.Equal(t, ErrInvalidToken, arg.Validate())
+	})
 }
