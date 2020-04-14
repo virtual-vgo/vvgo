@@ -21,6 +21,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Flags struct {
@@ -118,27 +119,31 @@ func main() {
 	}
 }
 
+var shutdownOnce sync.Once
+
 func shutdown(client CmdClient, sigCh chan os.Signal) {
-	yellow.Fprintln(os.Stdout, ":: waiting for uploads to complete... Ctrl+C again to force quit")
-	done := make(chan struct{})
+	shutdownOnce.Do(func() {
+		yellow.Fprintln(os.Stdout, ":: waiting for uploads to complete... Ctrl+C again to force quit")
+		done := make(chan struct{})
 
-	go client.Close()
+		go client.Close()
 
-	go func() {
-		for result := range client.Status() {
-			printResult(result)
+		go func() {
+			for result := range client.Status() {
+				printResult(result)
+			}
+			close(done)
+		}()
+
+		select {
+		case sig := <-sigCh:
+			red.Printf(":: received: %s\n", sig)
+			os.Exit(1)
+		case <-done:
+			yellow.Println(":: closed!")
+			os.Exit(0)
 		}
-		close(done)
-	}()
-
-	select {
-	case sig := <-sigCh:
-		red.Printf(":: received: %s\n", sig)
-		os.Exit(1)
-	case <-done:
-		yellow.Println(":: closed!")
-		os.Exit(0)
-	}
+	})
 }
 
 func printResult(result api.UploadStatus) {

@@ -8,13 +8,6 @@ import (
 	"net/http/pprof"
 )
 
-const (
-	SheetsBucketName = "sheets"
-	ClixBucketName   = "clix"
-	PartsBucketName  = "parts"
-	PartsLockerName  = "parts.lock"
-)
-
 var logger = log.Logger()
 
 var PublicFiles = "public"
@@ -87,8 +80,8 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := DownloadHandler{
-		SheetsBucketName: database.Sheets.DownloadURL,
-		ClixBucketName:   database.Clix.DownloadURL,
+		config.SheetsBucketName: database.Sheets.DownloadURL,
+		config.ClixBucketName:   database.Clix.DownloadURL,
 	}
 	mux.Handle("/download", auth.Authenticate(downloadHandler))
 
