@@ -90,9 +90,31 @@ images/kv-cache:
 
 images: images/vvgo images/page-cache images/object-cache images/kv-cache
 
-# Push images
 
-RELEASE_TAG ?= development
+# Releases
+
+HARDWARE ?= $(shell uname -m)
+RELEASE_TAG ?= $(shell git rev-parse --short HEAD)
+
+.PHONY: releases
+releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-linux-$(HARDWARE)
+releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-darwin-$(HARDWARE)
+releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-windows-$(HARDWARE).exe
+
+releases/%: $(BIN_PATH)/%-$(RELEASE_TAG)-%-$(HARDWARE)
+	GOOS=$@ go build -v -o $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-$@-$(HARDWARE) $(GO_PREFIX)/cmd/vvgo-uploader
+releases/%.exe: $(BIN_PATH)/%-$(RELEASE_TAG)-%-$(HARDWARE).exe
+	GOOS=$@ go build -v -o $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-$@-$(HARDWARE).exe $(GO_PREFIX)/cmd/vvgo-uploader
+$(BIN_PATH)/%-$(RELEASE_TAG)-darwin-$(HARDWARE):
+	GOOS=$@ go build -v -o $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-$@-$(HARDWARE) $(GO_PREFIX)/cmd/vvgo-uploader
+$(BIN_PATH)/%-$(RELEASE_TAG)-windows-$(HARDWARE).exe:
+	GOOS=$@ go build -v -o $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-$@-$(HARDWARE).exe $(GO_PREFIX)/cmd/vvgo-uploader
+
+
+
+
+
+# Push images
 
 .PHONY: push push/object-cache push/page-cache push/vvgo push/vvgo-builder
 
