@@ -6,3 +6,4 @@ info.go
 !infra/*
 *.exe
 data/statik
+node_modules
