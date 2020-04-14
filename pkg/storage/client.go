@@ -23,8 +23,8 @@ type Client struct {
 }
 
 type Config struct {
-	MinioConfig
-	RedisConfig
+	Minio MinioConfig `envconfig:"minio"`
+	Redis RedisConfig `envconfig:"redis"`
 }
 
 type MinioConfig struct {
@@ -40,14 +40,14 @@ type RedisConfig struct {
 }
 
 func NewClient(config Config) *Client {
-	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
+	minioClient, err := minio.New(config.Minio.Endpoint, config.Minio.AccessKey, config.Minio.SecretKey, config.Minio.UseSSL)
 	if err != nil {
 		logger.WithError(err).Error("minio.New() failed")
 		return nil
 	}
 	redisClient := redis.NewClient(&redis.Options{
 		Network: "tcp",
-		Addr:    config.Address,
+		Addr:    config.Redis.Address,
 	})
 
 	return &Client{

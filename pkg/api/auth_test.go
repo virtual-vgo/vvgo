@@ -84,13 +84,13 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		{
 			name:    "success",
 			request: newAuthRequest("/", "jackson", "the-earth-is-flat"),
-			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{MemberBasicAuthUser: "jackson", MemberBasicAuthPass: "the-earth-is-flat"},
 			wants:   wants{code: http.StatusOK},
 		},
 		{
 			name:    "incorrect user",
 			request: newAuthRequest("/", "", "the-earth-is-flat"),
-			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{MemberBasicAuthUser: "jackson", MemberBasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -100,7 +100,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		{
 			name:    "incorrect pass",
 			request: newAuthRequest("/", "jackson", ""),
-			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{MemberBasicAuthUser: "jackson", MemberBasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -110,7 +110,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		{
 			name:    "no auth",
 			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
-			config:  ServerConfig{BasicAuthUser: "jackson", BasicAuthPass: "the-earth-is-flat"},
+			config:  ServerConfig{MemberBasicAuthUser: "jackson", MemberBasicAuthPass: "the-earth-is-flat"},
 			wants: wants{
 				code:   http.StatusUnauthorized,
 				body:   "authorization failed",
@@ -120,7 +120,7 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			server := BasicAuth{tt.config.BasicAuthUser: tt.config.BasicAuthPass}
+			server := BasicAuth{tt.config.MemberBasicAuthUser: tt.config.MemberBasicAuthPass}
 			server.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// do nothing
 			})).ServeHTTP(recorder, tt.request)

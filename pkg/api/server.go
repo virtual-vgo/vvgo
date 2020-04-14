@@ -13,16 +13,16 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress    string
-	MaxContentLength int64
-	BasicAuthUser    string
-	BasicAuthPass    string
-	SheetsBucketName string
-	ClixBucketName   string
-	PartsBucketName  string
-	PartsLockerKey   string
-	PrepRepToken     string
-	AdminToken       string
+	ListenAddress       string `envconfig:"listen_address"`
+	MaxContentLength    int64  `envconfig:"max_content_length"`
+	SheetsBucketName    string `envconfig:"sheets_bucket_name"`
+	ClixBucketName      string `envconfig:"clix_bucket_name"`
+	PartsBucketName     string `envconfig:"parts_bucket_name"`
+	PartsLockerKey      string `envconfig:"parts_locker_key"`
+	MemberBasicAuthUser string `envconfig:"member_basic_auth_user"`
+	MemberBasicAuthPass string `envconfig:"member_basic_auth_pass"`
+	PrepRepToken        string `envconfig:"prep_rep_token"`
+	AdminToken          string `envconfig:"admin_token"`
 }
 
 type FileBucket interface {
@@ -58,7 +58,7 @@ func NewStorage(client *storage.Client, config ServerConfig) *Storage {
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {
-	members := BasicAuth{config.BasicAuthUser: config.BasicAuthPass}
+	members := BasicAuth{config.MemberBasicAuthUser: config.MemberBasicAuthPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
 	admin := TokenAuth{config.AdminToken}
 

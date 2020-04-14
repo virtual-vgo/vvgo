@@ -5,12 +5,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -18,35 +18,35 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	InitializeStorage bool
-	StorageConfig     storage.Config
-	ApiConfig         api.ServerConfig
+	InitializeStorage bool             `envconfig:"initialize_storage"`
+	StorageConfig     storage.Config   `envconfig:"storage"`
+	ApiConfig         api.ServerConfig `envconfig:"api"`
 }
 
 func NewDefaultConfig() Config {
 	return Config{
 		InitializeStorage: false,
 		ApiConfig: api.ServerConfig{
-			ListenAddress:    ":8080",
-			MaxContentLength: 1e6,
-			BasicAuthUser:    "admin",
-			BasicAuthPass:    "admin",
-			SheetsBucketName: "sheets",
-			ClixBucketName:   "clix",
-			PartsBucketName:  "parts",
-			PartsLockerKey:   "parts.lock",
-			AdminToken:       "admin",
-			PrepRepToken:     "prep-rep",
+			ListenAddress:       ":8080",
+			MaxContentLength:    1e6,
+			MemberBasicAuthUser: "admin",
+			MemberBasicAuthPass: "admin",
+			SheetsBucketName:    "sheets",
+			ClixBucketName:      "clix",
+			PartsBucketName:     "parts",
+			PartsLockerKey:      "parts.lock",
+			AdminToken:          "admin",
+			PrepRepToken:        "prep-rep",
 		},
 		StorageConfig: storage.Config{
-			MinioConfig: storage.MinioConfig{
+			Minio: storage.MinioConfig{
 				Endpoint:  "localhost:9000",
 				Region:    "sfo2",
 				AccessKey: "minioadmin",
 				SecretKey: "minioadmin",
 				UseSSL:    false,
 			},
-			RedisConfig: storage.RedisConfig{
+			Redis: storage.RedisConfig{
 				Address: "localhost:6379",
 			},
 		},
@@ -54,49 +54,9 @@ func NewDefaultConfig() Config {
 }
 
 func (x *Config) ParseEnv() {
-	x.InitializeStorage, _ = strconv.ParseBool(os.Getenv("INITIALIZE_STORAGE"))
-
-	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
-		x.StorageConfig.MinioConfig.Endpoint = endpoint
-	}
-	if arg := os.Getenv("MINIO_REGION"); arg != "" {
-		x.StorageConfig.MinioConfig.Region = arg
-	}
-	if id := os.Getenv("MINIO_ACCESS_KEY"); id != "" {
-		x.StorageConfig.MinioConfig.AccessKey = id
-	}
-	if key := os.Getenv("MINIO_SECRET_KEY"); key != "" {
-		x.StorageConfig.MinioConfig.SecretKey = key
-	}
-	x.StorageConfig.MinioConfig.UseSSL, _ = strconv.ParseBool(os.Getenv("MINIO_USE_SSL"))
-
-	if address := os.Getenv("REDIS_ADDRESS"); address != "" {
-		x.StorageConfig.RedisConfig.Address = address
-	}
-
-	if maxContentLength, _ := strconv.ParseInt(os.Getenv("API_MAX_CONTENT_LENGTH"), 10, 64); maxContentLength != 0 {
-		x.ApiConfig.MaxContentLength = maxContentLength
-	}
-	if listenAddress := os.Getenv("LISTEN_ADDRESS"); listenAddress != "" {
-		x.ApiConfig.ListenAddress = listenAddress
-	}
-	if user := os.Getenv("BASIC_AUTH_USER"); user != "" {
-		x.ApiConfig.BasicAuthUser = user
-	}
-	if pass := os.Getenv("BASIC_AUTH_PASS"); pass != "" {
-		x.ApiConfig.BasicAuthPass = pass
-	}
-	if arg := os.Getenv("SHEETS_BUCKET_NAME"); arg != "" {
-		x.ApiConfig.SheetsBucketName = arg
-	}
-	if arg := os.Getenv("CLIX_BUCKET_NAME"); arg != "" {
-		x.ApiConfig.ClixBucketName = arg
-	}
-	if arg := os.Getenv("PARTS_BUCKET_NAME"); arg != "" {
-		x.ApiConfig.PartsBucketName = arg
-	}
-	if arg := os.Getenv("PARTS_LOCKER_KEY"); arg != "" {
-		x.ApiConfig.PartsLockerKey = arg
+	err := envconfig.Process("", x)
+	if err != nil {
+		logger.Fatal(err)
 	}
 }
 
