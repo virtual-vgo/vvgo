@@ -54,11 +54,11 @@ var project = Projects{projects: []Project{
 		Arrangers:    []string{"Jacob Zeleny"},
 		Editors:      []string{},
 		Transcribers: []string{},
-		Preparers:    []string{"The Giggling Donkey, Inc.","Thomas Håkanson"},
+		Preparers:    []string{"The Giggling Donkey, Inc.", "Thomas Håkanson"},
 		ClixBy:       []string{"Finny Jacob Zeleny"},
 		Reviewers:    []string{"B. Harnish"},
 		Lyricists:    []string{"B. Harnish"},
-		AddlContent:  []string{"Chris Suzuki","B. Harnish"},
+		AddlContent:  []string{"Chris Suzuki", "B. Harnish"},
 	},
 }}
 
