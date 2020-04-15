@@ -6,8 +6,8 @@ body {
 .logo-main {
     display: block;
     margin: 20px auto;
-    width: 30%;
-    height: 30%;
+    width: 90%;
+    height: 90%;
 }
 
 .logo-small {
@@ -26,4 +26,17 @@ body {
 .top-nav {
     margin-top: 15px;
     background-color: rgba(71, 54, 80, 0.57);
+}
+
+.bg-green {
+    background-color: rgba(14, 57, 5, 0.62);
+}
+
+.bg-terminal {
+    background-color: rgba(71, 54, 80, 0.57);
+}
+
+.thick-border {
+    border-style: solid;
+    border-width: thick;
 }

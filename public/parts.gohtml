@@ -29,8 +29,8 @@
 </head>
 <body>
 
-<nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border m-2">
-    <div class="container-fluid">
+<div class="container">
+    <nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border m-2">
         <a class="nav-link btn-outline-primary text-light" href="/">
             <i class="fas fa-home fa-2x mr-2"></i>Virtual VGO
         </a>
@@ -54,40 +54,42 @@
                 </li>
             </ul>
         </div>
-    </div>
-</nav>
+    </nav>
+</div>
 
 <main role="main">
     <div class="container parts-table">
         <div class="jumbotron bg-transparent">
-            <h1 class="title text-monospace">Parts</h1>
-            <table id="parts" class="table text-light bg-transparent">
-                <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Part</th>
-                    <th>Downloads</th>
-                </tr>
-                </thead>
-                <tbody>
-                {{- range .}}
+            <div class="bg-terminal p-3 thick-border rounded">
+                <h1 class="title text-monospace">Parts</h1>
+                <table id="parts" class="table text-light">
+                    <thead>
                     <tr>
-                        <td class="title">{{.Project}}</td>
-                        <td class="title">{{.PartName}} #{{.PartNumber}}</td>
-                        <td>
-                            <a href="{{.SheetMusic}}"
-                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                sheet music <i class="far fa-file-pdf"></i>
-                            </a> <i class="fas fa-grip-lines-vertical"></i>
-                            <a href="{{.ClickTrack}}"
-                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                click track <i class="far fa-file-audio"></i>
-                            </a>
-                        </td>
+                        <th>Project</th>
+                        <th>Part</th>
+                        <th>Downloads</th>
                     </tr>
-                {{- end }}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {{- range .}}
+                        <tr>
+                            <td class="title">{{.Project}}</td>
+                            <td class="title">{{.PartName}} #{{.PartNumber}}</td>
+                            <td>
+                                <a href="{{.SheetMusic}}"
+                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                    sheet music <i class="far fa-file-pdf"></i>
+                                </a> <i class="fas fa-grip-lines-vertical"></i>
+                                <a href="{{.ClickTrack}}"
+                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                    click track <i class="far fa-file-audio"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {{- end }}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </main>
