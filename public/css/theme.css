@@ -1,13 +1,13 @@
 body {
-    background-color: rgb(32, 25, 36);
+    background-color: rgba(32, 25, 36, 1);
     color: #E9E9E9;
 }
 
-.logo {
+.logo-main {
     display: block;
     margin: 20px auto;
-    width: 50%;
-    height: 50%;
+    width: 30%;
+    height: 30%;
 }
 
 .logo-small {
@@ -24,5 +24,6 @@ body {
 }
 
 .top-nav {
-    padding: 15px;
+    margin-top: 15px;
+    background-color: rgba(71, 54, 80, 0.57);
 }

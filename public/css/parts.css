@@ -1,7 +1,11 @@
 body {
-    background-image: url("../images/logo.svg");
-    background-blend-mode: overlay;
     background-size: 25%;
     background-position: center;
     background-repeat: no-repeat;
+    background-image: url("../images/logo.svg");
+    background-color: rgba(32, 25, 36, 1);
+}
+
+main {
+    background-color: rgba(32, 25, 36, 0.50);
 }
