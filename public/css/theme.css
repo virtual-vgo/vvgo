@@ -1,7 +1,6 @@
 body {
-    background-color: rgb(24, 19, 28);
+    background-color: rgb(32, 25, 36);
     color: #E9E9E9;
-    font-family: sans-serif, serif;
 }
 
 .logo {
@@ -24,35 +23,6 @@ body {
     font-weight: bold;
 }
 
-.button-table {
-    margin: 0 auto;
+.top-nav {
+    padding: 15px;
 }
-
-.button {
-    border: none;
-    margin: 4px 4px;
-    padding: 10px 10px;
-    display: inline-block;
-    cursor: pointer;
-    font-size: 20px;
-    text-decoration: none;
-    text-align: center;
-}
-
-.discord {
-    background-color: #7289DA;
-    color: white;
-    font-family: sans-serif, serif;
-    font-weight: bold;
-    border-radius: 4px;
-}
-
-.facebook {
-    background-color: #4267B2;
-    color: white;
-    font-family: Sans-serif, serif;
-    font-weight: bold;
-    border-radius: 4px;
-}
-
-

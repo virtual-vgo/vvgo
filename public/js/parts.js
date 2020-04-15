@@ -1,6 +1,6 @@
 $(document).ready(function () {
     $('#parts').DataTable({
-        scrollY: '50vh',
+        scrollY: "40vh",
         scrollCollapse: true,
         paging: false,
         "columnDefs": [
