@@ -143,7 +143,6 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 				}
 				gotBody = gotBuf.String()
 
-
 				var wantBuf bytes.Buffer
 				if err := m.Minify("text/html", &wantBuf, strings.NewReader(tt.wants.body)); err != nil {
 					panic(err)

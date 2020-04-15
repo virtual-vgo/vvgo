@@ -11,11 +11,7 @@ require (
 	github.com/rakyll/statik v0.1.7
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.2.2
-	github.com/tdewolff/minify v1.1.0
 	github.com/tdewolff/minify/v2 v2.7.3
-	github.com/tdewolff/parse v1.1.0 // indirect
-	github.com/tdewolff/test v1.0.6 // indirect
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
-	golang.org/x/net v0.0.0-20190923162816-aa69164e4478
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d // indirect
 )
