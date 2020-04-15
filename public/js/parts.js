@@ -3,7 +3,7 @@ $(document).ready(function () {
         scrollY: "40vh",
         scrollCollapse: true,
         paging: false,
-        "columnDefs": [
+        columnDefs: [
             {
                 targets: [2],
                 orderable: false,
