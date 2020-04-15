@@ -13,7 +13,7 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress    string `split_words:"true" default:"localhost:8080"`
+	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
 	MaxContentLength int64  `split_words:"true" default:"10000000"`
 	SheetsBucketName string `split_words:"true" default:"sheets"`
 	ClixBucketName   string `split_words:"true" default:"clix"`
