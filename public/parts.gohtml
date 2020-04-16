@@ -1,22 +1,16 @@
 <!doctype html>
 <html lang="en">
-
+{{ .Header }}
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="Virtual Video Game Orchestra">
-
     <title>Virtual Video Game Orchestra</title>
+    <meta name="description" content="">
 
-    <link rel="icon" href="images/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="stylesheet" type="text/css" href="npm/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="npm/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="npm/@fortawesome/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="css/theme.css">
     <link rel="stylesheet" type="text/css" href="css/parts.css">
-
 
     <script type="text/javascript" src="npm/jquery/dist/jquery.min.js"></script>
     <script type="text/javascript" src="npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -26,41 +20,8 @@
     <script type="text/javascript" src="npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
     <script type="text/javascript" src="js/parts.js"></script>
 </head>
+{{ .NavBar }}
 <body>
-
-<div class="container">
-    <nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border m-2">
-        <a class="nav-link btn-outline-primary text-light" href="/">
-            <i class="fas fa-home fa-2x mr-2"></i>Virtual VGO
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
-                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav container">
-                <li class="nav-item btn">
-                    <a class="nav-selected nav-link btn-outline-primary text-monospace btn-link" href="/parts">
-                        Parts
-                    </a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link btn-outline-primary" href="https://www.facebook.com/groups/1080154885682377/">
-                        <i class="fab fa-facebook-square fa-2x"></i>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link btn-outline-primary" href="https://github.com/virtual-vgo/vvgo">
-                        <i class="fab fa-github-square fa-2x"></i>
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
-</div>
-
 <main role="main">
     <div class="container parts-table">
         <div class="jumbotron bg-transparent">
@@ -75,7 +36,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {{- range .}}
+                    {{- range .Rows}}
                         <tr>
                             <td class="title">{{.Project}}</td>
                             <td class="title">{{.PartName}} #{{.PartNumber}}</td>

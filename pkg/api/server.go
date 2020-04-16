@@ -93,7 +93,13 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	mux.Handle("/upload", prepRep.Authenticate(uploadHandler))
 
 	mux.Handle("/version", http.HandlerFunc(Version))
-	mux.Handle("/", http.FileServer(http.Dir("public")))
+	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			IndexHandler{}.ServeHTTP(w, r)
+		} else {
+			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
+		}
+	}))
 
 	return &http.Server{
 		Addr:     config.ListenAddress,
