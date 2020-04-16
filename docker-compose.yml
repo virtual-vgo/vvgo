@@ -40,7 +40,7 @@ services:
     container_name: vvgo
     environment:
       INITIALIZE_STORAGE: "true"
-      REDIS_ADDRESS: kv-cache:6379
+      STORAGE_REDIS_ADDRESS: kv-cache:6379
       STORAGE_MINIO_ENDPOINT: object-cache:9000
       STORAGE_MINIO_ACCESSKEY: vvgo-admin
       STORAGE_MINIO_SECRETKEY: vvgo-admin
