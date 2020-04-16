@@ -154,3 +154,36 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		})
 	}
 }
+
+func TestIndexHandler_ServeHTTP(t *testing.T) {
+	wantCode := http.StatusOK
+	wantBytes, err := ioutil.ReadFile("testdata/index.html")
+	if err != nil {
+		t.Fatalf("ioutil.ReadFile() failed: %v", err)
+	}
+
+	server := IndexHandler{}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	server.ServeHTTP(recorder, request)
+	gotResp := recorder.Result()
+	t.Logf("Got Body:\n%s\n", strings.TrimSpace(recorder.Body.String()))
+	if expected, got := wantCode, gotResp.StatusCode; expected != got {
+		t.Errorf("expected code %v, got %v", expected, got)
+	}
+
+	m := minify.New()
+	m.AddFunc("text/html", html.Minify)
+	var gotBuf bytes.Buffer
+	if err := m.Minify("text/html", &gotBuf, recorder.Body); err != nil {
+		panic(err)
+	}
+	gotBody := gotBuf.String()
+
+	var wantBuf bytes.Buffer
+	if err := m.Minify("text/html", &wantBuf, bytes.NewReader(wantBytes)); err != nil {
+		panic(err)
+	}
+	wantBody := wantBuf.String()
+	assert.Equal(t, wantBody, gotBody, "body")
+}
