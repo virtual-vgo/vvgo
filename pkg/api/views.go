@@ -43,6 +43,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}{
 		Header: Header(),
 		NavBar: NavBar(NavBarOpts{PartsActive: true}),
+		Rows:   rows,
 	}
 
 	var buffer bytes.Buffer
