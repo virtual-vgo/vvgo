@@ -2,35 +2,33 @@
 
 GO_PREFIX ?= github.com/virtual-vgo/vvgo
 
-# Tests
-
-.PHONY: fmt vet test
-fmt:
-	gofmt -d .
-
-vet:
-	go vet $(GO_PREFIX)/...
-
-TEST_FLAGS ?= -race
-test: fmt vet
-	go test $(TEST_FLAGS) $(GO_PREFIX)/...
-
 # Build vvgo
-
-# Use go build tools caching, so mark this as a phony target
-.PHONY: vvgo vvgo-uploader
+.PHONY: vvgo vvgo-uploader # Use go build tools caching
 BIN_PATH ?= .
 BUILD_FLAGS ?= -v
 vvgo:
-	go generate ./... && go build -v -o $(BIN_PATH)/vvgo $(GO_PREFIX)/cmd/vvgo
-
+	go generate ./... && go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/$@
 vvgo-uploader:
-	go generate ./... && go build -v -o $(BIN_PATH)/vvgo-uploader $(GO_PREFIX)/cmd/vvgo-uploader
+	go generate ./... && go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/$@
 
-WIN_RELEASE=$(shell git rev-parse --short HEAD)
-vvgo-uploader.exe:
-	go generate ./...
-	GOOS=windows go build -v -o $(BIN_PATH)/vvgo-uploader-$(WIN_RELEASE).exe $(GO_PREFIX)/cmd/vvgo-uploader
+# Generate code
+generate: cmd/vvgo/info.go cmd/vvgo-uploader/info.go data/statik/statik.go
+cmd/vvgo/info.go:
+	go generate $(GO_PREFIX)/cmd/vvgo
+cmd/vvgo-uploader/info.go:
+	go generate $(GO_PREFIX)/cmd/vvgo-uploader
+data/statik/statik.go: data
+	go generate $(GO_PREFIX)/data
+
+# Run tests
+.PHONY: fmt vet test
+fmt:
+	gofmt -d .
+vet:
+	go vet $(GO_PREFIX)/...
+TEST_FLAGS ?= -race
+test: generate fmt vet
+	go test $(TEST_FLAGS) $(GO_PREFIX)/...
 
 # Build images
 
@@ -46,8 +44,8 @@ PAGE_CACHE_IMAGE_CACHE ?= $(IMAGE_REPO)/$(PAGE_CACHE_IMAGE_NAME):latest
 OBJECT_CACHE_IMAGE_CACHE ?= $(IMAGE_REPO)/$(OBJECT_CACHE_IMAGE_NAME):latest
 KV_CACHE_IMAGE_CACHE ?= $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):latest
 
-.PHONY: images images/vvgo images/object-cache images/page-cache
-
+.PHONY: images
+images: images/vvgo images/object-cache images/page-cache images/kv-cache
 images/vvgo-builder:
 	docker pull $(VVGO_IMAGE_CACHE)-builder || true
 	docker build . \
@@ -58,7 +56,7 @@ images/vvgo-builder:
 		--build-arg GITHUB_REF=$GITHUB_REF \
 		--tag builder
 
-images/vvgo: images/vvgo-builder
+images/vvgo:
 	docker pull $(VVGO_IMAGE_CACHE) || true
 	docker build . \
 		--file Dockerfile \
@@ -90,52 +88,43 @@ images/kv-cache:
 
 images: images/vvgo images/page-cache images/object-cache images/kv-cache
 
-
 # Releases
 
 HARDWARE ?= $(shell uname -m)
 RELEASE_TAG ?= $(shell git rev-parse --short HEAD)
 
-.PHONY: releases
-releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-linux-$(HARDWARE)
-releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-darwin-$(HARDWARE)
-releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-windows-$(HARDWARE).exe
+.PHONY: releases releases/$(BIN_PATH) releases/$(IMAGE_REPO)
+releases: releases/$(BIN_PATH)
+releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-linux-$(HARDWARE)
+releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-darwin-$(HARDWARE)
+releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-windows-$(HARDWARE).exe
 
-releases/%: $(BIN_PATH)/%-$(RELEASE_TAG)-%-$(HARDWARE)
-	GOOS=$@ go build -v -o $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-$@-$(HARDWARE) $(GO_PREFIX)/cmd/vvgo-uploader
-releases/%.exe: $(BIN_PATH)/%-$(RELEASE_TAG)-%-$(HARDWARE).exe
-	GOOS=$@ go build -v -o $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-$@-$(HARDWARE).exe $(GO_PREFIX)/cmd/vvgo-uploader
 $(BIN_PATH)/%-$(RELEASE_TAG)-darwin-$(HARDWARE):
-	GOOS=$@ go build -v -o $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-$@-$(HARDWARE) $(GO_PREFIX)/cmd/vvgo-uploader
+	GOOS=darwin go build -v -o $(BIN_PATH)/$@-$(RELEASE_TAG)-darwin-$(HARDWARE).exe $(GO_PREFIX)/cmd/vvgo-uploader
+$(BIN_PATH)/%-$(RELEASE_TAG)-linux-$(HARDWARE):
+	GOOS=linux go build -v -o $(BIN_PATH)/$@-$(RELEASE_TAG)-linux-$(HARDWARE) $(GO_PREFIX)/cmd/vvgo-uploader
 $(BIN_PATH)/%-$(RELEASE_TAG)-windows-$(HARDWARE).exe:
-	GOOS=$@ go build -v -o $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-$@-$(HARDWARE).exe $(GO_PREFIX)/cmd/vvgo-uploader
+	GOOS=windows go build -v -o $(BIN_PATH)/$@-$(RELEASE_TAG)-windows-$(HARDWARE).exe $(GO_PREFIX)/cmd/vvgo-uploader
 
+releases: releases/$(IMAGE_REPO)
+releases/$(IMAGE_REPO): releases/$(IMAGE_REPO)/$(VVGO_IMAGE_NAME)-builder\:$(RELEASE_TAG)
+releases/$(IMAGE_REPO): releases/$(IMAGE_REPO)/$(VVGO_IMAGE_NAME)\:$(RELEASE_TAG)
+releases/$(IMAGE_REPO): releases/$(IMAGE_REPO)/$(PAGE_CACHE_IMAGE_NAME)\:$(RELEASE_TAG)
+releases/$(IMAGE_REPO): releases/$(IMAGE_REPO)/$(OBJECT_CACHE_IMAGE_NAME)\:$(RELEASE_TAG)
+releases/$(IMAGE_REPO): releases/$(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME)\:$(RELEASE_TAG)
 
-
-
+releases/$(IMAGE_REPO)/%: images/$(IMAGE_REPO)/%
+	docker tag $@ $(IMAGE_REPO)/$@
 
 # Push images
 
-.PHONY: push push/object-cache push/page-cache push/vvgo push/vvgo-builder
+.PHONY: push push/$(IMAGE_REPO)
+push: push/$(IMAGE_REPO)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo-builder\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/page-cache\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/object-cache\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/kv-cache\:$(RELEASE_TAG)
 
-push/vvgo-builder:
-	docker tag builder $(IMAGE_REPO)/$(VVGO_IMAGE_NAME)-builder:$(RELEASE_TAG)
-	docker push $(IMAGE_REPO)/$(VVGO_IMAGE_NAME)-builder:$(RELEASE_TAG)
-
-push/vvgo:
-	docker tag artifact $(IMAGE_REPO)/$(VVGO_IMAGE_NAME):$(RELEASE_TAG)
-	docker push $(IMAGE_REPO)/$(VVGO_IMAGE_NAME):$(RELEASE_TAG)
-
-push/page-cache:
-	docker tag page-cache $(IMAGE_REPO)/$(PAGE_CACHE_IMAGE_NAME):$(RELEASE_TAG)
-	docker push $(IMAGE_REPO)/$(PAGE_CACHE_IMAGE_NAME):$(RELEASE_TAG)
-
-push/object-cache:
-	docker tag object-cache $(IMAGE_REPO)/$(OBJECT_CACHE_IMAGE_NAME):$(RELEASE_TAG)
-	docker push $(IMAGE_REPO)/$(OBJECT_CACHE_IMAGE_NAME):$(RELEASE_TAG)
-
-push/kv-cache:
-	docker tag kv-cache $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):$(RELEASE_TAG)
-	docker push $(IMAGE_REPO)/$(KV_CACHE_IMAGE_NAME):$(RELEASE_TAG)
-
-push: push/vvgo-builder push/vvgo push/page-cache push/object-cache push/kv-cache
+push/$(IMAGE_REPO)/%:
+	docker push $(IMAGE_REPO)/$@

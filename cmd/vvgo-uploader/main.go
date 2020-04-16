@@ -14,7 +14,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/version"
-	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -23,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 )
 
 type Flags struct {
@@ -121,7 +119,7 @@ func main() {
 
 func readApiKey() string {
 	fmt.Print(":: enter token: ")
-	tokenBytes, _ := terminal.ReadPassword(syscall.Stdin)
+	tokenBytes, _ := "", ""
 	fmt.Println()
 	return string(tokenBytes)
 }
