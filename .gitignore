@@ -3,5 +3,7 @@ vvgo-uploader
 .idea
 info.go
 !cmd/*
+!infra/*
 *.exe
 data/statik
+node_modules

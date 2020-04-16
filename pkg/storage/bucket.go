@@ -72,7 +72,7 @@ type Bucket struct {
 func (x *Client) NewBucket(name string) *Bucket {
 	return &Bucket{
 		Name:   name,
-		Region: x.config.MinioConfig.Region,
+		Region: x.config.Minio.Region,
 		Client: x.minioClient,
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/version"
+	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 type Flags struct {
@@ -37,8 +39,6 @@ func (x *Flags) Parse() {
 	flag.BoolVar(&x.version, "version", false, "print version and quit")
 	flag.StringVar(&x.project, "project", "", "project for these uploads (required)")
 	flag.StringVar(&x.endpoint, "endpoint", "https://vvgo.org", "vvgo endpoint")
-	flag.StringVar(&x.user, "user", "vvgo-dev", "basic auth username")
-	flag.StringVar(&x.pass, "pass", "vvgo-dev", "basic auth password")
 	flag.BoolVar(&x.save, "save", false, "save local copy (debugging)")
 	flag.Parse()
 }
@@ -73,12 +73,12 @@ func main() {
 		}
 
 		// Build a new client
+		token := readApiKey()
 		client := CmdClient{
 			AsyncClient: api.NewAsyncClient(api.AsyncClientConfig{
 				ClientConfig: api.ClientConfig{
 					ServerAddress: flags.endpoint,
-					BasicAuthUser: flags.user,
-					BasicAuthPass: flags.pass,
+					Token:         token,
 				},
 				MaxParallel: 32,
 				QueueLength: 64,
@@ -117,6 +117,13 @@ func main() {
 		red.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
+}
+
+func readApiKey() string {
+	fmt.Print(":: enter token: ")
+	tokenBytes, _ := terminal.ReadPassword(syscall.Stdin)
+	fmt.Println()
+	return string(tokenBytes)
 }
 
 var shutdownOnce sync.Once
@@ -251,7 +258,7 @@ func readUploadType(writer io.Writer, reader *bufio.Reader, mediaType string) (a
 }
 
 func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
-	fmt.Fprintf(writer, ":: part numbers (ex. 1, 2): ")
+	fmt.Fprint(writer, ":: part numbers (ex. 1, 2): ")
 	rawNumbers, err := reader.ReadString('\n')
 	if err != nil {
 		printError(err)
@@ -279,7 +286,7 @@ func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
 }
 
 func readPartNames(writer io.Writer, reader *bufio.Reader) []string {
-	fmt.Fprintf(writer, ":: part names (ex. trumpet, flute): ")
+	fmt.Fprint(writer, ":: part names (ex. trumpet, flute): ")
 	rawNames, err := reader.ReadString('\n')
 	if err != nil {
 		printError(err)
