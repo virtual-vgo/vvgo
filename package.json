@@ -1,7 +1,12 @@
 {
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.13.0",
+    "bootstrap": "^4.4.1",
     "datatables.net": "^1.10.20",
-    "jquery": "^3.5.0"
+    "datatables.net-bs4": "^1.10.20",
+    "datatables.net-responsive-bs4": "^2.2.3",
+    "jquery": "3.4.1",
+    "popper.js": "^1.16.1"
   },
   "name": "vvgo",
   "repository": "git@github.com:virtual-vgo/vvgo.git",

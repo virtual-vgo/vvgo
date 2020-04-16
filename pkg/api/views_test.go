@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"github.com/tdewolff/minify/v2"
+	"github.com/tdewolff/minify/v2/html"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
-	"golang.org/x/net/html"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -118,6 +119,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 			server.ServeHTTP(recorder, request)
 			gotResp := recorder.Result()
 			gotBody := strings.TrimSpace(recorder.Body.String())
+			t.Logf("Got Body:\n%s\n", gotBody)
 			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
@@ -133,21 +135,55 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 				gotBody = string(gotBytes)
 
 			case mockHTML:
-				wantHTML := html.NewTokenizer(strings.NewReader(mockHTML))
-				gotHTML := html.NewTokenizer(strings.NewReader(gotBody))
-
-				tt.wants.body = ""
-				for token := wantHTML.Next(); token != html.ErrorToken; token = wantHTML.Next() {
-					tt.wants.body += string(bytes.TrimSpace(wantHTML.Raw()))
+				m := minify.New()
+				m.AddFunc("text/html", html.Minify)
+				var gotBuf bytes.Buffer
+				if err := m.Minify("text/html", &gotBuf, strings.NewReader(gotBody)); err != nil {
+					panic(err)
 				}
+				gotBody = gotBuf.String()
 
-				gotBody = ""
-				for token := gotHTML.Next(); token != html.ErrorToken; token = gotHTML.Next() {
-					gotBody += string(bytes.TrimSpace(gotHTML.Raw()))
+				var wantBuf bytes.Buffer
+				if err := m.Minify("text/html", &wantBuf, strings.NewReader(tt.wants.body)); err != nil {
+					panic(err)
 				}
+				tt.wants.body = wantBuf.String()
 			}
 
 			assert.Equal(t, tt.wants.body, gotBody, "body")
 		})
 	}
+}
+
+func TestIndexHandler_ServeHTTP(t *testing.T) {
+	wantCode := http.StatusOK
+	wantBytes, err := ioutil.ReadFile("testdata/index.html")
+	if err != nil {
+		t.Fatalf("ioutil.ReadFile() failed: %v", err)
+	}
+
+	server := IndexHandler{}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	server.ServeHTTP(recorder, request)
+	gotResp := recorder.Result()
+	t.Logf("Got Body:\n%s\n", strings.TrimSpace(recorder.Body.String()))
+	if expected, got := wantCode, gotResp.StatusCode; expected != got {
+		t.Errorf("expected code %v, got %v", expected, got)
+	}
+
+	m := minify.New()
+	m.AddFunc("text/html", html.Minify)
+	var gotBuf bytes.Buffer
+	if err := m.Minify("text/html", &gotBuf, recorder.Body); err != nil {
+		panic(err)
+	}
+	gotBody := gotBuf.String()
+
+	var wantBuf bytes.Buffer
+	if err := m.Minify("text/html", &wantBuf, bytes.NewReader(wantBytes)); err != nil {
+		panic(err)
+	}
+	wantBody := wantBuf.String()
+	assert.Equal(t, wantBody, gotBody, "body")
 }

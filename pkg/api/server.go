@@ -13,7 +13,7 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress    string `split_words:"true" default:"localhost:8080"`
+	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
 	MaxContentLength int64  `split_words:"true" default:"10000000"`
 	SheetsBucketName string `split_words:"true" default:"sheets"`
 	ClixBucketName   string `split_words:"true" default:"clix"`
@@ -93,7 +93,13 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	mux.Handle("/upload", prepRep.Authenticate(uploadHandler))
 
 	mux.Handle("/version", http.HandlerFunc(Version))
-	mux.Handle("/", http.FileServer(http.Dir("public")))
+	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			IndexHandler{}.ServeHTTP(w, r)
+		} else {
+			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
+		}
+	}))
 
 	return &http.Server{
 		Addr:     config.ListenAddress,

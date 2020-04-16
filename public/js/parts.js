@@ -1,15 +1,16 @@
 $(document).ready(function () {
     $('#parts').DataTable({
-        scrollY: '50vh',
+        scrollY: "40vh",
         scrollCollapse: true,
         paging: false,
-        "columnDefs": [
+        columnDefs: [
             {
                 targets: [2],
-                orderable: false
+                orderable: false,
+                searchable: false,
             },
             {
-                className: "dt-center",
+                className: "text-center",
                 targets: "_all"
             }
         ]

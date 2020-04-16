@@ -1,12 +1,7 @@
-.parts-table {
-    border: none;
-    margin: 10px auto;
-    padding: 15px 15px;
-    width: 60em;
-    background-color: rgb(42, 34, 46);
-    border-radius: 10px;
-}
-
-.part-number-col {
-    width: 70px;
+body {
+    background-size: 25%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-image: url("../images/logo.svg");
+    background-color: rgba(32, 25, 36, 1);
 }
