@@ -57,9 +57,7 @@ func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 		}(); ok {
 			handler.ServeHTTP(w, r)
 		} else {
-			logger.WithFields(logrus.Fields{
-				"header": HeaderVirtualVGOApiToken,
-			}).Error("token authentication failed")
+			logger.Error("token authentication failed")
 			unauthorized(w)
 		}
 	})

@@ -1,14 +1,13 @@
 body {
-    background-color: rgb(24, 19, 28);
+    background-color: rgba(32, 25, 36, 1);
     color: #E9E9E9;
-    font-family: sans-serif, serif;
 }
 
-.logo {
+.logo-main {
     display: block;
     margin: 20px auto;
-    width: 50%;
-    height: 50%;
+    width: 90%;
+    height: 90%;
 }
 
 .logo-small {
@@ -24,43 +23,34 @@ body {
     font-weight: bold;
 }
 
-.button-table {
-    margin: 0 auto;
+.top-nav {
+    margin-top: 15px;
+    background-color: rgba(71, 54, 80, 0.57);
 }
 
-.button {
-    border: none;
-    margin: 4px 4px;
-    padding: 15px 15px;
-    display: inline-block;
-    cursor: pointer;
-    font-size: 20px;
-    text-decoration: none;
-    text-align: center;
+.nav-selected {
+    background-color: rgba(30, 107, 255, 0.82)
 }
 
-.discord {
-    background-color: #7289DA;
-    color: white;
-    font-family: sans-serif, serif;
-    font-weight: bold;
-    border-radius: 4px;
+.bg-green {
+    background-color: rgba(14, 57, 5, 0.62);
 }
 
-.facebook {
-    background-color: #4267B2;
-    color: white;
-    font-family: Sans-serif, serif;
-    font-weight: bold;
-    border-radius: 4px;
+.bg-terminal {
+    background-color: rgba(71, 54, 80, 0.57);
 }
 
-a:link.download-link, a:visited.download-link {
-    color: #E9E9E9;
-    text-align: center;
-    text-decoration: underline;
+.thick-border {
+    border-style: solid;
+    border-width: thick;
 }
 
-a:link.download-link, a:visited.download-link, a:active.download-link, a:hover.download-link {
-    text-decoration: underline;
+.crt-grid {
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 2;
+    background-size: 100% 5px, 5px 100%;
+}
+
+a:hover {
+    text-decoration-color: #1e7e34;
 }

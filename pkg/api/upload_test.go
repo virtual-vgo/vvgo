@@ -16,6 +16,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 )
 
@@ -351,8 +352,16 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			if !assert.Equal(t, tt.wants.body.String(), respBody.String(), "body") {
 				var gotStatus []UploadStatus
 				gob.NewDecoder(recorder.Body).Decode(&gotStatus)
+				sort.Sort(statusSort(wantStatus))
+				sort.Sort(statusSort(gotStatus))
 				assert.Equal(t, wantStatus, gotStatus)
 			}
 		})
 	}
 }
+
+type statusSort []UploadStatus
+
+func (x statusSort) Len() int           { return len(x) }
+func (x statusSort) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x statusSort) Less(i, j int) bool { return x[i].FileName < x[j].FileName }
