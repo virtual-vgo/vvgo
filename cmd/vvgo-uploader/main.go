@@ -121,7 +121,7 @@ func main() {
 
 func readApiKey() string {
 	fmt.Print(":: enter token: ")
-	tokenBytes, _ := terminal.ReadPassword(syscall.Stdin)
+	tokenBytes, _ := terminal.ReadPassword(int(syscall.Stdin))
 	fmt.Println()
 	return string(tokenBytes)
 }
