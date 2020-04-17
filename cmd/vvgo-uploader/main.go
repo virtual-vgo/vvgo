@@ -64,7 +64,7 @@ func main() {
 		flags.Parse()
 
 		if flags.version {
-			fmt.Println(version.String())
+			fmt.Println(string(version.JSON()))
 			os.Exit(0)
 		}
 

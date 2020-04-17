@@ -39,7 +39,7 @@ func (x Config) ParseFlags() {
 
 	switch {
 	case showVersion:
-		fmt.Println(version.String())
+		fmt.Println(string(version.JSON()))
 		os.Exit(0)
 	case showReleaseTags:
 		for _, tag := range version.ReleaseTags() {

@@ -39,9 +39,9 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
     "click_track": "/download?bucket=clix\u0026object=click.mp3",
     "file_key": "0xff",
     "link": "/download?bucket=sheets\u0026object=0xff",
-    "part_name": "Dio Brando",
+    "part_name": "trumpet",
     "part_number": 3,
-    "project": "truly",
+    "project": "01-snake-eater",
     "sheet_music": "/download?bucket=sheets\u0026object=sheet.pdf"
   }
 ]`
@@ -49,8 +49,8 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		if name == parts.DataFile {
 			parts := []parts.Part{{
 				ID: parts.ID{
-					Project: "truly",
-					Name:    "dio brando",
+					Project: "01-snake-eater",
+					Name:    "trumpet",
 					Number:  3,
 				},
 				Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
