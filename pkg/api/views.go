@@ -29,9 +29,21 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		BackingTrack string
 	}
 
-	allParts := x.Parts.List()
-	rows := make([]tableRow, 0, len(allParts))
-	for _, part := range allParts {
+	parts := x.Parts.List()
+	want := len(parts)
+	for i := 0; i < want; i++ {
+		if parts[i].Validate() == nil &&
+			projects.GetName(parts[i].Project).Archived == false &&
+			projects.GetName(parts[i].Project).Released == true {
+			continue
+		}
+		parts[i], parts[want-1] = parts[want-1], parts[i]
+		i--
+		want--
+	}
+	parts = parts[:want]
+	rows := make([]tableRow, 0, len(parts))
+	for _, part := range parts {
 		rows = append(rows, tableRow{
 			Project:      projects.GetName(part.Project).Title,
 			PartName:     strings.Title(part.Name),

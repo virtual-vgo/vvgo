@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -29,33 +30,38 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		code int
 		body string
 	}
-	mockBodyBytes, err := ioutil.ReadFile("testdata/parts.html")
+	fileBytes, err := ioutil.ReadFile("testdata/parts.html")
 	if err != nil {
 		t.Fatalf("ioutil.ReadFile() failed: %v", err)
 	}
-	mockHTML := string(mockBodyBytes)
-	mockJSON := `[
-  {
-    "click_track": "/download?bucket=clix\u0026object=click.mp3",
-    "file_key": "0xff",
-    "link": "/download?bucket=sheets\u0026object=0xff",
-    "part_name": "trumpet",
-    "part_number": 3,
-    "project": "01-snake-eater",
-    "sheet_music": "/download?bucket=sheets\u0026object=sheet.pdf"
-  }
-]`
+	mockHTML := string(fileBytes)
+	fileBytes, err = ioutil.ReadFile("testdata/parts.json")
+	if err != nil {
+		t.Fatalf("ioutil.ReadFile() failed: %v", err)
+	}
+	mockJSON := string(fileBytes)
 	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
 		if name == parts.DataFile {
-			parts := []parts.Part{{
-				ID: parts.ID{
-					Project: "01-snake-eater",
-					Name:    "trumpet",
-					Number:  3,
+			parts := []parts.Part{
+				{
+					ID: parts.ID{
+						Project: "01-snake-eater",
+						Name:    "trumpet",
+						Number:  3,
+					},
+					Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+					Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 				},
-				Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-				Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-			}}
+				{
+					ID: parts.ID{
+						Project: "02-proof-of-a-hero",
+						Name:    "trumpet",
+						Number:  3,
+					},
+					Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+					Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+				},
+			}
 			var buffer bytes.Buffer
 			json.NewEncoder(&buffer).Encode(parts)
 			*dest = storage.Object{
@@ -119,7 +125,8 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 			server.ServeHTTP(recorder, request)
 			gotResp := recorder.Result()
 			gotBody := strings.TrimSpace(recorder.Body.String())
-			t.Logf("Got Body:\n%s\n", gotBody)
+			t.Logf("Expected body:\n%s\n", tt.wants.body)
+			t.Logf("Got body:\n%s\n", gotBody)
 			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)
 			}
@@ -130,8 +137,10 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 				json.Unmarshal([]byte(mockJSON), &buf)
 				wantBytes, _ := json.Marshal(&buf)
 				tt.wants.body = string(wantBytes)
+				buf = nil
 				json.Unmarshal([]byte(gotBody), &buf)
-				gotBytes, _ := json.Marshal(&buf)
+				gotBytes, err := json.Marshal(&buf)
+				require.NoError(t, err, "json.Unmarshal")
 				gotBody = string(gotBytes)
 
 			case mockHTML:
