@@ -111,15 +111,15 @@ images/kv-cache:
 
 # Deploy images
 
-.PHONY: deploy push/$(IMAGE_REPO)
-deploy: push/$(IMAGE_REPO)
+.PHONY: push push/$(IMAGE_REPO)
+push: push/$(IMAGE_REPO)
 
-deploy/$(IMAGE_REPO): push/$(IMAGE_REPO)/page-cache\:$(RELEASE_TAG)
-deploy/$(IMAGE_REPO): push/$(IMAGE_REPO)/object-cache\:$(RELEASE_TAG)
-deploy/$(IMAGE_REPO): push/$(IMAGE_REPO)/kv-cache\:$(RELEASE_TAG)
-deploy/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo-builder\:$(RELEASE_TAG)
-deploy/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/page-cache\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/object-cache\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/kv-cache\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo-builder\:$(RELEASE_TAG)
+push/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo\:$(RELEASE_TAG)
 
-deploy/$(IMAGE_REPO)/%\:$(RELEASE_TAG): images/%
+push/$(IMAGE_REPO)/%\:$(RELEASE_TAG):
 	docker tag $*:$(RELEASE_TAG) $(IMAGE_REPO)/$*:$(RELEASE_TAG)
 	docker push $(IMAGE_REPO)/$*
