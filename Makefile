@@ -77,7 +77,7 @@ images/vvgo-builder:
 		--cache-from=$(VVGO_IMAGE_CACHE)-builder \
 		--build-arg GITHUB_SHA=$GITHUB_SHA \
 		--build-arg GITHUB_REF=$GITHUB_REF \
-		--tag vvgo-builder:$(RELEASE_TAG)
+		--tag vvgo-builder
 
 images/vvgo:
 	docker pull $(VVGO_IMAGE_CACHE) || true
@@ -86,28 +86,28 @@ images/vvgo:
 		--target vvgo \
 		--cache-from=$(VVGO_IMAGE_CACHE)-builder \
 		--cache-from=$(VVGO_IMAGE_CACHE) \
-		--tag vvgo:$(RELEASE_TAG)
+		--tag vvgo
 
 images/page-cache:
 	docker pull $(PAGE_CACHE_IMAGE_CACHE) || true
 	docker build infra/object-cache \
 		--file infra/object-cache/Dockerfile \
 		--cache-from=$(PAGE_CACHE_IMAGE_CACHE) \
-		--tag page-cache:$(RELEASE_TAG)
+		--tag page-cache
 
 images/object-cache:
 	docker pull $(OBJECT_CACHE_IMAGE_CACHE) || true
 	docker build infra/page-cache \
 		--file infra/page-cache/Dockerfile \
 		--cache-from=$(OBJECT_CACHE_IMAGE_CACHE) \
-		--tag object-cache:$(RELEASE_TAG)
+		--tag object-cache
 
 images/kv-cache:
 	docker pull $(KV_CACHE_IMAGE_CACHE) || true
 	docker build infra/kv-cache \
 		--file infra/kv-cache/Dockerfile \
 		--cache-from=$(KV_CACHE_IMAGE_CACHE) \
-		--tag kv-cache:$(RELEASE_TAG)
+		--tag kv-cache
 
 # Deploy images
 
@@ -121,5 +121,5 @@ push/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo-builder\:$(RELEASE_TAG)
 push/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo\:$(RELEASE_TAG)
 
 push/$(IMAGE_REPO)/%\:$(RELEASE_TAG):
-	docker tag $*:$(RELEASE_TAG) $(IMAGE_REPO)/$*:$(RELEASE_TAG)
+	docker tag $* $(IMAGE_REPO)/$*:$(RELEASE_TAG)
 	docker push $(IMAGE_REPO)/$*
