@@ -21,24 +21,24 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type tableRow struct {
-		Project      string
-		PartName     string
-		PartNumber   uint8
-		SheetMusic   string
-		ClickTrack   string
-		BackingTrack string
+		Project        string
+		PartName       string
+		PartNumber     uint8
+		SheetMusic     string
+		ClickTrack     string
+		ReferenceTrack string
 	}
 
 	allParts := x.Parts.List()
 	rows := make([]tableRow, 0, len(allParts))
 	for _, part := range allParts {
 		rows = append(rows, tableRow{
-			Project:      projects.GetName(part.Project).Title,
-			PartName:     strings.Title(part.Name),
-			PartNumber:   part.Number,
-			SheetMusic:   part.SheetLink(x.SheetsBucketName),
-			ClickTrack:   part.ClickLink(x.ClixBucketName),
-			BackingTrack: projects.GetName(part.Project).BackingTrackLink(x.TracksBucketName),
+			Project:        projects.GetName(part.Project).Title,
+			PartName:       strings.Title(part.Name),
+			PartNumber:     part.Number,
+			SheetMusic:     part.SheetLink(x.SheetsBucketName),
+			ClickTrack:     part.ClickLink(x.ClixBucketName),
+			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.TracksBucketName),
 		})
 	}
 
