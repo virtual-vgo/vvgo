@@ -29,6 +29,9 @@ func StdLogger() *log.Logger {
 	return log.New(Logger().Writer(), "", 0)
 }
 
+// Probably want to use hooks here. Example logrus hook for syslog:
+// https://github.com/sirupsen/logrus/blob/master/hooks/syslog/syslog.go
+
 type discordWriter struct {
 	endpoint string
 }
