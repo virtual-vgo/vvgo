@@ -21,12 +21,12 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type tableRow struct {
-		Project      string
-		PartName     string
-		PartNumber   uint8
-		SheetMusic   string
-		ClickTrack   string
-		BackingTrack string
+		Project      string `json:"project"`
+		PartName     string `json:"part_name"`
+		PartNumber   uint8  `json:"part_number"`
+		SheetMusic   string `json:"sheet_music"`
+		ClickTrack   string `json:"click_track"`
+		BackingTrack string `json:"backing_track"`
 	}
 
 	parts := x.Parts.List()
@@ -74,7 +74,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	default:
-		jsonEncode(&buffer, &rows)
+		jsonEncodeIndent(&buffer, &rows, "", "  ")
 	}
 	buffer.WriteTo(w)
 }
