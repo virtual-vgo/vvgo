@@ -122,4 +122,4 @@ push/$(IMAGE_REPO): push/$(IMAGE_REPO)/vvgo\:$(RELEASE_TAG)
 
 push/$(IMAGE_REPO)/%\:$(RELEASE_TAG):
 	docker tag $* $(IMAGE_REPO)/$*:$(RELEASE_TAG)
-	docker push $(IMAGE_REPO)/$*
+	docker push $(IMAGE_REPO)/$*:$(RELEASE_TAG)
