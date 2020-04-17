@@ -57,9 +57,9 @@ func jsonEncode(dest io.Writer, src interface{}) bool {
 	return true
 }
 
-func jsonEncodeIndent(dest io.Writer, src interface{}, prefix, indent string) bool {
+func jsonEncodeBeautify(dest io.Writer, src interface{}) bool {
 	encoder := json.NewEncoder(dest)
-	encoder.SetIndent(prefix, indent)
+	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(src); err != nil {
 		logger.WithError(err).Error("json.Encode() failed")
 		return false

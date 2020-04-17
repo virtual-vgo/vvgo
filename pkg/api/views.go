@@ -74,7 +74,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	default:
-		jsonEncodeIndent(&buffer, &rows, "", "  ")
+		jsonEncodeBeautify(&buffer, &rows)
 	}
 	buffer.WriteTo(w)
 }
