@@ -12,10 +12,10 @@ var ErrNotFound = errors.New("project not found")
 
 // A VVGO project
 type Project struct {
-	Name         string   `json:"name"`
-	Title        string   `json:"title"`
-	Released     bool     `json:"released"`
-	Archived     bool     `json:"archived"`
+	Name           string   `json:"name"`
+	Title          string   `json:"title"`
+	Released       bool     `json:"released"`
+	Archived       bool     `json:"archived"`
 	Sources        []string `json:"sources"`
 	Composers      []string `json:"composers"`
 	Arrangers      []string `json:"arrangers"`
@@ -31,10 +31,10 @@ type Project struct {
 
 var project = Projects{projects: []Project{
 	{
-		Name:         "01-snake-eater",
-		Title:        "Snake Eater",
-		Released:     true,
-		Archived:     false,
+		Name:           "01-snake-eater",
+		Title:          "Snake Eater",
+		Released:       true,
+		Archived:       false,
 		Sources:        []string{"Metal Gear Solid 3"},
 		Composers:      []string{"Norihiko Hibino (日比野 則彦)"},
 		Arrangers:      []string{},
@@ -48,10 +48,10 @@ var project = Projects{projects: []Project{
 		ReferenceTrack: "",
 	},
 	{
-		Name:         "02-proof-of-a-hero",
-		Title:        "Proof of a Hero",
-		Released:     true,
-		Archived:     false,
+		Name:           "02-proof-of-a-hero",
+		Title:          "Proof of a Hero",
+		Released:       true,
+		Archived:       false,
 		Sources:        []string{"Monster Hunter"},
 		Composers:      []string{"Masato Kohda (甲田 雅人)"},
 		Arrangers:      []string{"Jacob Zeleny"},
