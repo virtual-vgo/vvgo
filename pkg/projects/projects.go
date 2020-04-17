@@ -2,6 +2,7 @@ package projects
 
 import (
 	"errors"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 )
 
@@ -25,6 +26,7 @@ type Project struct {
 	Reviewers    []string `json:"reviewers"`
 	Lyricists    []string `json:"lyricists"`
 	AddlContent  []string `json:"addl_content"`
+	BackingTrack string   `json:"backing_track"`
 }
 
 var project = Projects{projects: []Project{
@@ -43,6 +45,7 @@ var project = Projects{projects: []Project{
 		Reviewers:    []string{},
 		Lyricists:    []string{},
 		AddlContent:  []string{"Brandon Harnish"},
+		BackingTrack: "",
 	},
 	{
 		Name:         "02-proof-of-a-hero",
@@ -59,8 +62,18 @@ var project = Projects{projects: []Project{
 		Reviewers:    []string{"Brandon Harnish"},
 		Lyricists:    []string{},
 		AddlContent:  []string{"Chris Suzuki", "Brandon Harnish", "Jerome Landingin", "Joselyn DeSoto"},
+		BackingTrack: "",
 	},
 }}
+
+func (x Project) BackingTrackLink(bucket string) string {
+	if bucket == "" || x.BackingTrack == "" {
+		return "#"
+	} else {
+		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.BackingTrack)
+
+	}
+}
 
 func init() {
 	// build indices

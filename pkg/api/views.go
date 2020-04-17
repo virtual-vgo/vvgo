@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -20,22 +21,24 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type tableRow struct {
-		Project    string `json:"project"`
-		PartName   string `json:"part_name"`
-		PartNumber uint8  `json:"part_number"`
-		SheetMusic string `json:"sheet_music"`
-		ClickTrack string `json:"click_track"`
+		Project      string
+		PartName     string
+		PartNumber   uint8
+		SheetMusic   string
+		ClickTrack   string
+		BackingTrack string
 	}
 
 	allParts := x.Parts.List()
 	rows := make([]tableRow, 0, len(allParts))
 	for _, part := range allParts {
 		rows = append(rows, tableRow{
-			Project:    part.Project,
-			PartName:   strings.Title(part.Name),
-			PartNumber: part.Number,
-			SheetMusic: part.SheetLink(x.SheetsBucketName),
-			ClickTrack: part.ClickLink(x.ClixBucketName),
+			Project:      projects.GetName(part.Project).Title,
+			PartName:     strings.Title(part.Name),
+			PartNumber:   part.Number,
+			SheetMusic:   part.SheetLink(x.SheetsBucketName),
+			ClickTrack:   part.ClickLink(x.ClixBucketName),
+			BackingTrack: projects.GetName(part.Project).BackingTrackLink(x.TracksBucketName),
 		})
 	}
 
