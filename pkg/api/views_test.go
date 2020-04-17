@@ -104,7 +104,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			server := PartsHandler{&Storage{
+			server := PartsHandler{NavBar{}, &Storage{
 				Parts:  parts.Parts{Bucket: &mockBucket},
 				Sheets: &mockBucket,
 				Clix:   &mockBucket,

@@ -29,7 +29,11 @@ body {
 }
 
 .nav-selected {
-    background-color: rgba(30, 107, 255, 0.82)
+    background-color: rgba(14, 57, 5, 0.62);
+}
+
+a:hover.nav-login {
+    background: #1e7e34;
 }
 
 .bg-green {
