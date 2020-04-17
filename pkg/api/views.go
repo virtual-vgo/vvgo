@@ -8,7 +8,10 @@ import (
 	"strings"
 )
 
-type PartsHandler struct{ *Storage }
+type PartsHandler struct {
+	NavBar
+	*Storage
+}
 
 func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -36,13 +39,15 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	navBarOpts := x.NavBar.NewOpts(r)
+	navBarOpts.PartsActive = true
 	page := struct {
 		Header template.HTML
 		NavBar template.HTML
 		Rows   []tableRow
 	}{
 		Header: Header(),
-		NavBar: NavBar(NavBarOpts{PartsActive: true}),
+		NavBar: x.NavBar.RenderHTML(navBarOpts),
 		Rows:   rows,
 	}
 
@@ -59,7 +64,9 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-type IndexHandler struct{}
+type IndexHandler struct {
+	NavBar
+}
 
 func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -67,12 +74,13 @@ func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	navBarOpts := x.NavBar.NewOpts(r)
 	page := struct {
 		Header template.HTML
 		NavBar template.HTML
 	}{
 		Header: Header(),
-		NavBar: NavBar(NavBarOpts{}),
+		NavBar: x.NavBar.RenderHTML(navBarOpts),
 	}
 
 	var buffer bytes.Buffer
@@ -89,12 +97,30 @@ func Header() template.HTML {
 	return template.HTML(buffer.String())
 }
 
-func NavBar(opts NavBarOpts) template.HTML {
+type NavBar struct {
+	MemberUser string
+}
+
+type NavBarRenderOpts struct {
+	ShowLogin       bool
+	ShowMemberLinks bool
+	PartsActive     bool
+}
+
+func (x NavBar) NewOpts(r *http.Request) NavBarRenderOpts {
+	var opts NavBarRenderOpts
+	user, _, _ := r.BasicAuth()
+	switch user {
+	case x.MemberUser:
+		opts.ShowMemberLinks = true
+	default:
+		opts.ShowLogin = true
+	}
+	return opts
+}
+
+func (x NavBar) RenderHTML(opts NavBarRenderOpts) template.HTML {
 	var buffer bytes.Buffer
 	parseAndExecute(&buffer, &opts, filepath.Join(PublicFiles, "navbar.gohtml"))
 	return template.HTML(buffer.String())
-}
-
-type NavBarOpts struct {
-	PartsActive bool
 }

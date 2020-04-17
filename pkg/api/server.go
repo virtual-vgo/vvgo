@@ -58,6 +58,7 @@ func NewStorage(client *storage.Client, config ServerConfig) *Storage {
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {
+	navBar := NavBar{MemberUser: config.MemberUser}
 	members := BasicAuth{config.MemberUser: config.MemberPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
 	admin := TokenAuth{config.AdminToken}
@@ -78,8 +79,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
-
-	mux.Handle("/parts", members.Authenticate(PartsHandler{database}))
+	mux.Handle("/parts", members.Authenticate(PartsHandler{NavBar: navBar, Storage: database}))
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := DownloadHandler{
@@ -92,10 +92,12 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	uploadHandler := UploadHandler{database}
 	mux.Handle("/upload", prepRep.Authenticate(uploadHandler))
 
+	mux.Handle("/login", members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect)))
+
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexHandler{}.ServeHTTP(w, r)
+			IndexHandler{NavBar: navBar}.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}

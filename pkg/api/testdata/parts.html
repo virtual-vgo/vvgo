@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="author" content="Virtual Video Game Orchestra">
     <link rel="icon" href="images/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+
     <title>Virtual Video Game Orchestra</title>
     <meta name="description" content="">
 
@@ -24,11 +25,11 @@
     <script type="text/javascript" src="npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
     <script type="text/javascript" src="js/parts.js"></script>
 </head>
-<body>
 
+<body>
 <div class="container">
     <nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border m-2">
-        <a class="nav-link btn-outline-primary text-light" href="/">
+        <a class="nav-link text-light" href="/">
             <i class="fas fa-home fa-2x mr-2"></i>Virtual VGO
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
@@ -36,10 +37,15 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
+            <li class="nav-item btn">
+                <a class="nav-link disabled text-monospace"
+                   href="#" tabindex="-1" aria-disabled="true"> :hello:
+                </a>
+            </li>
             <ul class="navbar-nav container">
-                <li class="nav-item btn">
-                    <a class="nav-selected nav-link btn-outline-primary text-monospace btn-link" href="/parts">
-                        Parts
+                <li class="nav-item">
+                    <a class="bg-primary nav-link text-monospace"
+                       href="/parts"> Parts
                     </a>
                 </li>
             </ul>
