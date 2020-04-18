@@ -12,65 +12,65 @@ var ErrNotFound = errors.New("project not found")
 
 // A VVGO project
 type Project struct {
-	Name         string   `json:"name"`
-	Title        string   `json:"title"`
-	Released     bool     `json:"released"`
-	Archived     bool     `json:"archived"`
-	Sources      []string `json:"sources"`
-	Composers    []string `json:"composers"`
-	Arrangers    []string `json:"arrangers"`
-	Editors      []string `json:"editors"`
-	Transcribers []string `json:"transcribers"`
-	Preparers    []string `json:"preparers"`
-	ClixBy       []string `json:"clix_by"`
-	Reviewers    []string `json:"reviewers"`
-	Lyricists    []string `json:"lyricists"`
-	AddlContent  []string `json:"addl_content"`
-	BackingTrack string   `json:"backing_track"`
+	Name           string   `json:"name"`
+	Title          string   `json:"title"`
+	Released       bool     `json:"released"`
+	Archived       bool     `json:"archived"`
+	Sources        []string `json:"sources"`
+	Composers      []string `json:"composers"`
+	Arrangers      []string `json:"arrangers"`
+	Editors        []string `json:"editors"`
+	Transcribers   []string `json:"transcribers"`
+	Preparers      []string `json:"preparers"`
+	ClixBy         []string `json:"clix_by"`
+	Reviewers      []string `json:"reviewers"`
+	Lyricists      []string `json:"lyricists"`
+	AddlContent    []string `json:"addl_content"`
+	ReferenceTrack string   `json:"reference_track"`
 }
 
 var project = Projects{projects: []Project{
 	{
-		Name:         "01-snake-eater",
-		Title:        "Snake Eater",
-		Released:     true,
-		Archived:     true,
-		Sources:      []string{"Metal Gear Solid 3"},
-		Composers:    []string{"Norihiko Hibino (日比野 則彦)"},
-		Arrangers:    []string{},
-		Editors:      []string{"Jerome Landingin"},
-		Transcribers: []string{},
-		Preparers:    []string{"The Giggling Donkey, Inc."},
-		ClixBy:       []string{"Finny Jacob Zeleny"},
-		Reviewers:    []string{},
-		Lyricists:    []string{},
-		AddlContent:  []string{"Brandon Harnish"},
-		BackingTrack: "",
+		Name:           "01-snake-eater",
+		Title:          "Snake Eater",
+		Released:       true,
+		Archived:       true,
+		Sources:        []string{"Metal Gear Solid 3"},
+		Composers:      []string{"Norihiko Hibino (日比野 則彦)"},
+		Arrangers:      []string{},
+		Editors:        []string{"Jerome Landingin"},
+		Transcribers:   []string{},
+		Preparers:      []string{"The Giggling Donkey, Inc."},
+		ClixBy:         []string{"Finny Jacob Zeleny"},
+		Reviewers:      []string{},
+		Lyricists:      []string{},
+		AddlContent:    []string{"Brandon Harnish"},
+		ReferenceTrack: "",
 	},
 	{
-		Name:         "02-proof-of-a-hero",
-		Title:        "Proof of a Hero",
-		Released:     true,
-		Archived:     false,
-		Sources:      []string{"Monster Hunter"},
-		Composers:    []string{"Masato Kohda (甲田 雅人)"},
-		Arrangers:    []string{"Jacob Zeleny"},
-		Editors:      []string{},
-		Transcribers: []string{"Jacob Zeleny"},
-		Preparers:    []string{"The Giggling Donkey, Inc.", "Thomas Håkanson"},
-		ClixBy:       []string{"Jacob Zeleny"},
-		Reviewers:    []string{"Brandon Harnish"},
-		Lyricists:    []string{},
-		AddlContent:  []string{"Chris Suzuki", "Brandon Harnish", "Jerome Landingin", "Joselyn DeSoto"},
-		BackingTrack: "",
+		Name:           "02-proof-of-a-hero",
+		Title:          "Proof of a Hero",
+		Released:       true,
+		Archived:       false,
+		Sources:        []string{"Monster Hunter"},
+		Composers:      []string{"Masato Kohda (甲田 雅人)"},
+		Arrangers:      []string{"Jacob Zeleny"},
+		Editors:        []string{},
+		Transcribers:   []string{"Jacob Zeleny"},
+		Preparers:      []string{"The Giggling Donkey, Inc.", "Thomas Håkanson"},
+		ClixBy:         []string{"Jacob Zeleny"},
+		Reviewers:      []string{"Brandon Harnish"},
+		Lyricists:      []string{},
+		AddlContent:    []string{"Chris Suzuki", "Brandon Harnish", "Jerome Landingin", "Joselyn DeSoto"},
+		ReferenceTrack: "02_MH_Proof-of-a-Hero_Reference-Track-NO-CLIX.mp3",
 	},
 }}
 
-func (x Project) BackingTrackLink(bucket string) string {
-	if bucket == "" || x.BackingTrack == "" {
+func (x Project) ReferenceTrackLink(bucket string) string {
+	if bucket == "" || x.ReferenceTrack == "" {
 		return "#"
 	} else {
-		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.BackingTrack)
+		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.ReferenceTrack)
 	}
 }
 

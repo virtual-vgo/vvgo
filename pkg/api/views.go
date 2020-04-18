@@ -21,12 +21,12 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type tableRow struct {
-		Project      string `json:"project"`
-		PartName     string `json:"part_name"`
-		PartNumber   uint8  `json:"part_number"`
-		SheetMusic   string `json:"sheet_music"`
-		ClickTrack   string `json:"click_track"`
-		BackingTrack string `json:"backing_track"`
+		Project        string `json:"project"`
+		PartName       string `json:"part_name"`
+		PartNumber     uint8  `json:"part_number"`
+		SheetMusic     string `json:"sheet_music"`
+		ClickTrack     string `json:"click_track"`
+		ReferenceTrack string `json:"reference_track"`
 	}
 
 	parts := x.Parts.List()
@@ -45,12 +45,12 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rows := make([]tableRow, 0, len(parts))
 	for _, part := range parts {
 		rows = append(rows, tableRow{
-			Project:      projects.GetName(part.Project).Title,
-			PartName:     strings.Title(part.Name),
-			PartNumber:   part.Number,
-			SheetMusic:   part.SheetLink(x.SheetsBucketName),
-			ClickTrack:   part.ClickLink(x.ClixBucketName),
-			BackingTrack: projects.GetName(part.Project).BackingTrackLink(x.TracksBucketName),
+			Project:        projects.GetName(part.Project).Title,
+			PartName:       strings.Title(part.Name),
+			PartNumber:     part.Number,
+			SheetMusic:     part.SheetLink(x.SheetsBucketName),
+			ClickTrack:     part.ClickLink(x.ClixBucketName),
+			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.TracksBucketName),
 		})
 	}
 
