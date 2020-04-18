@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/honeycombio/beeline-go"
+	"github.com/honeycombio/beeline-go/wrappers/hnynethttp"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
@@ -41,7 +42,7 @@ func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
 			unauthorized(w)
 		} else {
-			handler.ServeHTTP(w, r)
+			hnynethttp.WrapHandler(handler).ServeHTTP(w, r)
 		}
 	})
 }
@@ -62,7 +63,7 @@ func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 			}
 			return false
 		}(); ok {
-			handler.ServeHTTP(w, r)
+			hnynethttp.WrapHandler(handler).ServeHTTP(w, r)
 		} else {
 			logger.Error("token authentication failed")
 			unauthorized(w)
