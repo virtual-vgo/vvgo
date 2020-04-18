@@ -106,7 +106,7 @@ func (x *Bucket) Make(ctx context.Context) bool {
 	return true
 }
 
-func (x *Bucket) StatObject(ctx context.Context,objectName string) (Object, error) {
+func (x *Bucket) StatObject(ctx context.Context, objectName string) (Object, error) {
 	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
 	defer span.Send()
 	opts := minio.StatObjectOptions{}

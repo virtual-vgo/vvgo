@@ -18,11 +18,11 @@ type MockBucket struct {
 	getObject func(ctx context.Context, name string, dest *storage.Object) bool
 }
 
-func (x *MockBucket) PutObject(ctx context.Context,name string, object *storage.Object) bool {
+func (x *MockBucket) PutObject(ctx context.Context, name string, object *storage.Object) bool {
 	return x.putObject(ctx, name, object)
 }
 
-func (x *MockBucket) GetObject(ctx context.Context,name string, dest *storage.Object) bool {
+func (x *MockBucket) GetObject(ctx context.Context, name string, dest *storage.Object) bool {
 	return x.getObject(ctx, name, dest)
 }
 
@@ -35,7 +35,7 @@ func (x *MockLocker) Lock(ctx context.Context) bool {
 	return x.lock(ctx)
 }
 
-func (x *MockLocker) Unlock(ctx context.Context,) {
+func (x *MockLocker) Unlock(ctx context.Context) {
 	x.unlock(ctx)
 }
 

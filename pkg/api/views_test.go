@@ -22,7 +22,7 @@ import (
 func TestPartsHandler_ServeHTTP(t *testing.T) {
 	clixBucket := "clix"
 	sheetsBucket := "sheets"
-	mockBucket := MockBucket{getObject: func(ctx context.Context,name string, dest *storage.Object) bool {
+	mockBucket := MockBucket{getObject: func(ctx context.Context, name string, dest *storage.Object) bool {
 		if name == parts.DataFile {
 			parts := []parts.Part{
 				{
