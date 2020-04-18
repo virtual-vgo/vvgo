@@ -100,7 +100,9 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	uploadHandler := UploadHandler{database}
 	mux.Handle("/upload", prepRep.Authenticate(uploadHandler))
 
-	mux.Handle("/login", members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect)))
+	mux.Handle("/login", &LoginHandler{
+		NavBar: navBar,
+	})
 
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
