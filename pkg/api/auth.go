@@ -38,11 +38,11 @@ func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 				}).Error("user authentication failed")
 				return false
 			}
-		}(); !ok {
+		}(); ok {
+			hnynethttp.WrapHandler(handler).ServeHTTP(w, r)
+		} else {
 			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
 			unauthorized(w)
-		} else {
-			hnynethttp.WrapHandler(handler).ServeHTTP(w, r)
 		}
 	})
 }

@@ -82,20 +82,23 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
-	mux.Handle("/parts", members.Authenticate(PartsHandler{NavBar: navBar, Storage: database}))
+
+	partsHandler := members.Authenticate(&PartsHandler{NavBar: navBar, Storage: database})
+	mux.Handle("/parts", partsHandler)
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
-	downloadHandler := DownloadHandler{
+	downloadHandler := members.Authenticate(&DownloadHandler{
 		config.SheetsBucketName: database.Sheets.DownloadURL,
 		config.ClixBucketName:   database.Clix.DownloadURL,
-	}
-	mux.Handle("/download", members.Authenticate(downloadHandler))
+	})
+	mux.Handle("/download", downloadHandler)
 
 	// Uploads
-	uploadHandler := UploadHandler{database}
-	mux.Handle("/upload", prepRep.Authenticate(uploadHandler))
+	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
+	mux.Handle("/upload", uploadHandler)
 
-	mux.Handle("/login", members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect)))
+	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))
+	mux.Handle("/login", loginHandler)
 
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
