@@ -12,12 +12,16 @@ type LoginHandler struct {
 	NavBar
 }
 
+const SessionCookie = "vvgo_session"
+
+var sessions = make(map[string]string)
+
 func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("vvgo_session")
+	cookie, err := r.Cookie(SessionCookie)
 	if err != nil {
 		logger.WithError(err).Info("cookie error")
 	}
-	if err == nil && cookie.Name == "vvgo_session" && cookie.Value == "jackson" {
+	if err == nil && cookie.Name == SessionCookie && cookie.Value == "jackson" {
 		w.Write([]byte("welcome back jackson\n"))
 		return
 	}
