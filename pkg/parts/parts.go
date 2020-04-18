@@ -23,13 +23,13 @@ var (
 )
 
 type Bucket interface {
-	PutObject(name string, object *storage.Object) bool
-	GetObject(name string, dest *storage.Object) bool
+	PutObject(ctx context.Context, name string, object *storage.Object) bool
+	GetObject(ctx context.Context, name string, dest *storage.Object) bool
 }
 
 type Locker interface {
 	Lock(ctx context.Context) bool
-	Unlock()
+	Unlock(ctx context.Context)
 }
 
 type Parts struct {
@@ -37,14 +37,14 @@ type Parts struct {
 	Locker
 }
 
-func (x Parts) Init() bool {
-	return x.PutObject(DataFile, storage.NewJSONObject(bytes.NewBuffer([]byte(`[]`))))
+func (x Parts) Init(ctx context.Context) bool {
+	return x.PutObject(ctx, DataFile, storage.NewJSONObject(bytes.NewBuffer([]byte(`[]`))))
 }
 
-func (x Parts) List() []Part {
+func (x Parts) List(ctx context.Context) []Part {
 	// grab the data file
 	var dest storage.Object
-	if ok := x.GetObject(DataFile, &dest); !ok {
+	if ok := x.GetObject(ctx, DataFile, &dest); !ok {
 		return nil
 	}
 
@@ -68,10 +68,10 @@ func (x Parts) Save(ctx context.Context, parts []Part) bool {
 	if ok := x.Lock(ctx); !ok {
 		return false
 	}
-	defer x.Unlock()
+	defer x.Unlock(ctx)
 
 	// pull down the parts data
-	allParts := x.List()
+	allParts := x.List(ctx)
 	if allParts == nil {
 		return false
 	}
@@ -86,7 +86,7 @@ func (x Parts) Save(ctx context.Context, parts []Part) bool {
 		return false
 	}
 
-	return storage.WithBackup(x.PutObject)(DataFile, storage.NewJSONObject(&buffer))
+	return storage.WithBackup(x.PutObject)(ctx, DataFile, storage.NewJSONObject(&buffer))
 }
 
 func mergeChanges(src []Part, changes []Part) []Part {

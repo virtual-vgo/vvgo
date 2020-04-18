@@ -11,6 +11,9 @@ import (
 func TestConfig_ParseEnv(t *testing.T) {
 	envs := map[string]string{
 		"INITIALIZE_STORAGE":      "true",
+		"HONEYCOMB_DATASET":       "honeycomb-dataset",
+		"HONEYCOMB_WRITE_KEY":     "honeycomb-write-key",
+		"HONEYCOMB_SERVICE_NAME":  "honeycomb-service-name",
 		"STORAGE_MINIO_ENDPOINT":  "minio-endpoint",
 		"STORAGE_MINIO_REGION":    "minio-region",
 		"STORAGE_MINIO_ACCESSKEY": "minio-access-key",
@@ -30,7 +33,10 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_ADMIN_TOKEN":         "admin-token",
 	}
 	want := Config{
-		InitializeStorage: true,
+		InitializeStorage:    true,
+		HoneycombWriteKey:    "honeycomb-write-key",
+		HoneycombDataset:     "honeycomb-dataset",
+		HoneycombServiceName: "honeycomb-service-name",
 		StorageConfig: storage.Config{
 			Minio: storage.MinioConfig{
 				Endpoint:  "minio-endpoint",

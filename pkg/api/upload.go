@@ -208,7 +208,7 @@ func (x UploadHandler) handleClix(ctx context.Context, upload *Upload) UploadSta
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if ok := x.Clix.PutFile(file); !ok {
+	if ok := x.Clix.PutFile(ctx, file); !ok {
 		return uploadInternalServerError(upload)
 	} else {
 		return x.handleParts(ctx, upload, file.ObjectKey())
@@ -221,7 +221,7 @@ func (x UploadHandler) handleSheets(ctx context.Context, upload *Upload) UploadS
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if ok := x.Sheets.PutFile(file); !ok {
+	if ok := x.Sheets.PutFile(ctx, file); !ok {
 		return uploadInternalServerError(upload)
 	} else {
 		return x.handleParts(ctx, upload, file.ObjectKey())

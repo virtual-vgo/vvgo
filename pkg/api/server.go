@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"github.com/honeycombio/beeline-go/wrappers/hnynethttp"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -27,8 +29,8 @@ type ServerConfig struct {
 }
 
 type FileBucket interface {
-	PutFile(file *storage.File) bool
-	DownloadURL(name string) (string, error)
+	PutFile(ctx context.Context, file *storage.File) bool
+	DownloadURL(ctx context.Context, name string) (string, error)
 }
 
 type Storage struct {
@@ -106,7 +108,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 
 	return &http.Server{
 		Addr:     config.ListenAddress,
-		Handler:  mux,
+		Handler:  hnynethttp.WrapHandler(mux),
 		ErrorLog: log.StdLogger(),
 	}
 }

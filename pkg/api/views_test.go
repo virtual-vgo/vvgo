@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/tdewolff/minify/v2"
@@ -45,7 +46,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
     "sheet_music": "/download?bucket=sheets\u0026object=sheet.pdf"
   }
 ]`
-	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
+	mockBucket := MockBucket{getObject: func(ctx context.Context, name string, dest *storage.Object) bool {
 		if name == parts.DataFile {
 			parts := []parts.Part{{
 				ID: parts.ID{

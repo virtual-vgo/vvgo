@@ -29,7 +29,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		BackingTrack string
 	}
 
-	allParts := x.Parts.List()
+	allParts := x.Parts.List(r.Context())
 	rows := make([]tableRow, 0, len(allParts))
 	for _, part := range allParts {
 		rows = append(rows, tableRow{

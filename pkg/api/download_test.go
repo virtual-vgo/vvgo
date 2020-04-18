@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"net/http"
@@ -24,9 +25,11 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	}{
 		{
 			name: "post",
-			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
-				return fmt.Sprintf("http://storage.example.com/%s/%s", "cheese", name), nil
-			}},
+			download: map[string]func(ctx context.Context, objectName string) (url string, err error){
+				"cheese": func(ctx context.Context, name string) (string, error) {
+					return fmt.Sprintf("http://storage.example.com/%s/%s", "cheese", name), nil
+				},
+			},
 			request: httptest.NewRequest(http.MethodPost, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusMethodNotAllowed,
@@ -34,9 +37,11 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 		},
 		{
 			name: "invalid bucket",
-			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
-				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
-			}},
+			download: map[string]func(ctx context.Context, objectName string) (url string, err error){
+				"cheese": func(ctx context.Context, name string) (string, error) {
+					return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
+				},
+			},
 			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusNotFound,
@@ -45,9 +50,11 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 		},
 		{
 			name: "invalid object",
-			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
-				return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
-			}},
+			download: map[string]func(ctx context.Context, objectName string) (url string, err error){
+				"cheese": func(ctx context.Context, name string) (string, error) {
+					return "", minio.ErrorResponse{StatusCode: http.StatusNotFound}
+				},
+			},
 			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants: wants{
 				code: http.StatusNotFound,
@@ -56,17 +63,21 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 		},
 		{
 			name: "server error",
-			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
-				return "", fmt.Errorf("mock error")
-			}},
+			download: map[string]func(ctx context.Context, objectName string) (url string, err error){
+				"cheese": func(ctx context.Context, name string) (string, error) {
+					return "", fmt.Errorf("mock error")
+				},
+			},
 			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants:   wants{code: http.StatusInternalServerError},
 		},
 		{
 			name: "success",
-			download: map[string]func(objectName string) (url string, err error){"cheese": func(name string) (string, error) {
-				return fmt.Sprintf("http://storage.example.com/%s/%s", "cheese", name), nil
-			}},
+			download: map[string]func(ctx context.Context, objectName string) (url string, err error){
+				"cheese": func(ctx context.Context, name string) (string, error) {
+					return fmt.Sprintf("http://storage.example.com/%s/%s", "cheese", name), nil
+				},
+			},
 			request: httptest.NewRequest(http.MethodGet, "/download?bucket=cheese&object=danish", strings.NewReader("")),
 			wants: wants{
 				code:     http.StatusFound,

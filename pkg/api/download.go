@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"github.com/minio/minio-go/v6"
 	"net/http"
 )
@@ -8,7 +9,7 @@ import (
 // Accepts query params `object` and `bucket`.
 // The map key is the bucket param.
 // The map value function should return the url of the object and any error encountered.
-type DownloadHandler map[string]func(objectName string) (url string, err error)
+type DownloadHandler map[string]func(ctx context.Context, objectName string) (url string, err error)
 
 func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -26,7 +27,7 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	downloadURL, err := urlFunc(objectName)
+	downloadURL, err := urlFunc(r.Context(), objectName)
 	switch e := err.(type) {
 	case nil:
 		http.Redirect(w, r, downloadURL, http.StatusFound)
