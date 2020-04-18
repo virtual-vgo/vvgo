@@ -61,7 +61,8 @@ func NewStorage(client *storage.Client, config ServerConfig) *Storage {
 func NewServer(config ServerConfig, database *Storage) *http.Server {
 	navBar := NavBar{MemberUser: config.MemberUser}
 	members := BasicAuth{config.MemberUser: config.MemberPass}
-	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
+	//prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
+	prepRep := PassThrough{}
 	admin := TokenAuth{config.AdminToken}
 
 	mux := http.NewServeMux()
