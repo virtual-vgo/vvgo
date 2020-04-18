@@ -5,6 +5,6 @@
     "part_number": 3,
     "sheet_music": "/download?bucket=sheets\u0026object=sheet.pdf",
     "click_track": "/download?bucket=clix\u0026object=click.mp3",
-    "backing_track": "#"
+    "reference_track": "#"
   }
 ]
