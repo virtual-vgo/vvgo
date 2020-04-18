@@ -113,6 +113,7 @@ type UploadStatus struct {
 }
 
 func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	if r.Method != http.MethodPost {
 		methodNotAllowed(w)
 		return
@@ -124,7 +125,7 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), UploadsTimeout)
+	ctx, cancel := context.WithTimeout(ctx, UploadsTimeout)
 	defer cancel()
 	statuses := x.ServeUploads(ctx, uploads)
 

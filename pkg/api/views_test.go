@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -12,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -20,43 +22,28 @@ import (
 func TestPartsHandler_ServeHTTP(t *testing.T) {
 	clixBucket := "clix"
 	sheetsBucket := "sheets"
-
-	type request struct {
-		method  string
-		body    string
-		accepts string
-	}
-	type wants struct {
-		code int
-		body string
-	}
-	mockBodyBytes, err := ioutil.ReadFile("testdata/parts.html")
-	if err != nil {
-		t.Fatalf("ioutil.ReadFile() failed: %v", err)
-	}
-	mockHTML := string(mockBodyBytes)
-	mockJSON := `[
-  {
-    "click_track": "/download?bucket=clix\u0026object=click.mp3",
-    "file_key": "0xff",
-    "link": "/download?bucket=sheets\u0026object=0xff",
-    "part_name": "trumpet",
-    "part_number": 3,
-    "project": "01-snake-eater",
-    "sheet_music": "/download?bucket=sheets\u0026object=sheet.pdf"
-  }
-]`
-	mockBucket := MockBucket{getObject: func(ctx context.Context, name string, dest *storage.Object) bool {
+	mockBucket := MockBucket{getObject: func(ctx context.Context,name string, dest *storage.Object) bool {
 		if name == parts.DataFile {
-			parts := []parts.Part{{
-				ID: parts.ID{
-					Project: "01-snake-eater",
-					Name:    "trumpet",
-					Number:  3,
+			parts := []parts.Part{
+				{
+					ID: parts.ID{
+						Project: "01-snake-eater",
+						Name:    "trumpet",
+						Number:  3,
+					},
+					Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+					Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 				},
-				Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-				Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-			}}
+				{
+					ID: parts.ID{
+						Project: "02-proof-of-a-hero",
+						Name:    "trumpet",
+						Number:  3,
+					},
+					Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+					Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+				},
+			}
 			var buffer bytes.Buffer
 			json.NewEncoder(&buffer).Encode(parts)
 			*dest = storage.Object{
@@ -67,93 +54,67 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 		return true
 	}}
 
-	for _, tt := range []struct {
-		name    string
-		request request
-		wants   wants
-	}{
-		{
-			name: "method post",
-			request: request{
-				method: http.MethodPost,
-			},
-			wants: wants{
-				code: http.StatusMethodNotAllowed,
-			},
+	server := PartsHandler{NavBar{}, &Storage{
+		Parts:  parts.Parts{Bucket: &mockBucket},
+		Sheets: &mockBucket,
+		Clix:   &mockBucket,
+		ServerConfig: ServerConfig{
+			SheetsBucketName: sheetsBucket,
+			ClixBucketName:   clixBucket,
 		},
-		{
-			name: "method get",
-			request: request{
-				method: http.MethodGet,
-			},
-			wants: wants{
-				code: http.StatusOK,
-				body: mockJSON,
-			},
-		},
-		{
-			name: "method get/accept text/html",
-			request: request{
-				method:  http.MethodGet,
-				accepts: "text/html",
-				body:    mockHTML,
-			},
-			wants: wants{
-				code: http.StatusOK,
-				body: mockHTML,
-			},
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			server := PartsHandler{NavBar{}, &Storage{
-				Parts:  parts.Parts{Bucket: &mockBucket},
-				Sheets: &mockBucket,
-				Clix:   &mockBucket,
-				ServerConfig: ServerConfig{
-					SheetsBucketName: sheetsBucket,
-					ClixBucketName:   clixBucket,
-				},
-			}}
-			recorder := httptest.NewRecorder()
-			request := httptest.NewRequest(tt.request.method, "/sheets", strings.NewReader(tt.request.body))
-			request.Header.Set("Accept", tt.request.accepts)
-			server.ServeHTTP(recorder, request)
-			gotResp := recorder.Result()
-			gotBody := strings.TrimSpace(recorder.Body.String())
-			t.Logf("Got Body:\n%s\n", gotBody)
-			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
-				t.Errorf("expected code %v, got %v", expected, got)
-			}
+	}}
 
-			switch tt.wants.body {
-			case mockJSON:
-				var buf []map[string]interface{}
-				json.Unmarshal([]byte(mockJSON), &buf)
-				wantBytes, _ := json.Marshal(&buf)
-				tt.wants.body = string(wantBytes)
-				json.Unmarshal([]byte(gotBody), &buf)
-				gotBytes, _ := json.Marshal(&buf)
-				gotBody = string(gotBytes)
+	t.Run("accept:application/json", func(t *testing.T) {
+		var wantBody bytes.Buffer
+		file, err := os.Open("testdata/parts.json")
+		require.NoError(t, err, "os.Open")
+		_, err = wantBody.ReadFrom(file)
+		require.NoError(t, err, "file.Read")
 
-			case mockHTML:
-				m := minify.New()
-				m.AddFunc("text/html", html.Minify)
-				var gotBuf bytes.Buffer
-				if err := m.Minify("text/html", &gotBuf, strings.NewReader(gotBody)); err != nil {
-					panic(err)
-				}
-				gotBody = gotBuf.String()
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/sheets", nil)
+		request.Header.Set("Accept", "application/json")
+		server.ServeHTTP(recorder, request)
 
-				var wantBuf bytes.Buffer
-				if err := m.Minify("text/html", &wantBuf, strings.NewReader(tt.wants.body)); err != nil {
-					panic(err)
-				}
-				tt.wants.body = wantBuf.String()
-			}
+		wantRaw, gotRaw := strings.TrimSpace(wantBody.String()), strings.TrimSpace(recorder.Body.String())
+		var wantMap []map[string]interface{}
+		err = json.Unmarshal(wantBody.Bytes(), &wantMap)
+		require.NoError(t, err, "json.Unmarshal")
+		var gotMap []map[string]interface{}
+		err = json.Unmarshal(recorder.Body.Bytes(), &gotMap)
+		assert.NoError(t, err, "json.Unmarshal")
+		if !assert.Equal(t, wantMap, gotMap, "body") {
+			t.Logf("Expected body:\n%s\n", wantRaw)
+			t.Logf("Got body:\n%s\n", gotRaw)
+		}
+	})
 
-			assert.Equal(t, tt.wants.body, gotBody, "body")
-		})
-	}
+	t.Run("accept:text/html", func(t *testing.T) {
+		var wantBody bytes.Buffer
+		file, err := os.Open("testdata/parts.html")
+		require.NoError(t, err, "os.Open")
+		_, err = wantBody.ReadFrom(file)
+		require.NoError(t, err, "file.Read")
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/sheets", nil)
+		request.Header.Set("Accept", "text/html")
+		server.ServeHTTP(recorder, request)
+
+		wantRaw, gotRaw := strings.TrimSpace(wantBody.String()), strings.TrimSpace(recorder.Body.String())
+		m := minify.New()
+		m.AddFunc("text/html", html.Minify)
+		var wantMin bytes.Buffer
+		err = m.Minify("text/html", &wantMin, &wantBody)
+		require.NoError(t, err, "m.Minify")
+		var gotMin bytes.Buffer
+		err = m.Minify("text/html", &gotMin, recorder.Body)
+		assert.NoError(t, err, "m.Minify")
+		if !assert.Equal(t, wantMin.String(), gotMin.String(), "body") {
+			t.Logf("Expected body:\n%s\n", wantRaw)
+			t.Logf("Got body:\n%s\n", gotRaw)
+		}
+	})
 }
 
 func TestIndexHandler_ServeHTTP(t *testing.T) {

@@ -15,23 +15,36 @@ type PartsHandler struct {
 }
 
 func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
 	}
 
 	type tableRow struct {
-		Project      string
-		PartName     string
-		PartNumber   uint8
-		SheetMusic   string
-		ClickTrack   string
-		BackingTrack string
+		Project      string `json:"project"`
+		PartName     string `json:"part_name"`
+		PartNumber   uint8  `json:"part_number"`
+		SheetMusic   string `json:"sheet_music"`
+		ClickTrack   string `json:"click_track"`
+		BackingTrack string `json:"backing_track"`
 	}
 
-	allParts := x.Parts.List(r.Context())
-	rows := make([]tableRow, 0, len(allParts))
-	for _, part := range allParts {
+	parts := x.Parts.List(ctx)
+	want := len(parts)
+	for i := 0; i < want; i++ {
+		if parts[i].Validate() == nil &&
+			projects.GetName(parts[i].Project).Archived == false &&
+			projects.GetName(parts[i].Project).Released == true {
+			continue
+		}
+		parts[i], parts[want-1] = parts[want-1], parts[i]
+		i--
+		want--
+	}
+	parts = parts[:want]
+	rows := make([]tableRow, 0, len(parts))
+	for _, part := range parts {
 		rows = append(rows, tableRow{
 			Project:      projects.GetName(part.Project).Title,
 			PartName:     strings.Title(part.Name),
@@ -62,7 +75,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	default:
-		jsonEncode(&buffer, &rows)
+		jsonEncodeBeautify(&buffer, &rows)
 	}
 	buffer.WriteTo(w)
 }
