@@ -34,7 +34,7 @@ var project = Projects{projects: []Project{
 		Name:           "01-snake-eater",
 		Title:          "Snake Eater",
 		Released:       true,
-		Archived:       false,
+		Archived:       true,
 		Sources:        []string{"Metal Gear Solid 3"},
 		Composers:      []string{"Norihiko Hibino (日比野 則彦)"},
 		Arrangers:      []string{},
@@ -71,7 +71,6 @@ func (x Project) ReferenceTrackLink(bucket string) string {
 		return "#"
 	} else {
 		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.ReferenceTrack)
-
 	}
 }
 

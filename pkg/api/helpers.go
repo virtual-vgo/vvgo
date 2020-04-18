@@ -57,6 +57,16 @@ func jsonEncode(dest io.Writer, src interface{}) bool {
 	return true
 }
 
+func jsonEncodeBeautify(dest io.Writer, src interface{}) bool {
+	encoder := json.NewEncoder(dest)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(src); err != nil {
+		logger.WithError(err).Error("json.Encode() failed")
+		return false
+	}
+	return true
+}
+
 func gobEncode(dest io.Writer, src interface{}) bool {
 	if err := gob.NewEncoder(dest).Encode(src); err != nil {
 		logger.WithError(err).Error("gob.Encode() failed")
