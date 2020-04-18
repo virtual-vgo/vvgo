@@ -34,7 +34,7 @@ func (x *Locker) newSpan(ctx context.Context, name string) (context.Context, *tr
 }
 
 func (x *Locker) Lock(ctx context.Context) bool {
-	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
+	ctx, span := x.newSpan(ctx, "Locker.Lock")
 	defer span.Send()
 	x.lock.Lock()
 	lock, err := x.client.Obtain(x.key, RedisLockDeadline, &redislock.Options{
@@ -51,7 +51,7 @@ func (x *Locker) Lock(ctx context.Context) bool {
 }
 
 func (x *Locker) Unlock(ctx context.Context) {
-	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
+	ctx, span := x.newSpan(ctx, "Locker.Unlock")
 	defer span.Send()
 	if err := x.redisLock.Release(); err != nil {
 		logger.WithError(err).Error("redislock.Release() failed")

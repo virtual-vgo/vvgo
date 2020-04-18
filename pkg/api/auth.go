@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/honeycombio/beeline-go"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
@@ -20,7 +21,10 @@ type BasicAuth map[string]string
 
 func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		if ok := func() bool {
+			_, span := beeline.StartSpan(ctx, "basic_auth")
+			defer span.Send()
 			user, pass, ok := r.BasicAuth()
 			if !ok || user == "" || pass == "" {
 				return false
@@ -46,7 +50,10 @@ type TokenAuth []string
 
 func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		if ok := func() bool {
+			_, span := beeline.StartSpan(ctx, "token_auth")
+			defer span.Send()
 			auth := strings.TrimSpace(r.Header.Get("Authorization"))
 			for _, token := range tokens {
 				if auth == "Bearer "+token {

@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"errors"
+	"github.com/honeycombio/beeline-go"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -113,7 +114,9 @@ type UploadStatus struct {
 }
 
 func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx, span := beeline.StartSpan(r.Context(), "upload_handler")
+	defer span.Send()
+
 	if r.Method != http.MethodPost {
 		methodNotAllowed(w)
 		return

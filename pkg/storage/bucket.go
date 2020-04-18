@@ -88,7 +88,7 @@ func (x *Bucket) newSpan(ctx context.Context, name string) (context.Context, *tr
 }
 
 func (x *Bucket) Make(ctx context.Context) bool {
-	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
+	ctx, span := x.newSpan(ctx, "Bucket.Make")
 	defer span.Send()
 	exists, err := x.BucketExists(x.Name)
 	if err != nil {
@@ -107,7 +107,7 @@ func (x *Bucket) Make(ctx context.Context) bool {
 }
 
 func (x *Bucket) StatObject(ctx context.Context, objectName string) (Object, error) {
-	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
+	ctx, span := x.newSpan(ctx, "Bucket.StatsObject")
 	defer span.Send()
 	opts := minio.StatObjectOptions{}
 	objectInfo, err := x.Client.StatObject(x.Name, objectName, opts)
@@ -123,7 +123,7 @@ func (x *Bucket) StatObject(ctx context.Context, objectName string) (Object, err
 }
 
 func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) bool {
-	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
+	ctx, span := x.newSpan(ctx, "Bucket.GetObject")
 	defer span.Send()
 	minioObject, err := x.Client.GetObject(x.Name, name, minio.GetObjectOptions{})
 	if err != nil {

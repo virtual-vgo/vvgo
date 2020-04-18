@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"github.com/honeycombio/beeline-go"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"html/template"
 	"net/http"
@@ -15,7 +16,9 @@ type PartsHandler struct {
 }
 
 func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx, span := beeline.StartSpan(r.Context(), "parts_handler")
+	defer span.Send()
+
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -85,6 +88,9 @@ type IndexHandler struct {
 }
 
 func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	_, span := beeline.StartSpan(r.Context(), "parts_handler")
+	defer span.Send()
+
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
