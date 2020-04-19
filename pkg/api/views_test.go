@@ -29,9 +29,9 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 			Cache:  storage.NewCache(storage.CacheOpts{}),
 			Locker: locker.NewLocker(locker.Opts{}),
 		},
-		Sheets:       bucket,
-		Clix:         bucket,
-		Tracks:       bucket,
+		Sheets: bucket,
+		Clix:   bucket,
+		Tracks: bucket,
 		ServerConfig: ServerConfig{
 			SheetsBucketName: "sheets",
 			ClixBucketName:   "clix",

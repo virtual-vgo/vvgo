@@ -246,7 +246,7 @@ func (x UploadHandler) handleParts(ctx context.Context, upload *Upload, objectKe
 			uploadParts[i].Clix.NewKey(objectKey)
 		}
 	}
-	if err := x.Parts.Save(ctx, uploadParts); err != nil  {
+	if err := x.Parts.Save(ctx, uploadParts); err != nil {
 		logger.WithError(err).Error("x.Parts.Save() failed")
 		return uploadInternalServerError(upload)
 	} else {

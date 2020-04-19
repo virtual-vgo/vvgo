@@ -77,7 +77,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 			w.Write([]byte("authenticated"))
 		})),
 	)
-	
+
 	// debug endpoints from net/http/pprof
 	pprofMux := http.NewServeMux()
 	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
