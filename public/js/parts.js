@@ -3,6 +3,7 @@ $(document).ready(function () {
         scrollY: "40vh",
         scrollCollapse: true,
         paging: false,
+        order: [1, 'asc'],
         columnDefs: [
             {
                 targets: [2],
