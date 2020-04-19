@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
 	"testing"
@@ -39,18 +38,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 			HoneycombWriteKey: "tracing-honeycomb-write-key",
 			HoneycombDataset:  "tracing-honeycomb-dataset",
 			ServiceName:       "tracing-service-name",
-		},
-		StorageConfig: storage.Config{
-			Minio: storage.MinioConfig{
-				Endpoint:  "minio-endpoint",
-				Region:    "minio-region",
-				AccessKey: "minio-access-key",
-				SecretKey: "minio-secret-key",
-				UseSSL:    true,
-			},
-			Redis: storage.RedisConfig{
-				Address: "redis-address",
-			},
 		},
 		ApiConfig: api.ServerConfig{
 			ListenAddress:    "listen-address",

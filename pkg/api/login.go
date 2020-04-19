@@ -19,18 +19,18 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "login_handler")
 	defer span.Send()
 
-	session, ok := sessions.Read(ctx, r)
-	if !ok {
+	var session sessions.Session
+	if err := sessions.ReadFromRequest(ctx, r, &session); err != nil {
 		user := r.FormValue("user")
 		pass := r.FormValue("pass")
 		if user == "jackson" && pass == "jackson" {
 			cookie := http.Cookie{
-				Name:    sessions.SessionCookie,
+				Name:    sessions.SessionKey,
 				Value:   user,
 				Expires: time.Now().Add(3600 * time.Second),
 			}
 			http.SetCookie(w, &cookie)
-			sessions.Add(ctx, sessions.Session{
+			sessions.Add(ctx, &sessions.Session{
 				Key:       user,
 				VVVGOUser: user,
 			})

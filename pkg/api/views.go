@@ -33,7 +33,12 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ReferenceTrack string `json:"reference_track"`
 	}
 
-	parts := x.Parts.List(ctx)
+	parts, err := x.Parts.List(ctx)
+	if err != nil {
+		internalServerError(w)
+		return
+	}
+
 	want := len(parts)
 	for i := 0; i < want; i++ {
 		if parts[i].Validate() == nil &&

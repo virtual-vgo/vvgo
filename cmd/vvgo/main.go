@@ -64,12 +64,15 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	storage := storage.NewClient(config.StorageConfig)
-	if storage == nil {
-		os.Exit(1)
+	storage, err := storage.NewWarehouse(config.StorageConfig)
+	if err != nil {
+		logger.WithError(err).Fatal("storage.NewWarehouse() failed")
 	}
 
-	database := api.NewStorage(storage, config.ApiConfig)
+	database := api.NewStorage(ctx, storage, config.ApiConfig)
+	if err != nil {
+		logger.WithError(err).Fatal("api.NewStorage() failed")
+	}
 	if database == nil {
 		os.Exit(1)
 	}
@@ -79,28 +82,34 @@ func main() {
 	}
 
 	apiServer := api.NewServer(config.ApiConfig, database)
-	if apiServer == nil {
-		os.Exit(1)
+	if err != nil {
+		logger.WithError(err).Fatal("api.NewServer() failed")
 	}
+
 	logger.Fatal(apiServer.ListenAndServe())
+	if err := apiServer.ListenAndServe(); err != nil {
+		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
+	}
 }
 
 func initializeStorage(ctx context.Context, db *api.Storage) {
 	var wg sync.WaitGroup
-	for _, initFunc := range []func(ctx context.Context) bool{
+	for _, initFunc := range []func(ctx context.Context) error{
 		db.Parts.Init,
 	} {
 		wg.Add(1)
-		go func(initFunc func(ctx context.Context) bool) {
+		go func(initFunc func(ctx context.Context) error) {
 			defer wg.Done()
 			timeout := time.NewTicker(5 * time.Second)
 			retryInterval := time.NewTicker(500 * time.Millisecond)
 			defer retryInterval.Stop()
 			defer timeout.Stop()
 			for range retryInterval.C {
-				if ok := initFunc(ctx); ok {
+				err := initFunc(ctx)
+				if err == nil {
 					return
 				}
+				logger.WithError(err).Fatal("init() failed")
 				select {
 				case <-timeout.C:
 					logger.Fatalf("failed to initialize storage")

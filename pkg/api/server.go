@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -28,28 +29,28 @@ type ServerConfig struct {
 	AdminToken       string `split_words:"true" default:"admin"`
 }
 
-type FileBucket interface {
-	PutFile(ctx context.Context, file *storage.File) bool
-	DownloadURL(ctx context.Context, name string) (string, error)
-}
-
 type Storage struct {
 	parts.Parts
-	Sheets FileBucket
-	Clix   FileBucket
-	Tracks FileBucket
+	Sheets *storage.Bucket
+	Clix   *storage.Bucket
+	Tracks *storage.Bucket
 	ServerConfig
 }
 
-func NewStorage(client *storage.Client, config ServerConfig) *Storage {
-	sheetsBucket := client.NewBucket(config.SheetsBucketName)
-	clixBucket := client.NewBucket(config.ClixBucketName)
-	partsBucket := client.NewBucket(config.PartsBucketName)
-	partsLocker := client.NewLocker(config.PartsLockerKey)
-	tracksBucket := client.NewBucket(config.TracksBucketName)
-	if sheetsBucket == nil || clixBucket == nil || partsBucket == nil || partsLocker == nil {
-		return nil
+func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config ServerConfig) *Storage {
+	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
+		bucket, err := warehouse.NewBucket(ctx, config.SheetsBucketName)
+		if err != nil {
+			logger.WithError(err).WithField("bucket_name", config.SheetsBucketName).Fatal("warehouse.NewBucket() failed")
+		}
+		return bucket
 	}
+
+	sheetsBucket := newBucket(ctx, config.SheetsBucketName)
+	clixBucket := newBucket(ctx, config.ClixBucketName)
+	tracksBucket := newBucket(ctx, config.TracksBucketName)
+	partsBucket := newBucket(ctx, config.PartsBucketName)
+	partsLocker := locker.NewLocker(config.PartsLockerKey)
 
 	return &Storage{
 		Parts: parts.Parts{

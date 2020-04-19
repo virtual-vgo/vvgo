@@ -6,38 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"strings"
 	"testing"
 	"time"
 )
-
-type MockBucket struct {
-	putObject func(ctx context.Context, name string, object *storage.Object) bool
-	getObject func(ctx context.Context, name string, dest *storage.Object) bool
-}
-
-func (x *MockBucket) PutObject(ctx context.Context, name string, object *storage.Object) bool {
-	return x.putObject(ctx, name, object)
-}
-
-func (x *MockBucket) GetObject(ctx context.Context, name string, dest *storage.Object) bool {
-	return x.getObject(ctx, name, dest)
-}
-
-type MockLocker struct {
-	lock   func(ctx context.Context) bool
-	unlock func(ctx context.Context)
-}
-
-func (x *MockLocker) Lock(ctx context.Context) bool {
-	return x.lock(ctx)
-}
-
-func (x *MockLocker) Unlock(ctx context.Context) {
-	x.unlock(ctx)
-}
 
 func TestParts_Init(t *testing.T) {
 	wantName := DataFile
@@ -49,14 +25,9 @@ func TestParts_Init(t *testing.T) {
 	var gotName string
 	var gotObject *storage.Object
 
-	parts := Parts{Bucket: &MockBucket{
-		putObject: func(ctx context.Context, name string, object *storage.Object) bool {
-			gotName = name
-			gotObject = object
-			return true
-		}},
-	}
-
+	bucket, err := storage.NewBucket(context.Background(), "test")
+	require.NoError(t, err, "storage.NewBucket()")
+	parts := Parts{Bucket: bucket}
 	parts.Init(context.Background())
 	assert.Equal(t, wantName, gotName, "name")
 	assert.Equal(t, gotObject, wantObject, "object")
@@ -76,17 +47,10 @@ func TestParts_List(t *testing.T) {
 	}
 
 	var gotName string
-	parts := Parts{Bucket: &MockBucket{
-		getObject: func(ctx context.Context, name string, object *storage.Object) bool {
-			gotName = name
-			*object = storage.Object{
-				ContentType: "application/json",
-				Buffer:      buffer,
-			}
-			return true
-		}},
-	}
-	gotList := parts.List(context.Background())
+	bucket, err := storage.NewBucket(context.Background(), "test")
+	require.NoError(t, err, "storage.NewBucket()")
+	parts := Parts{Bucket: bucket}
+	gotList,_ := parts.List(context.Background())
 
 	assert.Equal(t, wantName, gotName, "name")
 	assert.Equal(t, wantList, gotList, "object")
@@ -118,24 +82,11 @@ func TestParts_Save(t *testing.T) {
 
 	var gotNames []string
 	var gotObjects []storage.Object
+	bucket, err := storage.NewBucket(context.Background(), "test")
+	require.NoError(t, err, "storage.NewBucket()")
 	parts := Parts{
-		Bucket: &MockBucket{
-			getObject: func(ctx context.Context, name string, object *storage.Object) bool {
-				*object = storage.Object{
-					ContentType: "application/json",
-					Buffer:      *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5}]`))}
-				return true
-			},
-			putObject: func(ctx context.Context, name string, object *storage.Object) bool {
-				gotNames = append(gotNames, name)
-				gotObjects = append(gotObjects, *object)
-				return true
-			},
-		},
-		Locker: &MockLocker{
-			lock:   func(ctx context.Context) bool { return true },
-			unlock: func(ctx context.Context) {},
-		},
+		Bucket: bucket,
+		Locker: locker.NewLocker("test"),
 	}
 	gotOk := parts.Save(nil, cmdArgs.parts)
 

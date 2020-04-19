@@ -5,33 +5,106 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"mime"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
-type Object struct {
-	ContentType string
-	Tags        Tags
-	Buffer      bytes.Buffer
-}
+const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
-type Tags map[string]string
+var logger = log.Logger()
+var client *Warehouse
 
-func NewObject(mediaType string, buffer *bytes.Buffer) *Object {
-	return &Object{
-		ContentType: mediaType,
-		Buffer:      *buffer,
+func init() {
+	var config Config
+	err := envconfig.Process("storage", &config)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	client, err = NewWarehouse(config)
+	if err != nil {
+		logger.Fatal(err)
 	}
 }
 
-func NewJSONObject(buffer *bytes.Buffer) *Object {
-	return NewObject("application/json", buffer)
+type Warehouse struct {
+	Config
+	minioClient *minio.Client
+}
+
+type Config struct {
+	Minio MinioConfig `envconfig:"minio"`
+}
+
+type MinioConfig struct {
+	Endpoint  string `default:"localhost:9000"`
+	Region    string `default:"sfo2"`
+	AccessKey string `default:"minioadmin"`
+	SecretKey string `default:"minioadmin"`
+	UseSSL    bool   `default:"false"`
+}
+
+func NewWarehouse(config Config) (*Warehouse, error) {
+	client := Warehouse{Config: config}
+	if config.Minio.Endpoint != "" {
+		var err error
+		client.minioClient, err = minio.New(config.Minio.Endpoint, config.Minio.AccessKey, config.Minio.SecretKey, config.Minio.UseSSL)
+		if err != nil {
+			return nil, fmt.Errorf("minio.New() failed: %v", err)
+		}
+	}
+	return &client, nil
+}
+
+func NewBucket(ctx context.Context, name string) (*Bucket, error) {
+	return client.NewBucket(ctx, name)
+}
+
+type Bucket struct {
+	Name        string
+	minioRegion string
+	minioClient *minio.Client
+}
+
+func (x *Warehouse) NewBucket(ctx context.Context, name string) (*Bucket, error) {
+	bucket := Bucket{
+		Name:        name,
+		minioRegion: x.Minio.Region,
+		minioClient: x.minioClient,
+	}
+
+	if x.minioClient != nil {
+		bucket.minioClient = x.minioClient
+		_, span := x.newSpan(ctx, "warehouse_new_bucket")
+		defer span.Send()
+		exists, err := x.minioClient.BucketExists(name)
+		if err != nil {
+			span.AddField("error", err)
+			return nil, err
+		}
+		if exists == false {
+			if err := x.minioClient.MakeBucket(name, x.Minio.Region); err != nil {
+				span.AddField("error", err)
+				return nil, err
+			}
+		}
+	}
+	return &bucket, nil
+}
+
+func (x *Warehouse) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
+	ctx, span := tracing.StartSpan(ctx, name)
+	tracing.AddField(ctx, "minio_endpoint", x.Minio.Endpoint)
+	tracing.AddField(ctx, "minio_region", x.Minio.Region)
+	return ctx, span
 }
 
 type File struct {
@@ -65,163 +138,138 @@ func (x File) ObjectKey() string {
 	return x.objectKey
 }
 
-type Bucket struct {
-	Name   string
-	Region string
-	*minio.Client
-}
-
-func (x *Client) NewBucket(name string) *Bucket {
-	return &Bucket{
-		Name:   name,
-		Region: x.config.Minio.Region,
-		Client: x.minioClient,
+func (x *Bucket) StatFile(ctx context.Context, objectKey string, dest *File) error {
+	var obj Object
+	if err := x.StatObject(ctx, objectKey, &obj); err != nil {
+		return err
 	}
+	*dest = File{
+		Ext:       filepath.Ext(objectKey),
+		MediaType: obj.ContentType,
+		objectKey: objectKey,
+	}
+	return nil
 }
 
-func (x *Bucket) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
-	ctx, span := tracing.StartSpan(ctx, name)
-	tracing.AddField(ctx, "bucket_name", x.Name)
-	tracing.AddField(ctx, "bucket_region", x.Region)
-	return ctx, span
-}
-
-func (x *Bucket) Make(ctx context.Context) bool {
-	ctx, span := x.newSpan(ctx, "Bucket.Make")
+func (x *Bucket) PutFile(ctx context.Context, file *File) error {
+	ctx, span := x.newSpan(ctx, "bucket_put_file")
 	defer span.Send()
-	exists, err := x.BucketExists(x.Name)
-	if err != nil {
-		logger.WithError(err).Error("minioClient.BucketExists() failed")
-		span.AddField("error", err)
-		return false
-	}
-	if exists == false {
-		if err := x.MakeBucket(x.Name, x.Region); err != nil {
-			logger.WithError(err).Error("minioClient.MakeBucket() failed")
-			span.AddField("error", err)
-			return false
-		}
-	}
-	return true
+	return x.PutObject(ctx, file.ObjectKey(), NewObject(file.MediaType, bytes.NewBuffer(file.Bytes)))
 }
 
-func (x *Bucket) StatObject(ctx context.Context, objectName string) (Object, error) {
-	ctx, span := x.newSpan(ctx, "Bucket.StatsObject")
+type Object struct {
+	ContentType string
+	Tags        Tags
+	Buffer      bytes.Buffer
+}
+
+type Tags map[string]string
+
+func NewObject(mediaType string, buffer *bytes.Buffer) *Object {
+	return &Object{
+		ContentType: mediaType,
+		Buffer:      *buffer,
+	}
+}
+
+func NewJSONObject(buffer *bytes.Buffer) *Object {
+	return NewObject("application/json", buffer)
+}
+
+func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object) error {
+	if x.minioClient == nil {
+		return nil
+	}
+
+	_, span := x.newSpan(ctx, "bucket_stat_object")
 	defer span.Send()
 	opts := minio.StatObjectOptions{}
-	objectInfo, err := x.Client.StatObject(x.Name, objectName, opts)
+	objectInfo, err := x.minioClient.StatObject(x.Name, objectName, opts)
 	if err != nil {
 		span.AddField("error", err)
-		return Object{}, err
-	} else {
-		return Object{
-			ContentType: objectInfo.ContentType,
-			Tags:        Tags(objectInfo.UserMetadata),
-		}, nil
+		return err
 	}
-}
-func (x *Bucket) StatFile(ctx context.Context, file *File) (Object, error) {
-	return x.StatObject(ctx, file.ObjectKey())
+	*dest = Object{
+		ContentType: objectInfo.ContentType,
+		Tags:        Tags(objectInfo.UserMetadata),
+	}
+	return nil
 }
 
-func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) bool {
-	ctx, span := x.newSpan(ctx, "Bucket.GetObject")
+func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error {
+	if x.minioClient == nil {
+		return nil
+	}
+
+	_, span := x.newSpan(ctx, "bucket_get_object")
 	defer span.Send()
-	minioObject, err := x.Client.GetObject(x.Name, name, minio.GetObjectOptions{})
+	minioObject, err := x.minioClient.GetObject(x.Name, name, minio.GetObjectOptions{})
 	if err != nil {
-		logger.WithError(err).Error("minioClient.GetObject() failed")
 		span.AddField("error", err)
-		return false
+		return err
 	}
 	info, err := minioObject.Stat()
 	if err != nil {
-		logger.WithError(err).Error("minioObject.Stat() failed")
 		span.AddField("error", err)
-		return false
+		return err
 	}
 	var buffer bytes.Buffer
 	if _, err := buffer.ReadFrom(minioObject); err != nil {
-		logger.WithError(err).Error("minioObject.Read() failed")
 		span.AddField("error", err)
-		return false
+		return err
 	}
 	*dest = Object{
 		ContentType: info.ContentType,
 		Tags:        map[string]string(info.UserMetadata),
 		Buffer:      buffer,
 	}
-	return true
+	return err
 }
 
-func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) bool {
-	ctx, span := x.newSpan(ctx, "Bucket.PutObject")
-	defer span.Send()
-
-	if ok := x.Make(ctx); !ok {
-		return false
+func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) error {
+	if x.minioClient == nil {
+		return nil
 	}
+
+	ctx, span := x.newSpan(ctx, "bucket_put_object")
+	defer span.Send()
 	opts := minio.PutObjectOptions{
 		ContentType:  object.ContentType,
 		UserMetadata: object.Tags,
 	}
-	n, err := x.Client.PutObject(x.Name, name, &object.Buffer, -1, opts)
+	n, err := x.minioClient.PutObject(x.Name, name, &object.Buffer, -1, opts)
 	if err != nil {
-		logger.WithError(err).Error("minioClient.PutObject() failed")
 		span.AddField("error", err)
-		return false
+		return err
 	}
 	logger.WithFields(logrus.Fields{
 		"bucket_name": x.Name,
 		"object_name": name,
 		"object_size": n,
 	}).Info("uploaded object")
-	return true
+	return nil
 }
 
 // Stores the object and a copy with a timestamp appended to the file name.
-func WithBackup(putObjectFunc func(ctx context.Context, name string, object *Object) bool) func(ctx context.Context, name string, object *Object) bool {
-	return func(ctx context.Context, name string, object *Object) bool {
+func WithBackup(putObjectFunc func(ctx context.Context, name string, object *Object) error) func(ctx context.Context, name string, object *Object) error {
+	return func(ctx context.Context, name string, object *Object) error {
 		backupName := fmt.Sprintf("%s-%s", name, time.Now().UTC().Format(time.RFC3339))
 		backupBuffer := object.Buffer
-		if ok := putObjectFunc(ctx, backupName, NewObject(object.ContentType, &backupBuffer)); !ok {
-			return false
+		if err := putObjectFunc(ctx, backupName, NewObject(object.ContentType, &backupBuffer)); err != nil {
+			return err
 		}
 		return putObjectFunc(ctx, name, object)
 	}
 }
 
-func (x *Bucket) PutFile(ctx context.Context, file *File) bool {
-	ctx, span := x.newSpan(ctx, "Bucket.PutFile")
-	defer span.Send()
-	return x.PutObject(ctx, file.ObjectKey(), NewObject(file.MediaType, bytes.NewBuffer(file.Bytes)))
-}
-
-func (x *Bucket) ListObjects(ctx context.Context) map[string]Object {
-	ctx, span := x.newSpan(ctx, "Bucket.ListObjects")
-	defer span.Send()
-	done := make(chan struct{})
-	defer close(done)
-
-	objects := make(map[string]Object)
-	for objectInfo := range x.Client.ListObjects(x.Name, "", false, done) {
-		if objectInfo.Key == "" {
-			continue
-		}
-
-		object, err := x.StatObject(ctx, objectInfo.Key)
-		if err != nil {
-			logger.WithError(err).Error("minio.StatObject() failed")
-			continue
-		}
-		objects[objectInfo.Key] = object
-	}
-	return objects
-}
-
 func (x *Bucket) DownloadURL(ctx context.Context, name string) (string, error) {
+	if x.minioClient == nil {
+		return "#", nil
+	}
+
 	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
 	defer span.Send()
-	policy, err := x.Client.GetBucketPolicy(x.Name)
+	policy, err := x.minioClient.GetBucketPolicy(x.Name)
 	if err != nil {
 		return "", err
 	}
@@ -229,13 +277,20 @@ func (x *Bucket) DownloadURL(ctx context.Context, name string) (string, error) {
 	var downloadUrl *url.URL
 	switch policy {
 	case "download":
-		downloadUrl, err = url.Parse(fmt.Sprintf("%s/%s/%s", x.Client.EndpointURL(), x.Name, name))
+		downloadUrl, err = url.Parse(fmt.Sprintf("%s/%s/%s", x.minioClient.EndpointURL(), x.Name, name))
 	default:
-		downloadUrl, err = x.Client.PresignedGetObject(x.Name, name, ProtectedLinkExpiry, nil)
+		downloadUrl, err = x.minioClient.PresignedGetObject(x.Name, name, ProtectedLinkExpiry, nil)
 	}
 	if err != nil {
 		return "", err
 	} else {
 		return downloadUrl.String(), nil
 	}
+}
+
+func (x *Bucket) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
+	ctx, span := tracing.StartSpan(ctx, name)
+	tracing.AddField(ctx, "bucket_name", x.Name)
+	tracing.AddField(ctx, "bucket_region", x.minioRegion)
+	return ctx, span
 }

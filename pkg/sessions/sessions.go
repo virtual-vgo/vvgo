@@ -2,55 +2,74 @@ package sessions
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"errors"
+	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"net/http"
 )
 
-type Locker interface {
-	Lock(ctx context.Context) bool
-	Unlock()
+const SessionKey = "vvgo_session"
+
+var sessions *Sessions
+
+func init() {
+	sessions = &Sessions{
+		sessions: make(map[string]Session),
+		locker:   locker.NewLocker(SessionKey),
+	}
 }
 
-const SessionCookie = "vvgo_session"
+func ReadFromRequest(ctx context.Context, r *http.Request, dest *Session) error {
+	return sessions.ReadFromRequest(ctx, r, dest)
+}
 
-var logger = log.Logger()
-var sessions = new(Sessions)
+func Add(ctx context.Context, session *Session) error {
+	return sessions.Add(ctx, session)
+}
 
-func Add(ctx context.Context, session Session)                  { sessions.Add(ctx, session) }
-func Read(ctx context.Context, r *http.Request) (Session, bool) { return sessions.Read(ctx, r) }
+type Config struct {
+	LockerName string
+}
 
 type Sessions struct {
-	sessions []Session
-	locker   Locker
-}
-
-func (x *Sessions) Add(ctx context.Context, session Session) {
-	x.locker.Lock(ctx)
-	defer x.locker.Unlock()
-	x.sessions = append(x.sessions, session)
-}
-
-func (x *Sessions) Read(ctx context.Context, r *http.Request) (Session, bool) {
-	x.locker.Lock(ctx)
-	defer x.locker.Unlock()
-	cookie, err := r.Cookie(SessionCookie)
-	if err != nil {
-		logger.WithError(err).Debug("cookie error")
-		return Session{}, false
-	}
-	return sessions.Get(cookie.Value)
-}
-
-func (x *Sessions) Get(key string) (Session, bool) {
-	for _, session := range x.sessions {
-		if session.Key == key {
-			return session, true
-		}
-	}
-	return Session{}, false
+	sessions map[string]Session
+	locker   *locker.Locker
 }
 
 type Session struct {
 	Key       string
 	VVVGOUser string
+}
+
+func (x *Sessions) Add(ctx context.Context, session *Session) error {
+	if err := x.locker.Lock(ctx); err != nil {
+		return fmt.Errorf("x.locker.Lock() failed: %v", err)
+	}
+	defer x.locker.Unlock(ctx)
+	x.sessions[session.Key] = *session
+	return nil
+}
+
+var ErrSessionNotFound = errors.New("session not found")
+
+func (x *Sessions) Get(ctx context.Context, key string, dest *Session) error {
+	if err := x.locker.Lock(ctx); err != nil {
+		return fmt.Errorf("x.locker.Lock() failed: %v", err)
+	}
+	defer x.locker.Unlock(ctx)
+	_, ok := x.sessions[key]
+	if !ok {
+		return ErrSessionNotFound
+	}
+	*dest = x.sessions[key]
+	return nil
+
+}
+
+func (x *Sessions) ReadFromRequest(ctx context.Context, r *http.Request, dest *Session) error {
+	cookie, err := r.Cookie(SessionKey)
+	if err != nil {
+		return err
+	}
+	return sessions.Get(ctx, cookie.Value, dest)
 }
