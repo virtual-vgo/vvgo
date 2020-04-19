@@ -46,6 +46,7 @@ func NewStorage(client *storage.Client, config ServerConfig) *Storage {
 	clixBucket := client.NewBucket(config.ClixBucketName)
 	partsBucket := client.NewBucket(config.PartsBucketName)
 	partsLocker := client.NewLocker(config.PartsLockerKey)
+	tracksBucket := client.NewBucket(config.TracksBucketName)
 	if sheetsBucket == nil || clixBucket == nil || partsBucket == nil || partsLocker == nil {
 		return nil
 	}
@@ -57,6 +58,7 @@ func NewStorage(client *storage.Client, config ServerConfig) *Storage {
 		},
 		Sheets:       sheetsBucket,
 		Clix:         clixBucket,
+		Tracks:       tracksBucket,
 		ServerConfig: config,
 	}
 }
