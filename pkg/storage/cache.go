@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 )
 
@@ -28,9 +29,9 @@ func NewCache(opts CacheOpts) *Cache {
 
 var ErrObjectNotFound = errors.New("object not found")
 
-func (x *Cache) StatObject(ctx context.Context, name string, dest *Object) error {
+func (x *Cache) GetObject(ctx context.Context, name string, dest *Object) error {
 	if err := x.locker.Lock(ctx); err != nil {
-		return err
+		return fmt.Errorf("locker.Lock() failed: %v", err)
 	}
 	defer x.locker.Unlock(ctx)
 
@@ -43,35 +44,6 @@ func (x *Cache) StatObject(ctx context.Context, name string, dest *Object) error
 		}
 
 		// stat the object
-		if err := x.bucket.StatObject(ctx, name, dest); err != nil {
-			return nil
-		}
-		x.cache[name] = *dest
-		return nil
-	default:
-		return err
-	}
-}
-
-func (x *Cache) GetObject(ctx context.Context, name string, dest *Object) error {
-	if err := x.locker.Lock(ctx); err != nil {
-		return err
-	}
-	defer x.locker.Unlock(ctx)
-
-	switch err := x.readObject(name, dest); err {
-	case nil:
-		// check that the full object is in cache
-		if dest.Buffer.Len() != 0 {
-			return nil
-		}
-		fallthrough
-	case ErrObjectNotFound:
-		if x.bucket == nil {
-			return ErrObjectNotFound
-		}
-
-		// get the object
 		if err := x.bucket.GetObject(ctx, name, dest); err != nil {
 			return nil
 		}
@@ -80,7 +52,6 @@ func (x *Cache) GetObject(ctx context.Context, name string, dest *Object) error 
 	default:
 		return err
 	}
-
 }
 
 func (x *Cache) readObject(name string, dest *Object) error {

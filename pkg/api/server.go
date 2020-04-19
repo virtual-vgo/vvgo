@@ -77,14 +77,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 			w.Write([]byte("authenticated"))
 		})),
 	)
-
-	mux.Handle("/oauth", &OAuthHandler{
-		ClientID:     "",
-		ClientSecret: "",
-		AuthURL:      "https://discordapp.com/api/oauth2/authorize",
-		TokenURL:     "https://discordapp.com/api/oauth2/token",
-	})
-
+	
 	// debug endpoints from net/http/pprof
 	pprofMux := http.NewServeMux()
 	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
