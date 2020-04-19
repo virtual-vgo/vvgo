@@ -35,6 +35,7 @@ type Storage struct {
 	parts.Parts
 	Sheets FileBucket
 	Clix   FileBucket
+	Tracks FileBucket
 	ServerConfig
 }
 
@@ -87,6 +88,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	downloadHandler := DownloadHandler{
 		config.SheetsBucketName: database.Sheets.DownloadURL,
 		config.ClixBucketName:   database.Clix.DownloadURL,
+		config.TracksBucketName: database.Tracks.DownloadURL,
 	}
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 
