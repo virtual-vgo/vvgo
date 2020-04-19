@@ -2,6 +2,7 @@ package sessions
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"net/http"
 )
 
@@ -12,10 +13,11 @@ type Locker interface {
 
 const SessionCookie = "vvgo_session"
 
+var logger = log.Logger()
 var sessions = new(Sessions)
 
-func Add(session Session)                  { sessions.Add(session) }
-func Read(r *http.Request) (Session, bool) { return sessions.Read(r) }
+func Add(ctx context.Context, session Session)                  { sessions.Add(ctx, session) }
+func Read(ctx context.Context, r *http.Request) (Session, bool) { return sessions.Read(ctx, r) }
 
 type Sessions struct {
 	sessions []Session
@@ -23,12 +25,14 @@ type Sessions struct {
 }
 
 func (x *Sessions) Add(ctx context.Context, session Session) {
-	x.locker.Lock()
+	x.locker.Lock(ctx)
 	defer x.locker.Unlock()
 	x.sessions = append(x.sessions, session)
 }
 
-func (x *Sessions) Read(r *http.Request) (Session, bool) {
+func (x *Sessions) Read(ctx context.Context, r *http.Request) (Session, bool) {
+	x.locker.Lock(ctx)
+	defer x.locker.Unlock()
 	cookie, err := r.Cookie(SessionCookie)
 	if err != nil {
 		logger.WithError(err).Debug("cookie error")

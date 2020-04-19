@@ -3,6 +3,8 @@ package api
 import (
 	"bytes"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/sessions"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -14,18 +16,21 @@ type LoginHandler struct {
 }
 
 func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	session, ok := sessions.Read(r)
+	ctx, span := tracing.StartSpan(r.Context(), "login_handler")
+	defer span.Send()
+
+	session, ok := sessions.Read(ctx, r)
 	if !ok {
 		user := r.FormValue("user")
 		pass := r.FormValue("pass")
 		if user == "jackson" && pass == "jackson" {
 			cookie := http.Cookie{
-				Name:    SessionCookie,
+				Name:    sessions.SessionCookie,
 				Value:   user,
 				Expires: time.Now().Add(3600 * time.Second),
 			}
 			http.SetCookie(w, &cookie)
-			sessions.Add(Session{
+			sessions.Add(ctx, sessions.Session{
 				Key:       user,
 				VVVGOUser: user,
 			})
