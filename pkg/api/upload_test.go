@@ -59,7 +59,7 @@ func TestUpload_Validate(t *testing.T) {
 			name: "invalid part names",
 			upload: Upload{
 				UploadType:  UploadTypeSheets,
-				PartNames:   []string{"not-an-instrument"},
+				PartNames:   []string{""},
 				PartNumbers: []uint8{1},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "sheet-music.pdf"),

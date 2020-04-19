@@ -105,6 +105,10 @@ func (x *Bucket) StatObject(objectName string) (Object, error) {
 	}
 }
 
+func (x *Bucket) StatFile(file *File) (Object, error) {
+	return x.StatObject(file.ObjectKey())
+}
+
 func (x *Bucket) GetObject(name string, dest *Object) bool {
 	minioObject, err := x.Client.GetObject(x.Name, name, minio.GetObjectOptions{})
 	if err != nil {
