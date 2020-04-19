@@ -9,7 +9,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
@@ -21,7 +20,6 @@ var logger = log.Logger()
 
 type Config struct {
 	InitializeStorage bool             `split_words:"true" default:"false"`
-	StorageConfig     storage.Config   `envconfig:"storage"`
 	ApiConfig         api.ServerConfig `envconfig:"api"`
 	TracingConfig     tracing.Config   `envconfig:"tracing"`
 }
@@ -64,39 +62,24 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	storage, err := storage.NewWarehouse(config.StorageConfig)
-	if err != nil {
-		logger.WithError(err).Fatal("storage.NewWarehouse() failed")
-	}
-
-	database := api.NewStorage(ctx, storage, config.ApiConfig)
-	if err != nil {
-		logger.WithError(err).Fatal("api.NewStorage() failed")
-	}
+	database := api.NewStorage(ctx, config.ApiConfig)
 	if database == nil {
 		os.Exit(1)
 	}
 
 	if config.InitializeStorage {
-		initializeStorage(ctx, database)
+		initializeStorage(ctx, database.Init)
 	}
 
 	apiServer := api.NewServer(config.ApiConfig, database)
-	if err != nil {
-		logger.WithError(err).Fatal("api.NewServer() failed")
-	}
-
-	logger.Fatal(apiServer.ListenAndServe())
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}
 }
 
-func initializeStorage(ctx context.Context, db *api.Storage) {
+func initializeStorage(ctx context.Context, initFuncs ...func(ctx context.Context) error) {
 	var wg sync.WaitGroup
-	for _, initFunc := range []func(ctx context.Context) error{
-		db.Parts.Init,
-	} {
+	for _, initFunc := range initFuncs {
 		wg.Add(1)
 		go func(initFunc func(ctx context.Context) error) {
 			defer wg.Done()

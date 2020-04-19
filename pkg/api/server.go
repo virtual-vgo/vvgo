@@ -37,9 +37,9 @@ type Storage struct {
 	ServerConfig
 }
 
-func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config ServerConfig) *Storage {
+func NewStorage(ctx context.Context, config ServerConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
-		bucket, err := warehouse.NewBucket(ctx, config.SheetsBucketName)
+		bucket, err := storage.NewBucket(ctx, config.SheetsBucketName)
 		if err != nil {
 			logger.WithError(err).WithField("bucket_name", config.SheetsBucketName).Fatal("warehouse.NewBucket() failed")
 		}

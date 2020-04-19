@@ -44,6 +44,10 @@ type Config struct {
 	Minio MinioConfig `envconfig:"minio"`
 }
 
+func (x *Config) ParseEnv() error {
+	return envconfig.Process("storage", x)
+}
+
 type MinioConfig struct {
 	Endpoint  string `default:"localhost:9000"`
 	Region    string `default:"sfo2"`

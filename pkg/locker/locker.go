@@ -7,6 +7,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
+	"os"
 	"sync"
 	"time"
 )
@@ -39,11 +40,8 @@ type Config struct {
 }
 
 func (x *Config) ParseEnv() error {
+	os.Environ()
 	return envconfig.Process("locker", x)
-}
-
-type RedisConfig struct {
-	Address string `default:"localhost:6379"`
 }
 
 func NewSmithy(config Config) LockSmith {
