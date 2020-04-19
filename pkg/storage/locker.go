@@ -3,8 +3,7 @@ package storage
 import (
 	"context"
 	"github.com/bsm/redislock"
-	"github.com/honeycombio/beeline-go"
-	"github.com/honeycombio/beeline-go/trace"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"sync"
 )
 
@@ -27,9 +26,9 @@ func (x *Client) NewLocker(key string) *Locker {
 	return x.lockers[key]
 }
 
-func (x *Locker) newSpan(ctx context.Context, name string) (context.Context, *trace.Span) {
-	ctx, span := beeline.StartSpan(ctx, name)
-	beeline.AddField(ctx, "locker_key", x.key)
+func (x *Locker) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
+	ctx, span := tracing.StartSpan(ctx, name)
+	tracing.AddField(ctx, "locker_key", x.key)
 	return ctx, span
 }
 

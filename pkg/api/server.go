@@ -2,10 +2,10 @@ package api
 
 import (
 	"context"
-	"github.com/honeycombio/beeline-go/wrappers/hnynethttp"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"net/http/pprof"
 )
@@ -111,7 +111,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 
 	return &http.Server{
 		Addr:     config.ListenAddress,
-		Handler:  hnynethttp.WrapHandler(mux),
+		Handler:  tracing.WrapHandler(mux),
 		ErrorLog: log.StdLogger(),
 	}
 }

@@ -6,11 +6,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/honeycombio/beeline-go"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
 	"sync"
@@ -20,12 +20,10 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	InitializeStorage    bool             `split_words:"true" default:"false"`
-	HoneycombWriteKey    string           `split_words:"true" default:""`
-	HoneycombDataset     string           `split_words:"true" default:"development"`
-	HoneycombServiceName string           `split_words:"true" default:"vvgo"`
-	StorageConfig        storage.Config   `envconfig:"storage"`
-	ApiConfig            api.ServerConfig `envconfig:"api"`
+	InitializeStorage bool             `split_words:"true" default:"false"`
+	StorageConfig     storage.Config   `envconfig:"storage"`
+	ApiConfig         api.ServerConfig `envconfig:"api"`
+	TracingConfig     tracing.Config   `envconfig:"tracing"`
 }
 
 func (x *Config) ParseEnv() {
@@ -63,8 +61,8 @@ func main() {
 	config.ParseEnv()
 	config.ParseFlags()
 
-	initializeHoneycomb(config)
-	defer beeline.Close()
+	tracing.Initialize(config.TracingConfig)
+	defer tracing.Close()
 
 	storage := storage.NewClient(config.StorageConfig)
 	if storage == nil {
@@ -113,12 +111,4 @@ func initializeStorage(ctx context.Context, db *api.Storage) {
 	}
 	wg.Wait()
 	logger.Info("storage initialized")
-}
-
-func initializeHoneycomb(config Config) {
-	beeline.Init(beeline.Config{
-		ServiceName: config.HoneycombServiceName,
-		WriteKey:    config.HoneycombWriteKey,
-		Dataset:     config.HoneycombDataset,
-	})
 }

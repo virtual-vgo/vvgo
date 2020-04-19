@@ -2,8 +2,8 @@ package api
 
 import (
 	"bytes"
-	"github.com/honeycombio/beeline-go"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -16,7 +16,7 @@ type PartsHandler struct {
 }
 
 func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := beeline.StartSpan(r.Context(), "parts_handler")
+	ctx, span := tracing.StartSpan(r.Context(), "parts_handler")
 	defer span.Send()
 
 	if r.Method != http.MethodGet {
@@ -88,7 +88,7 @@ type IndexHandler struct {
 }
 
 func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, span := beeline.StartSpan(r.Context(), "parts_handler")
+	_, span := tracing.StartSpan(r.Context(), "parts_handler")
 	defer span.Send()
 
 	if r.Method != http.MethodGet {

@@ -5,9 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/honeycombio/beeline-go"
-	"github.com/honeycombio/beeline-go/wrappers/hnynethttp"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,7 +23,7 @@ func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if ok := func() bool {
-			_, span := beeline.StartSpan(ctx, "basic_auth")
+			_, span := tracing.StartSpan(ctx, "basic_auth")
 			defer span.Send()
 			user, pass, ok := r.BasicAuth()
 			if !ok || user == "" || pass == "" {
@@ -39,7 +38,7 @@ func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 				return false
 			}
 		}(); ok {
-			hnynethttp.WrapHandler(handler).ServeHTTP(w, r)
+			tracing.WrapHandler(handler).ServeHTTP(w, r)
 		} else {
 			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
 			unauthorized(w)
@@ -53,7 +52,7 @@ func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if ok := func() bool {
-			_, span := beeline.StartSpan(ctx, "token_auth")
+			_, span := tracing.StartSpan(ctx, "token_auth")
 			defer span.Send()
 			auth := strings.TrimSpace(r.Header.Get("Authorization"))
 			for _, token := range tokens {
@@ -63,7 +62,7 @@ func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 			}
 			return false
 		}(); ok {
-			hnynethttp.WrapHandler(handler).ServeHTTP(w, r)
+			tracing.WrapHandler(handler).ServeHTTP(w, r)
 		} else {
 			logger.Error("token authentication failed")
 			unauthorized(w)

@@ -5,10 +5,9 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"github.com/honeycombio/beeline-go"
-	"github.com/honeycombio/beeline-go/trace"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"mime"
 	"net/http"
 	"net/url"
@@ -80,10 +79,10 @@ func (x *Client) NewBucket(name string) *Bucket {
 	}
 }
 
-func (x *Bucket) newSpan(ctx context.Context, name string) (context.Context, *trace.Span) {
-	ctx, span := beeline.StartSpan(ctx, name)
-	beeline.AddField(ctx, "bucket_name", x.Name)
-	beeline.AddField(ctx, "bucket_region", x.Region)
+func (x *Bucket) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
+	ctx, span := tracing.StartSpan(ctx, name)
+	tracing.AddField(ctx, "bucket_name", x.Name)
+	tracing.AddField(ctx, "bucket_region", x.Region)
 	return ctx, span
 }
 
