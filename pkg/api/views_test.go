@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,8 +22,7 @@ import (
 func TestPartsHandler_ServeHTTP(t *testing.T) {
 	clixBucket := "clix"
 	sheetsBucket := "sheets"
-
-	mockBucket := MockBucket{getObject: func(name string, dest *storage.Object) bool {
+	mockBucket := MockBucket{getObject: func(ctx context.Context, name string, dest *storage.Object) bool {
 		if name == parts.DataFile {
 			parts := []parts.Part{
 				{
@@ -129,7 +129,6 @@ func TestIndexHandler_ServeHTTP(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	server.ServeHTTP(recorder, request)
 	gotResp := recorder.Result()
-	t.Logf("Got Body:\n%s\n", strings.TrimSpace(recorder.Body.String()))
 	if expected, got := wantCode, gotResp.StatusCode; expected != got {
 		t.Errorf("expected code %v, got %v", expected, got)
 	}
@@ -147,5 +146,7 @@ func TestIndexHandler_ServeHTTP(t *testing.T) {
 		panic(err)
 	}
 	wantBody := wantBuf.String()
-	assert.Equal(t, wantBody, gotBody, "body")
+	if !assert.Equal(t, wantBody, gotBody, "body") {
+		t.Logf("Got Body:\n%s\n", strings.TrimSpace(recorder.Body.String()))
+	}
 }

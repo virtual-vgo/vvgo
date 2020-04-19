@@ -9,6 +9,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -113,6 +114,9 @@ type UploadStatus struct {
 }
 
 func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "upload_handler")
+	defer span.Send()
+
 	if r.Method != http.MethodPost {
 		methodNotAllowed(w)
 		return
@@ -124,7 +128,7 @@ func (x UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), UploadsTimeout)
+	ctx, cancel := context.WithTimeout(ctx, UploadsTimeout)
 	defer cancel()
 	statuses := x.ServeUploads(ctx, uploads)
 
@@ -208,7 +212,7 @@ func (x UploadHandler) handleClix(ctx context.Context, upload *Upload) UploadSta
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if ok := x.Clix.PutFile(file); !ok {
+	if ok := x.Clix.PutFile(ctx, file); !ok {
 		return uploadInternalServerError(upload)
 	} else {
 		return x.handleParts(ctx, upload, file.ObjectKey())
@@ -221,7 +225,7 @@ func (x UploadHandler) handleSheets(ctx context.Context, upload *Upload) UploadS
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if ok := x.Sheets.PutFile(file); !ok {
+	if ok := x.Sheets.PutFile(ctx, file); !ok {
 		return uploadInternalServerError(upload)
 	} else {
 		return x.handleParts(ctx, upload, file.ObjectKey())

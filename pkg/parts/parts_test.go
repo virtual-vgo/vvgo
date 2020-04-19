@@ -14,29 +14,29 @@ import (
 )
 
 type MockBucket struct {
-	putObject func(name string, object *storage.Object) bool
-	getObject func(name string, dest *storage.Object) bool
+	putObject func(ctx context.Context, name string, object *storage.Object) bool
+	getObject func(ctx context.Context, name string, dest *storage.Object) bool
 }
 
-func (x *MockBucket) PutObject(name string, object *storage.Object) bool {
-	return x.putObject(name, object)
+func (x *MockBucket) PutObject(ctx context.Context, name string, object *storage.Object) bool {
+	return x.putObject(ctx, name, object)
 }
 
-func (x *MockBucket) GetObject(name string, dest *storage.Object) bool {
-	return x.getObject(name, dest)
+func (x *MockBucket) GetObject(ctx context.Context, name string, dest *storage.Object) bool {
+	return x.getObject(ctx, name, dest)
 }
 
 type MockLocker struct {
 	lock   func(ctx context.Context) bool
-	unlock func()
+	unlock func(ctx context.Context)
 }
 
 func (x *MockLocker) Lock(ctx context.Context) bool {
 	return x.lock(ctx)
 }
 
-func (x *MockLocker) Unlock() {
-	x.unlock()
+func (x *MockLocker) Unlock(ctx context.Context) {
+	x.unlock(ctx)
 }
 
 func TestParts_Init(t *testing.T) {
@@ -50,14 +50,14 @@ func TestParts_Init(t *testing.T) {
 	var gotObject *storage.Object
 
 	parts := Parts{Bucket: &MockBucket{
-		putObject: func(name string, object *storage.Object) bool {
+		putObject: func(ctx context.Context, name string, object *storage.Object) bool {
 			gotName = name
 			gotObject = object
 			return true
 		}},
 	}
 
-	parts.Init()
+	parts.Init(context.Background())
 	assert.Equal(t, wantName, gotName, "name")
 	assert.Equal(t, gotObject, wantObject, "object")
 }
@@ -77,7 +77,7 @@ func TestParts_List(t *testing.T) {
 
 	var gotName string
 	parts := Parts{Bucket: &MockBucket{
-		getObject: func(name string, object *storage.Object) bool {
+		getObject: func(ctx context.Context, name string, object *storage.Object) bool {
 			gotName = name
 			*object = storage.Object{
 				ContentType: "application/json",
@@ -86,7 +86,7 @@ func TestParts_List(t *testing.T) {
 			return true
 		}},
 	}
-	gotList := parts.List()
+	gotList := parts.List(context.Background())
 
 	assert.Equal(t, wantName, gotName, "name")
 	assert.Equal(t, wantList, gotList, "object")
@@ -120,13 +120,13 @@ func TestParts_Save(t *testing.T) {
 	var gotObjects []storage.Object
 	parts := Parts{
 		Bucket: &MockBucket{
-			getObject: func(name string, object *storage.Object) bool {
+			getObject: func(ctx context.Context, name string, object *storage.Object) bool {
 				*object = storage.Object{
 					ContentType: "application/json",
 					Buffer:      *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5}]`))}
 				return true
 			},
-			putObject: func(name string, object *storage.Object) bool {
+			putObject: func(ctx context.Context, name string, object *storage.Object) bool {
 				gotNames = append(gotNames, name)
 				gotObjects = append(gotObjects, *object)
 				return true
@@ -134,7 +134,7 @@ func TestParts_Save(t *testing.T) {
 		},
 		Locker: &MockLocker{
 			lock:   func(ctx context.Context) bool { return true },
-			unlock: func() {},
+			unlock: func(ctx context.Context) {},
 		},
 	}
 	gotOk := parts.Save(nil, cmdArgs.parts)
@@ -224,7 +224,7 @@ func TestPart_Validate(t *testing.T) {
 			name: "invalid part name",
 			fields: fields{
 				Project:    "01-snake-eater",
-				PartName:   "not-an-instrument",
+				PartName:   "",
 				PartNumber: 6,
 			},
 			want: ErrInvalidPartName,

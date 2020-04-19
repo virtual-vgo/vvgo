@@ -59,7 +59,7 @@ func TestUpload_Validate(t *testing.T) {
 			name: "invalid part names",
 			upload: Upload{
 				UploadType:  UploadTypeSheets,
-				PartNames:   []string{"not-an-instrument"},
+				PartNames:   []string{""},
 				PartNumbers: []uint8{1},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
@@ -185,18 +185,18 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		locker MockLocker
 	}{
 		bucket: MockBucket{
-			getObject: func(_ string, object *storage.Object) bool {
+			getObject: func(ctx context.Context, name string, object *storage.Object) bool {
 				*object = storage.Object{ContentType: "", Buffer: *bytes.NewBuffer([]byte(`[]`))}
 				return true
 			},
-			putObject: func(string, *storage.Object) bool { return true },
-			putFile: func(file *storage.File) bool {
+			putObject: func(context.Context, string, *storage.Object) bool { return true },
+			putFile: func(ctx context.Context, file *storage.File) bool {
 				return true
 			},
 		},
 		locker: MockLocker{
 			lock:   func(ctx context.Context) bool { return true },
-			unlock: func() {},
+			unlock: func(ctx context.Context) {},
 		},
 	}
 

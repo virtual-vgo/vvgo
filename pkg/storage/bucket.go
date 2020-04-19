@@ -2,10 +2,12 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"mime"
 	"net/http"
 	"net/url"
@@ -77,25 +79,39 @@ func (x *Client) NewBucket(name string) *Bucket {
 	}
 }
 
-func (x *Bucket) Make() bool {
+func (x *Bucket) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
+	ctx, span := tracing.StartSpan(ctx, name)
+	tracing.AddField(ctx, "bucket_name", x.Name)
+	tracing.AddField(ctx, "bucket_region", x.Region)
+	return ctx, span
+}
+
+func (x *Bucket) Make(ctx context.Context) bool {
+	ctx, span := x.newSpan(ctx, "Bucket.Make")
+	defer span.Send()
 	exists, err := x.BucketExists(x.Name)
 	if err != nil {
 		logger.WithError(err).Error("minioClient.BucketExists() failed")
+		span.AddField("error", err)
 		return false
 	}
 	if exists == false {
 		if err := x.MakeBucket(x.Name, x.Region); err != nil {
 			logger.WithError(err).Error("minioClient.MakeBucket() failed")
+			span.AddField("error", err)
 			return false
 		}
 	}
 	return true
 }
 
-func (x *Bucket) StatObject(objectName string) (Object, error) {
+func (x *Bucket) StatObject(ctx context.Context, objectName string) (Object, error) {
+	ctx, span := x.newSpan(ctx, "Bucket.StatsObject")
+	defer span.Send()
 	opts := minio.StatObjectOptions{}
 	objectInfo, err := x.Client.StatObject(x.Name, objectName, opts)
 	if err != nil {
+		span.AddField("error", err)
 		return Object{}, err
 	} else {
 		return Object{
@@ -104,21 +120,29 @@ func (x *Bucket) StatObject(objectName string) (Object, error) {
 		}, nil
 	}
 }
+func (x *Bucket) StatFile(ctx context.Context, file *File) (Object, error) {
+	return x.StatObject(ctx, file.ObjectKey())
+}
 
-func (x *Bucket) GetObject(name string, dest *Object) bool {
+func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) bool {
+	ctx, span := x.newSpan(ctx, "Bucket.GetObject")
+	defer span.Send()
 	minioObject, err := x.Client.GetObject(x.Name, name, minio.GetObjectOptions{})
 	if err != nil {
 		logger.WithError(err).Error("minioClient.GetObject() failed")
+		span.AddField("error", err)
 		return false
 	}
 	info, err := minioObject.Stat()
 	if err != nil {
 		logger.WithError(err).Error("minioObject.Stat() failed")
+		span.AddField("error", err)
 		return false
 	}
 	var buffer bytes.Buffer
 	if _, err := buffer.ReadFrom(minioObject); err != nil {
 		logger.WithError(err).Error("minioObject.Read() failed")
+		span.AddField("error", err)
 		return false
 	}
 	*dest = Object{
@@ -129,8 +153,11 @@ func (x *Bucket) GetObject(name string, dest *Object) bool {
 	return true
 }
 
-func (x *Bucket) PutObject(name string, object *Object) bool {
-	if ok := x.Make(); !ok {
+func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) bool {
+	ctx, span := x.newSpan(ctx, "Bucket.PutObject")
+	defer span.Send()
+
+	if ok := x.Make(ctx); !ok {
 		return false
 	}
 	opts := minio.PutObjectOptions{
@@ -140,6 +167,7 @@ func (x *Bucket) PutObject(name string, object *Object) bool {
 	n, err := x.Client.PutObject(x.Name, name, &object.Buffer, -1, opts)
 	if err != nil {
 		logger.WithError(err).Error("minioClient.PutObject() failed")
+		span.AddField("error", err)
 		return false
 	}
 	logger.WithFields(logrus.Fields{
@@ -151,22 +179,26 @@ func (x *Bucket) PutObject(name string, object *Object) bool {
 }
 
 // Stores the object and a copy with a timestamp appended to the file name.
-func WithBackup(putObjectFunc func(name string, object *Object) bool) func(name string, object *Object) bool {
-	return func(name string, object *Object) bool {
+func WithBackup(putObjectFunc func(ctx context.Context, name string, object *Object) bool) func(ctx context.Context, name string, object *Object) bool {
+	return func(ctx context.Context, name string, object *Object) bool {
 		backupName := fmt.Sprintf("%s-%s", name, time.Now().UTC().Format(time.RFC3339))
 		backupBuffer := object.Buffer
-		if ok := putObjectFunc(backupName, NewObject(object.ContentType, &backupBuffer)); !ok {
+		if ok := putObjectFunc(ctx, backupName, NewObject(object.ContentType, &backupBuffer)); !ok {
 			return false
 		}
-		return putObjectFunc(name, object)
+		return putObjectFunc(ctx, name, object)
 	}
 }
 
-func (x *Bucket) PutFile(file *File) bool {
-	return x.PutObject(file.ObjectKey(), NewObject(file.MediaType, bytes.NewBuffer(file.Bytes)))
+func (x *Bucket) PutFile(ctx context.Context, file *File) bool {
+	ctx, span := x.newSpan(ctx, "Bucket.PutFile")
+	defer span.Send()
+	return x.PutObject(ctx, file.ObjectKey(), NewObject(file.MediaType, bytes.NewBuffer(file.Bytes)))
 }
 
-func (x *Bucket) ListObjects() map[string]Object {
+func (x *Bucket) ListObjects(ctx context.Context) map[string]Object {
+	ctx, span := x.newSpan(ctx, "Bucket.ListObjects")
+	defer span.Send()
 	done := make(chan struct{})
 	defer close(done)
 
@@ -176,7 +208,7 @@ func (x *Bucket) ListObjects() map[string]Object {
 			continue
 		}
 
-		object, err := x.StatObject(objectInfo.Key)
+		object, err := x.StatObject(ctx, objectInfo.Key)
 		if err != nil {
 			logger.WithError(err).Error("minio.StatObject() failed")
 			continue
@@ -186,7 +218,9 @@ func (x *Bucket) ListObjects() map[string]Object {
 	return objects
 }
 
-func (x *Bucket) DownloadURL(name string) (string, error) {
+func (x *Bucket) DownloadURL(ctx context.Context, name string) (string, error) {
+	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
+	defer span.Send()
 	policy, err := x.Client.GetBucketPolicy(x.Name)
 	if err != nil {
 		return "", err

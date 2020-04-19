@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -15,6 +16,9 @@ type PartsHandler struct {
 }
 
 func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "parts_handler")
+	defer span.Send()
+
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -29,7 +33,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ReferenceTrack string `json:"reference_track"`
 	}
 
-	parts := x.Parts.List()
+	parts := x.Parts.List(ctx)
 	want := len(parts)
 	for i := 0; i < want; i++ {
 		if parts[i].Validate() == nil &&
@@ -84,6 +88,9 @@ type IndexHandler struct {
 }
 
 func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	_, span := tracing.StartSpan(r.Context(), "parts_handler")
+	defer span.Send()
+
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return

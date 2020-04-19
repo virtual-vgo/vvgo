@@ -62,7 +62,7 @@ var project = Projects{projects: []Project{
 		Reviewers:      []string{"Brandon Harnish"},
 		Lyricists:      []string{},
 		AddlContent:    []string{"Chris Suzuki", "Brandon Harnish", "Jerome Landingin", "Joselyn DeSoto"},
-		ReferenceTrack: "02_MH_Proof-of-a-Hero_Reference-Track-NO-CLIX.mp3",
+		ReferenceTrack: "02_MH_Proof-of-a-Hero_Reference-Track_W-CLIX.mp3",
 	},
 }}
 
