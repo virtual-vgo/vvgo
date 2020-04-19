@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"strconv"
 	"strings"
@@ -26,7 +27,10 @@ type BasicAuth map[string]string
 
 func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		if ok := func() bool {
+			_, span := tracing.StartSpan(ctx, "basic_auth")
+			defer span.Send()
 			user, pass, ok := r.BasicAuth()
 			if !ok || user == "" || pass == "" {
 				return false
@@ -39,11 +43,11 @@ func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 				}).Error("user authentication failed")
 				return false
 			}
-		}(); !ok {
+		}(); ok {
+			tracing.WrapHandler(handler).ServeHTTP(w, r)
+		} else {
 			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
 			unauthorized(w)
-		} else {
-			handler.ServeHTTP(w, r)
 		}
 	})
 }
@@ -52,7 +56,10 @@ type TokenAuth []string
 
 func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		if ok := func() bool {
+			_, span := tracing.StartSpan(ctx, "token_auth")
+			defer span.Send()
 			auth := strings.TrimSpace(r.Header.Get("Authorization"))
 			for _, token := range tokens {
 				if auth == "Bearer "+token {
@@ -61,7 +68,7 @@ func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 			}
 			return false
 		}(); ok {
-			handler.ServeHTTP(w, r)
+			tracing.WrapHandler(handler).ServeHTTP(w, r)
 		} else {
 			logger.Error("token authentication failed")
 			unauthorized(w)

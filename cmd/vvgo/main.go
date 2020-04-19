@@ -3,12 +3,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
 	"sync"
@@ -21,6 +23,7 @@ type Config struct {
 	InitializeStorage bool             `split_words:"true" default:"false"`
 	StorageConfig     storage.Config   `envconfig:"storage"`
 	ApiConfig         api.ServerConfig `envconfig:"api"`
+	TracingConfig     tracing.Config   `envconfig:"tracing"`
 }
 
 func (x *Config) ParseEnv() {
@@ -53,9 +56,13 @@ func (x Config) ParseFlags() {
 }
 
 func main() {
+	ctx := context.Background()
 	var config Config
 	config.ParseEnv()
 	config.ParseFlags()
+
+	tracing.Initialize(config.TracingConfig)
+	defer tracing.Close()
 
 	storage := storage.NewClient(config.StorageConfig)
 	if storage == nil {
@@ -68,7 +75,7 @@ func main() {
 	}
 
 	if config.InitializeStorage {
-		initializeStorage(database)
+		initializeStorage(ctx, database)
 	}
 
 	apiServer := api.NewServer(config.ApiConfig, database)
@@ -78,20 +85,20 @@ func main() {
 	logger.Fatal(apiServer.ListenAndServe())
 }
 
-func initializeStorage(db *api.Storage) {
+func initializeStorage(ctx context.Context, db *api.Storage) {
 	var wg sync.WaitGroup
-	for _, initFunc := range []func() bool{
+	for _, initFunc := range []func(ctx context.Context) bool{
 		db.Parts.Init,
 	} {
 		wg.Add(1)
-		go func(initFunc func() bool) {
+		go func(initFunc func(ctx context.Context) bool) {
 			defer wg.Done()
 			timeout := time.NewTicker(5 * time.Second)
 			retryInterval := time.NewTicker(500 * time.Millisecond)
 			defer retryInterval.Stop()
 			defer timeout.Stop()
 			for range retryInterval.C {
-				if ok := initFunc(); ok {
+				if ok := initFunc(ctx); ok {
 					return
 				}
 				select {

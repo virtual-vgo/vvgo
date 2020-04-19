@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"net/http/pprof"
 )
@@ -27,8 +29,8 @@ type ServerConfig struct {
 }
 
 type FileBucket interface {
-	PutFile(file *storage.File) bool
-	DownloadURL(name string) (string, error)
+	PutFile(ctx context.Context, file *storage.File) bool
+	DownloadURL(ctx context.Context, name string) (string, error)
 }
 
 type Storage struct {
@@ -81,21 +83,24 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
-	mux.Handle("/parts", members.Authenticate(PartsHandler{NavBar: navBar, Storage: database}))
+
+	partsHandler := members.Authenticate(&PartsHandler{NavBar: navBar, Storage: database})
+	mux.Handle("/parts", partsHandler)
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
-	downloadHandler := DownloadHandler{
+	downloadHandler := members.Authenticate(&DownloadHandler{
 		config.SheetsBucketName: database.Sheets.DownloadURL,
 		config.ClixBucketName:   database.Clix.DownloadURL,
 		config.TracksBucketName: database.Tracks.DownloadURL,
-	}
+	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 
 	// Uploads
-	uploadHandler := UploadHandler{database}
-	mux.Handle("/upload", prepRep.Authenticate(uploadHandler))
+	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
+	mux.Handle("/upload", uploadHandler)
 
-	mux.Handle("/login", members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect)))
+	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))
+	mux.Handle("/login", loginHandler)
 
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +113,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 
 	return &http.Server{
 		Addr:     config.ListenAddress,
-		Handler:  mux,
+		Handler:  tracing.WrapHandler(mux),
 		ErrorLog: log.StdLogger(),
 	}
 }
