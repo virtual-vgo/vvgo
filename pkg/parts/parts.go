@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/data"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -176,9 +175,6 @@ func (x Part) Validate() error {
 func ValidNames(names ...string) bool {
 	for _, name := range names {
 		if name == "" {
-			return false
-		}
-		if _, ok := data.ValidPartNames()[name]; !ok {
 			return false
 		}
 	}
