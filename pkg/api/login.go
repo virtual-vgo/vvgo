@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -14,29 +15,61 @@ type LoginHandler struct {
 
 const SessionCookie = "vvgo_session"
 
-var sessions = make(map[string]string)
+var sessions = new(Sessions)
 
-func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+type Sessions struct {
+	sessions []Session
+}
+
+func (x *Sessions) Add(session Session) {
+	x.sessions = append(x.sessions, session)
+}
+
+func (x *Sessions) Read(r *http.Request) (Session, bool) {
 	cookie, err := r.Cookie(SessionCookie)
 	if err != nil {
-		logger.WithError(err).Info("cookie error")
+		logger.WithError(err).Debug("cookie error")
+		return Session{}, false
 	}
-	if err == nil && cookie.Name == SessionCookie && cookie.Value == "jackson" {
-		w.Write([]byte("welcome back jackson\n"))
-		return
-	}
+	return sessions.Get(cookie.Value)
+}
 
-	user := r.FormValue("user")
-	pass := r.FormValue("pass")
-	if user == "jackson" && pass == "jackson" {
-		http.SetCookie(w, &http.Cookie{
-			Name:    "vvgo_session",
-			Value:   "jackson",
-			Expires: time.Now().Add(3600 * time.Second),
-		})
-		w.Write([]byte("welcome jackson, have a cookie!\n"))
+func (x *Sessions) Get(key string) (Session, bool) {
+	for _, session := range x.sessions {
+		if session.Key == key {
+			return session, true
+		}
+	}
+	return Session{}, false
+}
+
+type Session struct {
+	Key       string
+	VVVGOUser string
+}
+
+func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	session, ok := sessions.Read(r)
+	if !ok {
+		user := r.FormValue("user")
+		pass := r.FormValue("pass")
+		if user == "jackson" && pass == "jackson" {
+			cookie := http.Cookie{
+				Name:    SessionCookie,
+				Value:   user,
+				Expires: time.Now().Add(3600 * time.Second),
+			}
+			http.SetCookie(w, &cookie)
+			sessions.Add(Session{
+				Key:       user,
+				VVVGOUser: user,
+			})
+			w.Write([]byte("welcome jackson, have a cookie!\n"))
+		} else {
+			unauthorized(w)
+		}
 	} else {
-		unauthorized(w)
+		fmt.Fprint(w, "welcome back "+session.VVVGOUser)
 	}
 }
 
