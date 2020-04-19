@@ -71,7 +71,7 @@ Aulochrome
 Automobile Brake Drums
 Bagpipe
 Balalaika
-B♭ Alto Ocarina
+Bb Alto Ocarina
 Bamboo Wind Chimes
 Bandoneon
 Banjo
@@ -86,10 +86,10 @@ Baritone Saxophone
 Baritone Ukulele
 Baroque Oboe
 Baroque Trumpet
-Baroque Trumpet in B♭
+Baroque Trumpet in Bb
 Baroque Trumpet in C
 Baroque Trumpet in D
-Baroque Trumpet in E♭
+Baroque Trumpet in Eb
 Baroque Trumpet in F
 Baryton
 Bass
@@ -123,19 +123,19 @@ Bass Synthesizer
 Bass Trombone
 Bass Trumpet
 Bass Trumpet in C
-Bass Tuba in E♭
+Bass Tuba in Eb
 Bass Tuba in F
-B♭ Bass Clarinet (Bass Clef)
-B♭ Bass Ophicleide
-B♭ Bass Trumpet
-B♭ Clarinet
-B♭ Cornet
+Bb Bass Clarinet (Bass Clef)
+Bb Bass Ophicleide
+Bb Bass Trumpet
+Bb Clarinet
+Bb Cornet
 B Duduk
-B♭ Duduk
+Bb Duduk
 Bell Plate
 Bells
 Berda
-B♭ Fife
+Bb Fife
 Bongos
 Bouzouki
 Bowed Synthesizer
@@ -145,14 +145,14 @@ Brač
 Brass
 Brass Synthesizer
 Brightness Synthesizer
-B♭ Soprano Ocarina
-B♭ Sousaphone
-B♭ Tin Whistle
-B♭ Trumpet
-B♭ Tuba
+Bb Soprano Ocarina
+Bb Sousaphone
+Bb Tin Whistle
+Bb Trumpet
+Bb Tuba
 Bugarija
 Bugle
-B♭ Wagner Tuba
+Bb Wagner Tuba
 Cabasa
 C Alto Ocarina
 Carillon
@@ -225,7 +225,7 @@ Didgeridoo
 Dizi
 Double Bass
 Double Contrabass Flute
-D♭ Piccolo
+Db Piccolo
 Drumset
 D Tin Whistle
 D Trumpet
@@ -233,13 +233,13 @@ Duduk
 Dulcian
 Dulcimer
 D Violone
-E♭ Alto Horn
-E♭ Alto Ophicleide
-E♭ Bass Trumpet
+Eb Alto Horn
+Eb Alto Ophicleide
+Eb Bass Trumpet
 Echoes Synthesizer
-E♭ Clarinet
-E♭ Contrabass Ophicleide
-E♭ Cornet
+Eb Clarinet
+Eb Contrabass Ophicleide
+Eb Cornet
 E Dizi
 E Duduk
 Effect Synthesizer
@@ -253,8 +253,8 @@ English Flageolet
 English Horn
 Erhu
 E Trumpet
-E♭ Trumpet
-E♭ Tuba
+Eb Trumpet
+Eb Tuba
 Euphonium
 Euphonium Bugle
 F Alto Horn
@@ -314,15 +314,15 @@ Hi-hat
 Honky Tonk Piano
 Horagai
 Horn in A
-Horn in A♭
-Horn in B♭
-Horn in B♭ alto
-Horn in B♭ basso
+Horn in Ab
+Horn in Bb
+Horn in Bb alto
+Horn in Bb basso
 Horn in C
 Horn in C alto
 Horn in D
 Horn in E
-Horn in E♭
+Horn in Eb
 Horn in F
 Horn in G
 Hyperbass Flute
@@ -393,9 +393,9 @@ Piccolo Oboe
 Piccolo Snare
 Piccolo Trumpet
 Piccolo Trumpet in A
-Piccolo Trumpet in B♭
+Piccolo Trumpet in Bb
 Pipe Organ
-Pocket-Sax B♭
+Pocket-Sax Bb
 Pocket-Sax C
 Pocket-Sax D
 Pocket-Sax G
@@ -548,3 +548,7 @@ Wood Blocks
 Wooden Wind Chimes
 Xylomarimba
 Xylophone
+
+# Manually added for our nefarious purposes
+Piatti
+Suspended Cymbal
