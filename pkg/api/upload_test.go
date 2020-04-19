@@ -313,7 +313,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			ctx := context.Background()
 			bucket, err := storage.NewBucket(ctx, "testing")
 			require.NoError(t, err, "storage.NewBucket")
-			storage := Storage{
+			handlerStorage := Storage{
 				Parts: parts.Parts{
 					Cache:  storage.NewCache(storage.CacheOpts{}),
 					Locker: locker.NewLocker(locker.Opts{}),
@@ -321,14 +321,21 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 				Sheets: bucket,
 				Clix:   bucket,
 				Tracks: bucket,
+				ServerConfig: ServerConfig{
+					SheetsBucketName: "sheets",
+					ClixBucketName:   "clix",
+					PartsBucketName:  "parts",
+					TracksBucketName: "tracks",
+				},
 			}
+			require.NoError(t, handlerStorage.Parts.Init(ctx), "parts.Init()")
 
 			request := httptest.NewRequest(tt.request.method, "/upload", &tt.request.body)
 			request.Header.Set("Content-Type", tt.request.mediaType)
 			request.Header.Set("Content-Encoding", tt.request.encoding)
 			request.Header.Set("Accept", tt.request.accept)
 			recorder := httptest.NewRecorder()
-			UploadHandler{&storage}.ServeHTTP(recorder, request)
+			UploadHandler{&handlerStorage}.ServeHTTP(recorder, request)
 			resp := recorder.Result()
 			var respBody bytes.Buffer
 			respBody.ReadFrom(resp.Body)
