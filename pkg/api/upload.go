@@ -228,7 +228,7 @@ func (x UploadHandler) handleSheets(ctx context.Context, upload *Upload) UploadS
 	}
 
 	if err := x.Sheets.PutFile(ctx, file); err != nil {
-		logger.WithError(err).Error("x.Clix.PutFile() failed")
+		logger.WithError(err).Error("x.Sheets.PutFile() failed")
 		return uploadInternalServerError(upload)
 	} else {
 		return x.handleParts(ctx, upload, file.ObjectKey())
@@ -247,7 +247,7 @@ func (x UploadHandler) handleParts(ctx context.Context, upload *Upload, objectKe
 		}
 	}
 	if err := x.Parts.Save(ctx, uploadParts); err != nil  {
-		logger.WithError(err).Error("x.Clix.PutFile() failed")
+		logger.WithError(err).Error("x.Parts.Save() failed")
 		return uploadInternalServerError(upload)
 	} else {
 		return uploadSuccess(upload)

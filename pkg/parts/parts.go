@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
-	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"strings"
@@ -15,15 +14,13 @@ import (
 
 const DataFile = "parts.json"
 
-var logger = log.Logger()
-
 var (
 	ErrInvalidPartName   = fmt.Errorf("invalid part name")
 	ErrInvalidPartNumber = fmt.Errorf("invalid part number")
 )
 
 type Parts struct {
-	*storage.Bucket
+	*storage.Cache
 	*locker.Locker
 }
 
@@ -74,7 +71,7 @@ func (x Parts) Save(ctx context.Context, parts []Part) error {
 		return fmt.Errorf("json.Encode() failed: %v", err)
 	}
 
-	return storage.WithBackup(x.PutObject)(ctx, DataFile, storage.NewJSONObject(&buffer))
+	return x.PutObject(ctx, DataFile, storage.NewJSONObject(&buffer))
 }
 
 func mergeChanges(src []Part, changes []Part) []Part {

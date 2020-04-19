@@ -26,8 +26,8 @@ func init() {
 	smithy = NewSmithy(config)
 }
 
-func NewLocker(key string) *Locker {
-	return smithy.NewLocker(key)
+func NewLocker(opts Opts) *Locker {
+	return smithy.NewLocker(opts)
 }
 
 type LockSmith struct {
@@ -65,8 +65,12 @@ type Locker struct {
 	redisLockClient *redislock.Client
 }
 
-func (x *LockSmith) NewLocker(redisKey string) *Locker {
-	locker := &Locker{redisKey: redisKey}
+type Opts struct {
+	RedisKey string
+}
+
+func (x *LockSmith) NewLocker(opts Opts) *Locker {
+	locker := &Locker{redisKey: opts.RedisKey}
 	if x.redisClient != nil {
 		locker.redisLockClient = redislock.New(x.redisClient)
 	}

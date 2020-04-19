@@ -15,7 +15,7 @@ var sessions *Sessions
 func init() {
 	sessions = &Sessions{
 		sessions: make(map[string]Session),
-		locker:   locker.NewLocker(SessionKey),
+		locker:   locker.NewLocker(locker.Opts{RedisKey: SessionKey}),
 	}
 }
 

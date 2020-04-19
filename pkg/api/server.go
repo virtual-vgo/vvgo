@@ -49,12 +49,12 @@ func NewStorage(ctx context.Context, config ServerConfig) *Storage {
 	sheetsBucket := newBucket(ctx, config.SheetsBucketName)
 	clixBucket := newBucket(ctx, config.ClixBucketName)
 	tracksBucket := newBucket(ctx, config.TracksBucketName)
-	partsBucket := newBucket(ctx, config.PartsBucketName)
-	partsLocker := locker.NewLocker(config.PartsLockerKey)
+	partsCache := storage.NewCache(storage.CacheOpts{Bucket: newBucket(ctx, config.PartsBucketName)})
+	partsLocker := locker.NewLocker(locker.Opts{RedisKey: config.PartsLockerKey})
 
 	return &Storage{
 		Parts: parts.Parts{
-			Bucket: partsBucket,
+			Cache:  partsCache,
 			Locker: partsLocker,
 		},
 		Sheets:       sheetsBucket,

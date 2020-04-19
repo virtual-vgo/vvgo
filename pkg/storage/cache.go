@@ -13,54 +13,94 @@ type Cache struct {
 	locker *locker.Locker
 }
 
-func NewCache(bucket *Bucket) *Cache {
+type CacheOpts struct {
+	Bucket   *Bucket
+	RedisKey string
+}
+
+func NewCache(opts CacheOpts) *Cache {
 	return &Cache{
-		bucket: bucket,
-		cache:  nil,
-		locker: nil,
+		bucket: opts.Bucket,
+		cache:  make(map[string]Object),
+		locker: locker.NewLocker(locker.Opts{RedisKey: opts.RedisKey}),
 	}
 }
 
 var ErrObjectNotFound = errors.New("object not found")
 
-func (x *Cache) StatObject(ctx context.Context, objectName string, dest *Object) error {
-	x.locker.Lock(ctx)
+func (x *Cache) StatObject(ctx context.Context, name string, dest *Object) error {
+	if err := x.locker.Lock(ctx); err != nil {
+		return err
+	}
 	defer x.locker.Unlock(ctx)
 
-	_, ok := x.cache[objectName]
-	if ok {
-		*dest = x.cache[objectName]
+	switch err := x.readObject(name, dest); err {
+	case nil:
 		return nil
-	}
+	case ErrObjectNotFound:
+		if x.bucket == nil {
+			return ErrObjectNotFound
+		}
 
-	if x.bucket != nil {
-		return x.bucket.StatObject(ctx, objectName, dest)
+		// stat the object
+		if err := x.bucket.StatObject(ctx, name, dest); err != nil {
+			return nil
+		}
+		x.cache[name] = *dest
+		return nil
+	default:
+		return err
 	}
-	return ErrObjectNotFound
 }
 
-func (x *Cache) GetObject(ctx context.Context, objectName string, dest *Object) error {
-	x.locker.Lock(ctx)
+func (x *Cache) GetObject(ctx context.Context, name string, dest *Object) error {
+	if err := x.locker.Lock(ctx); err != nil {
+		return err
+	}
 	defer x.locker.Unlock(ctx)
 
-	_, ok := x.cache[objectName]
-	if ok {
-		*dest = x.cache[objectName]
+	switch err := x.readObject(name, dest); err {
+	case nil:
+		// check that the full object is in cache
+		if dest.Buffer.Len() != 0 {
+			return nil
+		}
+		fallthrough
+	case ErrObjectNotFound:
+		if x.bucket == nil {
+			return ErrObjectNotFound
+		}
+
+		// get the object
+		if err := x.bucket.GetObject(ctx, name, dest); err != nil {
+			return nil
+		}
+		x.cache[name] = *dest
 		return nil
+	default:
+		return err
 	}
 
-	if x.bucket != nil {
-		return x.bucket.GetObject(ctx, objectName, dest)
+}
+
+func (x *Cache) readObject(name string, dest *Object) error {
+	// check if the object is already in cache
+	if _, ok := x.cache[name]; ok {
+		*dest = x.cache[name]
+		return nil
+	} else {
+		return ErrObjectNotFound
 	}
-	return ErrObjectNotFound
 }
 
 func (x *Cache) PutObject(ctx context.Context, name string, object *Object) error {
-	x.locker.Lock(ctx)
+	if err := x.locker.Lock(ctx); err != nil {
+		return err
+	}
 	defer x.locker.Unlock(ctx)
 
 	if x.bucket != nil {
-		if err := x.bucket.PutObject(ctx, name, object); err != nil {
+		if err := WithBackup(x.bucket.PutObject)(ctx, name, object); err != nil {
 			return err
 		}
 	}

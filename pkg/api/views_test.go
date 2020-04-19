@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
@@ -20,49 +21,50 @@ import (
 )
 
 func TestPartsHandler_ServeHTTP(t *testing.T) {
-	clixBucket := "clix"
-	sheetsBucket := "sheets"
-	mockBucket := MockBucket{getObject: func(ctx context.Context, name string, dest *storage.Object) bool {
-		if name == parts.DataFile {
-			parts := []parts.Part{
-				{
-					ID: parts.ID{
-						Project: "01-snake-eater",
-						Name:    "trumpet",
-						Number:  3,
-					},
-					Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-					Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-				},
-				{
-					ID: parts.ID{
-						Project: "02-proof-of-a-hero",
-						Name:    "trumpet",
-						Number:  3,
-					},
-					Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-					Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-				},
-			}
-			var buffer bytes.Buffer
-			json.NewEncoder(&buffer).Encode(parts)
-			*dest = storage.Object{
-				ContentType: "application/json",
-				Buffer:      buffer,
-			}
-		}
-		return true
-	}}
-
-	server := PartsHandler{NavBar{}, &Storage{
-		Parts:  parts.Parts{Bucket: &mockBucket},
-		Sheets: &mockBucket,
-		Clix:   &mockBucket,
-		ServerConfig: ServerConfig{
-			SheetsBucketName: sheetsBucket,
-			ClixBucketName:   clixBucket,
+	ctx := context.Background()
+	bucket, err := storage.NewBucket(ctx, "testing")
+	require.NoError(t, err, "storage.NewBucket")
+	handlerStorage := Storage{
+		Parts: parts.Parts{
+			Cache:  storage.NewCache(storage.CacheOpts{}),
+			Locker: locker.NewLocker(locker.Opts{}),
 		},
-	}}
+		Sheets:       bucket,
+		Clix:         bucket,
+		Tracks:       bucket,
+		ServerConfig: ServerConfig{
+			SheetsBucketName: "sheets",
+			ClixBucketName:   "clix",
+			PartsBucketName:  "parts",
+			TracksBucketName: "tracks",
+		},
+	}
+
+	// load the cache with some dummy data
+	obj := storage.Object{ContentType: "application/json"}
+	require.NoError(t, json.NewEncoder(&obj.Buffer).Encode([]parts.Part{
+		{
+			ID: parts.ID{
+				Project: "01-snake-eater",
+				Name:    "trumpet",
+				Number:  3,
+			},
+			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+		},
+		{
+			ID: parts.ID{
+				Project: "02-proof-of-a-hero",
+				Name:    "trumpet",
+				Number:  3,
+			},
+			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+		},
+	}), "json.Encode()")
+	require.NoError(t, handlerStorage.Cache.PutObject(ctx, parts.DataFile, &obj), "cache.PutObject()")
+
+	server := PartsHandler{NavBar{}, &handlerStorage}
 
 	t.Run("accept:application/json", func(t *testing.T) {
 		var wantBody bytes.Buffer

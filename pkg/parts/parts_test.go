@@ -16,50 +16,69 @@ import (
 )
 
 func TestParts_Init(t *testing.T) {
-	wantName := DataFile
-	wantObject := &storage.Object{
+	ctx := context.Background()
+	parts := Parts{
+		Cache:  storage.NewCache(storage.CacheOpts{}),
+		Locker: locker.NewLocker(locker.Opts{}),
+	}
+
+	wantObject := storage.Object{
 		ContentType: "application/json",
 		Buffer:      *bytes.NewBuffer([]byte(`[]`)),
 	}
 
-	var gotName string
-	var gotObject *storage.Object
+	require.NoError(t, parts.Init(ctx), "init")
 
-	bucket, err := storage.NewBucket(context.Background(), "test")
-	require.NoError(t, err, "storage.NewBucket()")
-	parts := Parts{Bucket: bucket}
-	parts.Init(context.Background())
-	assert.Equal(t, wantName, gotName, "name")
-	assert.Equal(t, gotObject, wantObject, "object")
+	var gotObject storage.Object
+	assert.NoError(t, parts.GetObject(context.Background(), DataFile, &gotObject))
+	assert.Equal(t, objectToString(wantObject), objectToString(gotObject))
 }
 
 func TestParts_List(t *testing.T) {
-	wantName := DataFile
+	ctx := context.Background()
+	parts := Parts{
+		Cache:  storage.NewCache(storage.CacheOpts{}),
+		Locker: locker.NewLocker(locker.Opts{}),
+	}
 	wantList := []Part{{ID: ID{
 		Project: "cheese",
 		Name:    "broccoli",
 		Number:  3,
 	}}}
 
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(&wantList); err != nil {
-		t.Fatalf("json.Encode() failed: %v", err)
-	}
+	// load the cache with a dummy object
+	obj := storage.Object{ContentType: "application/json"}
+	require.NoError(t, json.NewEncoder(&obj.Buffer).Encode([]Part{{ID: ID{
+		Project: "cheese",
+		Name:    "broccoli",
+		Number:  3,
+	}}}), "json.Encode()")
+	require.NoError(t, parts.Cache.PutObject(ctx, DataFile, &obj), "cache.PutObject()")
 
-	var gotName string
-	bucket, err := storage.NewBucket(context.Background(), "test")
-	require.NoError(t, err, "storage.NewBucket()")
-	parts := Parts{Bucket: bucket}
-	gotList,_ := parts.List(context.Background())
-
-	assert.Equal(t, wantName, gotName, "name")
+	gotList, err := parts.List(context.Background())
+	assert.NoError(t, err, "parts.List()")
 	assert.Equal(t, wantList, gotList, "object")
 }
 
 func TestParts_Save(t *testing.T) {
+	ctx := context.Background()
+	parts := Parts{
+		Cache:  storage.NewCache(storage.CacheOpts{}),
+		Locker: locker.NewLocker(locker.Opts{}),
+	}
+	require.NoError(t, parts.Init(ctx))
+
+	// load the cache with a dummy object
+	obj := storage.Object{ContentType: "application/json"}
+	require.NoError(t, json.NewEncoder(&obj.Buffer).Encode([]Part{{ID: ID{
+		Project: "cheese",
+		Name:    "turnip",
+		Number:  5,
+	}}}), "json.Encode()")
+	require.NoError(t, parts.Cache.PutObject(ctx, DataFile, &obj), "cache.PutObject()")
+
 	type args struct {
-		parts     []Part
-		fileBytes []byte
+		parts []Part
 	}
 
 	cmdArgs := args{
@@ -70,39 +89,21 @@ func TestParts_Save(t *testing.T) {
 		}}},
 	}
 
-	wantOk := true
-	wantNames := []string{
-		fmt.Sprintf("%s-%s", DataFile, time.Now().UTC().Format(time.RFC3339)),
-		DataFile,
-	}
-	wantObjects := []storage.Object{
-		{ContentType: "application/json", Buffer: *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`))},
-		{ContentType: "application/json", Buffer: *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`))},
+	wantObject := storage.Object{
+		ContentType: "application/json",
+		Buffer:      *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`)),
 	}
 
-	var gotNames []string
-	var gotObjects []storage.Object
-	bucket, err := storage.NewBucket(context.Background(), "test")
-	require.NoError(t, err, "storage.NewBucket()")
-	parts := Parts{
-		Bucket: bucket,
-		Locker: locker.NewLocker("test"),
-	}
-	gotOk := parts.Save(nil, cmdArgs.parts)
+	assert.NoError(t, parts.Save(ctx, cmdArgs.parts), "parts.Save()")
 
-	assert.Equal(t, wantOk, gotOk, "ok")
-	assert.Equal(t, wantNames, gotNames, "names")
-	if want, got := objectsToString(wantObjects), objectsToString(gotObjects); want != got {
-		t.Errorf("\nwant:\n%s\ngot:\n%s", want, got)
-	}
+	// check the data file
+	var gotObject storage.Object
+	assert.NoError(t, parts.GetObject(context.Background(), DataFile, &gotObject))
+	assert.Equal(t, objectToString(wantObject), objectToString(gotObject))
 }
 
-func objectsToString(objects []storage.Object) string {
-	var str string
-	for _, object := range objects {
-		str += fmt.Sprintf("content-type: `%s`, body: `%s`\n", object.ContentType, strings.TrimSpace(object.Buffer.String()))
-	}
-	return strings.TrimSpace(str)
+func objectToString(object storage.Object) string {
+	return fmt.Sprintf("content-type: `%s`, body: `%s`\n", object.ContentType, strings.TrimSpace(object.Buffer.String()))
 }
 
 func TestPart_String(t *testing.T) {
