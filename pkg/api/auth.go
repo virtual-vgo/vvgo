@@ -14,6 +14,12 @@ import (
 
 const HeaderVirtualVGOApiToken = "Virtual-VGO-Api-Token"
 
+type PassThrough struct{}
+
+func (x PassThrough) Authenticate(handler http.Handler) http.Handler {
+	return handler
+}
+
 // Authenticates http requests using basic auth.
 // User name is the map key, and password is the value.
 // If the map is empty or nil, requests are always authenticated.

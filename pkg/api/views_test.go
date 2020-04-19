@@ -129,7 +129,6 @@ func TestIndexHandler_ServeHTTP(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	server.ServeHTTP(recorder, request)
 	gotResp := recorder.Result()
-	t.Logf("Got Body:\n%s\n", strings.TrimSpace(recorder.Body.String()))
 	if expected, got := wantCode, gotResp.StatusCode; expected != got {
 		t.Errorf("expected code %v, got %v", expected, got)
 	}
@@ -147,5 +146,7 @@ func TestIndexHandler_ServeHTTP(t *testing.T) {
 		panic(err)
 	}
 	wantBody := wantBuf.String()
-	assert.Equal(t, wantBody, gotBody, "body")
+	if !assert.Equal(t, wantBody, gotBody, "body") {
+		t.Logf("Got Body:\n%s\n", strings.TrimSpace(recorder.Body.String()))
+	}
 }

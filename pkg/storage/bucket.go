@@ -120,6 +120,9 @@ func (x *Bucket) StatObject(ctx context.Context, objectName string) (Object, err
 		}, nil
 	}
 }
+func (x *Bucket) StatFile(ctx context.Context, file *File) (Object, error) {
+	return x.StatObject(ctx, file.ObjectKey())
+}
 
 func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) bool {
 	ctx, span := x.newSpan(ctx, "Bucket.GetObject")

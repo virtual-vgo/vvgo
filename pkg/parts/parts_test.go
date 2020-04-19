@@ -224,7 +224,7 @@ func TestPart_Validate(t *testing.T) {
 			name: "invalid part name",
 			fields: fields{
 				Project:    "01-snake-eater",
-				PartName:   "not-an-instrument",
+				PartName:   "",
 				PartNumber: 6,
 			},
 			want: ErrInvalidPartName,

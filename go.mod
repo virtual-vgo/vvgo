@@ -9,7 +9,6 @@ require (
 	github.com/honeycombio/beeline-go v0.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/minio/minio-go/v6 v6.0.50
-	github.com/rakyll/statik v0.1.7
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.5.1
 	github.com/tdewolff/minify/v2 v2.7.3
