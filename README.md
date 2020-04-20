@@ -36,5 +36,5 @@ make vvgo
 ### Build with make
 
 ```sh
-make vvgo
+make test vvgo
 ```
