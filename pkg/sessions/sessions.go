@@ -8,51 +8,49 @@ import (
 	"net/http"
 )
 
-const SessionKey = "vvgo_session"
+const SessionCookieKey = "vvgo_session"
 
-var sessions *Sessions
+var ErrSessionNotFound = errors.New("session not found")
 
-func init() {
-	sessions = &Sessions{
-		sessions: make(map[string]Session),
-		locker:   locker.NewLocker(locker.Opts{RedisKey: SessionKey}),
-	}
-}
-
-func ReadFromRequest(ctx context.Context, r *http.Request, dest *Session) error {
-	return sessions.ReadFromRequest(ctx, r, dest)
-}
-
-func Add(ctx context.Context, session *Session) error {
-	return sessions.Add(ctx, session)
-}
-
-type Config struct {
-	LockerName string
-}
-
-type Sessions struct {
+type Store struct {
+	Opts
 	sessions map[string]Session
 	locker   *locker.Locker
 }
 
+type Opts struct {
+	LockerName string
+}
+
 type Session struct {
-	Key       string
 	VVVGOUser string
 }
 
-func (x *Sessions) Add(ctx context.Context, session *Session) error {
+func NewStore(config Opts) *Store {
+	return &Store{
+		sessions: make(map[string]Session),
+		locker:   locker.NewLocker(locker.Opts{RedisKey: config.LockerName}),
+	}
+}
+
+func (x *Store) Add(ctx context.Context, key string, session *Session) error {
 	if err := x.locker.Lock(ctx); err != nil {
 		return fmt.Errorf("x.locker.Lock() failed: %v", err)
 	}
 	defer x.locker.Unlock(ctx)
-	x.sessions[session.Key] = *session
+	x.sessions[key] = *session
 	return nil
 }
 
-var ErrSessionNotFound = errors.New("session not found")
+func (x *Store) ReadFromRequest(ctx context.Context, r *http.Request, dest *Session) error {
+	cookie, err := r.Cookie(SessionCookieKey)
+	if err != nil {
+		return err
+	}
+	return x.Get(ctx, cookie.Value, dest)
+}
 
-func (x *Sessions) Get(ctx context.Context, key string, dest *Session) error {
+func (x *Store) Get(ctx context.Context, key string, dest *Session) error {
 	if err := x.locker.Lock(ctx); err != nil {
 		return fmt.Errorf("x.locker.Lock() failed: %v", err)
 	}
@@ -64,12 +62,4 @@ func (x *Sessions) Get(ctx context.Context, key string, dest *Session) error {
 	*dest = x.sessions[key]
 	return nil
 
-}
-
-func (x *Sessions) ReadFromRequest(ctx context.Context, r *http.Request, dest *Session) error {
-	cookie, err := r.Cookie(SessionKey)
-	if err != nil {
-		return err
-	}
-	return sessions.Get(ctx, cookie.Value, dest)
 }

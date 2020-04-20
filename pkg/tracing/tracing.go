@@ -38,7 +38,7 @@ func StartSpan(ctx context.Context, name string) (context.Context, Span) {
 func WrapHandler(handler http.Handler) http.Handler {
 	return hnynethttp.WrapHandler(handler)
 }
-
+func AddError(ctx context.Context, err error) { AddField(ctx, "error", err) }
 func AddField(ctx context.Context, key string, val interface{}) {
 	beeline.AddField(ctx, key, val)
 }

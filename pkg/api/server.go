@@ -5,6 +5,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
+	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
@@ -27,6 +28,7 @@ type ServerConfig struct {
 	MemberPass       string `split_words:"true" default:"admin"`
 	PrepRepToken     string `split_words:"true" default:"admin"`
 	AdminToken       string `split_words:"true" default:"admin"`
+	SessionsKey      string `split_words:"true" default:"sessions"`
 }
 
 type Storage struct {
@@ -102,7 +104,10 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
 	mux.Handle("/upload", uploadHandler)
 
-	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))
+	loginHandler := &LoginHandler{
+		NavBar:   navBar,
+		Sessions: sessions.NewStore(sessions.Opts{LockerName: config.SessionsKey}),
+	}
 	mux.Handle("/login", loginHandler)
 
 	mux.Handle("/version", http.HandlerFunc(Version))

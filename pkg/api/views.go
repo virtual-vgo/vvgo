@@ -35,6 +35,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	parts, err := x.Parts.List(ctx)
 	if err != nil {
+		logger.WithError(err).Error("x.Parts.List() failed")
 		internalServerError(w)
 		return
 	}
