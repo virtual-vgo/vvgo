@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-	"time"
 )
 
 func TestLoginHandler_ServeHTTP(t *testing.T) {
@@ -155,31 +154,3 @@ func noFollow(client *http.Client) *http.Client {
 	return client
 }
 
-func TestSession_RenderCookie(t *testing.T) {
-	secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
-	var dest http.Cookie
-	session := Session{
-		ID:      0x7b7cc95133c4265d,
-		Expires: time.Unix(0, 0x1607717a7c5d32e1),
-	}
-	session.RenderCookie(secret, &dest)
-	wantCookieExpires := session.Expires
-	wantCookieValue := "efc691b4e7b839e1-The-b5d412436dc4119b-Earth-b2e0dbf93cf52bb7-Is-bcf63f4fdd4adf89-Flat-7b7cc95133c4265d1607717a7c5d32e1"
-	assert.Equal(t, wantCookieExpires, dest.Expires, "expires")
-	assert.Equal(t, wantCookieValue, dest.Value, "value")
-}
-
-func TestSession_ReadCookie(t *testing.T) {
-	secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
-	src := http.Cookie{
-		Value: "efc691b4e7b839e1-The-b5d412436dc4119b-Earth-b2e0dbf93cf52bb7-Is-bcf63f4fdd4adf89-Flat-7b7cc95133c4265d1607717a7c5d32e1",
-	}
-	wantSession := Session{
-		ID:      0x7b7cc95133c4265d,
-		Expires: time.Unix(0, 0x1607717a7c5d32e1),
-	}
-
-	var gotSession Session
-	require.NoError(t, gotSession.ReadCookie(secret, &src), "Read()")
-	assert.Equal(t, wantSession, gotSession, "session")
-}

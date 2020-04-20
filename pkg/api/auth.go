@@ -1,17 +1,13 @@
 package api
 
 import (
-	"crypto/rand"
-	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -163,7 +159,7 @@ func (x DiscordOAuthHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// query discord for the user name and roles
+	// query discord for the user name
 	req, err = http.NewRequestWithContext(ctx, http.MethodGet,
 		DiscordEndpoint+"/users/@me", nil)
 	if err != nil {
@@ -246,68 +242,12 @@ func (x DiscordOAuthHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// create a cookie for them
-	token := NewSecret().String()
-	if err := x.Sessions.Add(ctx, token, &sessions.Session{
-	}); err != nil {
-		tracing.AddError(ctx, err)
-		logger.WithError(err).Error("x.Sessions.Add() failed")
-	}
-
-	cookie := http.Cookie{
-		Name:    sessions.SessionCookieKey,
-		Value:   token,
-		Expires: time.Now().Add(3600 * time.Second),
-	}
-	http.SetCookie(w, &cookie)
+	cookie := x.Sessions.NewSessionCookie(time.Now().Add(7*24*3600*time.Second))
+	http.SetCookie(w, cookie)
 	http.Redirect(w, r, "/", http.StatusFound)
-
 }
 
 const DiscordGuildID = "690626216637497425"
 const DiscordRoleVVGOMembers = "i dunno"
 const DiscordEndpoint = "https://discordapp.com"
 
-type Secret [4]uint64
-
-var ErrInvalidSecret = errors.New("invalid secret")
-
-func NewSecret() Secret {
-	var token Secret
-	for i := range token {
-		binary.Read(rand.Reader, binary.LittleEndian, &token[i])
-	}
-	return token
-}
-
-func (x Secret) String() string {
-	var got [len(x)]string
-	for i := range x {
-		got[i] = fmt.Sprintf("%016x", x[i])
-	}
-	return strings.Join(got[:], "-")
-}
-
-func DecodeSecret(secretString string) (Secret, error) {
-	tokenParts := strings.Split(secretString, "-")
-	var token Secret
-	if len(tokenParts) != len(token) {
-		return Secret{}, ErrInvalidSecret
-	}
-	for i := range token {
-		if len(tokenParts[i]) != 16 {
-			return Secret{}, ErrInvalidSecret
-		}
-		token[i], _ = strconv.ParseUint(tokenParts[i], 16, 64)
-	}
-	return token, token.Validate()
-}
-
-func (x Secret) Validate() error {
-	for i := range x {
-		if x[i] == 0 {
-			return ErrInvalidSecret
-		}
-	}
-	return nil
-}
