@@ -30,7 +30,7 @@ func TestTokenAuth_Authenticate(t *testing.T) {
 		},
 		{
 			name:      "empty map",
-			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "Bearer 196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Secret": "Bearer 196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
 			tokenAuth: TokenAuth{},
 			wantCode:  http.StatusUnauthorized,
 		},
@@ -42,7 +42,7 @@ func TestTokenAuth_Authenticate(t *testing.T) {
 		},
 		{
 			name:      "incorrect token",
-			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "Bearer 8d32ff4a91a530bc-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
+			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Secret": "Bearer 8d32ff4a91a530bc-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
 			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
 			wantCode:  http.StatusUnauthorized,
 		},
@@ -145,24 +145,30 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 }
 
 func TestToken(t *testing.T) {
+	t.Run("new", func(t *testing.T) {
+		token := NewSecret()
+		assert.NoError(t, token.Validate(), "validate")
+		t.Logf("new token: %s", token.String())
+		assert.NotEqual(t, token.String(), NewSecret().String())
+	})
 	t.Run("decode", func(t *testing.T) {
 		arg := "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"
-		expected := Token{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
-		got, _ := DecodeToken(arg)
+		expected := Secret{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		got, _ := DecodeSecret(arg)
 		assert.Equal(t, expected, got)
 	})
 	t.Run("string", func(t *testing.T) {
 		expected := "196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"
-		arg := Token{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		arg := Secret{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
 		got := arg.String()
 		assert.Equal(t, expected, got)
 	})
 	t.Run("validate/success", func(t *testing.T) {
-		arg := Token{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		arg := Secret{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
 		assert.NoError(t, arg.Validate())
 	})
 	t.Run("validate/fail", func(t *testing.T) {
-		arg := Token{0, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
-		assert.Equal(t, ErrInvalidToken, arg.Validate())
+		arg := Secret{0, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		assert.Equal(t, ErrInvalidSecret, arg.Validate())
 	})
 }

@@ -23,7 +23,8 @@ type Opts struct {
 }
 
 type Session struct {
-	VVVGOUser string
+	DiscordUser  string
+	DiscordRoles []string
 }
 
 func NewStore(config Opts) *Store {

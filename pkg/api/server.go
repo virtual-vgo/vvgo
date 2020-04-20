@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -9,6 +10,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
+	"net/http/httputil"
 	"net/http/pprof"
 )
 
@@ -109,6 +111,13 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 		Sessions: sessions.NewStore(sessions.Opts{LockerName: config.SessionsKey}),
 	}
 	mux.Handle("/login", loginHandler)
+
+	mux.Handle("/oauth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := httputil.DumpRequest(r, true)
+		fmt.Println(string(body))
+
+
+	}))
 
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

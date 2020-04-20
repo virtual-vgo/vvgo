@@ -2,6 +2,10 @@ package api
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
+	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -62,9 +66,8 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		token := NewToken().String()
+		token := ""
 		if err := x.Sessions.Add(ctx, token, &sessions.Session{
-			VVVGOUser: user,
 		}); err != nil {
 			tracing.AddError(ctx, err)
 			logger.WithError(err).Error("x.Sessions.Add() failed")
@@ -77,7 +80,69 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, &cookie)
 		http.Redirect(w, r, "/", http.StatusFound)
+
 	default:
 		methodNotAllowed(w)
 	}
+}
+
+type Session struct {
+	ID      uint64
+	Expires time.Time
+}
+
+var ErrInvalidSession = errors.New("invalid cookie")
+
+const SessionFormat = "%016x-The-%016x-Earth-%016x-Is-%016x-Flat-%016x%016x"
+
+func (x *Session) ReadString(secret Secret, value string) error {
+	// read the cookie
+	var hash [4]uint64
+	var sessionID uint64
+	var expiresAt uint64
+	_, err := fmt.Sscanf(value, SessionFormat,
+		&hash[0], &hash[1], &hash[2], &hash[3], &sessionID, &expiresAt)
+	if err != nil {
+		return ErrInvalidSession
+	}
+
+	// validate the cookie
+	str := fmt.Sprintf("%s%016x%016x", secret.String(), sessionID, expiresAt)
+	sum := sha256.Sum256([]byte(str))
+	sumReader := bytes.NewReader(sum[:])
+	var got [4]uint64
+	for i := range hash {
+		binary.Read(sumReader, binary.LittleEndian, &got[i])
+	}
+	if hash != got {
+		return ErrInvalidSession
+	}
+
+	x.ID = sessionID
+	x.Expires = time.Unix(0, int64(expiresAt))
+	return nil
+}
+
+func (x *Session) String(secret Secret) string {
+	str := fmt.Sprintf("%s%016x%016x", secret.String(), x.ID, x.Expires.UnixNano())
+	sum := sha256.Sum256([]byte(str))
+	sumReader := bytes.NewReader(sum[:])
+	var hash [4]uint64
+	for i := range hash {
+		binary.Read(sumReader, binary.LittleEndian, &hash[i])
+	}
+	return fmt.Sprintf(SessionFormat,
+		hash[0], hash[1], hash[2], hash[3], x.ID, uint64(x.Expires.UnixNano()))
+}
+
+func (x *Session) ReadCookie(secret Secret, src *http.Cookie) error {
+	return x.ReadString(secret, src.Value)
+}
+
+func (x *Session) RenderCookie(secret Secret, dest *http.Cookie) {
+	*dest = http.Cookie{
+		Value:   x.String(secret),
+		Expires: x.Expires,
+	}
+	return
 }
