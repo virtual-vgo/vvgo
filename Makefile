@@ -12,13 +12,11 @@ vvgo-uploader:
 	go generate ./... && go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo-uploader
 
 # Generate code
-generate: cmd/vvgo/info.go cmd/vvgo-uploader/info.go data/statik/statik.go
+generate: cmd/vvgo/info.go cmd/vvgo-uploader/info.go
 cmd/vvgo/info.go:
 	go generate $(GO_PREFIX)/cmd/vvgo
 cmd/vvgo-uploader/info.go:
 	go generate $(GO_PREFIX)/cmd/vvgo-uploader
-data/statik/statik.go: data
-	go generate $(GO_PREFIX)/data
 
 # Run tests
 .PHONY: fmt vet test
