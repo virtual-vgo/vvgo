@@ -6,10 +6,15 @@ GO_PREFIX ?= github.com/virtual-vgo/vvgo
 .PHONY: vvgo vvgo-uploader # Use go build tools caching
 BIN_PATH ?= .
 BUILD_FLAGS ?= -v
-vvgo:
+vvgo: node_modules
 	go generate ./... && go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo
 vvgo-uploader:
 	go generate ./... && go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo-uploader
+
+# Download external dependencies (yarn)
+.PHONY: node_modules
+node_modules:
+	yarn install
 
 # Generate code
 generate: cmd/vvgo/info.go cmd/vvgo-uploader/info.go
