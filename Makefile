@@ -45,16 +45,19 @@ RELEASE_TAG ?= $(shell git rev-parse --short HEAD)
 
 .PHONY: releases releases/$(BIN_PATH) releases/$(IMAGE_REPO)
 releases: releases/$(BIN_PATH)
+releases/$(BIN_PATH): $(BIN_PATH)/vvgo-$(RELEASE_TAG)-linux-$(HARDWARE)
+releases/$(BIN_PATH): $(BIN_PATH)/vvgo-$(RELEASE_TAG)-darwin-$(HARDWARE)
+releases/$(BIN_PATH): $(BIN_PATH)/vvgo-$(RELEASE_TAG)-windows-$(HARDWARE).exe
 releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-linux-$(HARDWARE)
 releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-darwin-$(HARDWARE)
 releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-windows-$(HARDWARE).exe
 
 $(BIN_PATH)/%-$(RELEASE_TAG)-darwin-$(HARDWARE): generate
-	GOOS=darwin go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo-uploader
+	GOOS=darwin go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/$*
 $(BIN_PATH)/%-$(RELEASE_TAG)-linux-$(HARDWARE): generate
-	GOOS=linux go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo-uploader
+	GOOS=linux go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/$*
 $(BIN_PATH)/%-$(RELEASE_TAG)-windows-$(HARDWARE).exe: generate
-	GOOS=windows go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo-uploader
+	GOOS=windows go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/$*
 
 # Build images
 
