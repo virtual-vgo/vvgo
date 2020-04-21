@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
+	"github.com/virtual-vgo/vvgo/pkg/users"
 	"net/http"
 	"net/url"
 	"strings"
@@ -21,7 +22,7 @@ func (x PassThrough) Authenticate(handler http.Handler) http.Handler {
 }
 
 // Authenticates http requests using basic auth.
-// User name is the map key, and password is the value.
+// Identity name is the map key, and password is the value.
 // If the map is empty or nil, requests are always authenticated.
 type BasicAuth map[string]string
 
@@ -179,10 +180,10 @@ func (x DiscordOAuthHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// unmarshal the response
-	var user struct {
+	var discordUser struct {
 		ID string `json:"id"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&discordUser); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
 		tracing.AddError(ctx, err)
 		logger.Error("authorization failed")
@@ -192,7 +193,7 @@ func (x DiscordOAuthHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) 
 
 	// verify this user is in our discord server
 	req, err = http.NewRequestWithContext(ctx, http.MethodGet,
-		fmt.Sprintf("%s/guilds/%s/members/%s", DiscordEndpoint, DiscordGuildID, user.ID), nil)
+		fmt.Sprintf("%s/guilds/%s/members/%s", DiscordEndpoint, DiscordGuildID, discordUser.ID), nil)
 	if err != nil {
 		logger.WithError(err).Error("http.NewRequestWithContext() failed")
 		tracing.AddError(ctx, err)
@@ -242,7 +243,19 @@ func (x DiscordOAuthHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	cookie := x.Sessions.NewSessionCookie(time.Now().Add(7*24*3600*time.Second))
+	// create a user object
+	user := sessions.Identity{
+		Kind:        sessions.IdentityDiscord,
+		DiscordUser: sessions.DiscordUser{UserID: discordUser.ID},
+	}
+
+	// create a session and cookie
+	session, cookie := x.Sessions.NewSessionCookie(time.Now().Add(7*24*3600*time.Second))
+	if err := x.Sessions.Save(session.ID, &user); err != nil {
+		logger.WithError(err).Error("x.Sessions.Save() failed")
+		internalServerError(w)
+	}
+
 	http.SetCookie(w, cookie)
 	http.Redirect(w, r, "/", http.StatusFound)
 }

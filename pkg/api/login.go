@@ -24,7 +24,7 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		var session sessions.Session
-		if err := x.Sessions.ReadFromRequest(ctx, r, &session); err == nil {
+		if err := x.Sessions.ReadSessionFromRequest(ctx, r, &session); err == nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
@@ -47,7 +47,7 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		var session sessions.Session
-		if err := x.Sessions.ReadFromRequest(ctx, r, &session); err == nil {
+		if err := x.Sessions.ReadSessionFromRequest(ctx, r, &session); err == nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}

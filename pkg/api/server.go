@@ -108,7 +108,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 
 	loginHandler := &LoginHandler{
 		NavBar:   navBar,
-		Sessions: sessions.NewStore(sessions.Opts{LockerName: config.SessionsKey}),
+		Sessions: sessions.NewStore(sessions.StoreOpts{LockerName: config.SessionsKey}),
 	}
 	mux.Handle("/login", loginHandler)
 
