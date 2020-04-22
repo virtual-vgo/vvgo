@@ -9,19 +9,23 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/sessions"
+	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
-	"sync"
-	"time"
 )
 
 var logger = log.Logger()
 
 type Config struct {
-	InitializeStorage bool             `split_words:"true" default:"false"`
-	ApiConfig         api.ServerConfig `envconfig:"api"`
-	TracingConfig     tracing.Config   `envconfig:"tracing"`
+	Secret            string            `envconfig:"vvgo_secret"`
+	InitializeStorage bool              `split_words:"true" default:"false"`
+	ApiConfig         api.ServerConfig  `envconfig:"api"`
+	ApiStorageConfig  api.StorageConfig `envconfig:"api_storage"`
+	TracingConfig     tracing.Config    `envconfig:"tracing"`
+	StorageConfig     storage.Config    `envconfig:"storage"`
+	SessionsConfig    sessions.Config   `envconfig:"sessions"`
 }
 
 func (x *Config) ParseEnv() {
@@ -62,45 +66,27 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	database := api.NewStorage(ctx, config.ApiConfig)
+	var secret sessions.Secret
+	sessionsStore := sessions.NewStore(secret, config.SessionsConfig)
+
+	warehouse, err := storage.NewWarehouse(config.StorageConfig)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	database := api.NewStorage(ctx, sessionsStore, warehouse, config.ApiStorageConfig)
 	if database == nil {
 		os.Exit(1)
 	}
 
 	if config.InitializeStorage {
-		initializeStorage(ctx, database.Init)
+		if err := database.Init(ctx); err != nil {
+			logger.WithError(err).Fatal("failed to initialize storage")
+		}
 	}
 
 	apiServer := api.NewServer(config.ApiConfig, database)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}
-}
-
-func initializeStorage(ctx context.Context, initFuncs ...func(ctx context.Context) error) {
-	var wg sync.WaitGroup
-	for _, initFunc := range initFuncs {
-		wg.Add(1)
-		go func(initFunc func(ctx context.Context) error) {
-			defer wg.Done()
-			timeout := time.NewTicker(5 * time.Second)
-			retryInterval := time.NewTicker(500 * time.Millisecond)
-			defer retryInterval.Stop()
-			defer timeout.Stop()
-			for range retryInterval.C {
-				err := initFunc(ctx)
-				if err == nil {
-					return
-				}
-				logger.WithError(err).Fatal("init() failed")
-				select {
-				case <-timeout.C:
-					logger.Fatalf("failed to initialize storage")
-				default:
-				}
-			}
-		}(initFunc)
-	}
-	wg.Wait()
-	logger.Info("storage initialized")
 }

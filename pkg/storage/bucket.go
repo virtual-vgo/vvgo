@@ -21,19 +21,6 @@ import (
 const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
 var logger = log.Logger()
-var client *Warehouse
-
-func init() {
-	var config Config
-	err := envconfig.Process("storage", &config)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	client, err = NewWarehouse(config)
-	if err != nil {
-		logger.Fatal(err)
-	}
-}
 
 type Warehouse struct {
 	Config
@@ -68,10 +55,6 @@ func NewWarehouse(config Config) (*Warehouse, error) {
 	return &client, nil
 }
 
-func NewBucket(ctx context.Context, name string) (*Bucket, error) {
-	return client.NewBucket(ctx, name)
-}
-
 type Bucket struct {
 	Name        string
 	minioRegion string
@@ -79,13 +62,10 @@ type Bucket struct {
 }
 
 func (x *Warehouse) NewBucket(ctx context.Context, name string) (*Bucket, error) {
-	bucket := Bucket{
-		Name:        name,
-		minioRegion: x.Minio.Region,
-		minioClient: x.minioClient,
-	}
+	bucket := Bucket{Name: name}
 
 	if x.minioClient != nil {
+		bucket.minioRegion = x.Minio.Region
 		bucket.minioClient = x.minioClient
 		_, span := x.newSpan(ctx, "warehouse_new_bucket")
 		defer span.Send()

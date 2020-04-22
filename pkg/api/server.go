@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -10,7 +9,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
-	"net/http/httputil"
 	"net/http/pprof"
 )
 
@@ -21,30 +19,35 @@ var PublicFiles = "public"
 type ServerConfig struct {
 	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
 	MaxContentLength int64  `split_words:"true" default:"10000000"`
-	SheetsBucketName string `split_words:"true" default:"sheets"`
-	ClixBucketName   string `split_words:"true" default:"clix"`
-	PartsBucketName  string `split_words:"true" default:"parts"`
-	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
-	TracksBucketName string `split_words:"true" default:"tracks"`
-	MemberUser       string `split_words:"true" default:"admin"`
-	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
-	SessionsKey      string `split_words:"true" default:"sessions"`
+
+	MemberUser   string `split_words:"true" default:"admin"`
+	MemberPass   string `split_words:"true" default:"admin"`
+	PrepRepToken string `split_words:"true" default:"admin"`
+	AdminToken   string `split_words:"true" default:"admin"`
+
 	DiscordOAuthHandlerConfig `envconfig:"discord"`
 }
 
-type Storage struct {
-	parts.Parts
-	Sheets *storage.Bucket
-	Clix   *storage.Bucket
-	Tracks *storage.Bucket
-	ServerConfig
+type StorageConfig struct {
+	SheetsBucketName  string `split_words:"true" default:"sheets"`
+	ClixBucketName    string `split_words:"true" default:"clix"`
+	PartsBucketName   string `split_words:"true" default:"parts"`
+	PartsLockerKey    string `split_words:"true" default:"parts.lock"`
+	TracksBucketName  string `split_words:"true" default:"tracks"`
 }
 
-func NewStorage(ctx context.Context, config ServerConfig) *Storage {
+type Storage struct {
+	StorageConfig
+	Sessions *sessions.Store
+	Parts    *parts.Parts
+	Sheets   *storage.Bucket
+	Clix     *storage.Bucket
+	Tracks   *storage.Bucket
+}
+
+func NewStorage(ctx context.Context, sessions *sessions.Store, warehouse *storage.Warehouse, config StorageConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
-		bucket, err := storage.NewBucket(ctx, config.SheetsBucketName)
+		bucket, err := warehouse.NewBucket(ctx, config.SheetsBucketName)
 		if err != nil {
 			logger.WithError(err).WithField("bucket_name", config.SheetsBucketName).Fatal("warehouse.NewBucket() failed")
 		}
@@ -58,14 +61,25 @@ func NewStorage(ctx context.Context, config ServerConfig) *Storage {
 	partsLocker := locker.NewLocker(locker.Opts{RedisKey: config.PartsLockerKey})
 
 	return &Storage{
-		Parts: parts.Parts{
+		Sessions: sessions,
+		Parts: &parts.Parts{
 			Cache:  partsCache,
 			Locker: partsLocker,
 		},
-		Sheets:       sheetsBucket,
-		Clix:         clixBucket,
-		Tracks:       tracksBucket,
-		ServerConfig: config,
+		Sheets: sheetsBucket,
+		Clix:   clixBucket,
+		Tracks: tracksBucket,
+	}
+}
+
+func (x *Storage) Init(ctx context.Context) error {
+	if err := x.Sessions.Init(ctx); err != nil {
+		return err
+	} else if err = x.Parts.Init(ctx); err != nil {
+		return err
+	} else {
+		logger.Info("storage initialized")
+		return nil
 	}
 }
 
@@ -97,9 +111,9 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
-		config.SheetsBucketName: database.Sheets.DownloadURL,
-		config.ClixBucketName:   database.Clix.DownloadURL,
-		config.TracksBucketName: database.Tracks.DownloadURL,
+		database.SheetsBucketName: database.Sheets.DownloadURL,
+		database.ClixBucketName:   database.Clix.DownloadURL,
+		database.TracksBucketName: database.Tracks.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 
@@ -109,16 +123,15 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 
 	loginHandler := &LoginHandler{
 		NavBar:   navBar,
-		Sessions: sessions.NewStore(sessions.StoreOpts{LockerName: config.SessionsKey}),
+		Sessions: database.Sessions,
 	}
 	mux.Handle("/login", loginHandler)
 
-	mux.Handle("/oauth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := httputil.DumpRequest(r, true)
-		fmt.Println(string(body))
-
-
-	}))
+	discordOAuthHandler := DiscordOAuthHandler{
+		Config:   config.DiscordOAuthHandlerConfig,
+		Sessions: database.Sessions,
+	}
+	mux.Handle("/discord_oauth", &discordOAuthHandler)
 
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

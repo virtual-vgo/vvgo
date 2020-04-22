@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"time"
 )
@@ -18,10 +19,10 @@ import (
 var ErrSessionNotFound = errors.New("session not found")
 
 type Store struct {
-	StoreOpts
-	secret     Secret
-	cache      *storage.Cache
-	locker     *locker.Locker
+	Config
+	secret Secret
+	cache  *storage.Cache
+	locker *locker.Locker
 }
 
 type SessionID uint64
@@ -31,7 +32,7 @@ type Session struct {
 	Expires time.Time
 }
 
-type StoreOpts struct {
+type Config struct {
 	CookieName string
 	LockerName string
 }
@@ -43,11 +44,13 @@ type Kind string
 func (x Kind) String() string { return string(x) }
 
 const (
-	IdentityDiscord Kind = "discord"
+	IdentityPassword Kind = "password"
+	IdentityDiscord  Kind = "discord"
 )
 
 type Identity struct {
 	Kind        `json:"kind"`
+	Roles       []string `roles:"roles"`
 	DiscordUser `json:"discord_user,omitempty"`
 }
 
@@ -55,12 +58,22 @@ type DiscordUser struct {
 	UserID string `json:"user_id"`
 }
 
-func NewStore(secret Secret, config StoreOpts) *Store {
+func NewStore(secret Secret, config Config) *Store {
 	return &Store{
 		secret: secret,
 		cache:  storage.NewCache(storage.CacheOpts{}),
 		locker: locker.NewLocker(locker.Opts{RedisKey: config.LockerName}),
 	}
+}
+
+func (x *Store) Init(ctx context.Context) error {
+	ctx, span := tracing.StartSpan(ctx, "sessions_store_init")
+	defer span.Send()
+	obj := storage.Object{Buffer: *bytes.NewBuffer([]byte(`{}`))}
+	if err := x.cache.PutObject(ctx, DataFile, &obj); err != nil {
+		return fmt.Errorf("x.cache.PutObject() failed: %v", err)
+	}
+	return nil
 }
 
 func (x *Store) ReadIdentityFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
@@ -143,7 +156,7 @@ func (x *Store) StoreIdentity(ctx context.Context, sessionID SessionID, src *Ide
 
 func (x *Store) NewCookie(session Session) *http.Cookie {
 	return &http.Cookie{
-		Name:    x.StoreOpts.CookieName,
+		Name:    x.Config.CookieName,
 		Value:   session.String(x.secret),
 		Expires: session.Expires,
 	}

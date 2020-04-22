@@ -20,7 +20,7 @@ import (
 func TestLoginHandler_ServeHTTP(t *testing.T) {
 	t.Run("get/redirect", func(t *testing.T) {
 		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.StoreOpts{}),
+			Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{}),
 		})
 		defer ts.Close()
 
@@ -41,7 +41,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		}
 
 		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.StoreOpts{}),
+			Sessions: sessions.NewStore(sessions.Secret{},sessions.Config{}),
 		})
 		defer ts.Close()
 
@@ -76,7 +76,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("post/failure", func(t *testing.T) {
 		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.StoreOpts{}),
+			Sessions: sessions.NewStore(sessions.Secret{},sessions.Config{}),
 		})
 		defer ts.Close()
 
@@ -94,7 +94,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("post/success", func(t *testing.T) {
 		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.StoreOpts{}),
+			Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{}),
 		})
 		defer ts.Close()
 		tsRealURL, err := url.Parse(ts.URL)
@@ -122,7 +122,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("post/success+repeat", func(t *testing.T) {
 		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.StoreOpts{}),
+			Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{}),
 		})
 		defer ts.Close()
 
@@ -153,4 +153,3 @@ func noFollow(client *http.Client) *http.Client {
 	}
 	return client
 }
-

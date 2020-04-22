@@ -25,8 +25,8 @@ type DiscordOAuthHandlerConfig struct {
 }
 
 type DiscordOAuthHandler struct {
-	DiscordOAuthHandlerConfig
-	Sessions sessions.Store
+	Config   DiscordOAuthHandlerConfig
+	Sessions *sessions.Store
 }
 
 var ErrInvalidOAuthCode = errors.New("invalid oauth code")
@@ -46,7 +46,7 @@ type discordUser struct {
 
 var ErrNotAMember = errors.New("not a member")
 
-func (x DiscordOAuthHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) {
+func (x DiscordOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "discord_oauth_handler")
 	defer span.Send()
 
@@ -71,7 +71,7 @@ func (x DiscordOAuthHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) 
 		// check that they have the member role
 		var ok bool
 		for _, role := range roles {
-			if role == x.RoleVVGOMember {
+			if role == x.Config.RoleVVGOMember {
 				ok = true
 				break
 			}
@@ -113,12 +113,12 @@ func (x DiscordOAuthHandler) buildOAuthRequest(ctx context.Context, code string)
 	form := make(url.Values)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", x.OAuthRedirectURI)
+	form.Add("redirect_uri", x.Config.OAuthRedirectURI)
 	form.Add("scope", "identify")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		"https://discordapp.com/api/v6/oauth2/token", strings.NewReader(form.Encode()))
-	req.SetBasicAuth(x.OAuthClientID, x.OAuthClientSecret)
+	req.SetBasicAuth(x.Config.OAuthClientID, x.Config.OAuthClientSecret)
 	return req, err
 }
 
@@ -154,7 +154,7 @@ func (x DiscordOAuthHandler) doOAuthRequest(ctx context.Context, code string, r 
 
 func (x DiscordOAuthHandler) queryDiscordUser(ctx context.Context, oauthToken *oauthToken) (*discordUser, error) {
 	// build the request
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, x.Endpoint+"/users/@me", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, x.Config.Endpoint+"/users/@me", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -179,12 +179,12 @@ func (x DiscordOAuthHandler) queryDiscordUser(ctx context.Context, oauthToken *o
 func (x DiscordOAuthHandler) queryUserGuildRoles(ctx context.Context, userID string) ([]string, error) {
 	// verify this user is in our discord server
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-		fmt.Sprintf("%s/guilds/%s/members/%s", x.Endpoint, x.GuildID, userID), nil)
+		fmt.Sprintf("%s/guilds/%s/members/%s", x.Config.Endpoint, x.Config.GuildID, userID), nil)
 	if err != nil {
 		logger.WithError(err).Error("http.NewRequestWithContext() failed")
 		return nil, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", x.AuthType, x.AuthToken))
+	req.Header.Add("Authorization", fmt.Sprintf("%s %s", x.Config.AuthType, x.Config.AuthToken))
 	resp, err := tracing.DoHttpRequest(req)
 	if err != nil {
 		logger.WithError(err).Error("tracing.DoHttpRequest() failed")
@@ -208,4 +208,3 @@ func (x DiscordOAuthHandler) queryUserGuildRoles(ctx context.Context, userID str
 	}
 	return guildMember.Roles, nil
 }
-

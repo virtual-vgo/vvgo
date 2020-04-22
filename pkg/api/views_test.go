@@ -21,18 +21,21 @@ import (
 )
 
 func TestPartsHandler_ServeHTTP(t *testing.T) {
+	warehouse, err := storage.NewWarehouse(storage.Config{})
+	require.NoError(t, err, "storage.NewWarehouse")
+
 	ctx := context.Background()
-	bucket, err := storage.NewBucket(ctx, "testing")
+	bucket, err := warehouse.NewBucket(ctx, "testing")
 	require.NoError(t, err, "storage.NewBucket")
 	handlerStorage := Storage{
-		Parts: parts.Parts{
+		Parts: &parts.Parts{
 			Cache:  storage.NewCache(storage.CacheOpts{}),
 			Locker: locker.NewLocker(locker.Opts{}),
 		},
 		Sheets: bucket,
 		Clix:   bucket,
 		Tracks: bucket,
-		ServerConfig: ServerConfig{
+		StorageConfig: StorageConfig{
 			SheetsBucketName: "sheets",
 			ClixBucketName:   "clix",
 			PartsBucketName:  "parts",
@@ -62,7 +65,7 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 		},
 	}), "json.Encode()")
-	require.NoError(t, handlerStorage.Cache.PutObject(ctx, parts.DataFile, &obj), "cache.PutObject()")
+	require.NoError(t, handlerStorage.Parts.Cache.PutObject(ctx, parts.DataFile, &obj), "cache.PutObject()")
 
 	server := PartsHandler{NavBar{}, &handlerStorage}
 

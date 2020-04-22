@@ -11,10 +11,17 @@ import (
 	"time"
 )
 
+type Login struct {
+	User  string
+	Pass  string
+	Roles []string
+}
+
 type LoginHandler struct {
 	NavBar   NavBar
 	Secret   sessions.Secret
 	Sessions *sessions.Store
+	Logins   []Login
 }
 
 func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +31,7 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		var session sessions.Session
-		if err := x.Sessions.ReadSessionFromRequest(ctx, r, &session); err == nil {
+		if err := x.Sessions.ReadSessionFromRequest(r, &session); err == nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
@@ -47,14 +54,22 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		var session sessions.Session
-		if err := x.Sessions.ReadSessionFromRequest(ctx, r, &session); err == nil {
+		if err := x.Sessions.ReadSessionFromRequest(r, &session); err == nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
 
 		user := r.FormValue("user")
 		pass := r.FormValue("pass")
-		if !(user == "jackson@jacksonargo.com" || pass == "jackson") {
+
+		var roles []string
+		for _, login := range x.Logins {
+			if user == login.User && pass == login.Pass {
+				roles = login.Roles
+			}
+		}
+
+		if len(roles) == 0 {
 			logger.WithFields(logrus.Fields{
 				"user": user,
 				"pass": pass,
@@ -63,7 +78,20 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		cookie := x.Sessions.NewSessionCookie(time.Now().Add(7 * 24 * 3600 * time.Second))
+		// create the identity object
+		identity := sessions.Identity{
+			Kind:  sessions.IdentityPassword,
+			Roles: roles,
+		}
+
+		// create a session and cookie
+		session = x.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
+		cookie := x.Sessions.NewCookie(session)
+		if err := x.Sessions.StoreIdentity(ctx, session.ID, &identity); err != nil {
+			logger.WithError(err).Error("x.Sessions.Save() failed")
+			internalServerError(w)
+		}
+
 		http.SetCookie(w, cookie)
 		http.Redirect(w, r, "/", http.StatusFound)
 
