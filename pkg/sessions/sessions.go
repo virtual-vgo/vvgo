@@ -12,8 +12,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -152,10 +150,10 @@ func (x *Store) NewCookie(name string, session Session) *http.Cookie {
 	}
 }
 
-func (x *Store) NewSession(expiresAt time.Time) *Session {
+func (x *Store) NewSession(expiresAt time.Time) Session {
 	var id SessionID
 	binary.Read(rand.Reader, binary.LittleEndian, &id)
-	return &Session{
+	return Session{
 		ID:      id,
 		Expires: expiresAt,
 	}
@@ -211,6 +209,8 @@ func (x *Session) String(secret Secret) string {
 
 type Secret [4]uint64
 
+const SecretFormat = "%016x%016x%016x%016x"
+
 var ErrInvalidSecret = errors.New("invalid secret")
 
 func NewSecret() Secret {
@@ -221,26 +221,6 @@ func NewSecret() Secret {
 	return token
 }
 
-func (x Secret) String() string {
-	var got [len(x)]string
-	for i := range x {
-		got[i] = fmt.Sprintf("%013s", strconv.FormatUint(x[i], 36))
-	}
-	return strings.Join(got[:], "")
-}
-
-func DecodeSecret(secretString string) (Secret, error) {
-	var token Secret
-	for i := range token {
-		if len(secretString) < 13 {
-			return Secret{}, ErrInvalidSecret
-		}
-		token[i], _ = strconv.ParseUint(secretString[:13], 36, 64)
-		secretString = secretString[13:]
-	}
-	return token, token.Validate()
-}
-
 func (x Secret) Validate() error {
 	for i := range x {
 		if x[i] == 0 {
@@ -248,4 +228,13 @@ func (x Secret) Validate() error {
 		}
 	}
 	return nil
+}
+
+func (x Secret) String() string {
+	return fmt.Sprintf(SecretFormat, x[0], x[1], x[2], x[3])
+}
+
+func (x *Secret) Decode(str string) error {
+	_, err := fmt.Sscanf(str, SecretFormat, &x[0], &x[1], &x[2], &x[3])
+	return err
 }
