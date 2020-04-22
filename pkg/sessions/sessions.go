@@ -15,15 +15,13 @@ import (
 	"time"
 )
 
-const SessionCookieKey = "vvgo_session"
-
 var ErrSessionNotFound = errors.New("session not found")
 
 type Store struct {
 	StoreOpts
-	Secret Secret
-	cache  *storage.Cache
-	locker *locker.Locker
+	secret     Secret
+	cache      *storage.Cache
+	locker     *locker.Locker
 }
 
 type SessionID uint64
@@ -57,8 +55,9 @@ type DiscordUser struct {
 	UserID string `json:"user_id"`
 }
 
-func NewStore(config StoreOpts) *Store {
+func NewStore(secret Secret, config StoreOpts) *Store {
 	return &Store{
+		secret: secret,
 		cache:  storage.NewCache(storage.CacheOpts{}),
 		locker: locker.NewLocker(locker.Opts{RedisKey: config.LockerName}),
 	}
@@ -108,11 +107,11 @@ func (x *Store) getMap(ctx context.Context, dest *map[SessionID]Identity) error 
 }
 
 func (x *Store) ReadSessionFromRequest(r *http.Request, dest *Session) error {
-	cookie, err := r.Cookie(SessionCookieKey)
+	cookie, err := r.Cookie(x.CookieName)
 	if err != nil {
 		return err
 	}
-	return dest.ReadCookie(x.Secret, cookie)
+	return dest.ReadCookie(x.secret, cookie)
 }
 
 func (x *Store) StoreIdentity(ctx context.Context, sessionID SessionID, src *Identity) error {
@@ -142,10 +141,10 @@ func (x *Store) StoreIdentity(ctx context.Context, sessionID SessionID, src *Ide
 	return nil
 }
 
-func (x *Store) NewCookie(name string, session Session) *http.Cookie {
+func (x *Store) NewCookie(session Session) *http.Cookie {
 	return &http.Cookie{
-		Name:    name,
-		Value:   session.String(x.Secret),
+		Name:    x.StoreOpts.CookieName,
+		Value:   session.String(x.secret),
 		Expires: session.Expires,
 	}
 }

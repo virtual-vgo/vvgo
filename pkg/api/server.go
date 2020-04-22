@@ -31,6 +31,7 @@ type ServerConfig struct {
 	PrepRepToken     string `split_words:"true" default:"admin"`
 	AdminToken       string `split_words:"true" default:"admin"`
 	SessionsKey      string `split_words:"true" default:"sessions"`
+	DiscordOAuthHandlerConfig `envconfig:"discord"`
 }
 
 type Storage struct {
