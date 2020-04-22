@@ -163,7 +163,7 @@ func (x *Store) NewSession(expiresAt time.Time) *Session {
 
 var ErrInvalidSession = errors.New("invalid cookie")
 
-const SessionFormat = "%016x-V-%016x-V-%016x-G-%016x-O-%016x%016x"
+const SessionFormat = "V-i-r-t-u-a-l--V-G-O--%016x%016x%016x%016x%016x%016x"
 
 func (x *Session) ReadCookie(secret Secret, src *http.Cookie) error {
 	return x.ReadString(secret, src.Value)
@@ -224,22 +224,19 @@ func NewSecret() Secret {
 func (x Secret) String() string {
 	var got [len(x)]string
 	for i := range x {
-		got[i] = fmt.Sprintf("%016x", x[i])
+		got[i] = fmt.Sprintf("%013s", strconv.FormatUint(x[i], 36))
 	}
-	return strings.Join(got[:], "-")
+	return strings.Join(got[:], "")
 }
 
 func DecodeSecret(secretString string) (Secret, error) {
-	tokenParts := strings.Split(secretString, "-")
 	var token Secret
-	if len(tokenParts) != len(token) {
-		return Secret{}, ErrInvalidSecret
-	}
 	for i := range token {
-		if len(tokenParts[i]) != 16 {
+		if len(secretString) < 13 {
 			return Secret{}, ErrInvalidSecret
 		}
-		token[i], _ = strconv.ParseUint(tokenParts[i], 16, 64)
+		token[i], _ = strconv.ParseUint(secretString[:13], 36, 64)
+		secretString = secretString[13:]
 	}
 	return token, token.Validate()
 }

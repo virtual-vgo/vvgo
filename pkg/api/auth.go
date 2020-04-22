@@ -243,15 +243,16 @@ func (x DiscordOAuthHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// create a user object
-	user := sessions.Identity{
+	// create an identity object
+	identity := sessions.Identity{
 		Kind:        sessions.IdentityDiscord,
 		DiscordUser: sessions.DiscordUser{UserID: discordUser.ID},
 	}
 
 	// create a session and cookie
-	session, cookie := x.Sessions.NewSessionCookie(time.Now().Add(7*24*3600*time.Second))
-	if err := x.Sessions.Save(session.ID, &user); err != nil {
+	session := x.Sessions.NewSession(time.Now().Add(7*24*3600*time.Second))
+	cookie := x.Sessions.NewCookie(x.SessionCookieName, session)
+	if err := x.Sessions.Save(session.ID, &identity); err != nil {
 		logger.WithError(err).Error("x.Sessions.Save() failed")
 		internalServerError(w)
 	}
