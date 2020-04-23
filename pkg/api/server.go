@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -126,9 +127,9 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 		Sessions: database.Sessions,
 		Logins: []Login{
 			{
-				User:  "jackson",
-				Pass:  "jackson",
-				Roles: []string{"jackson"},
+				User:  config.MemberUser,
+				Pass:  config.MemberPass,
+				Roles: []access.Role{access.RoleVVGOMember},
 			},
 		},
 	}

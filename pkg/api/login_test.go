@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"golang.org/x/net/publicsuffix"
 	"io/ioutil"
@@ -26,7 +27,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 			{
 				User:  "vvgo-user",
 				Pass:  "vvgo-pass",
-				Roles: []string{"vvgo-member"},
+				Roles: []access.Role{"vvgo-member"},
 			},
 		},
 	}
@@ -44,7 +45,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		cookie := loginHandler.Sessions.NewCookie(session)
 		assert.NoError(t, loginHandler.Sessions.StoreIdentity(ctx, session.ID, &sessions.Identity{
 			Kind:  sessions.IdentityPassword,
-			Roles: []string{"cheese"},
+			Roles: []access.Role{"cheese"},
 		}))
 
 		// set the cookie on the client

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -50,7 +51,7 @@ const (
 
 type Identity struct {
 	Kind        `json:"kind"`
-	Roles       []string `roles:"roles"`
+	Roles       []access.Role `roles:"roles"`
 	DiscordUser `json:"discord_user,omitempty"`
 }
 

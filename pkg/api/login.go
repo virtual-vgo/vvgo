@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
@@ -14,7 +15,7 @@ import (
 type Login struct {
 	User  string
 	Pass  string
-	Roles []string
+	Roles []access.Role
 }
 
 type LoginHandler struct {
@@ -63,7 +64,7 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		user := r.FormValue("user")
 		pass := r.FormValue("pass")
 
-		var roles []string
+		var roles []access.Role
 		for _, login := range x.Logins {
 			if user == login.User && pass == login.Pass {
 				roles = login.Roles
@@ -103,4 +104,3 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w)
 	}
 }
-

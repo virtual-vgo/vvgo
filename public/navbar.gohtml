@@ -10,7 +10,12 @@
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <li class="nav-item btn">
                 {{ if .ShowLogin }}
-                    <a class="nav-login nav-link text-monospace text-info" href="/login"> Login</a>
+                    <a class="nav-login nav-link text-monospace text-info" href="/login">
+                        Login
+                    </a>
+                    <a class="nav-login nav-link text-monospace text-info" href="{{.DiscordLoginUrl}}">
+                        Login With Discord
+                    </a>
                 {{ else }}
                     <a class="nav-link disabled text-monospace"
                        href="#" tabindex="-1" aria-disabled="true"> :hello:
