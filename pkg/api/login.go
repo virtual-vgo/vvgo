@@ -31,7 +31,7 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		var session sessions.Session
-		err := x.Sessions.ReadSessionFromRequest(r, &session);
+		err := x.Sessions.ReadSessionFromRequest(r, &session)
 		if err == nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
@@ -73,7 +73,6 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if len(roles) == 0 {
 			logger.WithFields(logrus.Fields{
 				"user": user,
-				"pass": pass,
 			}).Error("authorization failed")
 			unauthorized(w)
 			return
@@ -96,8 +95,12 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		http.SetCookie(w, cookie)
 		http.Redirect(w, r, "/", http.StatusFound)
+		logger.WithFields(logrus.Fields{
+			"user": user,
+		}).Info("user logged in")
 
 	default:
 		methodNotAllowed(w)
 	}
 }
+

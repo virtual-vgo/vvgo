@@ -124,6 +124,13 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	loginHandler := &LoginHandler{
 		NavBar:   navBar,
 		Sessions: database.Sessions,
+		Logins: []Login{
+			{
+				User:  "jackson",
+				Pass:  "jackson",
+				Roles: []string{"jackson"},
+			},
+		},
 	}
 	mux.Handle("/login", loginHandler)
 
