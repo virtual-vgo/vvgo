@@ -15,13 +15,13 @@ import (
 
 type DiscordOAuthHandlerConfig struct {
 	Endpoint          string `default:"https://discordapp.com"`
-	AuthType          string
-	AuthToken         string
-	GuildID           string
-	RoleVVGOMember    string
-	OAuthClientID     string // find in discord
-	OAuthClientSecret string // find in discord
-	OAuthRedirectURI  string // this is the redirect we set in discord
+	AuthType          string `split_words:"true"`
+	AuthToken         string `split_words:"true"`
+	GuildID           string `split_words:"true"`
+	RoleVVGOMember    string `envconfig:"role_vvgo_member"`
+	OAuthClientID     string `envconfig:"oauth_client_id"`           // find in discord
+	OAuthClientSecret string `envconfig:"oauth_client_secret"`       // find in discord
+	OAuthRedirectURI  string `envconfig:"oauth_redirect_uri"` // this is the redirect we set in discord
 }
 
 type DiscordOAuthHandler struct {
@@ -83,6 +83,7 @@ func (x DiscordOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// create the identity object
 		identity = sessions.Identity{
 			Kind:        sessions.IdentityDiscord,
+			Roles:       []string{},
 			DiscordUser: sessions.DiscordUser{UserID: discordUser.ID},
 		}
 		return nil

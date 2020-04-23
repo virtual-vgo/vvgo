@@ -60,6 +60,7 @@ type DiscordUser struct {
 
 func NewStore(secret Secret, config Config) *Store {
 	return &Store{
+		Config: config,
 		secret: secret,
 		cache:  storage.NewCache(storage.CacheOpts{}),
 		locker: locker.NewLocker(locker.Opts{RedisKey: config.LockerName}),

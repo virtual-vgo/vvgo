@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
@@ -15,17 +16,42 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLoginHandler_ServeHTTP(t *testing.T) {
-	t.Run("get/redirect", func(t *testing.T) {
-		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{}),
-		})
-		defer ts.Close()
+	loginHandler := LoginHandler{
+		Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{CookieName: "vvgo-cookie"}),
+		Logins: []Login{
+			{
+				User:  "vvgo-user",
+				Pass:  "vvgo-pass",
+				Roles: []string{"vvgo-member"},
+			},
+		},
+	}
 
+	t.Run("get/redirect", func(t *testing.T) {
+		ctx := context.Background()
+		loginHandler.Sessions.Init(context.Background())
+		ts := httptest.NewServer(loginHandler)
+		defer ts.Close()
+		tsUrl, err := url.Parse(ts.URL)
+		require.NoError(t, err, "url.Parse()")
+
+		// create a session and cookie
+		session := loginHandler.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
+		cookie := loginHandler.Sessions.NewCookie(session)
+		assert.NoError(t, loginHandler.Sessions.StoreIdentity(ctx, session.ID, &sessions.Identity{
+			Kind:  sessions.IdentityPassword,
+			Roles: []string{"cheese"},
+		}))
+
+		// set the cookie on the client
 		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 		require.NoError(t, err, "cookiejar.New")
+		jar.SetCookies(tsUrl, []*http.Cookie{cookie})
+
 		client := noFollow(&http.Client{Jar: jar})
 		resp, err := client.Get(ts.URL)
 		require.NoError(t, err, "client.Get")
@@ -40,9 +66,8 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 			t.Fatalf("ioutil.ReadFile() failed: %v", err)
 		}
 
-		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.Secret{},sessions.Config{}),
-		})
+		loginHandler.Sessions.Init(context.Background())
+		ts := httptest.NewServer(loginHandler)
 		defer ts.Close()
 
 		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
@@ -75,16 +100,14 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("post/failure", func(t *testing.T) {
-		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.Secret{},sessions.Config{}),
-		})
+		loginHandler.Sessions.Init(context.Background())
+		ts := httptest.NewServer(loginHandler)
 		defer ts.Close()
 
-		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-		require.NoError(t, err, "cookiejar.New")
-		client := noFollow(&http.Client{Jar: jar})
-
-		resp, err := client.Post(ts.URL, "text/plain", nil)
+		urlValues := make(url.Values)
+		urlValues.Add("user", "vvgo-user")
+		urlValues.Add("pass", "vvgo-user")
+		resp, err := noFollow(http.DefaultClient).PostForm(ts.URL, urlValues)
 		require.NoError(t, err, "client.Get")
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		var gotBody bytes.Buffer
@@ -93,37 +116,21 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("post/success", func(t *testing.T) {
-		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{}),
-		})
+		loginHandler.Sessions.Init(context.Background())
+		ts := httptest.NewServer(loginHandler)
 		defer ts.Close()
-		tsRealURL, err := url.Parse(ts.URL)
-		require.NoError(t, err, "url.Parse")
-
-		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-		require.NoError(t, err, "cookiejar.New")
-		client := noFollow(&http.Client{Jar: jar})
-		t.Log("current cookies:")
-		for _, cookie := range jar.Cookies(tsRealURL) {
-			t.Logf("%s: %s", cookie.Name, cookie.Value)
-		}
 
 		urlValues := make(url.Values)
-		urlValues.Add("user", "jackson@jacksonargo.com")
-		urlValues.Add("pass", "jackson")
-		resp, err := client.PostForm(ts.URL, urlValues)
-		require.NoError(t, err, "client.Get")
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		var gotBody bytes.Buffer
-		gotBody.ReadFrom(resp.Body)
-		assert.Equal(t, "welcome jackson, have a cookie!", strings.TrimSpace(gotBody.String()), "body")
-
+		urlValues.Add("user", "vvgo-user")
+		urlValues.Add("pass", "vvgo-pass")
+		resp, err := noFollow(http.DefaultClient).PostForm(ts.URL, urlValues)
+		require.NoError(t, err, "http.PostForm")
+		assert.Equal(t, http.StatusFound, resp.StatusCode)
 	})
 
 	t.Run("post/success+repeat", func(t *testing.T) {
-		ts := httptest.NewServer(LoginHandler{
-			Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{}),
-		})
+		loginHandler.Sessions.Init(context.Background())
+		ts := httptest.NewServer(loginHandler)
 		defer ts.Close()
 
 		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
@@ -131,14 +138,11 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		client := noFollow(&http.Client{Jar: jar})
 
 		urlValues := make(url.Values)
-		urlValues.Add("user", "jackson@jacksonargo.com")
-		urlValues.Add("pass", "jackson")
+		urlValues.Add("user", "vvgo-user")
+		urlValues.Add("pass", "vvgo-pass")
 		resp, err := client.PostForm(ts.URL, urlValues)
-		require.NoError(t, err, "client.PostForm")
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		var gotBody bytes.Buffer
-		gotBody.ReadFrom(resp.Body)
-		assert.Equal(t, "welcome jackson, have a cookie!", strings.TrimSpace(gotBody.String()), "body")
+		require.NoError(t, err, "client.Get")
+		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		resp, err = client.Get(ts.URL)
 		require.NoError(t, err, "client.Get")

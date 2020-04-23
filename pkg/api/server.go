@@ -25,15 +25,15 @@ type ServerConfig struct {
 	PrepRepToken string `split_words:"true" default:"admin"`
 	AdminToken   string `split_words:"true" default:"admin"`
 
-	DiscordOAuthHandlerConfig `envconfig:"discord"`
+	Discord DiscordOAuthHandlerConfig `envconfig:"discord"`
 }
 
 type StorageConfig struct {
-	SheetsBucketName  string `split_words:"true" default:"sheets"`
-	ClixBucketName    string `split_words:"true" default:"clix"`
-	PartsBucketName   string `split_words:"true" default:"parts"`
-	PartsLockerKey    string `split_words:"true" default:"parts.lock"`
-	TracksBucketName  string `split_words:"true" default:"tracks"`
+	SheetsBucketName string `split_words:"true" default:"sheets"`
+	ClixBucketName   string `split_words:"true" default:"clix"`
+	PartsBucketName  string `split_words:"true" default:"parts"`
+	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
+	TracksBucketName string `split_words:"true" default:"tracks"`
 }
 
 type Storage struct {
@@ -128,7 +128,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	mux.Handle("/login", loginHandler)
 
 	discordOAuthHandler := DiscordOAuthHandler{
-		Config:   config.DiscordOAuthHandlerConfig,
+		Config:   config.Discord,
 		Sessions: database.Sessions,
 	}
 	mux.Handle("/discord_oauth", &discordOAuthHandler)

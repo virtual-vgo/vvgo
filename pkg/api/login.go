@@ -31,7 +31,8 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		var session sessions.Session
-		if err := x.Sessions.ReadSessionFromRequest(r, &session); err == nil {
+		err := x.Sessions.ReadSessionFromRequest(r, &session);
+		if err == nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
@@ -88,8 +89,9 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		session = x.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
 		cookie := x.Sessions.NewCookie(session)
 		if err := x.Sessions.StoreIdentity(ctx, session.ID, &identity); err != nil {
-			logger.WithError(err).Error("x.Sessions.Save() failed")
+			logger.WithError(err).Error("x.Sessions.StoreIdentity() failed")
 			internalServerError(w)
+			return
 		}
 
 		http.SetCookie(w, cookie)
