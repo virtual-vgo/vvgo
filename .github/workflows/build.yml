@@ -13,6 +13,4 @@ jobs:
       - name: Build images
         shell: bash
         run: |
-          for tag in latest $(docker run --rm vvgo --release-tags); do
-              RELEASE_TAG="$tag" make push
-          done
+          RELEASE_TAG=${{ github.ref }} make push
