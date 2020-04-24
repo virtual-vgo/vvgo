@@ -2,7 +2,9 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
+	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
 	"net/http"
@@ -64,7 +66,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	navBarOpts := x.NavBar.NewOpts(r)
+	navBarOpts := x.NavBar.NewOpts(ctx, r)
 	navBarOpts.PartsActive = true
 	page := struct {
 		Header template.HTML
@@ -94,7 +96,7 @@ type IndexHandler struct {
 }
 
 func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, span := tracing.StartSpan(r.Context(), "parts_handler")
+	ctx, span := tracing.StartSpan(r.Context(), "parts_handler")
 	defer span.Send()
 
 	if r.Method != http.MethodGet {
@@ -102,7 +104,7 @@ func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	navBarOpts := x.NavBar.NewOpts(r)
+	navBarOpts := x.NavBar.NewOpts(ctx, r)
 	page := struct {
 		Header template.HTML
 		NavBar template.HTML
@@ -126,23 +128,33 @@ func Header() template.HTML {
 }
 
 type NavBar struct {
-	MemberUser string
+	MemberUser      string
+	DiscordLoginUrl string
+	Sessions        *sessions.Store
 }
 
 type NavBarRenderOpts struct {
+	Identity        sessions.Identity
 	ShowLogin       bool
 	ShowMemberLinks bool
 	PartsActive     bool
+	DiscordLoginUrl string
 }
 
-func (x NavBar) NewOpts(r *http.Request) NavBarRenderOpts {
+func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
 	var opts NavBarRenderOpts
-	user, _, _ := r.BasicAuth()
-	switch user {
-	case x.MemberUser:
-		opts.ShowMemberLinks = true
-	default:
-		opts.ShowLogin = true
+	var identity sessions.Identity
+	showLogin := true
+	if x.Sessions != nil {
+		if err := x.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err == nil {
+			showLogin = false
+		}
+	}
+	opts = NavBarRenderOpts{
+		Identity:        identity,
+		ShowLogin:       showLogin,
+		ShowMemberLinks: identity.IsVVGOMember(),
+		DiscordLoginUrl: x.DiscordLoginUrl,
 	}
 	return opts
 }

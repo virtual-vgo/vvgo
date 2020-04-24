@@ -8,20 +8,33 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
-            <li class="nav-item btn">
-                {{ if .ShowLogin }}
-                    <a class="nav-login nav-link text-monospace text-info" href="/login">
-                        Login
-                    </a>
-                    <a class="nav-login nav-link text-monospace text-info" href="{{.DiscordLoginUrl}}">
-                        Login With Discord
-                    </a>
-                {{ else }}
-                    <a class="nav-link disabled text-monospace"
-                       href="#" tabindex="-1" aria-disabled="true"> :hello:
-                    </a>
-                {{ end }}
-            </li>
+            {{ if .ShowLogin }}
+                <ul class="navbar-nav container">
+                    <li class="nav-item btn">
+                        <a class="nav-login nav-link text-monospace text-info" href="/login">
+                            Login
+                        </a>
+                    </li>
+                    <li class="nav-item btn">
+                        <a class="nav-login nav-link text-monospace text-info" href="{{.DiscordLoginUrl}}">
+                            Login With Discord
+                        </a>
+                    </li>
+                </ul>
+            {{ else }}
+                <ul class="navbar-nav container ml-auto">
+                    <li class="nav-item btn">
+                        <a class="bg-primary nav-link text-monospace"
+                           href="/logout"> Logout
+                        </a>
+                    </li>
+                    <li class="nav-item btn">
+                        <a class="nav-link disabled text-monospace"
+                           href="#" tabindex="-1" aria-disabled="true"> :hello {{ .Identity.Role }}:
+                        </a>
+                    </li>
+                </ul>
+            {{ end }}
             {{ if .ShowMemberLinks }}
                 <ul class="navbar-nav container">
                     <li class="nav-item">
@@ -31,7 +44,7 @@
                     </li>
                 </ul>
             {{ end }}
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link btn-outline-primary" href="https://www.facebook.com/groups/1080154885682377/">
                         <i class="fab fa-facebook-square fa-2x"></i>

@@ -71,10 +71,8 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		ts := httptest.NewServer(loginHandler)
 		defer ts.Close()
 
-		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 		require.NoError(t, err, "cookiejar.New")
-		client := noFollow(&http.Client{Jar: jar})
-		resp, err := client.Get(ts.URL)
+		resp, err := noFollow(http.DefaultClient).Get(ts.URL)
 		require.NoError(t, err, "client.Get")
 		assert.Equal(t, wantCode, resp.StatusCode)
 		var respBody bytes.Buffer
@@ -150,6 +148,43 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, "/", resp.Header.Get("Location"), "location")
 	})
+}
+
+func TestLogoutHandler_ServeHTTP(t *testing.T) {
+	ctx := context.Background()
+	logoutHandler := LogoutHandler{
+		Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{CookieName: "vvgo-cookie"}),
+	}
+
+	logoutHandler.Sessions.Init(context.Background())
+	ts := httptest.NewServer(logoutHandler)
+	defer ts.Close()
+	tsUrl, err := url.Parse(ts.URL)
+	require.NoError(t, err, "url.Parse()")
+
+	// create a session and cookie
+	session := logoutHandler.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
+	cookie := logoutHandler.Sessions.NewCookie(session)
+	assert.NoError(t, logoutHandler.Sessions.StoreIdentity(ctx, session.ID, &sessions.Identity{
+		Kind:  sessions.IdentityPassword,
+		Roles: []access.Role{"cheese"},
+	}))
+
+	// set the cookie on the client
+	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	require.NoError(t, err, "cookiejar.New")
+	jar.SetCookies(tsUrl, []*http.Cookie{cookie})
+
+	// make the request
+	client := noFollow(&http.Client{Jar: jar})
+	resp, err := client.Get(ts.URL)
+	require.NoError(t, err, "client.Get")
+	assert.Equal(t, http.StatusFound, resp.StatusCode)
+	assert.Equal(t, "/", resp.Header.Get("Location"), "location")
+
+	// check that the session doesn't exist
+	var dest sessions.Identity
+	assert.Equal(t, sessions.ErrSessionNotFound, logoutHandler.Sessions.GetIdentity(ctx, session.ID, &dest))
 }
 
 func noFollow(client *http.Client) *http.Client {

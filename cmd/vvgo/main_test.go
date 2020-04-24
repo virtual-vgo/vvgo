@@ -4,6 +4,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
@@ -41,6 +42,9 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"STORAGE_MINIO_ACCESSKEY":         "minio-access-key",
 		"STORAGE_MINIO_SECRETKEY":         "minio-secret-key",
 		"STORAGE_MINIO_USESSL":            "true",
+		"SESSIONS_COOKIE_NAME":            "sessions-cookie-name",
+		"SESSIONS_COOKIE_DOMAIN":          "sessions-cookie-domain",
+		"SESSIONS_LOCKER_NAME":            "sessions-locker-name",
 	}
 	want := Config{
 		Secret:            "vvgo-secret",
@@ -83,6 +87,11 @@ func TestConfig_ParseEnv(t *testing.T) {
 				SecretKey: "minio-secret-key",
 				UseSSL:    true,
 			},
+		},
+		SessionsConfig: sessions.Config{
+			CookieName:   "sessions-cookie-name",
+			CookieDomain: "sessions-cookie-domain",
+			LockerName:   "sessions-locker-name",
 		},
 	}
 

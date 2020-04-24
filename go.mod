@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/bsm/redislock v0.5.0
+	github.com/bwmarrin/discordgo v0.20.3
 	github.com/fatih/color v1.9.0
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/honeycombio/beeline-go v0.5.1
@@ -14,6 +15,5 @@ require (
 	github.com/tdewolff/minify/v2 v2.7.3
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d // indirect
 )

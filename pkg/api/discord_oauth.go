@@ -9,14 +9,14 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
 )
 
 type DiscordOAuthHandlerConfig struct {
-	Endpoint          string `default:"https://discordapp.com"`
-	AuthType          string `split_words:"true"`
+	Endpoint          string `default:"https://discordapp.com/api/v6"`
 	AuthToken         string `split_words:"true"`
 	GuildID           string `split_words:"true"`
 	RoleVVGOMember    string `envconfig:"role_vvgo_member"`
@@ -51,10 +51,18 @@ func (x DiscordOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "discord_oauth_handler")
 	defer span.Send()
 
+	buf, _ := httputil.DumpRequest(r, true)
+	fmt.Println(string(buf))
+
 	var identity sessions.Identity
 	if err := func() error {
 		code := r.FormValue("code")
-		oauthToken, err := x.doOAuthRequest(ctx, code, r)
+		req, err := x.buildOAuthRequest(ctx, code)
+		if err != nil {
+			return err
+		}
+
+		oauthToken, err := x.doOAuthRequest(req)
 		if err != nil {
 			return err
 		}
@@ -85,7 +93,7 @@ func (x DiscordOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		identity = sessions.Identity{
 			Kind:        sessions.IdentityDiscord,
 			Roles:       []access.Role{access.RoleVVGOMember},
-			DiscordUser: sessions.DiscordUser{UserID: discordUser.ID},
+			DiscordUser: &sessions.DiscordUser{UserID: discordUser.ID},
 		}
 		return nil
 	}(); err != nil {
@@ -110,9 +118,16 @@ func (x DiscordOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 var ErrDiscordRequestFailed = errors.New("discord request failed")
 
+// builds the oauth request for identity access
 func (x DiscordOAuthHandler) buildOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
+	if code == "" {
+		return nil, ErrInvalidOAuthCode
+	}
+
 	// build the authorization request
 	form := make(url.Values)
+	form.Add("client_id", x.Config.OAuthClientID)
+	form.Add("client_secret", x.Config.OAuthClientSecret)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
 	form.Add("redirect_uri", x.Config.OAuthRedirectURI)
@@ -120,22 +135,18 @@ func (x DiscordOAuthHandler) buildOAuthRequest(ctx context.Context, code string)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		"https://discordapp.com/api/v6/oauth2/token", strings.NewReader(form.Encode()))
-	req.SetBasicAuth(x.Config.OAuthClientID, x.Config.OAuthClientSecret)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	return req, err
 }
 
-func (x DiscordOAuthHandler) doOAuthRequest(ctx context.Context, code string, r *http.Request) (*oauthToken, error) {
-	if code == "" {
-		return nil, ErrInvalidOAuthCode
-	}
-
-	req, err := x.buildOAuthRequest(ctx, code)
-	if err != nil {
-		return nil, err
-	}
-
+// performs the oauth request and returns the token
+func (x DiscordOAuthHandler) doOAuthRequest(req *http.Request) (*oauthToken, error) {
+	buf, _ := httputil.DumpRequest(req, true)
+	fmt.Println(string(buf))
 	// do the request
 	resp, err := tracing.DoHttpRequest(req)
+	buf, _ = httputil.DumpResponse(resp, true)
+	fmt.Println(string(buf))
 	if err != nil {
 		return nil, err
 	}
@@ -147,23 +158,28 @@ func (x DiscordOAuthHandler) doOAuthRequest(ctx context.Context, code string, r 
 
 	// unmarshal the response
 	var oauthToken oauthToken
-	if err := json.NewDecoder(r.Body).Decode(&oauthToken); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&oauthToken); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
 		return nil, err
 	}
 	return &oauthToken, nil
 }
 
+// query discord for the token's user name
 func (x DiscordOAuthHandler) queryDiscordUser(ctx context.Context, oauthToken *oauthToken) (*discordUser, error) {
 	// build the request
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, x.Config.Endpoint+"/users/@me", nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauthToken.TokenType, oauthToken.AccessToken))
+	req.Header.Add("Authorization", oauthToken.TokenType+" "+oauthToken.AccessToken)
 
 	// do the request
+	buf, _ := httputil.DumpRequest(req, true)
+	fmt.Println(string(buf))
 	resp, err := tracing.DoHttpRequest(req)
+	buf, _ = httputil.DumpResponse(resp, true)
+	fmt.Println(string(buf))
 	if resp.StatusCode != http.StatusOK {
 		logger.WithField("status", resp.StatusCode).Error("non-200 response from discord")
 		return nil, ErrDiscordRequestFailed
@@ -171,13 +187,14 @@ func (x DiscordOAuthHandler) queryDiscordUser(ctx context.Context, oauthToken *o
 
 	// unmarshal the payload
 	var discordUser discordUser
-	if err := json.NewDecoder(req.Body).Decode(&discordUser); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&discordUser); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
 		return nil, err
 	}
 	return &discordUser, nil
 }
 
+// query discord for the guild roles of the user id
 func (x DiscordOAuthHandler) queryUserGuildRoles(ctx context.Context, userID string) ([]string, error) {
 	// verify this user is in our discord server
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
@@ -186,12 +203,16 @@ func (x DiscordOAuthHandler) queryUserGuildRoles(ctx context.Context, userID str
 		logger.WithError(err).Error("http.NewRequestWithContext() failed")
 		return nil, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", x.Config.AuthType, x.Config.AuthToken))
+	req.Header.Add("Authorization", "Bot "+x.Config.AuthToken)
+
+	buf, _ := httputil.DumpRequest(req, true)
+	fmt.Println(string(buf))
 	resp, err := tracing.DoHttpRequest(req)
+	buf, _ = httputil.DumpResponse(resp, true)
+	fmt.Println(string(buf))
 	if err != nil {
 		logger.WithError(err).Error("tracing.DoHttpRequest() failed")
 		return nil, err
-
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -203,7 +224,7 @@ func (x DiscordOAuthHandler) queryUserGuildRoles(ctx context.Context, userID str
 		Nick  string   `json:"nick"`
 		Roles []string `json:"roles"`
 	}
-	if err := json.NewDecoder(req.Body).Decode(&guildMember); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&guildMember); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
 		return nil, err
 

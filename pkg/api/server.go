@@ -20,11 +20,11 @@ var PublicFiles = "public"
 type ServerConfig struct {
 	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
 	MaxContentLength int64  `split_words:"true" default:"10000000"`
-
-	MemberUser   string `split_words:"true" default:"admin"`
-	MemberPass   string `split_words:"true" default:"admin"`
-	PrepRepToken string `split_words:"true" default:"admin"`
-	AdminToken   string `split_words:"true" default:"admin"`
+	MemberUser       string `split_words:"true" default:"admin"`
+	MemberPass       string `split_words:"true" default:"admin"`
+	PrepRepToken     string `split_words:"true" default:"admin"`
+	AdminToken       string `split_words:"true" default:"admin"`
+	DiscordLoginUrl  string `split_words:"true" default:"admin"`
 
 	Discord DiscordOAuthHandlerConfig `envconfig:"discord"`
 }
@@ -85,7 +85,7 @@ func (x *Storage) Init(ctx context.Context) error {
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {
-	navBar := NavBar{MemberUser: config.MemberUser}
+	navBar := NavBar{MemberUser: config.MemberUser, Sessions: database.Sessions, DiscordLoginUrl: config.DiscordLoginUrl}
 	members := BasicAuth{config.MemberUser: config.MemberPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
 	admin := TokenAuth{config.AdminToken}
@@ -134,6 +134,9 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 		},
 	}
 	mux.Handle("/login", loginHandler)
+
+	logoutHandler := &LogoutHandler{Sessions: database.Sessions}
+	mux.Handle("/logout", logoutHandler)
 
 	discordOAuthHandler := DiscordOAuthHandler{
 		Config:   config.Discord,

@@ -34,8 +34,9 @@ type Session struct {
 }
 
 type Config struct {
-	CookieName string
-	LockerName string
+	CookieName   string `split_words:"true" default:"vvgo-sessions"`
+	CookieDomain string `split_words:"true" default:"localhost"`
+	LockerName   string `split_words:"true" default:"vvgo-sessions"`
 }
 
 const DataFile = "users.json"
@@ -50,9 +51,27 @@ const (
 )
 
 type Identity struct {
-	Kind        `json:"kind"`
-	Roles       []access.Role `roles:"roles"`
-	DiscordUser `json:"discord_user,omitempty"`
+	Kind         `json:"kind"`
+	Roles        []access.Role `roles:"roles"`
+	*DiscordUser `json:"discord_user,omitempty"`
+}
+
+// returns the first role or RoleUnknown if the identity has no roles
+func (x Identity) Role() access.Role {
+	if len(x.Roles) == 0 {
+		return access.RoleUnknown
+	} else {
+		return x.Roles[0]
+	}
+}
+
+func (x Identity) IsVVGOMember() bool {
+	for _, role := range x.Roles {
+		if role == access.RoleVVGOMember {
+			return true
+		}
+	}
+	return false
 }
 
 type DiscordUser struct {
@@ -129,7 +148,7 @@ func (x *Store) ReadSessionFromRequest(r *http.Request, dest *Session) error {
 	return dest.ReadCookie(x.secret, cookie)
 }
 
-func (x *Store) StoreIdentity(ctx context.Context, sessionID SessionID, src *Identity) error {
+func (x *Store) StoreIdentity(ctx context.Context, id SessionID, src *Identity) error {
 	// read+modify+write
 	if err := x.locker.Lock(ctx); err != nil {
 		return err
@@ -143,11 +162,35 @@ func (x *Store) StoreIdentity(ctx context.Context, sessionID SessionID, src *Ide
 	}
 
 	// modify
-	sessions[sessionID] = *src
+	sessions[id] = *src
 
 	// write
+	return x.writeMap(ctx, &sessions)
+}
+
+func (x *Store) DeleteIdentity(ctx context.Context, id SessionID) error {
+	// read+modify+write
+	if err := x.locker.Lock(ctx); err != nil {
+		return err
+	}
+	defer x.locker.Unlock(ctx)
+
+	// read
+	var sessions map[SessionID]Identity
+	if err := x.getMap(ctx, &sessions); err != nil {
+		return err
+	}
+
+	// modify
+	delete(sessions, id)
+
+	// write
+	return x.writeMap(ctx, &sessions)
+}
+
+func (x *Store) writeMap(ctx context.Context, src *map[SessionID]Identity) error {
 	var obj storage.Object
-	if err := json.NewEncoder(&obj.Buffer).Encode(&sessions); err != nil {
+	if err := json.NewEncoder(&obj.Buffer).Encode(src); err != nil {
 		return fmt.Errorf("json.Decode() failed: %v", err)
 	}
 	if err := x.cache.PutObject(ctx, DataFile, &obj); err != nil {
@@ -158,9 +201,11 @@ func (x *Store) StoreIdentity(ctx context.Context, sessionID SessionID, src *Ide
 
 func (x *Store) NewCookie(session Session) *http.Cookie {
 	return &http.Cookie{
-		Name:    x.Config.CookieName,
-		Value:   session.String(x.secret),
-		Expires: session.Expires,
+		Name:     x.Config.CookieName,
+		Value:    session.String(x.secret),
+		Expires:  session.Expires,
+		Domain:   x.Config.CookieDomain,
+		HttpOnly: true,
 	}
 }
 

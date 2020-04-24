@@ -31,14 +31,13 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		var session sessions.Session
-		err := x.Sessions.ReadSessionFromRequest(r, &session)
-		if err == nil {
+		var identity sessions.Identity
+		if err := x.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err == nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
 
-		opts := x.NavBar.NewOpts(r)
+		opts := x.NavBar.NewOpts(ctx, r)
 		page := struct {
 			Header template.HTML
 			NavBar template.HTML
@@ -55,8 +54,8 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		buf.WriteTo(w)
 
 	case http.MethodPost:
-		var session sessions.Session
-		if err := x.Sessions.ReadSessionFromRequest(r, &session); err == nil {
+		var identity sessions.Identity
+		if err := x.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err == nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
@@ -80,13 +79,13 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// create the identity object
-		identity := sessions.Identity{
+		identity = sessions.Identity{
 			Kind:  sessions.IdentityPassword,
 			Roles: roles,
 		}
 
 		// create a session and cookie
-		session = x.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
+		session := x.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
 		cookie := x.Sessions.NewCookie(session)
 		if err := x.Sessions.StoreIdentity(ctx, session.ID, &identity); err != nil {
 			logger.WithError(err).Error("x.Sessions.StoreIdentity() failed")
@@ -103,4 +102,29 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		methodNotAllowed(w)
 	}
+}
+
+type LogoutHandler struct {
+	Sessions *sessions.Store
+}
+
+func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "logout_handler")
+	defer span.Send()
+
+	var session sessions.Session
+	if err := x.Sessions.ReadSessionFromRequest(r, &session); err != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
+	// delete the session
+	if err := x.Sessions.DeleteIdentity(ctx, session.ID); err != nil {
+		logger.WithError(err).Error("x.Sessions.DeleteIdentity() failed")
+		internalServerError(w)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
+	return
 }
