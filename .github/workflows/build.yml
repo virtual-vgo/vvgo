@@ -10,12 +10,7 @@ jobs:
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
 
-      - name: Build image
-        env:
-          DOCKER_BUILDKIT: 1
-        run: make images
-
-      - name: Push images
+      - name: Build images
         shell: bash
         run: |
           for tag in latest $(docker run --rm vvgo --release-tags); do
