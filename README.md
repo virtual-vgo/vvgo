@@ -32,3 +32,9 @@ make vvgo
 # Run it
 ./vvgo
 ```
+
+### Build with make
+
+```sh
+make test vvgo
+```
