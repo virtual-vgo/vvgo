@@ -9,7 +9,6 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
-	"time"
 )
 
 type Login struct {
@@ -73,7 +72,7 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if len(roles) == 0 {
 			logger.WithFields(logrus.Fields{
 				"user": user,
-			}).Error("authorization failed")
+			}).Error("password authentication failed")
 			unauthorized(w)
 			return
 		}
@@ -83,21 +82,7 @@ func (x LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Kind:  sessions.IdentityPassword,
 			Roles: roles,
 		}
-
-		// create a session and cookie
-		session := x.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
-		cookie := x.Sessions.NewCookie(session)
-		if err := x.Sessions.StoreIdentity(ctx, session.ID, &identity); err != nil {
-			logger.WithError(err).Error("x.Sessions.StoreIdentity() failed")
-			internalServerError(w)
-			return
-		}
-
-		http.SetCookie(w, cookie)
-		http.Redirect(w, r, "/", http.StatusFound)
-		logger.WithFields(logrus.Fields{
-			"user": user,
-		}).Info("user logged in")
+		loginRedirect(newCookie(ctx, x.Sessions, &identity), w, r, "/")
 
 	default:
 		methodNotAllowed(w)

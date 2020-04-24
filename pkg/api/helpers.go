@@ -2,13 +2,40 @@ package api
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/gob"
 	"encoding/json"
+	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"html/template"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
+
+func loginRedirect(cookie *http.Cookie, w http.ResponseWriter, r *http.Request, name string) {
+	if cookie == nil {
+		internalServerError(w)
+		return
+	}
+	http.SetCookie(w, cookie)
+	logger.WithFields(logrus.Fields{
+		"name": name,
+	}).Info("name logged in")
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func newCookie(ctx context.Context, store *sessions.Store, identity *sessions.Identity) *http.Cookie {
+	// create a session and cookie
+	session := store.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
+	cookie := store.NewCookie(session)
+	if err := store.StoreIdentity(ctx, session.ID, identity); err != nil {
+		logger.WithError(err).Error("x.Sessions.Save() failed")
+		return nil
+	}
+	return cookie
+}
 
 func readBody(dest io.Writer, r *http.Request) bool {
 	switch r.Header.Get("Content-Encoding") {

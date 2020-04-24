@@ -47,8 +47,11 @@ func AddField(ctx context.Context, key string, val interface{}) {
 func DoHttpRequest(r *http.Request) (*http.Response, error) {
 	_, span := StartSpan(r.Context(), fmt.Sprintf("%s: %s", r.Method, r.URL.String()))
 	defer span.Send()
-	span.AddField("method", r.Method)
-	span.AddField("uri", r.URL.String())
-	span.AddField("content_length", r.ContentLength)
-	return http.DefaultClient.Do(r)
+	span.AddField("request_method", r.Method)
+	span.AddField("request_uri", r.URL.String())
+	span.AddField("request_content_length", r.ContentLength)
+	resp, err := http.DefaultClient.Do(r)
+	span.AddField("response_code", resp.StatusCode)
+	span.AddField("response_content_length", resp.ContentLength)
+	return resp, err
 }
