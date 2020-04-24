@@ -57,7 +57,7 @@ IMAGE_REPO ?= docker.pkg.github.com/$(GITHUB_REPO)
 images: images/vvgo-builder
 images: images/vvgo
 
-images/vvgo-builder:
+images/vvgo:
 	docker build . \
 		--file Dockerfile \
 		--target builder \
@@ -65,16 +65,9 @@ images/vvgo-builder:
 		--build-arg GITHUB_REF=$GITHUB_REF \
 		--tag vvgo-builder
 
-images/vvgo:
-	docker build . \
- 	--file Dockerfile \
- 	--target vvgo \
- 	--tag vvgo
-
 # Deploy images
 
 .PHONY: push
-push: push/vvgo-builder
 push: push/vvgo
 
 push/%: images/%
