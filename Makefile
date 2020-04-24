@@ -71,7 +71,6 @@ images: images/vvgo
 images/vvgo:
 	docker build . \
 		--file Dockerfile \
-		--target builder \
 		--build-arg GITHUB_SHA=$GITHUB_SHA \
 		--build-arg GITHUB_REF=$GITHUB_REF \
 		--tag vvgo
