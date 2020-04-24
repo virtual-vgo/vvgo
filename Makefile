@@ -63,7 +63,7 @@ images/vvgo:
 		--target builder \
 		--build-arg GITHUB_SHA=$GITHUB_SHA \
 		--build-arg GITHUB_REF=$GITHUB_REF \
-		--tag vvgo-builder
+		--tag vvgo
 
 # Deploy images
 
