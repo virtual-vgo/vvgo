@@ -73,7 +73,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 
 		// check that a session exists for the cookie
 		var session sessions.Session
-		require.NoError(t, session.ReadCookie(sessions.Secret{1, 2, 3, 4}, cookies[0]), "session.ReadCookie")
+		require.NoError(t, session.DecodeCookie(sessions.Secret{1, 2, 3, 4}, cookies[0]), "session.DecodeCookie")
 
 		// check that the identity is what we expect
 		var identity sessions.Identity

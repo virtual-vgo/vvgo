@@ -14,6 +14,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -54,8 +55,8 @@ const (
 // This _absolutely_ should not contain any personally identifiable information.
 // Numeric user id's are fine, but no emails, user names, addresses, etc.
 type Identity struct {
-	Kind        `json:"kind"`
-	Roles       []access.Role `json:"roles"`
+	Kind  `json:"kind"`
+	Roles []access.Role `json:"roles"`
 }
 
 // returns the first role or RoleUnknown if the identity has no roles.
@@ -99,7 +100,6 @@ func (x *Store) Init(ctx context.Context) error {
 }
 
 // ReadIdentityFromRequest reads the identity from the sessions db based on the request data.
-// Currently, this only includes cookies, but we can add support for jwt's.
 func (x *Store) ReadIdentityFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
 	// read the session
 	var session Session
@@ -108,6 +108,24 @@ func (x *Store) ReadIdentityFromRequest(ctx context.Context, r *http.Request, de
 	}
 	// lookup the session
 	return x.GetIdentity(ctx, session.ID, dest)
+}
+
+// Reads the session data from an http request
+// Currently, this function can read sessions from either a cookie or bearer token.
+func (x *Store) ReadSessionFromRequest(r *http.Request, dest *Session) error {
+	// check for a bearer token
+	token := r.Header.Get("Authorization")
+	if strings.HasPrefix(token, "Bearer ") {
+		return dest.Decode(x.secret, strings.TrimPrefix(token, "Bearer "))
+	}
+
+	// check for a cookie
+	cookie, err := r.Cookie(x.CookieName)
+	if err == nil {
+		return dest.DecodeCookie(x.secret, cookie)
+	}
+
+	return ErrSessionNotFound
 }
 
 func (x *Store) GetIdentity(ctx context.Context, id SessionID, dest *Identity) error {
@@ -128,27 +146,6 @@ func (x *Store) GetIdentity(ctx context.Context, id SessionID, dest *Identity) e
 	}
 	*dest = identities[id]
 	return nil
-}
-
-func (x *Store) getMap(ctx context.Context, dest *map[SessionID]Identity) error {
-	// load the data file from cache
-	var obj storage.Object
-	if err := x.cache.GetObject(ctx, DataFile, &obj); err != nil {
-		return err
-	}
-
-	if err := json.NewDecoder(&obj.Buffer).Decode(&dest); err != nil {
-		return fmt.Errorf("json.Decode() failed: %v", err)
-	}
-	return nil
-}
-
-func (x *Store) ReadSessionFromRequest(r *http.Request, dest *Session) error {
-	cookie, err := r.Cookie(x.CookieName)
-	if err != nil {
-		return err
-	}
-	return dest.ReadCookie(x.secret, cookie)
 }
 
 func (x *Store) StoreIdentity(ctx context.Context, id SessionID, src *Identity) error {
@@ -191,21 +188,10 @@ func (x *Store) DeleteIdentity(ctx context.Context, id SessionID) error {
 	return x.writeMap(ctx, &sessions)
 }
 
-func (x *Store) writeMap(ctx context.Context, src *map[SessionID]Identity) error {
-	var obj storage.Object
-	if err := json.NewEncoder(&obj.Buffer).Encode(src); err != nil {
-		return fmt.Errorf("json.Decode() failed: %v", err)
-	}
-	if err := x.cache.PutObject(ctx, DataFile, &obj); err != nil {
-		return fmt.Errorf("x.cache.PutObject() failed: %v", err)
-	}
-	return nil
-}
-
 func (x *Store) NewCookie(session Session) *http.Cookie {
 	return &http.Cookie{
 		Name:     x.Config.CookieName,
-		Value:    session.String(x.secret),
+		Value:    session.Encode(x.secret),
 		Expires:  session.Expires,
 		Domain:   x.Config.CookieDomain,
 		HttpOnly: true,
@@ -221,15 +207,51 @@ func (x *Store) NewSession(expiresAt time.Time) Session {
 	}
 }
 
+func (x *Store) getMap(ctx context.Context, dest *map[SessionID]Identity) error {
+	// load the data file from cache
+	var obj storage.Object
+	if err := x.cache.GetObject(ctx, DataFile, &obj); err != nil {
+		return err
+	}
+
+	if err := json.NewDecoder(&obj.Buffer).Decode(&dest); err != nil {
+		return fmt.Errorf("json.Decode() failed: %v", err)
+	}
+	return nil
+}
+
+func (x *Store) writeMap(ctx context.Context, src *map[SessionID]Identity) error {
+	var obj storage.Object
+	if err := json.NewEncoder(&obj.Buffer).Encode(src); err != nil {
+		return fmt.Errorf("json.Decode() failed: %v", err)
+	}
+	if err := x.cache.PutObject(ctx, DataFile, &obj); err != nil {
+		return fmt.Errorf("x.cache.PutObject() failed: %v", err)
+	}
+	return nil
+}
+
 var ErrInvalidSession = errors.New("invalid cookie")
 
 const SessionFormat = "V-i-r-t-u-a-l--V-G-O--%016x%016x%016x%016x%016x%016x"
 
-func (x *Session) ReadCookie(secret Secret, src *http.Cookie) error {
-	return x.ReadString(secret, src.Value)
+func (x *Session) Encode(secret Secret) string {
+	str := fmt.Sprintf("%s%016x%016x", secret.String(), x.ID, x.Expires.UnixNano())
+	sum := sha256.Sum256([]byte(str))
+	sumReader := bytes.NewReader(sum[:])
+	var hash [4]uint64
+	for i := range hash {
+		binary.Read(sumReader, binary.LittleEndian, &hash[i])
+	}
+	return fmt.Sprintf(SessionFormat,
+		hash[0], hash[1], hash[2], hash[3], x.ID, uint64(x.Expires.UnixNano()))
 }
 
-func (x *Session) ReadString(secret Secret, value string) error {
+func (x *Session) DecodeCookie(secret Secret, src *http.Cookie) error {
+	return x.Decode(secret, src.Value)
+}
+
+func (x *Session) Decode(secret Secret, value string) error {
 	// read the cookie
 	var hash [4]uint64
 	var id SessionID
@@ -254,19 +276,18 @@ func (x *Session) ReadString(secret Secret, value string) error {
 
 	x.ID = id
 	x.Expires = time.Unix(0, int64(expiresAt))
-	return nil
+	return x.Validate()
 }
 
-func (x *Session) String(secret Secret) string {
-	str := fmt.Sprintf("%s%016x%016x", secret.String(), x.ID, x.Expires.UnixNano())
-	sum := sha256.Sum256([]byte(str))
-	sumReader := bytes.NewReader(sum[:])
-	var hash [4]uint64
-	for i := range hash {
-		binary.Read(sumReader, binary.LittleEndian, &hash[i])
+var ErrSessionExpired = errors.New("session is expired")
+
+func (x *Session) Validate() error {
+	switch {
+	case time.Now().UnixNano() >= x.Expires.UnixNano():
+		return ErrSessionExpired
+	default:
+		return nil
 	}
-	return fmt.Sprintf(SessionFormat,
-		hash[0], hash[1], hash[2], hash[3], x.ID, uint64(x.Expires.UnixNano()))
 }
 
 type Secret [4]uint64
@@ -294,9 +315,4 @@ func (x Secret) Validate() error {
 
 func (x Secret) String() string {
 	return fmt.Sprintf(SecretFormat, x[0], x[1], x[2], x[3])
-}
-
-func (x *Secret) Decode(str string) error {
-	_, err := fmt.Sscanf(str, SecretFormat, &x[0], &x[1], &x[2], &x[3])
-	return err
 }
