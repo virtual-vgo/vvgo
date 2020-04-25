@@ -142,4 +142,3 @@ func TestBasicAuth_Authenticate(t *testing.T) {
 		})
 	}
 }
-

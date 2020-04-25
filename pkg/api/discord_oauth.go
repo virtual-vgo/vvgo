@@ -66,8 +66,8 @@ func (x DiscordAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// create the identity object
 	identity := sessions.Identity{
-		Kind:        sessions.KindDiscord,
-		Roles:       []access.Role{access.RoleVVGOMember},
+		Kind:  sessions.KindDiscord,
+		Roles: []access.Role{access.RoleVVGOMember},
 	}
 	loginRedirect(ctx, w, r, x.Sessions, &identity)
 }

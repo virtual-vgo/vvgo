@@ -6,4 +6,3 @@ import (
 
 func TestDiscordOAuthHandler_ServeHTTP(t *testing.T) {
 }
-

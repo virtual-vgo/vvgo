@@ -69,31 +69,20 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
-            <li class="nav-item btn">
-
-                <a class="nav-link disabled text-monospace"
-                   href="#" tabindex="-1" aria-disabled="true"> :hello:
-                </a>
-
-            </li>
-
             <ul class="navbar-nav container">
-                <li class="nav-item">
-                    <a class=" nav-link text-monospace"
-                       href="/parts"> Parts
+                <li class="nav-item btn">
+                    <a class="nav-login nav-link text-monospace text-info" href="/login">
+                        Login
+                    </a>
+                </li>
+                <li class="nav-item btn">
+                    <a class="nav-login nav-link text-monospace text-info" href="">
+                        Login With Discord
                     </a>
                 </li>
             </ul>
 
-            <ul class="navbar-nav container">
-                <li class="nav-item">
-                    <a class="bg-primary nav-link text-monospace"
-                       href="/logout"> Logout
-                    </a>
-                </li>
-            </ul>
-
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link btn-outline-primary" href="https://www.facebook.com/groups/1080154885682377/">
                         <i class="fab fa-facebook-square fa-2x"></i>
@@ -112,10 +101,17 @@
 <form class="form-signin" action="/login" method="post">
     <img class="mb-4 mt-4" src="images/logo.svg" alt="" width="100%">
     <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-    <label for="inputUser" class="sr-only">VVGO User</label>
-    <input name="user" type="text" id="inputUser" class="form-control" placeholder="vvgo user" required autofocus>
-    <label for="inputPassword" class="sr-only">Password</label>
-    <input name="pass" type="password" id="inputPassword" class="form-control" placeholder="password" required>
+
+    <div>
+        <label for="inputUser" class="sr-only">VVGO User</label>
+        <input name="user" type="text" id="inputUser" class="form-control" placeholder="vvgo user" required autofocus>
+    </div>
+
+    <div class="mt-1">
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input name="pass" type="password" id="inputPassword" class="form-control" placeholder="password" required>
+    </div>
+
     <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
 </form>
 </body>
