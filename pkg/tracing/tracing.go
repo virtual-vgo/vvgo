@@ -51,7 +51,11 @@ func DoHttpRequest(r *http.Request) (*http.Response, error) {
 	span.AddField("request_uri", r.URL.String())
 	span.AddField("request_content_length", r.ContentLength)
 	resp, err := http.DefaultClient.Do(r)
-	span.AddField("response_code", resp.StatusCode)
-	span.AddField("response_content_length", resp.ContentLength)
+	if err != nil {
+		span.AddField("error", err.Error())
+	} else {
+		span.AddField("response_code", resp.StatusCode)
+		span.AddField("response_content_length", resp.ContentLength)
+	}
 	return resp, err
 }
