@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/access"
+	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -18,15 +19,15 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
-	MaxContentLength int64  `split_words:"true" default:"10000000"`
-	MemberUser       string `split_words:"true" default:"admin"`
-	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
-	DiscordLoginUrl  string `split_words:"true" default:"admin"`
-
-	Discord DiscordOAuthHandlerConfig `envconfig:"discord"`
+	ListenAddress         string `split_words:"true" default:"0.0.0.0:8080"`
+	MaxContentLength      int64  `split_words:"true" default:"10000000"`
+	MemberUser            string `split_words:"true" default:"admin"`
+	MemberPass            string `split_words:"true" default:"admin"`
+	PrepRepToken          string `split_words:"true" default:"admin"`
+	AdminToken            string `split_words:"true" default:"admin"`
+	DiscordLoginUrl       string `split_words:"true" default:"#"`
+	DiscordGuildID        string `envconfig:"discord_guild_id"`
+	DiscordRoleVVGOMember string `envconfig:"discord_role_vvgo_member"`
 }
 
 type StorageConfig struct {
@@ -84,7 +85,7 @@ func (x *Storage) Init(ctx context.Context) error {
 	}
 }
 
-func NewServer(config ServerConfig, database *Storage) *http.Server {
+func NewServer(config ServerConfig, database *Storage, discordClient *discord.Client) *http.Server {
 	navBar := NavBar{MemberUser: config.MemberUser, Sessions: database.Sessions, DiscordLoginUrl: config.DiscordLoginUrl}
 	members := BasicAuth{config.MemberUser: config.MemberPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
@@ -107,9 +108,35 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
 
-	partsHandler := members.Authenticate(&PartsHandler{NavBar: navBar, Storage: database})
-	mux.Handle("/parts", partsHandler)
-	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
+	// auth handlers
+	passwordLoginHandler := &PasswordLoginHandler{
+		Sessions: database.Sessions,
+		Logins: []PasswordLogin{
+			{
+				User:  config.MemberUser,
+				Pass:  config.MemberPass,
+				Roles: []access.Role{access.RoleVVGOMember},
+			},
+		},
+	}
+	mux.Handle("/auth/password", passwordLoginHandler)
+
+	discordLoginHandler := DiscordAuthHandler{
+		GuildID:        discord.GuildID(config.DiscordGuildID),
+		RoleVVGOMember: config.DiscordRoleVVGOMember,
+		Sessions:       database.Sessions,
+		Discord:        discordClient,
+	}
+	mux.Handle("/auth/discord", &discordLoginHandler)
+
+	logoutHandler := &LogoutHandler{Sessions: database.Sessions}
+	mux.Handle("/logout", logoutHandler)
+
+	mux.Handle("/version", http.HandlerFunc(Version))
+
+	// upload/download handlers
+	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
+	mux.Handle("/upload", uploadHandler)
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
 		database.SheetsBucketName: database.Sheets.DownloadURL,
@@ -118,36 +145,17 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 
-	// Uploads
-	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
-	mux.Handle("/upload", uploadHandler)
+	// views
+	loginView := &LoginView{NavBar: navBar, Sessions: database.Sessions}
+	mux.Handle("/login", loginView)
 
-	loginHandler := &LoginHandler{
-		NavBar:   navBar,
-		Sessions: database.Sessions,
-		Logins: []Login{
-			{
-				User:  config.MemberUser,
-				Pass:  config.MemberPass,
-				Roles: []access.Role{access.RoleVVGOMember},
-			},
-		},
-	}
-	mux.Handle("/login", loginHandler)
+	partsView := members.Authenticate(&PartView{NavBar: navBar, Storage: database})
+	mux.Handle("/parts", partsView)
 
-	logoutHandler := &LogoutHandler{Sessions: database.Sessions}
-	mux.Handle("/logout", logoutHandler)
-
-	discordOAuthHandler := DiscordOAuthHandler{
-		Config:   config.Discord,
-		Sessions: database.Sessions,
-	}
-	mux.Handle("/discord_oauth", &discordOAuthHandler)
-
-	mux.Handle("/version", http.HandlerFunc(Version))
+	indexView := &IndexView{NavBar: navBar}
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexHandler{NavBar: navBar}.ServeHTTP(w, r)
+			indexView.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}

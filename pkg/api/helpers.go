@@ -14,29 +14,6 @@ import (
 	"time"
 )
 
-func loginRedirect(cookie *http.Cookie, w http.ResponseWriter, r *http.Request, name string) {
-	if cookie == nil {
-		internalServerError(w)
-		return
-	}
-	http.SetCookie(w, cookie)
-	logger.WithFields(logrus.Fields{
-		"name": name,
-	}).Info("name logged in")
-	http.Redirect(w, r, "/", http.StatusFound)
-}
-
-func newCookie(ctx context.Context, store *sessions.Store, identity *sessions.Identity) *http.Cookie {
-	// create a session and cookie
-	session := store.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
-	cookie := store.NewCookie(session)
-	if err := store.StoreIdentity(ctx, session.ID, identity); err != nil {
-		logger.WithError(err).Error("x.Sessions.Save() failed")
-		return nil
-	}
-	return cookie
-}
-
 func readBody(dest io.Writer, r *http.Request) bool {
 	switch r.Header.Get("Content-Encoding") {
 	case "application/gzip":
@@ -159,4 +136,30 @@ func unauthorized(w http.ResponseWriter) {
 
 func notImplemented(w http.ResponseWriter) {
 	http.Error(w, "", http.StatusNotImplemented)
+}
+
+// creates a cookie and redirects the user to the home page
+func loginRedirect(ctx context.Context, w http.ResponseWriter, r *http.Request, store *sessions.Store, identity *sessions.Identity) {
+	cookie := newCookie(ctx, store, identity)
+	if cookie == nil {
+		internalServerError(w)
+		return
+	}
+	http.SetCookie(w, cookie)
+	logger.WithFields(logrus.Fields{
+		"identity": identity.Kind,
+		"roles":    identity.Roles,
+	}).Info("authorization succeeded")
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func newCookie(ctx context.Context, store *sessions.Store, identity *sessions.Identity) *http.Cookie {
+	// create a session and cookie
+	session := store.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
+	cookie := store.NewCookie(session)
+	if err := store.StoreIdentity(ctx, session.ID, identity); err != nil {
+		logger.WithError(err).Error("x.Sessions.Save() failed")
+		return nil
+	}
+	return cookie
 }

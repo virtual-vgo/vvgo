@@ -46,7 +46,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	gotToken, gotError := client.QueryOAuth(ctx, "test-code")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodPost, gotRequest.Method)
-	assert.Equal(t, "/api/v6/oauth2/token", gotRequest.URL.String())
+	assert.Equal(t, "/oauth2/token", gotRequest.URL.String())
 	assert.Equal(t, "application/x-www-form-urlencoded", gotRequest.Header.Get("Content-Type"))
 
 	wantForm := make(url.Values)
@@ -107,7 +107,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
 	assert.Equal(t, "/users/@me", gotRequest.URL.String())
-	assert.Equal(t, "Bearer 6qrZcUqja7812RVdnEKjpzOL4CvHBFG", gotRequest.Header.Get("Authorization"))
+	assert.Equal(t, []string{"Bearer 6qrZcUqja7812RVdnEKjpzOL4CvHBFG"}, gotRequest.Header["Authorization"])
 	assert.Equal(t, &User{ID: "80351110224678912"}, gotUser)
 }
 
@@ -141,6 +141,6 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
 	assert.Equal(t, "/guilds/test-guild-id/members/test-user-id", gotRequest.URL.String())
-	assert.Equal(t, "Bot test-bot-auth-token", gotRequest.Header.Get("Authorization"))
+	assert.Equal(t, []string{"Bot test-bot-auth-token"}, gotRequest.Header["Authorization"])
 	assert.Equal(t, &GuildMember{Roles: []string{"jelly", "donut"}}, gotMember)
 }

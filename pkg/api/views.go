@@ -12,13 +12,13 @@ import (
 	"strings"
 )
 
-type PartsHandler struct {
+type PartView struct {
 	NavBar
 	*Storage
 }
 
-func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "parts_handler")
+func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "parts_view")
 	defer span.Send()
 
 	if r.Method != http.MethodGet {
@@ -91,12 +91,12 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-type IndexHandler struct {
+type IndexView struct {
 	NavBar
 }
 
-func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "parts_handler")
+func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "index_view")
 	defer span.Send()
 
 	if r.Method != http.MethodGet {
@@ -119,6 +119,38 @@ func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	buffer.WriteTo(w)
+}
+
+type LoginView struct {
+	NavBar   NavBar
+	Sessions *sessions.Store
+}
+
+func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "login_view")
+	defer span.Send()
+
+	var identity sessions.Identity
+	if err := x.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err == nil {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
+	opts := x.NavBar.NewOpts(ctx, r)
+	page := struct {
+		Header template.HTML
+		NavBar template.HTML
+	}{
+		Header: Header(),
+		NavBar: x.NavBar.RenderHTML(opts),
+	}
+
+	var buf bytes.Buffer
+	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	buf.WriteTo(w)
 }
 
 func Header() template.HTML {

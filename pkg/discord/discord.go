@@ -17,12 +17,18 @@ import (
 
 var logger = log.Logger()
 
+// Client that makes discord requests.
 type Client struct {
 	Config
 }
 
+func NewClient(config Config) *Client {
+	return &Client{Config: config}
+}
+
 var ErrInvalidOAuthCode = errors.New("invalid oauth code")
 
+// Config for discord requests.
 type Config struct {
 	// Api endpoint to query
 	Endpoint string `default:"https://discordapp.com/api/v6"`
@@ -54,11 +60,25 @@ type OAuthToken struct {
 	Scope        string `json:"scope"`
 }
 
+// A discord user id.
+// These are string encoded 64bit ints.
+// https://discordapp.com/developers/docs/reference#snowflakes
+type UserID string
+
+func (x UserID) String() string { return string(x) }
+
+// A discord guild id.
+// These are string encoded 64bit ints.
+// https://discordapp.com/developers/docs/reference#snowflakes
+type GuildID string
+
+func (x GuildID) String() string { return string(x) }
+
 // A discord user object.
 // We only care about the id.
 // https://discordapp.com/developers/docs/resources/user#user-object
 type User struct {
-	ID string `json:"id"`
+	ID UserID `json:"id"`
 }
 
 // A discord guild member object.
@@ -98,7 +118,7 @@ func (x Client) newOAuthRequest(ctx context.Context, code string) (*http.Request
 	form.Add("redirect_uri", x.Config.OAuthRedirectURI)
 	form.Add("scope", "identify")
 
-	req, err := x.newRequest(ctx, http.MethodPost, "/api/v6/oauth2/token", strings.NewReader(form.Encode()))
+	req, err := x.newRequest(ctx, http.MethodPost, "/oauth2/token", strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("http.NewRequestWithContext() failed: %v", err)
 	}
@@ -136,13 +156,12 @@ func (x Client) newTokenRequest(ctx context.Context, oauthToken *OAuthToken, pat
 // Query discord for the guild member object of the guild id and user id.
 // Here we use the the server's own auth token.
 // https://discordapp.com/developers/docs/resources/guild#get-guild-member
-func (x Client) QueryGuildMember(ctx context.Context, guildID string, userID string) (*GuildMember, error) {
-	req, err := x.newBotRequest(ctx, x.Config.BotAuthToken, "/guilds/"+guildID+"/members/"+userID)
+func (x Client) QueryGuildMember(ctx context.Context, guildID GuildID, userID UserID) (*GuildMember, error) {
+	req, err := x.newBotRequest(ctx, x.Config.BotAuthToken, "/guilds/"+guildID.String()+"/members/"+userID.String())
 	if err != nil {
 		logger.WithError(err).Error("http.NewRequestWithContext() failed")
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bot "+x.Config.BotAuthToken)
 
 	// unmarshal the response
 	var guildMember GuildMember
@@ -180,6 +199,7 @@ func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, erro
 		logger.WithFields(logrus.Fields{
 			"method": req.Method,
 			"status": resp.StatusCode,
+			"url":    req.URL.String(),
 			"body":   buf.String(),
 		}).Error("non-200 response from discord")
 
@@ -187,7 +207,7 @@ func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, erro
 		logger.WithFields(logrus.Fields{
 			"method": req.Method,
 			"status": resp.StatusCode,
-			"path":   req.URL.Path,
+			"url":    req.URL.String(),
 		}).Info("discord api request complete")
 		err = json.NewDecoder(resp.Body).Decode(dest)
 		if err != nil {

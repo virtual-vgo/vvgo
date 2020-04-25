@@ -46,17 +46,19 @@ type Kind string
 func (x Kind) String() string { return string(x) }
 
 const (
-	IdentityPassword Kind = "password"
-	IdentityDiscord  Kind = "discord"
+	KindPassword Kind = "password"
+	KindDiscord  Kind = "discord"
 )
 
+// A user identity.
+// This _absolutely_ should not contain any personally identifiable information.
+// Numeric user id's are fine, but no emails, user names, addresses, etc.
 type Identity struct {
-	Kind         `json:"kind"`
-	Roles        []access.Role `roles:"roles"`
-	*DiscordUser `json:"discord_user,omitempty"`
+	Kind        `json:"kind"`
+	Roles       []access.Role `json:"roles"`
 }
 
-// returns the first role or RoleUnknown if the identity has no roles
+// returns the first role or RoleUnknown if the identity has no roles.
 func (x Identity) Role() access.Role {
 	if len(x.Roles) == 0 {
 		return access.RoleUnknown
@@ -65,6 +67,7 @@ func (x Identity) Role() access.Role {
 	}
 }
 
+// Returns true if this identity has the vvgo members role.
 func (x Identity) IsVVGOMember() bool {
 	for _, role := range x.Roles {
 		if role == access.RoleVVGOMember {
@@ -74,10 +77,7 @@ func (x Identity) IsVVGOMember() bool {
 	return false
 }
 
-type DiscordUser struct {
-	UserID string `json:"user_id"`
-}
-
+// NewStore returns a new sessions client.
 func NewStore(secret Secret, config Config) *Store {
 	return &Store{
 		Config: config,
@@ -87,6 +87,7 @@ func NewStore(secret Secret, config Config) *Store {
 	}
 }
 
+// Init initializes the storage map so that it is ready for use.
 func (x *Store) Init(ctx context.Context) error {
 	ctx, span := tracing.StartSpan(ctx, "sessions_store_init")
 	defer span.Send()
@@ -97,6 +98,8 @@ func (x *Store) Init(ctx context.Context) error {
 	return nil
 }
 
+// ReadIdentityFromRequest reads the identity from the sessions db based on the request data.
+// Currently, this only includes cookies, but we can add support for jwt's.
 func (x *Store) ReadIdentityFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
 	// read the session
 	var session Session
