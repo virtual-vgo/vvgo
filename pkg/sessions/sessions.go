@@ -37,6 +37,7 @@ type Session struct {
 type Config struct {
 	CookieName   string `split_words:"true" default:"vvgo-sessions"`
 	CookieDomain string `split_words:"true" default:"localhost"`
+	CookiePath   string `split_words:"true" default:"/"`
 	LockerName   string `split_words:"true" default:"vvgo-sessions"`
 }
 
@@ -194,6 +195,7 @@ func (x *Store) NewCookie(session Session) *http.Cookie {
 		Value:    session.Encode(x.secret),
 		Expires:  session.Expires,
 		Domain:   x.Config.CookieDomain,
+		Path:     x.Config.CookiePath,
 		HttpOnly: true,
 	}
 }
