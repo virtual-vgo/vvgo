@@ -24,7 +24,7 @@ func TestParts_Init(t *testing.T) {
 
 	wantObject := storage.Object{
 		ContentType: "application/json",
-		Buffer:      *bytes.NewBuffer([]byte(`[]`)),
+		Bytes:       []byte(`[]`),
 	}
 
 	require.NoError(t, parts.Init(ctx), "init")
@@ -46,13 +46,13 @@ func TestParts_List(t *testing.T) {
 		Number:  3,
 	}}}
 
-	// load the cache with a dummy object
-	obj := storage.Object{ContentType: "application/json"}
-	require.NoError(t, json.NewEncoder(&obj.Buffer).Encode([]Part{{ID: ID{
+	var buf bytes.Buffer
+	require.NoError(t, json.NewEncoder(&buf).Encode([]Part{{ID: ID{
 		Project: "cheese",
 		Name:    "broccoli",
 		Number:  3,
 	}}}), "json.Encode()")
+	obj := storage.Object{ContentType: "application/json", Bytes: buf.Bytes()}
 	require.NoError(t, parts.Cache.PutObject(ctx, DataFile, &obj), "cache.PutObject()")
 
 	gotList, err := parts.List(context.Background())
@@ -69,12 +69,13 @@ func TestParts_Save(t *testing.T) {
 	require.NoError(t, parts.Init(ctx))
 
 	// load the cache with a dummy object
-	obj := storage.Object{ContentType: "application/json"}
-	require.NoError(t, json.NewEncoder(&obj.Buffer).Encode([]Part{{ID: ID{
+	var buf bytes.Buffer
+	require.NoError(t, json.NewEncoder(&buf).Encode([]Part{{ID: ID{
 		Project: "cheese",
 		Name:    "turnip",
 		Number:  5,
 	}}}), "json.Encode()")
+	obj := storage.Object{ContentType: "application/json", Bytes: buf.Bytes()}
 	require.NoError(t, parts.Cache.PutObject(ctx, DataFile, &obj), "cache.PutObject()")
 
 	type args struct {
@@ -91,7 +92,7 @@ func TestParts_Save(t *testing.T) {
 
 	wantObject := storage.Object{
 		ContentType: "application/json",
-		Buffer:      *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`)),
+		Bytes:       []byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`),
 	}
 
 	assert.NoError(t, parts.Save(ctx, cmdArgs.parts), "parts.Save()")
@@ -103,7 +104,7 @@ func TestParts_Save(t *testing.T) {
 }
 
 func objectToString(object storage.Object) string {
-	return fmt.Sprintf("content-type: `%s`, body: `%s`\n", object.ContentType, strings.TrimSpace(object.Buffer.String()))
+	return fmt.Sprintf("content-type: `%s`, body: `%s`\n", object.ContentType, strings.TrimSpace(string(object.Bytes)))
 }
 
 func TestPart_String(t *testing.T) {

@@ -25,19 +25,19 @@ type Parts struct {
 }
 
 func (x Parts) Init(ctx context.Context) error {
-	return x.PutObject(ctx, DataFile, storage.NewJSONObject(bytes.NewBuffer([]byte(`[]`))))
+	return x.PutObject(ctx, DataFile, storage.NewJSONObject([]byte(`[]`)))
 }
 
 func (x Parts) List(ctx context.Context) ([]Part, error) {
 	// grab the data file
-	var dest storage.Object
-	if err := x.GetObject(ctx, DataFile, &dest); err != nil {
+	var data storage.Object
+	if err := x.GetObject(ctx, DataFile, &data); err != nil {
 		return nil, err
 	}
 
 	// deserialize the data file
 	var parts []Part
-	if err := json.NewDecoder(&dest.Buffer).Decode(&parts); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(data.Bytes)).Decode(&parts); err != nil {
 		return nil, fmt.Errorf("json.Decode() failed: %v", err)
 	}
 	return parts, nil
@@ -71,7 +71,7 @@ func (x Parts) Save(ctx context.Context, parts []Part) error {
 		return fmt.Errorf("json.Encode() failed: %v", err)
 	}
 
-	return x.PutObject(ctx, DataFile, storage.NewJSONObject(&buffer))
+	return x.PutObject(ctx, DataFile, storage.NewJSONObject(buffer.Bytes()))
 }
 
 func mergeChanges(src []Part, changes []Part) []Part {

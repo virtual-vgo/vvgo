@@ -48,8 +48,8 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	}
 
 	// load the cache with some dummy data
-	obj := storage.Object{ContentType: "application/json"}
-	require.NoError(t, json.NewEncoder(&obj.Buffer).Encode([]parts.Part{
+	var buf bytes.Buffer
+	require.NoError(t, json.NewEncoder(&buf).Encode([]parts.Part{
 		{
 			ID: parts.ID{
 				Project: "01-snake-eater",
@@ -69,6 +69,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 		},
 	}), "json.Encode()")
+	obj := storage.Object{ContentType: "application/json", Bytes: buf.Bytes()}
 	require.NoError(t, handlerStorage.Parts.Cache.PutObject(ctx, parts.DataFile, &obj), "cache.PutObject()")
 
 	server := PartView{NavBar{}, &handlerStorage}

@@ -70,13 +70,12 @@ func (x *Cache) PutObject(ctx context.Context, name string, object *Object) erro
 	}
 	defer x.locker.Unlock(ctx)
 
-	cacheBuffer := object.Buffer
 	if x.bucket != nil {
 		if err := WithBackup(x.bucket.PutObject)(ctx, name, object); err != nil {
 			return err
 		}
 	}
 
-	x.cache[name] = *NewObject(object.ContentType, object.Tags, &cacheBuffer)
+	x.cache[name] = *object
 	return nil
 }

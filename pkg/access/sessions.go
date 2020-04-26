@@ -56,7 +56,7 @@ func NewStore(secret Secret, config Config) *Store {
 func (x *Store) Init(ctx context.Context) error {
 	ctx, span := tracing.StartSpan(ctx, "sessions_store_init")
 	defer span.Send()
-	obj := storage.Object{Buffer: *bytes.NewBuffer([]byte(`{}`))}
+	obj := storage.Object{Bytes: []byte(`{}`)}
 	if err := x.cache.PutObject(ctx, DataFile, &obj); err != nil {
 		return fmt.Errorf("x.cache.PutObject() failed: %v", err)
 	}
@@ -179,18 +179,18 @@ func (x *Store) getMap(ctx context.Context, dest *map[SessionID]Identity) error 
 		return err
 	}
 
-	if err := json.NewDecoder(&obj.Buffer).Decode(&dest); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(obj.Bytes)).Decode(&dest); err != nil {
 		return fmt.Errorf("json.Decode() failed: %v", err)
 	}
 	return nil
 }
 
 func (x *Store) writeMap(ctx context.Context, src *map[SessionID]Identity) error {
-	var obj storage.Object
-	if err := json.NewEncoder(&obj.Buffer).Encode(src); err != nil {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(src); err != nil {
 		return fmt.Errorf("json.Decode() failed: %v", err)
 	}
-	if err := x.cache.PutObject(ctx, DataFile, &obj); err != nil {
+	if err := x.cache.PutObject(ctx, DataFile, storage.NewJSONObject(buf.Bytes())); err != nil {
 		return fmt.Errorf("x.cache.PutObject() failed: %v", err)
 	}
 	return nil
