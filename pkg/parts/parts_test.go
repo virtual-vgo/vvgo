@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"strings"
@@ -13,89 +15,72 @@ import (
 	"time"
 )
 
-type MockBucket struct {
-	putObject func(ctx context.Context, name string, object *storage.Object) bool
-	getObject func(ctx context.Context, name string, dest *storage.Object) bool
-}
-
-func (x *MockBucket) PutObject(ctx context.Context, name string, object *storage.Object) bool {
-	return x.putObject(ctx, name, object)
-}
-
-func (x *MockBucket) GetObject(ctx context.Context, name string, dest *storage.Object) bool {
-	return x.getObject(ctx, name, dest)
-}
-
-type MockLocker struct {
-	lock   func(ctx context.Context) bool
-	unlock func(ctx context.Context)
-}
-
-func (x *MockLocker) Lock(ctx context.Context) bool {
-	return x.lock(ctx)
-}
-
-func (x *MockLocker) Unlock(ctx context.Context) {
-	x.unlock(ctx)
-}
-
 func TestParts_Init(t *testing.T) {
-	wantName := DataFile
-	wantObject := &storage.Object{
+	ctx := context.Background()
+	parts := Parts{
+		Cache:  storage.NewCache(storage.CacheOpts{}),
+		Locker: locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{}),
+	}
+
+	wantObject := storage.Object{
 		ContentType: "application/json",
-		Buffer:      *bytes.NewBuffer([]byte(`[]`)),
+		Bytes:       []byte(`[]`),
 	}
 
-	var gotName string
-	var gotObject *storage.Object
+	require.NoError(t, parts.Init(ctx), "init")
 
-	parts := Parts{Bucket: &MockBucket{
-		putObject: func(ctx context.Context, name string, object *storage.Object) bool {
-			gotName = name
-			gotObject = object
-			return true
-		}},
-	}
-
-	parts.Init(context.Background())
-	assert.Equal(t, wantName, gotName, "name")
-	assert.Equal(t, gotObject, wantObject, "object")
+	var gotObject storage.Object
+	assert.NoError(t, parts.GetObject(context.Background(), DataFile, &gotObject))
+	assert.Equal(t, objectToString(wantObject), objectToString(gotObject))
 }
 
 func TestParts_List(t *testing.T) {
-	wantName := DataFile
+	ctx := context.Background()
+	parts := Parts{
+		Cache:  storage.NewCache(storage.CacheOpts{}),
+		Locker: locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{}),
+	}
 	wantList := []Part{{ID: ID{
 		Project: "cheese",
 		Name:    "broccoli",
 		Number:  3,
 	}}}
 
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(&wantList); err != nil {
-		t.Fatalf("json.Encode() failed: %v", err)
-	}
+	var buf bytes.Buffer
+	require.NoError(t, json.NewEncoder(&buf).Encode([]Part{{ID: ID{
+		Project: "cheese",
+		Name:    "broccoli",
+		Number:  3,
+	}}}), "json.Encode()")
+	obj := storage.Object{ContentType: "application/json", Bytes: buf.Bytes()}
+	require.NoError(t, parts.Cache.PutObject(ctx, DataFile, &obj), "cache.PutObject()")
 
-	var gotName string
-	parts := Parts{Bucket: &MockBucket{
-		getObject: func(ctx context.Context, name string, object *storage.Object) bool {
-			gotName = name
-			*object = storage.Object{
-				ContentType: "application/json",
-				Buffer:      buffer,
-			}
-			return true
-		}},
-	}
-	gotList := parts.List(context.Background())
-
-	assert.Equal(t, wantName, gotName, "name")
+	gotList, err := parts.List(context.Background())
+	assert.NoError(t, err, "parts.List()")
 	assert.Equal(t, wantList, gotList, "object")
 }
 
 func TestParts_Save(t *testing.T) {
+	locker := locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{})
+	ctx := context.Background()
+	parts := Parts{
+		Cache:  storage.NewCache(storage.CacheOpts{}),
+		Locker: locker,
+	}
+	require.NoError(t, parts.Init(ctx))
+
+	// load the cache with a dummy object
+	var buf bytes.Buffer
+	require.NoError(t, json.NewEncoder(&buf).Encode([]Part{{ID: ID{
+		Project: "cheese",
+		Name:    "turnip",
+		Number:  5,
+	}}}), "json.Encode()")
+	obj := storage.Object{ContentType: "application/json", Bytes: buf.Bytes()}
+	require.NoError(t, parts.Cache.PutObject(ctx, DataFile, &obj), "cache.PutObject()")
+
 	type args struct {
-		parts     []Part
-		fileBytes []byte
+		parts []Part
 	}
 
 	cmdArgs := args{
@@ -106,52 +91,21 @@ func TestParts_Save(t *testing.T) {
 		}}},
 	}
 
-	wantOk := true
-	wantNames := []string{
-		fmt.Sprintf("%s-%s", DataFile, time.Now().UTC().Format(time.RFC3339)),
-		DataFile,
-	}
-	wantObjects := []storage.Object{
-		{ContentType: "application/json", Buffer: *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`))},
-		{ContentType: "application/json", Buffer: *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`))},
+	wantObject := storage.Object{
+		ContentType: "application/json",
+		Bytes:       []byte(`[{"project":"cheese","part_name":"turnip","part_number":5},{"project":"01-snake-eater","part_name":"trumpet","part_number":3}]`),
 	}
 
-	var gotNames []string
-	var gotObjects []storage.Object
-	parts := Parts{
-		Bucket: &MockBucket{
-			getObject: func(ctx context.Context, name string, object *storage.Object) bool {
-				*object = storage.Object{
-					ContentType: "application/json",
-					Buffer:      *bytes.NewBuffer([]byte(`[{"project":"cheese","part_name":"turnip","part_number":5}]`))}
-				return true
-			},
-			putObject: func(ctx context.Context, name string, object *storage.Object) bool {
-				gotNames = append(gotNames, name)
-				gotObjects = append(gotObjects, *object)
-				return true
-			},
-		},
-		Locker: &MockLocker{
-			lock:   func(ctx context.Context) bool { return true },
-			unlock: func(ctx context.Context) {},
-		},
-	}
-	gotOk := parts.Save(nil, cmdArgs.parts)
+	assert.NoError(t, parts.Save(ctx, cmdArgs.parts), "parts.Save()")
 
-	assert.Equal(t, wantOk, gotOk, "ok")
-	assert.Equal(t, wantNames, gotNames, "names")
-	if want, got := objectsToString(wantObjects), objectsToString(gotObjects); want != got {
-		t.Errorf("\nwant:\n%s\ngot:\n%s", want, got)
-	}
+	// check the data file
+	var gotObject storage.Object
+	assert.NoError(t, parts.GetObject(context.Background(), DataFile, &gotObject))
+	assert.Equal(t, objectToString(wantObject), objectToString(gotObject))
 }
 
-func objectsToString(objects []storage.Object) string {
-	var str string
-	for _, object := range objects {
-		str += fmt.Sprintf("content-type: `%s`, body: `%s`\n", object.ContentType, strings.TrimSpace(object.Buffer.String()))
-	}
-	return strings.TrimSpace(str)
+func objectToString(object storage.Object) string {
+	return fmt.Sprintf("content-type: `%s`, body: `%s`\n", object.ContentType, strings.TrimSpace(string(object.Bytes)))
 }
 
 func TestPart_String(t *testing.T) {

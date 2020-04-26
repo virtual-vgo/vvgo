@@ -5,6 +5,6 @@
     "part_number": 3,
     "sheet_music": "/download?bucket=sheets\u0026object=sheet.pdf",
     "click_track": "/download?bucket=clix\u0026object=click.mp3",
-    "reference_track": "#"
+    "reference_track": "/download?bucket=tracks&object=02_MH_Proof-of-a-Hero_Reference-Track_W-CLIX.mp3"
   }
 ]

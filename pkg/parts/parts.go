@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"strings"
@@ -14,65 +14,52 @@ import (
 
 const DataFile = "parts.json"
 
-var logger = log.Logger()
-
 var (
 	ErrInvalidPartName   = fmt.Errorf("invalid part name")
 	ErrInvalidPartNumber = fmt.Errorf("invalid part number")
 )
 
-type Bucket interface {
-	PutObject(ctx context.Context, name string, object *storage.Object) bool
-	GetObject(ctx context.Context, name string, dest *storage.Object) bool
-}
-
-type Locker interface {
-	Lock(ctx context.Context) bool
-	Unlock(ctx context.Context)
-}
-
 type Parts struct {
-	Bucket
-	Locker
+	*storage.Cache
+	*locker.Locker
 }
 
-func (x Parts) Init(ctx context.Context) bool {
-	return x.PutObject(ctx, DataFile, storage.NewJSONObject(bytes.NewBuffer([]byte(`[]`))))
+func (x Parts) Init(ctx context.Context) error {
+	return x.PutObject(ctx, DataFile, storage.NewJSONObject([]byte(`[]`)))
 }
 
-func (x Parts) List(ctx context.Context) []Part {
+func (x Parts) List(ctx context.Context) ([]Part, error) {
 	// grab the data file
-	var dest storage.Object
-	if ok := x.GetObject(ctx, DataFile, &dest); !ok {
-		return nil
+	var data storage.Object
+	if err := x.GetObject(ctx, DataFile, &data); err != nil {
+		return nil, err
 	}
 
 	// deserialize the data file
 	var parts []Part
-	if err := json.NewDecoder(&dest.Buffer).Decode(&parts); err != nil {
-		logger.WithError(err).Error("json.Decode() failed")
-		return nil
+	if err := json.NewDecoder(bytes.NewReader(data.Bytes)).Decode(&parts); err != nil {
+		return nil, fmt.Errorf("json.Decode() failed: %v", err)
 	}
-	return parts
+	return parts, nil
 }
 
-func (x Parts) Save(ctx context.Context, parts []Part) bool {
+func (x Parts) Save(ctx context.Context, parts []Part) error {
 	// first, validate all the parts
-	if ok := validatePart(parts); !ok {
-		return false
+	if err := validatePart(parts); err != nil {
+		return err
 	}
 
 	// now we update the data file
 	// read+modify+write means we need a lock
-	if ok := x.Lock(ctx); !ok {
-		return false
+	if err := x.Lock(ctx); err != nil {
+		return err
 	}
 	defer x.Unlock(ctx)
 
 	// pull down the parts data
-	allParts := x.List(ctx)
+	allParts, err := x.List(ctx)
 	if allParts == nil {
-		return false
+		return err
 	}
 
 	// merge the changes
@@ -81,11 +68,10 @@ func (x Parts) Save(ctx context.Context, parts []Part) bool {
 	// encode the data file
 	var buffer bytes.Buffer
 	if err := json.NewEncoder(&buffer).Encode(&allParts); err != nil {
-		logger.WithError(err).Error("json.Encode() failed")
-		return false
+		return fmt.Errorf("json.Encode() failed: %v", err)
 	}
 
-	return storage.WithBackup(x.PutObject)(ctx, DataFile, storage.NewJSONObject(&buffer))
+	return x.PutObject(ctx, DataFile, storage.NewJSONObject(buffer.Bytes()))
 }
 
 func mergeChanges(src []Part, changes []Part) []Part {
@@ -108,14 +94,13 @@ func mergeChanges(src []Part, changes []Part) []Part {
 	return src
 }
 
-func validatePart(parts []Part) bool {
+func validatePart(parts []Part) error {
 	for _, part := range parts {
 		if err := part.Validate(); err != nil {
-			logger.WithError(err).Error("part failed validation")
-			return false
+			return err
 		}
 	}
-	return true
+	return nil
 }
 
 type Part struct {
