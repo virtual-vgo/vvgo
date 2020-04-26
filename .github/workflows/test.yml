@@ -70,5 +70,11 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
           restore-keys: ${{ runner.os }}-go-
 
-      - name: Run `go test -v -race ./...`
-        run: go generate ./... && go test -v -race ./...
+      - name: Run `go test -race ./...`
+        run: |
+          set -e
+          go generate ./...
+          go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Upload coverage
+        run: bash <(curl -s https://codecov.io/bash)
