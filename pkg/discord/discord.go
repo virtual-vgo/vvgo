@@ -19,11 +19,11 @@ var logger = log.Logger()
 
 // Client that makes discord requests.
 type Client struct {
-	Config
+	config Config
 }
 
 func NewClient(config Config) *Client {
-	return &Client{Config: config}
+	return &Client{config: config}
 }
 
 var ErrInvalidOAuthCode = errors.New("invalid oauth code")
@@ -111,11 +111,11 @@ func (x Client) newOAuthRequest(ctx context.Context, code string) (*http.Request
 
 	// build the authorization request
 	form := make(url.Values)
-	form.Add("client_id", x.Config.OAuthClientID)
-	form.Add("client_secret", x.Config.OAuthClientSecret)
+	form.Add("client_id", x.config.OAuthClientID)
+	form.Add("client_secret", x.config.OAuthClientSecret)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", x.Config.OAuthRedirectURI)
+	form.Add("redirect_uri", x.config.OAuthRedirectURI)
 	form.Add("scope", "identify")
 
 	req, err := x.newRequest(ctx, http.MethodPost, "/oauth2/token", strings.NewReader(form.Encode()))
@@ -157,7 +157,7 @@ func (x Client) newTokenRequest(ctx context.Context, oauthToken *OAuthToken, pat
 // Here we use the the server's own auth token.
 // https://discordapp.com/developers/docs/resources/guild#get-guild-member
 func (x Client) QueryGuildMember(ctx context.Context, guildID GuildID, userID UserID) (*GuildMember, error) {
-	req, err := x.newBotRequest(ctx, x.Config.BotAuthToken, "/guilds/"+guildID.String()+"/members/"+userID.String())
+	req, err := x.newBotRequest(ctx, x.config.BotAuthToken, "/guilds/"+guildID.String()+"/members/"+userID.String())
 	if err != nil {
 		logger.WithError(err).Error("http.NewRequestWithContext() failed")
 		return nil, err
@@ -183,7 +183,7 @@ func (x Client) newBotRequest(ctx context.Context, token string, path string) (*
 }
 
 func (x Client) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
-	return http.NewRequestWithContext(ctx, method, x.Config.Endpoint+path, body)
+	return http.NewRequestWithContext(ctx, method, x.config.Endpoint+path, body)
 }
 
 // performs the http request and logs results
