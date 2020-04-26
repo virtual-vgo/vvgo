@@ -36,7 +36,7 @@ func (x *Config) ParseEnv() error {
 }
 
 type MinioConfig struct {
-	Endpoint  string `default:"localhost:9000"`
+	Endpoint  string `default:""`
 	Region    string `default:"sfo2"`
 	AccessKey string `default:"minioadmin"`
 	SecretKey string `default:"minioadmin"`

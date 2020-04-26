@@ -185,7 +185,7 @@ func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
 	opts = NavBarRenderOpts{
 		Identity:        identity,
 		ShowLogin:       showLogin,
-		ShowMemberLinks: identity.IsVVGOMember(),
+		ShowMemberLinks: identity.HasRole(access.RoleVVGOMember),
 		DiscordLoginUrl: x.DiscordLoginUrl,
 	}
 	return opts
