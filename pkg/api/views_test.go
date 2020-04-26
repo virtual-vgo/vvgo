@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
-	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/sessions"
@@ -179,7 +178,7 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 		cookie := loginView.Sessions.NewCookie(session)
 		assert.NoError(t, loginView.Sessions.StoreIdentity(ctx, session.ID, &sessions.Identity{
 			Kind:  sessions.KindPassword,
-			Roles: []access.Role{"cheese"},
+			Roles: []sessions.Role{"cheese"},
 		}))
 
 		// set the cookie on the client

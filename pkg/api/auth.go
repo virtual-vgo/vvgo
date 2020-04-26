@@ -1,11 +1,56 @@
 package api
 
 import (
-	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"strings"
 )
+
+// Authenticate http requests using the sessions api
+// If the request has a valid session and the required role, it is allowed access.
+type RBACMux struct {
+	Sessions *sessions.Store
+	*http.ServeMux
+}
+
+func NewRBACMux(store *sessions.Store) *RBACMux {
+	return &RBACMux{
+		Sessions: store,
+		ServeMux: http.NewServeMux(),
+	}
+}
+
+func (auth *RBACMux) Handle(pattern string, handler http.Handler, role sessions.Role) {
+	// anonymous access goes directly to the mux
+	if role == sessions.RoleAnonymous {
+		auth.ServeMux.Handle(pattern, handler)
+		return
+	}
+
+	auth.ServeMux.Handle(pattern, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if ok := func() bool {
+			ctx, span := tracing.StartSpan(r.Context(), "rbac_mux")
+			defer span.Send()
+
+			var identity sessions.Identity
+			if err := auth.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err != nil {
+				return false
+			}
+
+			for _, gotRole := range identity.Roles {
+				if role == gotRole {
+					return true
+				}
+			}
+			return false
+		}(); ok {
+			handler.ServeHTTP(w, r)
+		} else {
+			unauthorized(w)
+		}
+	}))
+}
 
 type PassThrough struct{}
 
@@ -31,9 +76,7 @@ func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
 			if auth[user] == pass {
 				return true
 			} else {
-				logger.WithFields(logrus.Fields{
-					"user": user,
-				}).Error("user authentication failed")
+				logger.WithField("user", user).Error("basic authentication failed")
 				return false
 			}
 		}(); ok {

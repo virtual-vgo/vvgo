@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
@@ -87,17 +86,8 @@ func (x *Storage) Init(ctx context.Context) error {
 
 func NewServer(config ServerConfig, database *Storage, discordClient *discord.Client) *http.Server {
 	navBar := NavBar{MemberUser: config.MemberUser, Sessions: database.Sessions, DiscordLoginUrl: config.DiscordLoginUrl}
-	members := BasicAuth{config.MemberUser: config.MemberPass}
-	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
-	admin := TokenAuth{config.AdminToken}
-
-	mux := http.NewServeMux()
-
-	mux.Handle("/auth",
-		prepRep.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("authenticated"))
-		})),
-	)
+	rbacMux := NewRBACMux(database.Sessions)
+	rbacMux.Handle("/version", http.HandlerFunc(Version), sessions.RoleAnonymous)
 
 	// debug endpoints from net/http/pprof
 	pprofMux := http.NewServeMux()
@@ -106,64 +96,65 @@ func NewServer(config ServerConfig, database *Storage, discordClient *discord.Cl
 	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
+	rbacMux.Handle("/debug/pprof/", pprofMux, sessions.RoleVVGODeveloper)
 
-	// auth handlers
-	passwordLoginHandler := &PasswordLoginHandler{
+	// authentication handlers
+	passwordLoginHandler := PasswordLoginHandler{
 		Sessions: database.Sessions,
 		Logins: []PasswordLogin{
 			{
 				User:  config.MemberUser,
 				Pass:  config.MemberPass,
-				Roles: []access.Role{access.RoleVVGOMember},
+				Roles: []sessions.Role{sessions.RoleVVGOMember},
 			},
 		},
 	}
-	mux.Handle("/auth/password", passwordLoginHandler)
+	rbacMux.Handle("/auth/password", passwordLoginHandler, sessions.RoleAnonymous)
 
-	discordLoginHandler := DiscordAuthHandler{
+	discordLoginHandler := DiscordLoginHandler{
 		GuildID:        discord.GuildID(config.DiscordGuildID),
 		RoleVVGOMember: config.DiscordRoleVVGOMember,
 		Sessions:       database.Sessions,
 		Discord:        discordClient,
 	}
-	mux.Handle("/auth/discord", &discordLoginHandler)
+	rbacMux.Handle("/auth/discord", discordLoginHandler, sessions.RoleAnonymous)
 
-	logoutHandler := &LogoutHandler{Sessions: database.Sessions}
-	mux.Handle("/logout", logoutHandler)
+	logoutHandler := LogoutHandler{Sessions: database.Sessions}
+	rbacMux.Handle("/logout", logoutHandler, sessions.RoleAnonymous)
 
-	mux.Handle("/version", http.HandlerFunc(Version))
+	// Upload
 
-	// upload/download handlers
-	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
-	mux.Handle("/upload", uploadHandler)
+	uploadHandler := UploadHandler{database}
+	rbacMux.Handle("/upload", uploadHandler, sessions.RoleVVGOUploader)
 
-	downloadHandler := members.Authenticate(&DownloadHandler{
+	// Download
+
+	downloadHandler := DownloadHandler{
 		database.SheetsBucketName: database.Sheets.DownloadURL,
 		database.ClixBucketName:   database.Clix.DownloadURL,
 		database.TracksBucketName: database.Tracks.DownloadURL,
-	})
-	mux.Handle("/download", members.Authenticate(downloadHandler))
+	}
+	rbacMux.Handle("/download", downloadHandler, sessions.RoleVVGOMember)
 
-	// views
-	loginView := &LoginView{NavBar: navBar, Sessions: database.Sessions}
-	mux.Handle("/login", loginView)
+	// Views
+	partsView := PartView{NavBar: navBar, Storage: database}
+	rbacMux.Handle("/parts", partsView, sessions.RoleVVGOMember)
 
-	partsView := members.Authenticate(&PartView{NavBar: navBar, Storage: database})
-	mux.Handle("/parts", partsView)
+	loginView := LoginView{NavBar: navBar, Sessions: database.Sessions}
+	rbacMux.Handle("/login", loginView, sessions.RoleAnonymous)
 
-	indexView := &IndexView{NavBar: navBar}
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	indexView := IndexView{NavBar: navBar}
+	rbacMux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			indexView.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}
-	}))
+	}), sessions.RoleAnonymous)
 
 	return &http.Server{
 		Addr:     config.ListenAddress,
-		Handler:  tracing.WrapHandler(mux),
+		Handler:  tracing.WrapHandler(rbacMux),
 		ErrorLog: log.StdLogger(),
 	}
 }

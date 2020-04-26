@@ -6,6 +6,7 @@ require (
 	github.com/bsm/redislock v0.5.0
 	github.com/fatih/color v1.9.0
 	github.com/go-redis/redis/v7 v7.2.0
+	github.com/gorilla/mux v1.7.4
 	github.com/honeycombio/beeline-go v0.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/minio/minio-go/v6 v6.0.50

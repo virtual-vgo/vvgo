@@ -40,6 +40,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"STORAGE_MINIO_USESSL":           "true",
 		"SESSIONS_COOKIE_NAME":           "sessions-cookie-name",
 		"SESSIONS_COOKIE_DOMAIN":         "sessions-cookie-domain",
+		"SESSIONS_COOKIE_PATH":           "sessions-cookie-path",
 		"SESSIONS_LOCKER_NAME":           "sessions-locker-name",
 		"DISCORD_ENDPOINT":               "discord-endpoint",
 		"DISCORD_BOT_AUTH_TOKEN":         "discord-bot-auth-token",
@@ -92,6 +93,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		SessionsConfig: sessions.Config{
 			CookieName:   "sessions-cookie-name",
 			CookieDomain: "sessions-cookie-domain",
+			CookiePath:   "sessions-cookie-path",
 			LockerName:   "sessions-locker-name",
 		},
 	}

@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -42,42 +41,6 @@ type Config struct {
 }
 
 const DataFile = "users.json"
-
-type Kind string
-
-func (x Kind) String() string { return string(x) }
-
-const (
-	KindPassword Kind = "password"
-	KindDiscord  Kind = "discord"
-)
-
-// A user identity.
-// This _absolutely_ should not contain any personally identifiable information.
-// Numeric user id's are fine, but no emails, user names, addresses, etc.
-type Identity struct {
-	Kind  `json:"kind"`
-	Roles []access.Role `json:"roles"`
-}
-
-// returns the first role or RoleUnknown if the identity has no roles.
-func (x Identity) Role() access.Role {
-	if len(x.Roles) == 0 {
-		return access.RoleUnknown
-	} else {
-		return x.Roles[0]
-	}
-}
-
-// Returns true if this identity has the vvgo members role.
-func (x Identity) IsVVGOMember() bool {
-	for _, role := range x.Roles {
-		if role == access.RoleVVGOMember {
-			return true
-		}
-	}
-	return false
-}
 
 // NewStore returns a new sessions client.
 func NewStore(secret Secret, config Config) *Store {
