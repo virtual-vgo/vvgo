@@ -8,22 +8,24 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
-	"sync"
-	"time"
 )
 
 var logger = log.Logger()
 
 type Config struct {
-	InitializeStorage bool             `split_words:"true" default:"false"`
-	StorageConfig     storage.Config   `envconfig:"storage"`
-	ApiConfig         api.ServerConfig `envconfig:"api"`
-	TracingConfig     tracing.Config   `envconfig:"tracing"`
+	Secret            string            `envconfig:"vvgo_secret"`
+	InitializeStorage bool              `split_words:"true" default:"false"`
+	ApiConfig         api.ServerConfig  `envconfig:"api"`
+	ApiStorageConfig  api.StorageConfig `envconfig:"api_storage"`
+	TracingConfig     tracing.Config    `envconfig:"tracing"`
+	StorageConfig     storage.Config    `envconfig:"storage"`
+	LockerConfig      locker.Config     `envconfig:"locker"`
 }
 
 func (x *Config) ParseEnv() {
@@ -64,51 +66,31 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	storage := storage.NewClient(config.StorageConfig)
-	if storage == nil {
-		os.Exit(1)
+	// Creates mutex locks.
+	locksmith := locker.NewLocksmith(config.LockerConfig)
+
+	// Creates/queries object buckets.
+	warehouse, err := storage.NewWarehouse(config.StorageConfig)
+	if err != nil {
+		logger.Fatal(err)
 	}
 
-	database := api.NewStorage(storage, config.ApiConfig)
+	// Build the api database.
+	database := api.NewStorage(ctx, locksmith, warehouse, config.ApiStorageConfig)
 	if database == nil {
 		os.Exit(1)
 	}
 
+	// Initialize the database, if requested
 	if config.InitializeStorage {
-		initializeStorage(ctx, database)
+		if err := database.Init(ctx); err != nil {
+			logger.WithError(err).Fatal("failed to initialize storage")
+		}
 	}
 
+	//
 	apiServer := api.NewServer(config.ApiConfig, database)
-	if apiServer == nil {
-		os.Exit(1)
+	if err := apiServer.ListenAndServe(); err != nil {
+		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}
-	logger.Fatal(apiServer.ListenAndServe())
-}
-
-func initializeStorage(ctx context.Context, db *api.Storage) {
-	var wg sync.WaitGroup
-	for _, initFunc := range []func(ctx context.Context) bool{
-		db.Parts.Init,
-	} {
-		wg.Add(1)
-		go func(initFunc func(ctx context.Context) bool) {
-			defer wg.Done()
-			timeout := time.NewTicker(5 * time.Second)
-			retryInterval := time.NewTicker(500 * time.Millisecond)
-			defer retryInterval.Stop()
-			defer timeout.Stop()
-			for range retryInterval.C {
-				if ok := initFunc(ctx); ok {
-					return
-				}
-				select {
-				case <-timeout.C:
-					logger.Fatalf("failed to initialize storage")
-				default:
-				}
-			}
-		}(initFunc)
-	}
-	wg.Wait()
-	logger.Info("storage initialized")
 }
