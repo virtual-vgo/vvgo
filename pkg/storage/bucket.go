@@ -36,7 +36,7 @@ func (x *Config) ParseEnv() error {
 }
 
 type MinioConfig struct {
-	Endpoint  string `default:""`
+	Endpoint  string `default:"localhost:9000"`
 	Region    string `default:"sfo2"`
 	AccessKey string `default:"minioadmin"`
 	SecretKey string `default:"minioadmin"`
@@ -138,26 +138,25 @@ func (x *Bucket) StatFile(ctx context.Context, objectKey string, dest *File) err
 func (x *Bucket) PutFile(ctx context.Context, file *File) error {
 	ctx, span := x.newSpan(ctx, "bucket_put_file")
 	defer span.Send()
-	return x.PutObject(ctx, file.ObjectKey(), NewObject(file.MediaType, bytes.NewBuffer(file.Bytes)))
+	return x.PutObject(ctx, file.ObjectKey(), NewObject(file.MediaType, nil, bytes.NewBuffer(file.Bytes)))
 }
 
 type Object struct {
 	ContentType string
-	Tags        Tags
+	Tags        map[string]string
 	Buffer      bytes.Buffer
 }
 
-type Tags map[string]string
-
-func NewObject(mediaType string, buffer *bytes.Buffer) *Object {
+func NewObject(mediaType string, tags map[string]string, buffer *bytes.Buffer) *Object {
 	return &Object{
 		ContentType: mediaType,
+		Tags:        tags,
 		Buffer:      *buffer,
 	}
 }
 
 func NewJSONObject(buffer *bytes.Buffer) *Object {
-	return NewObject("application/json", buffer)
+	return NewObject("application/json", nil, buffer)
 }
 
 func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object) error {
@@ -175,7 +174,7 @@ func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object
 	}
 	*dest = Object{
 		ContentType: objectInfo.ContentType,
-		Tags:        Tags(objectInfo.UserMetadata),
+		Tags:        objectInfo.UserMetadata,
 	}
 	return nil
 }
@@ -204,7 +203,7 @@ func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error
 	}
 	*dest = Object{
 		ContentType: info.ContentType,
-		Tags:        map[string]string(info.UserMetadata),
+		Tags:        info.UserMetadata,
 		Buffer:      buffer,
 	}
 	return err
@@ -239,7 +238,7 @@ func WithBackup(putObjectFunc func(ctx context.Context, name string, object *Obj
 	return func(ctx context.Context, name string, object *Object) error {
 		backupName := fmt.Sprintf("%s-%s", name, time.Now().UTC().Format(time.RFC3339))
 		backupBuffer := object.Buffer
-		if err := putObjectFunc(ctx, backupName, NewObject(object.ContentType, &backupBuffer)); err != nil {
+		if err := putObjectFunc(ctx, backupName, NewObject(object.ContentType, object.Tags, &backupBuffer)); err != nil {
 			return err
 		}
 		return putObjectFunc(ctx, name, object)
