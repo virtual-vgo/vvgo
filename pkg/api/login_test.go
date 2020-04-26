@@ -20,7 +20,7 @@ import (
 func TestLoginHandler_ServeHTTP(t *testing.T) {
 	secret := access.Secret{1, 2, 3, 4}
 	loginHandler := PasswordLoginHandler{
-		Sessions: access.NewStore(locker.NewSmith(locker.Config{}), access.Config{Secret: secret, CookieName: "vvgo-cookie"}),
+		Sessions: access.NewStore(locker.NewLocksmith(locker.Config{}), access.Config{Secret: secret, CookieName: "vvgo-cookie"}),
 		Logins: []PasswordLogin{
 			{
 				User:  "vvgo-user",
@@ -87,7 +87,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	logoutHandler := LogoutHandler{
-		Sessions: access.NewStore(locker.NewSmith(locker.Config{}), access.Config{CookieName: "vvgo-cookie"}),
+		Sessions: access.NewStore(locker.NewLocksmith(locker.Config{}), access.Config{CookieName: "vvgo-cookie"}),
 	}
 
 	logoutHandler.Sessions.Init(context.Background())

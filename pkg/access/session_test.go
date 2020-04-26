@@ -12,7 +12,7 @@ import (
 
 func TestStore_ReadSessionFromRequest(t *testing.T) {
 	secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
-	store := NewStore(locker.NewSmith(locker.Config{}), Config{Secret: secret, CookieName: "vvgo-cookie"})
+	store := NewStore(locker.NewLocksmith(locker.Config{}), Config{Secret: secret, CookieName: "vvgo-cookie"})
 	session := store.NewSession(time.Now().Add(1e6 * time.Second))
 	t.Run("no session", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)

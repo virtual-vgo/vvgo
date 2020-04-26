@@ -4,10 +4,8 @@ import (
 	"context"
 	"github.com/bsm/redislock"
 	"github.com/go-redis/redis/v7"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
-	"os"
 	"sync"
 	"time"
 )
@@ -16,22 +14,21 @@ const RedisLockDeadline = 5 * 60 * time.Second
 
 var logger = log.Logger()
 
-type LockSmith struct {
-	Config
+// Locksmith is used to build new mutex lockers.
+type Locksmith struct {
+	config      Config
 	redisClient *redis.Client
 }
 
 type Config struct {
-	RedisEnabled bool
+	// Enabled establishing locks with redis.
+	RedisEnabled bool `split_words:"true"`
+
+	// Tcp address of the redis server.
 	RedisAddress string `split_words:"true"`
 }
 
-func (x *Config) ParseEnv() error {
-	os.Environ()
-	return envconfig.Process("locker", x)
-}
-
-func NewSmith(config Config) *LockSmith {
+func NewLocksmith(config Config) *Locksmith {
 	var redisClient *redis.Client
 	if config.RedisEnabled {
 		redisClient = redis.NewClient(&redis.Options{
@@ -39,12 +36,13 @@ func NewSmith(config Config) *LockSmith {
 			Addr:    config.RedisAddress,
 		})
 	}
-	return &LockSmith{
-		Config:      config,
+	return &Locksmith{
+		config:      config,
 		redisClient: redisClient,
 	}
 }
 
+// A mutex locker
 type Locker struct {
 	lock            sync.Mutex
 	redisKey        string
@@ -56,7 +54,7 @@ type Opts struct {
 	RedisKey string
 }
 
-func (x *LockSmith) NewLocker(opts Opts) *Locker {
+func (x *Locksmith) NewLocker(opts Opts) *Locker {
 	locker := &Locker{redisKey: opts.RedisKey}
 	if x.redisClient != nil {
 		locker.redisLockClient = redislock.New(x.redisClient)

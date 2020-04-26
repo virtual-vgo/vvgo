@@ -179,7 +179,7 @@ func TestUpload_Validate(t *testing.T) {
 }
 
 func TestUploadHandler_ServeHTTP(t *testing.T) {
-	locker := locker.NewSmith(locker.Config{}).NewLocker(locker.Opts{})
+	locker := locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{})
 	warehouse, err := storage.NewWarehouse(storage.Config{})
 	require.NoError(t, err, "storage.NewWarehouse()")
 

@@ -71,10 +71,10 @@ func main() {
 	defer tracing.Close()
 
 	// Creates mutex locks.
-	lockSmith := locker.NewSmith(config.LockerConfig)
+	locksmith := locker.NewLocksmith(config.LockerConfig)
 
 	// Session storage.
-	sessionsStore := access.NewStore(lockSmith, config.AccessConfig)
+	sessionsStore := access.NewStore(locksmith, config.AccessConfig)
 
 	// Creates/queries object buckets.
 	warehouse, err := storage.NewWarehouse(config.StorageConfig)
@@ -83,7 +83,7 @@ func main() {
 	}
 
 	// Build the api database.
-	database := api.NewStorage(ctx, lockSmith, sessionsStore, warehouse, config.ApiStorageConfig)
+	database := api.NewStorage(ctx, locksmith, sessionsStore, warehouse, config.ApiStorageConfig)
 	if database == nil {
 		os.Exit(1)
 	}

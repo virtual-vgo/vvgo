@@ -43,11 +43,11 @@ type Config struct {
 const DataFile = "users.json"
 
 // NewStore returns a new sessions client.
-func NewStore(lockSmith *locker.LockSmith, config Config) *Store {
+func NewStore(locksmith *locker.Locksmith, config Config) *Store {
 	return &Store{
 		config: config,
 		cache:  storage.NewCache(storage.CacheOpts{}),
-		locker: lockSmith.NewLocker(locker.Opts{RedisKey: config.RedisKey}),
+		locker: locksmith.NewLocker(locker.Opts{RedisKey: config.RedisKey}),
 	}
 }
 
