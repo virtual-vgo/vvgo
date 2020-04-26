@@ -36,7 +36,8 @@ func (x *Config) ParseEnv() error {
 }
 
 type MinioConfig struct {
-	Endpoint  string `default:""`
+	Enabled   bool
+	Endpoint  string `default:"localhost:9000"`
 	Region    string `default:"sfo2"`
 	AccessKey string `default:"minioadmin"`
 	SecretKey string `default:"minioadmin"`
@@ -45,7 +46,7 @@ type MinioConfig struct {
 
 func NewWarehouse(config Config) (*Warehouse, error) {
 	client := Warehouse{config: config}
-	if config.Minio.Endpoint != "" {
+	if config.Minio.Enabled {
 		var err error
 		client.minioClient, err = minio.New(config.Minio.Endpoint, config.Minio.AccessKey, config.Minio.SecretKey, config.Minio.UseSSL)
 		if err != nil {
