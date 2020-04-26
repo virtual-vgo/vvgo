@@ -19,7 +19,7 @@ func TestParts_Init(t *testing.T) {
 	ctx := context.Background()
 	parts := Parts{
 		Cache:  storage.NewCache(storage.CacheOpts{}),
-		Locker: locker.NewLocker(locker.Opts{}),
+		Locker: locker.NewSmith(locker.Config{}).NewLocker(locker.Opts{}),
 	}
 
 	wantObject := storage.Object{
@@ -38,7 +38,7 @@ func TestParts_List(t *testing.T) {
 	ctx := context.Background()
 	parts := Parts{
 		Cache:  storage.NewCache(storage.CacheOpts{}),
-		Locker: locker.NewLocker(locker.Opts{}),
+		Locker: locker.NewSmith(locker.Config{}).NewLocker(locker.Opts{}),
 	}
 	wantList := []Part{{ID: ID{
 		Project: "cheese",
@@ -61,10 +61,11 @@ func TestParts_List(t *testing.T) {
 }
 
 func TestParts_Save(t *testing.T) {
+	locker := locker.NewSmith(locker.Config{}).NewLocker(locker.Opts{})
 	ctx := context.Background()
 	parts := Parts{
 		Cache:  storage.NewCache(storage.CacheOpts{}),
-		Locker: locker.NewLocker(locker.Opts{}),
+		Locker: locker,
 	}
 	require.NoError(t, parts.Init(ctx))
 

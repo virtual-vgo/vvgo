@@ -20,8 +20,7 @@ import (
 var ErrSessionNotFound = errors.New("session not found")
 
 type Store struct {
-	Config
-	secret Secret
+	config Config
 	cache  *storage.Cache
 	locker *locker.Locker
 }
@@ -34,21 +33,21 @@ type Session struct {
 }
 
 type Config struct {
+	Secret       Secret `default:"0000000000000000000000000000000000000000000000000000000000000000"`
 	CookieName   string `split_words:"true" default:"vvgo-sessions"`
 	CookieDomain string `split_words:"true" default:"localhost"`
 	CookiePath   string `split_words:"true" default:"/"`
-	LockerName   string `split_words:"true" default:"vvgo-sessions"`
+	RedisKey     string `split_words:"true"`
 }
 
 const DataFile = "users.json"
 
 // NewStore returns a new sessions client.
-func NewStore(secret Secret, config Config) *Store {
+func NewStore(lockSmith *locker.LockSmith, config Config) *Store {
 	return &Store{
-		Config: config,
-		secret: secret,
+		config: config,
 		cache:  storage.NewCache(storage.CacheOpts{}),
-		locker: locker.NewLocker(locker.Opts{RedisKey: config.LockerName}),
+		locker: lockSmith.NewLocker(locker.Opts{RedisKey: config.RedisKey}),
 	}
 }
 
@@ -80,13 +79,13 @@ func (x *Store) ReadSessionFromRequest(r *http.Request, dest *Session) error {
 	// check for a bearer token
 	token := r.Header.Get("Authorization")
 	if strings.HasPrefix(token, "Bearer ") {
-		return dest.Decode(x.secret, strings.TrimPrefix(token, "Bearer "))
+		return dest.Decode(x.config.Secret, strings.TrimPrefix(token, "Bearer "))
 	}
 
 	// check for a cookie
-	cookie, err := r.Cookie(x.CookieName)
+	cookie, err := r.Cookie(x.config.CookieName)
 	if err == nil {
-		return dest.DecodeCookie(x.secret, cookie)
+		return dest.DecodeCookie(x.config.Secret, cookie)
 	}
 
 	return ErrSessionNotFound
@@ -154,11 +153,11 @@ func (x *Store) DeleteIdentity(ctx context.Context, id SessionID) error {
 
 func (x *Store) NewCookie(session Session) *http.Cookie {
 	return &http.Cookie{
-		Name:     x.Config.CookieName,
-		Value:    session.Encode(x.secret),
+		Name:     x.config.CookieName,
+		Value:    session.Encode(x.config.Secret),
 		Expires:  session.Expires,
-		Domain:   x.Config.CookieDomain,
-		Path:     x.Config.CookiePath,
+		Domain:   x.config.CookieDomain,
+		Path:     x.config.CookiePath,
 		HttpOnly: true,
 	}
 }
@@ -280,4 +279,9 @@ func (x Secret) Validate() error {
 
 func (x Secret) String() string {
 	return fmt.Sprintf(SecretFormat, x[0], x[1], x[2], x[3])
+}
+
+func (x *Secret) Decode(src string) error {
+	_, err := fmt.Sscanf(src, SecretFormat, &x[0], &x[1], &x[2], &x[3])
+	return err
 }

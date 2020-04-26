@@ -10,6 +10,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -28,6 +29,7 @@ type Config struct {
 	StorageConfig     storage.Config    `envconfig:"storage"`
 	AccessConfig      access.Config     `envconfig:"sessions"`
 	DiscordConfig     discord.Config    `envconfig:"discord"`
+	LockerConfig      locker.Config     `envconfig:"locker"`
 }
 
 func (x *Config) ParseEnv() {
@@ -68,26 +70,35 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	var secret access.Secret
-	sessionsStore := access.NewStore(secret, config.AccessConfig)
+	// Creates mutex locks.
+	lockSmith := locker.NewSmith(config.LockerConfig)
 
+	// Session storage.
+	sessionsStore := access.NewStore(lockSmith, config.AccessConfig)
+
+	// Creates/queries object buckets.
 	warehouse, err := storage.NewWarehouse(config.StorageConfig)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	database := api.NewStorage(ctx, sessionsStore, warehouse, config.ApiStorageConfig)
+	// Build the api database.
+	database := api.NewStorage(ctx, lockSmith, sessionsStore, warehouse, config.ApiStorageConfig)
 	if database == nil {
 		os.Exit(1)
 	}
 
+	// Initialize the database, if requested
 	if config.InitializeStorage {
 		if err := database.Init(ctx); err != nil {
 			logger.WithError(err).Fatal("failed to initialize storage")
 		}
 	}
 
+	// Build the discord client
 	discordClient := discord.NewClient(config.DiscordConfig)
+
+	//
 	apiServer := api.NewServer(config.ApiConfig, database, discordClient)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")

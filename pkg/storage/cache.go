@@ -3,73 +3,53 @@ package storage
 import (
 	"context"
 	"errors"
-	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 )
 
-// In-memory caching between bucket operations
+// Cache is an in-memory object cache.
+// This can serve as a cache proxy between object storage, or as a stand-alone cache.
 type Cache struct {
-	bucket *Bucket
-	cache  map[string]Object
-	locker *locker.Locker
+	cache  map[string]Object // the cache map itself
+	bucket *Bucket           // optional bucket storage
 }
 
 type CacheOpts struct {
-	Bucket   *Bucket
-	RedisKey string
+	// If this is not nil, each write to the cache will additionally be written to a file in this bucket.
+	Bucket *Bucket
 }
 
 func NewCache(opts CacheOpts) *Cache {
 	return &Cache{
 		bucket: opts.Bucket,
 		cache:  make(map[string]Object),
-		locker: locker.NewLocker(locker.Opts{RedisKey: opts.RedisKey}),
 	}
 }
 
 var ErrObjectNotFound = errors.New("object not found")
 
+// GetObject will first try to find the object in the cache.
+// If it's a miss and x.Bucket is not nil, this function will query the bucket and store the results in the cache.
 func (x *Cache) GetObject(ctx context.Context, name string, dest *Object) error {
-	if err := x.locker.Lock(ctx); err != nil {
-		return fmt.Errorf("locker.Lock() failed: %v", err)
+	// try to read from the map
+	var ok bool
+	*dest, ok = x.cache[name]
+	if ok {
+		return nil
 	}
-	defer x.locker.Unlock(ctx)
 
-	switch err := x.readObject(name, dest); err {
-	case nil:
-		return nil
-	case ErrObjectNotFound:
-		if x.bucket == nil {
-			return ErrObjectNotFound
-		}
-
-		// stat the object
-		if err := x.bucket.GetObject(ctx, name, dest); err != nil {
-			return nil
-		}
-		x.cache[name] = *dest
-		return nil
-	default:
-		return err
-	}
-}
-
-func (x *Cache) readObject(name string, dest *Object) error {
-	// check if the object is already in cache
-	if _, ok := x.cache[name]; ok {
-		*dest = x.cache[name]
-		return nil
-	} else {
+	// try to read from the bucket
+	if x.bucket == nil {
 		return ErrObjectNotFound
 	}
+	if err := x.bucket.GetObject(ctx, name, dest); err != nil {
+		return nil
+	}
+	x.cache[name] = *dest
+	return nil
 }
 
+// PutObject puts an object into the cache.
+// If bucket is not nil, the file will also be written to the bucket.
 func (x *Cache) PutObject(ctx context.Context, name string, object *Object) error {
-	if err := x.locker.Lock(ctx); err != nil {
-		return err
-	}
-	defer x.locker.Unlock(ctx)
-
 	if x.bucket != nil {
 		if err := WithBackup(x.bucket.PutObject)(ctx, name, object); err != nil {
 			return err

@@ -41,7 +41,8 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"SESSIONS_COOKIE_NAME":           "sessions-cookie-name",
 		"SESSIONS_COOKIE_DOMAIN":         "sessions-cookie-domain",
 		"SESSIONS_COOKIE_PATH":           "sessions-cookie-path",
-		"SESSIONS_LOCKER_NAME":           "sessions-locker-name",
+		"SESSIONS_REDIS_KEY":             "sessions-redis-key",
+		"SESSIONS_SECRET":                "560febda7eae12b8c0cecc7851ca89062623d26de389ebcb5a3097fc6ef622a1",
 		"DISCORD_ENDPOINT":               "discord-endpoint",
 		"DISCORD_BOT_AUTH_TOKEN":         "discord-bot-auth-token",
 		"DISCORD_OAUTH_CLIENT_ID":        "discord-oauth-client-id",
@@ -91,10 +92,11 @@ func TestConfig_ParseEnv(t *testing.T) {
 			OAuthRedirectURI:  "discord-oauth-redirect-uri",
 		},
 		AccessConfig: access.Config{
+			Secret:       access.Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1},
 			CookieName:   "sessions-cookie-name",
 			CookieDomain: "sessions-cookie-domain",
 			CookiePath:   "sessions-cookie-path",
-			LockerName:   "sessions-locker-name",
+			RedisKey:     "sessions-redis-key",
 		},
 	}
 

@@ -23,7 +23,7 @@ const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 var logger = log.Logger()
 
 type Warehouse struct {
-	Config
+	config      Config
 	minioClient *minio.Client
 }
 
@@ -44,7 +44,7 @@ type MinioConfig struct {
 }
 
 func NewWarehouse(config Config) (*Warehouse, error) {
-	client := Warehouse{Config: config}
+	client := Warehouse{config: config}
 	if config.Minio.Endpoint != "" {
 		var err error
 		client.minioClient, err = minio.New(config.Minio.Endpoint, config.Minio.AccessKey, config.Minio.SecretKey, config.Minio.UseSSL)
@@ -63,22 +63,23 @@ type Bucket struct {
 
 func (x *Warehouse) NewBucket(ctx context.Context, name string) (*Bucket, error) {
 	bucket := Bucket{Name: name}
+	if x.minioClient == nil {
+		return &bucket, nil
+	}
 
-	if x.minioClient != nil {
-		bucket.minioRegion = x.Minio.Region
-		bucket.minioClient = x.minioClient
-		_, span := x.newSpan(ctx, "warehouse_new_bucket")
-		defer span.Send()
-		exists, err := x.minioClient.BucketExists(name)
-		if err != nil {
+	bucket.minioRegion = x.config.Minio.Region
+	bucket.minioClient = x.minioClient
+	_, span := x.newSpan(ctx, "warehouse_new_bucket")
+	defer span.Send()
+	exists, err := x.minioClient.BucketExists(name)
+	if err != nil {
+		span.AddField("error", err)
+		return nil, err
+	}
+	if exists == false {
+		if err := x.minioClient.MakeBucket(name, x.config.Minio.Region); err != nil {
 			span.AddField("error", err)
 			return nil, err
-		}
-		if exists == false {
-			if err := x.minioClient.MakeBucket(name, x.Minio.Region); err != nil {
-				span.AddField("error", err)
-				return nil, err
-			}
 		}
 	}
 	return &bucket, nil
@@ -86,8 +87,8 @@ func (x *Warehouse) NewBucket(ctx context.Context, name string) (*Bucket, error)
 
 func (x *Warehouse) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
 	ctx, span := tracing.StartSpan(ctx, name)
-	tracing.AddField(ctx, "minio_endpoint", x.Minio.Endpoint)
-	tracing.AddField(ctx, "minio_region", x.Minio.Region)
+	tracing.AddField(ctx, "minio_endpoint", x.config.Minio.Endpoint)
+	tracing.AddField(ctx, "minio_region", x.config.Minio.Region)
 	return ctx, span
 }
 

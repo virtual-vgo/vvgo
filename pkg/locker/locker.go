@@ -15,20 +15,6 @@ import (
 const RedisLockDeadline = 5 * 60 * time.Second
 
 var logger = log.Logger()
-var smithy LockSmith
-
-func init() {
-	var config Config
-	err := config.ParseEnv()
-	if err != nil {
-		logger.Fatal(err)
-	}
-	smithy = NewSmithy(config)
-}
-
-func NewLocker(opts Opts) *Locker {
-	return smithy.NewLocker(opts)
-}
 
 type LockSmith struct {
 	Config
@@ -36,6 +22,7 @@ type LockSmith struct {
 }
 
 type Config struct {
+	RedisEnabled bool
 	RedisAddress string `split_words:"true"`
 }
 
@@ -44,15 +31,15 @@ func (x *Config) ParseEnv() error {
 	return envconfig.Process("locker", x)
 }
 
-func NewSmithy(config Config) LockSmith {
+func NewSmith(config Config) *LockSmith {
 	var redisClient *redis.Client
-	if config.RedisAddress != "" {
+	if config.RedisEnabled {
 		redisClient = redis.NewClient(&redis.Options{
 			Network: "tcp",
 			Addr:    config.RedisAddress,
 		})
 	}
-	return LockSmith{
+	return &LockSmith{
 		Config:      config,
 		redisClient: redisClient,
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/access"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"golang.org/x/net/publicsuffix"
 	"net/http"
 	"net/http/cookiejar"
@@ -17,8 +18,9 @@ import (
 )
 
 func TestLoginHandler_ServeHTTP(t *testing.T) {
+	secret := access.Secret{1, 2, 3, 4}
 	loginHandler := PasswordLoginHandler{
-		Sessions: access.NewStore(access.Secret{1, 2, 3, 4}, access.Config{CookieName: "vvgo-cookie"}),
+		Sessions: access.NewStore(locker.NewSmith(locker.Config{}), access.Config{Secret: secret, CookieName: "vvgo-cookie"}),
 		Logins: []PasswordLogin{
 			{
 				User:  "vvgo-user",
@@ -85,7 +87,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	logoutHandler := LogoutHandler{
-		Sessions: access.NewStore(access.Secret{}, access.Config{CookieName: "vvgo-cookie"}),
+		Sessions: access.NewStore(locker.NewSmith(locker.Config{}), access.Config{CookieName: "vvgo-cookie"}),
 	}
 
 	logoutHandler.Sessions.Init(context.Background())

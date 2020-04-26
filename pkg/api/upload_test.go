@@ -179,6 +179,7 @@ func TestUpload_Validate(t *testing.T) {
 }
 
 func TestUploadHandler_ServeHTTP(t *testing.T) {
+	locker := locker.NewSmith(locker.Config{}).NewLocker(locker.Opts{})
 	warehouse, err := storage.NewWarehouse(storage.Config{})
 	require.NoError(t, err, "storage.NewWarehouse()")
 
@@ -319,7 +320,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			handlerStorage := Storage{
 				Parts: &parts.Parts{
 					Cache:  storage.NewCache(storage.CacheOpts{}),
-					Locker: locker.NewLocker(locker.Opts{}),
+					Locker: locker,
 				},
 				Sheets: bucket,
 				Clix:   bucket,

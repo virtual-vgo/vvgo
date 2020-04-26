@@ -3,6 +3,7 @@ package access
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,7 +12,7 @@ import (
 
 func TestStore_ReadSessionFromRequest(t *testing.T) {
 	secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
-	store := NewStore(secret, Config{CookieName: "vvgo-cookie"})
+	store := NewStore(locker.NewSmith(locker.Config{}), Config{Secret: secret, CookieName: "vvgo-cookie"})
 	session := store.NewSession(time.Now().Add(1e6 * time.Second))
 	t.Run("no session", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -73,6 +74,13 @@ func TestSecret(t *testing.T) {
 		expected := "196ddf804c7666d48d32ff4a91a530bcc5c7cde4a26096ad67758135226bfb2e"
 		arg := Secret{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
 		got := arg.String()
+		assert.Equal(t, expected, got)
+	})
+	t.Run("decode", func(t *testing.T) {
+		arg := "196ddf804c7666d48d32ff4a91a530bcc5c7cde4a26096ad67758135226bfb2e"
+		expected := Secret{0x196ddf804c7666d4, 0x8d32ff4a91a530bc, 0xc5c7cde4a26096ad, 0x67758135226bfb2e}
+		var got Secret
+		assert.NoError(t, got.Decode(arg))
 		assert.Equal(t, expected, got)
 	})
 	t.Run("validate/success", func(t *testing.T) {

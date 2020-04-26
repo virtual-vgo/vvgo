@@ -25,6 +25,7 @@ import (
 )
 
 func TestPartsView_ServeHTTP(t *testing.T) {
+	locker := locker.NewSmith(locker.Config{}).NewLocker(locker.Opts{})
 	warehouse, err := storage.NewWarehouse(storage.Config{})
 	require.NoError(t, err, "storage.NewWarehouse")
 
@@ -34,7 +35,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	handlerStorage := Storage{
 		Parts: &parts.Parts{
 			Cache:  storage.NewCache(storage.CacheOpts{}),
-			Locker: locker.NewLocker(locker.Opts{}),
+			Locker: locker,
 		},
 		Sheets: bucket,
 		Clix:   bucket,
@@ -163,7 +164,7 @@ func TestIndexView_ServeHTTP(t *testing.T) {
 
 func TestLoginView_ServeHTTP(t *testing.T) {
 	loginView := LoginView{
-		Sessions: access.NewStore(access.Secret{}, access.Config{CookieName: "vvgo-cookie"}),
+		Sessions: access.NewStore(locker.NewSmith(locker.Config{}), access.Config{CookieName: "vvgo-cookie"}),
 	}
 
 	t.Run("redirect", func(t *testing.T) {
