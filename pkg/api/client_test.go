@@ -32,14 +32,11 @@ func TestClient_Upload(t *testing.T) {
 	var gotAuthorized bool
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r
-		auth := TokenAuth{"Dio Brando"}
-		auth.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotAuthorized = true
-			gob.NewEncoder(w).Encode([]UploadStatus{{
-				FileName: "Dio_Brando.pdf",
-				Code:     http.StatusOK,
-			}})
-		})).ServeHTTP(w, r)
+		gotAuthorized = true
+		gob.NewEncoder(w).Encode([]UploadStatus{{
+			FileName: "Dio_Brando.pdf",
+			Code:     http.StatusOK,
+		}})
 	}))
 	defer ts.Close()
 	client.Client.ServerAddress = ts.URL

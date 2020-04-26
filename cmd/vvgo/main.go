@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
@@ -15,6 +16,8 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
+	"sort"
+	"strings"
 )
 
 var logger = log.Logger()
@@ -60,10 +63,17 @@ func (x Config) ParseFlags() {
 }
 
 func main() {
+	env := os.Environ()
+	sort.Strings(env)
+	fmt.Println(strings.Join(env, "\n"))
+
 	ctx := context.Background()
 	var config Config
 	config.ParseEnv()
 	config.ParseFlags()
+
+	buf, _ := json.MarshalIndent(&config, "", "    ")
+	fmt.Println(string(buf))
 
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
