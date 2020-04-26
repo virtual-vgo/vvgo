@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
@@ -90,7 +90,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 			OAuthClientSecret: "discord-oauth-client-secret",
 			OAuthRedirectURI:  "discord-oauth-redirect-uri",
 		},
-		SessionsConfig: sessions.Config{
+		SessionsConfig: access.Config{
 			CookieName:   "sessions-cookie-name",
 			CookieDomain: "sessions-cookie-domain",
 			CookiePath:   "sessions-cookie-path",

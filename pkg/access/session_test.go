@@ -1,4 +1,4 @@
-package sessions
+package access
 
 import (
 	"github.com/stretchr/testify/assert"

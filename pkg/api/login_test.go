@@ -5,7 +5,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/sessions"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"golang.org/x/net/publicsuffix"
 	"net/http"
 	"net/http/cookiejar"
@@ -18,12 +18,12 @@ import (
 
 func TestLoginHandler_ServeHTTP(t *testing.T) {
 	loginHandler := PasswordLoginHandler{
-		Sessions: sessions.NewStore(sessions.Secret{1, 2, 3, 4}, sessions.Config{CookieName: "vvgo-cookie"}),
+		Sessions: access.NewStore(access.Secret{1, 2, 3, 4}, access.Config{CookieName: "vvgo-cookie"}),
 		Logins: []PasswordLogin{
 			{
 				User:  "vvgo-user",
 				Pass:  "vvgo-pass",
-				Roles: []sessions.Role{"vvgo-member"},
+				Roles: []access.Role{"vvgo-member"},
 			},
 		},
 	}
@@ -71,21 +71,21 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		assert.Equal(t, "vvgo-cookie", cookies[0].Name, "cookie name")
 
 		// check that a session exists for the cookie
-		var session sessions.Session
-		require.NoError(t, session.DecodeCookie(sessions.Secret{1, 2, 3, 4}, cookies[0]), "session.DecodeCookie")
+		var session access.Session
+		require.NoError(t, session.DecodeCookie(access.Secret{1, 2, 3, 4}, cookies[0]), "session.DecodeCookie")
 
 		// check that the identity is what we expect
-		var identity sessions.Identity
+		var identity access.Identity
 		require.NoError(t, loginHandler.Sessions.GetIdentity(ctx, session.ID, &identity))
-		assert.Equal(t, sessions.KindPassword, identity.Kind, "identity.Kind")
-		assert.Equal(t, []sessions.Role{sessions.RoleVVGOMember}, identity.Roles, "identity.Roles")
+		assert.Equal(t, access.KindPassword, identity.Kind, "identity.Kind")
+		assert.Equal(t, []access.Role{access.RoleVVGOMember}, identity.Roles, "identity.Roles")
 	})
 }
 
 func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	logoutHandler := LogoutHandler{
-		Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{CookieName: "vvgo-cookie"}),
+		Sessions: access.NewStore(access.Secret{}, access.Config{CookieName: "vvgo-cookie"}),
 	}
 
 	logoutHandler.Sessions.Init(context.Background())
@@ -97,9 +97,9 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	// create a session and cookie
 	session := logoutHandler.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
 	cookie := logoutHandler.Sessions.NewCookie(session)
-	assert.NoError(t, logoutHandler.Sessions.StoreIdentity(ctx, session.ID, &sessions.Identity{
-		Kind:  sessions.KindPassword,
-		Roles: []sessions.Role{"cheese"},
+	assert.NoError(t, logoutHandler.Sessions.StoreIdentity(ctx, session.ID, &access.Identity{
+		Kind:  access.KindPassword,
+		Roles: []access.Role{"cheese"},
 	}))
 
 	// set the cookie on the client
@@ -115,8 +115,8 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	assert.Equal(t, "/", resp.Header.Get("Location"), "location")
 
 	// check that the session doesn't exist
-	var dest sessions.Identity
-	assert.Equal(t, sessions.ErrSessionNotFound, logoutHandler.Sessions.GetIdentity(ctx, session.ID, &dest))
+	var dest access.Identity
+	assert.Equal(t, access.ErrSessionNotFound, logoutHandler.Sessions.GetIdentity(ctx, session.ID, &dest))
 }
 
 func noFollow(client *http.Client) *http.Client {

@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
-	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"golang.org/x/net/publicsuffix"
 	"io/ioutil"
@@ -162,7 +162,7 @@ func TestIndexView_ServeHTTP(t *testing.T) {
 
 func TestLoginView_ServeHTTP(t *testing.T) {
 	loginView := LoginView{
-		Sessions: sessions.NewStore(sessions.Secret{}, sessions.Config{CookieName: "vvgo-cookie"}),
+		Sessions: access.NewStore(access.Secret{}, access.Config{CookieName: "vvgo-cookie"}),
 	}
 
 	t.Run("redirect", func(t *testing.T) {
@@ -176,9 +176,9 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 		// create a session and cookie
 		session := loginView.Sessions.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
 		cookie := loginView.Sessions.NewCookie(session)
-		assert.NoError(t, loginView.Sessions.StoreIdentity(ctx, session.ID, &sessions.Identity{
-			Kind:  sessions.KindPassword,
-			Roles: []sessions.Role{"cheese"},
+		assert.NoError(t, loginView.Sessions.StoreIdentity(ctx, session.ID, &access.Identity{
+			Kind:  access.KindPassword,
+			Roles: []access.Role{"cheese"},
 		}))
 
 		// set the cookie on the client

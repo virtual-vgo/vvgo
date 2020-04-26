@@ -3,8 +3,8 @@ package api
 import (
 	"bytes"
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
-	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
 	"net/http"
@@ -123,14 +123,14 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 type LoginView struct {
 	NavBar   NavBar
-	Sessions *sessions.Store
+	Sessions *access.Store
 }
 
 func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "login_view")
 	defer span.Send()
 
-	var identity sessions.Identity
+	var identity access.Identity
 	if err := x.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err == nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
@@ -162,11 +162,11 @@ func Header() template.HTML {
 type NavBar struct {
 	MemberUser      string
 	DiscordLoginUrl string
-	Sessions        *sessions.Store
+	Sessions        *access.Store
 }
 
 type NavBarRenderOpts struct {
-	Identity        sessions.Identity
+	Identity        access.Identity
 	ShowLogin       bool
 	ShowMemberLinks bool
 	PartsActive     bool
@@ -175,7 +175,7 @@ type NavBarRenderOpts struct {
 
 func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
 	var opts NavBarRenderOpts
-	var identity sessions.Identity
+	var identity access.Identity
 	showLogin := true
 	if x.Sessions != nil {
 		if err := x.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err == nil {

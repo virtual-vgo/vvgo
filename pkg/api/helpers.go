@@ -6,7 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"github.com/sirupsen/logrus"
-	"github.com/virtual-vgo/vvgo/pkg/sessions"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"html/template"
 	"io"
 	"net/http"
@@ -139,7 +139,7 @@ func notImplemented(w http.ResponseWriter) {
 }
 
 // creates a cookie and redirects the user to the home page
-func loginRedirect(ctx context.Context, w http.ResponseWriter, r *http.Request, store *sessions.Store, identity *sessions.Identity) {
+func loginRedirect(ctx context.Context, w http.ResponseWriter, r *http.Request, store *access.Store, identity *access.Identity) {
 	cookie := newCookie(ctx, store, identity)
 	if cookie == nil {
 		internalServerError(w)
@@ -153,7 +153,7 @@ func loginRedirect(ctx context.Context, w http.ResponseWriter, r *http.Request, 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func newCookie(ctx context.Context, store *sessions.Store, identity *sessions.Identity) *http.Cookie {
+func newCookie(ctx context.Context, store *access.Store, identity *access.Identity) *http.Cookie {
 	// create a session and cookie
 	session := store.NewSession(time.Now().Add(7 * 24 * 3600 * time.Second))
 	cookie := store.NewCookie(session)

@@ -7,10 +7,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
@@ -26,7 +26,7 @@ type Config struct {
 	ApiStorageConfig  api.StorageConfig `envconfig:"api_storage"`
 	TracingConfig     tracing.Config    `envconfig:"tracing"`
 	StorageConfig     storage.Config    `envconfig:"storage"`
-	SessionsConfig    sessions.Config   `envconfig:"sessions"`
+	SessionsConfig    access.Config     `envconfig:"sessions"`
 	DiscordConfig     discord.Config    `envconfig:"discord"`
 }
 
@@ -68,8 +68,8 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	var secret sessions.Secret
-	sessionsStore := sessions.NewStore(secret, config.SessionsConfig)
+	var secret access.Secret
+	sessionsStore := access.NewStore(secret, config.SessionsConfig)
 
 	warehouse, err := storage.NewWarehouse(config.StorageConfig)
 	if err != nil {

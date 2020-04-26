@@ -1,4 +1,4 @@
-package sessions
+package access
 
 // A user identity.
 // This _absolutely_ should not contain any personally identifiable information.
@@ -8,6 +8,8 @@ type Identity struct {
 	Roles []Role `json:"roles"`
 }
 
+// A user role.
+// These provide different levels of access to the api.
 type Role string
 
 func (x Role) String() string { return string(x) }

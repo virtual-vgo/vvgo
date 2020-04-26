@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/sessions"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"strings"
@@ -10,20 +10,20 @@ import (
 // Authenticate http requests using the sessions api
 // If the request has a valid session and the required role, it is allowed access.
 type RBACMux struct {
-	Sessions *sessions.Store
+	Sessions *access.Store
 	*http.ServeMux
 }
 
-func NewRBACMux(store *sessions.Store) *RBACMux {
+func NewRBACMux(store *access.Store) *RBACMux {
 	return &RBACMux{
 		Sessions: store,
 		ServeMux: http.NewServeMux(),
 	}
 }
 
-func (auth *RBACMux) Handle(pattern string, handler http.Handler, role sessions.Role) {
+func (auth *RBACMux) Handle(pattern string, handler http.Handler, role access.Role) {
 	// anonymous access goes directly to the mux
-	if role == sessions.RoleAnonymous {
+	if role == access.RoleAnonymous {
 		auth.ServeMux.Handle(pattern, handler)
 		return
 	}
@@ -33,7 +33,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role sessions.
 			ctx, span := tracing.StartSpan(r.Context(), "rbac_mux")
 			defer span.Send()
 
-			var identity sessions.Identity
+			var identity access.Identity
 			if err := auth.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err != nil {
 				return false
 			}

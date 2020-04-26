@@ -3,21 +3,21 @@ package api
 import (
 	"errors"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 )
 
 type PasswordLoginHandler struct {
-	Sessions *sessions.Store
+	Sessions *access.Store
 	Logins   []PasswordLogin
 }
 
 type PasswordLogin struct {
 	User  string
 	Pass  string
-	Roles []sessions.Role
+	Roles []access.Role
 }
 
 func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +29,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var identity sessions.Identity
+	var identity access.Identity
 	if err := x.Sessions.ReadIdentityFromRequest(ctx, r, &identity); err == nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
@@ -38,7 +38,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	user := r.FormValue("user")
 	pass := r.FormValue("pass")
 
-	var roles []sessions.Role
+	var roles []access.Role
 	for _, login := range x.Logins {
 		if user == login.User && pass == login.Pass {
 			roles = login.Roles
@@ -54,8 +54,8 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// create the identity object
-	identity = sessions.Identity{
-		Kind:  sessions.KindPassword,
+	identity = access.Identity{
+		Kind:  access.KindPassword,
 		Roles: roles,
 	}
 	loginRedirect(ctx, w, r, x.Sessions, &identity)
@@ -64,7 +64,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 type DiscordLoginHandler struct {
 	GuildID        discord.GuildID
 	RoleVVGOMember string
-	Sessions       *sessions.Store
+	Sessions       *access.Store
 	Discord        *discord.Client
 }
 
@@ -117,22 +117,22 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the identity object
-	identity := sessions.Identity{
-		Kind:  sessions.KindDiscord,
-		Roles: []sessions.Role{sessions.RoleVVGOMember},
+	identity := access.Identity{
+		Kind:  access.KindDiscord,
+		Roles: []access.Role{access.RoleVVGOMember},
 	}
 	loginRedirect(ctx, w, r, x.Sessions, &identity)
 }
 
 type LogoutHandler struct {
-	Sessions *sessions.Store
+	Sessions *access.Store
 }
 
 func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "logout_handler")
 	defer span.Send()
 
-	var session sessions.Session
+	var session access.Session
 	if err := x.Sessions.ReadSessionFromRequest(r, &session); err != nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
