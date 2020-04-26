@@ -26,7 +26,7 @@ type Config struct {
 	ApiStorageConfig  api.StorageConfig `envconfig:"api_storage"`
 	TracingConfig     tracing.Config    `envconfig:"tracing"`
 	StorageConfig     storage.Config    `envconfig:"storage"`
-	SessionsConfig    access.Config     `envconfig:"sessions"`
+	AccessConfig      access.Config     `envconfig:"sessions"`
 	DiscordConfig     discord.Config    `envconfig:"discord"`
 }
 
@@ -69,7 +69,7 @@ func main() {
 	defer tracing.Close()
 
 	var secret access.Secret
-	sessionsStore := access.NewStore(secret, config.SessionsConfig)
+	sessionsStore := access.NewStore(secret, config.AccessConfig)
 
 	warehouse, err := storage.NewWarehouse(config.StorageConfig)
 	if err != nil {

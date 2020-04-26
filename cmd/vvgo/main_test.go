@@ -90,7 +90,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 			OAuthClientSecret: "discord-oauth-client-secret",
 			OAuthRedirectURI:  "discord-oauth-redirect-uri",
 		},
-		SessionsConfig: access.Config{
+		AccessConfig: access.Config{
 			CookieName:   "sessions-cookie-name",
 			CookieDomain: "sessions-cookie-domain",
 			CookiePath:   "sessions-cookie-path",
