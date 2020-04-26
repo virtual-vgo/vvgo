@@ -30,11 +30,11 @@ type ServerConfig struct {
 }
 
 type StorageConfig struct {
-	SheetsBucketName   string `split_words:"true" default:"sheets"`
-	ClixBucketName     string `split_words:"true" default:"clix"`
-	PartsBucketName    string `split_words:"true" default:"parts"`
-	PartsLockerKey     string `split_words:"true" default:"parts.lock"`
-	TracksBucketName   string `split_words:"true" default:"tracks"`
+	SheetsBucketName string `split_words:"true" default:"sheets"`
+	ClixBucketName   string `split_words:"true" default:"clix"`
+	PartsBucketName  string `split_words:"true" default:"parts"`
+	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
+	TracksBucketName string `split_words:"true" default:"tracks"`
 }
 
 type Storage struct {
