@@ -1,6 +1,6 @@
-package access
+package login
 
-// The kind of identity
+// The kind of login
 // This can be used to access additional metadata fields we might add for a particular login.
 type Kind string
 
@@ -12,6 +12,7 @@ const (
 )
 
 // A user role.
+// Users can have multiple roles.
 // These provide different levels of access to the api.
 type Role string
 
