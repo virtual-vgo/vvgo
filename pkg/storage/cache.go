@@ -41,7 +41,7 @@ func (x *Cache) GetObject(ctx context.Context, name string, dest *Object) error 
 		return ErrObjectNotFound
 	}
 	if err := x.bucket.GetObject(ctx, name, dest); err != nil {
-		return nil
+		return err
 	}
 	x.cache[name] = *dest
 	return nil
