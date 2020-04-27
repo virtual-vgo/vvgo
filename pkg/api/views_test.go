@@ -22,7 +22,7 @@ import (
 
 func TestPartsView_ServeHTTP(t *testing.T) {
 	locker := locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{})
-	warehouse, err := storage.NewWarehouse(storage.Config{})
+	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
 	require.NoError(t, err, "storage.NewWarehouse")
 
 	ctx := context.Background()
