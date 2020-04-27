@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/log"
@@ -22,21 +21,23 @@ const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
 var logger = log.Logger()
 
+// Warehouse builds new object storage buckets.
+// Minio is the underlying driver.
 type Warehouse struct {
 	config      Config
 	minioClient *minio.Client
 }
 
 type Config struct {
+	// If this is enabled, the low-level api methods StatObject, GetObject, and PutObject will make no rpc calls
+	// and always return nil. DownloadURL will always return "#", nil.
+	NoOp bool
+
+	// Minio config used to build the minio client.
 	Minio MinioConfig `envconfig:"minio"`
 }
 
-func (x *Config) ParseEnv() error {
-	return envconfig.Process("storage", x)
-}
-
 type MinioConfig struct {
-	Enabled   bool
 	Endpoint  string `default:"localhost:9000"`
 	Region    string `default:"sfo2"`
 	AccessKey string `default:"minioadmin"`
@@ -44,32 +45,40 @@ type MinioConfig struct {
 	UseSSL    bool   `default:"false"`
 }
 
+// Returns a new warehouse that build buckets.
 func NewWarehouse(config Config) (*Warehouse, error) {
 	client := Warehouse{config: config}
-	if config.Minio.Enabled {
-		var err error
-		client.minioClient, err = minio.New(config.Minio.Endpoint, config.Minio.AccessKey, config.Minio.SecretKey, config.Minio.UseSSL)
-		if err != nil {
-			return nil, fmt.Errorf("minio.New() failed: %v", err)
-		}
+	if config.NoOp {
+		return &client, nil
+	}
+
+	var err error
+	client.minioClient, err = minio.New(config.Minio.Endpoint, config.Minio.AccessKey, config.Minio.SecretKey, config.Minio.UseSSL)
+	if err != nil {
+		return nil, fmt.Errorf("minio.New() failed: %v", err)
 	}
 	return &client, nil
 }
 
+// Buckets are an abstraction on top of the minio client for object storage
 type Bucket struct {
 	Name        string
+	noOp        bool
 	minioRegion string
 	minioClient *minio.Client
 }
 
 func (x *Warehouse) NewBucket(ctx context.Context, name string) (*Bucket, error) {
-	bucket := Bucket{Name: name}
-	if x.minioClient == nil {
+	bucket := Bucket{
+		Name:        name,
+		noOp:        x.config.NoOp,
+		minioRegion: x.config.Minio.Region,
+		minioClient: x.minioClient,
+	}
+	if x.config.NoOp {
 		return &bucket, nil
 	}
 
-	bucket.minioRegion = x.config.Minio.Region
-	bucket.minioClient = x.minioClient
 	_, span := x.newSpan(ctx, "warehouse_new_bucket")
 	defer span.Send()
 	exists, err := x.minioClient.BucketExists(name)
@@ -93,10 +102,20 @@ func (x *Warehouse) newSpan(ctx context.Context, name string) (context.Context, 
 	return ctx, span
 }
 
+// File is an object abstraction for any media files, pdfs, mp3s, etc. that might be uploaded to the website.
+// The object key is the md5sum of the file bytes.
+// This should not be used for data files.
 type File struct {
+	// Mime media type
 	MediaType string
-	Ext       string
-	Bytes     []byte
+
+	// File extension including the dot
+	Ext string
+
+	// File payload
+	Bytes []byte
+
+	// This is a cache of the objectKey
 	objectKey string
 }
 
@@ -104,6 +123,11 @@ var ErrInvalidMediaType = fmt.Errorf("invalid media type")
 var ErrDetectedInvalidContent = fmt.Errorf("detected invalid content")
 var ErrInvalidFileExtension = fmt.Errorf("invalid file extension")
 
+// ValidateMediaType checks the media type for files in 3 ways:
+// 1. whatever is set in x.MediaType,
+// 2. using http.DetectContentType to sniff the fist 512 bytes,
+// 3. and by the file extension.
+// If any of these media types do not pre as a prefix, an error is returned.
 func (x File) ValidateMediaType(pre string) error {
 	switch {
 	case !strings.HasPrefix(x.MediaType, pre):
@@ -117,6 +141,7 @@ func (x File) ValidateMediaType(pre string) error {
 	}
 }
 
+// ObjectKey is the md5sum of the file bytes.
 func (x File) ObjectKey() string {
 	if x.objectKey == "" {
 		x.objectKey = fmt.Sprintf("%x%s", md5.Sum(x.Bytes), x.Ext)
@@ -124,6 +149,7 @@ func (x File) ObjectKey() string {
 	return x.objectKey
 }
 
+// StatFile queries object storage for the file media type and ext.
 func (x *Bucket) StatFile(ctx context.Context, objectKey string, dest *File) error {
 	var obj Object
 	if err := x.StatObject(ctx, objectKey, &obj); err != nil {
@@ -137,12 +163,16 @@ func (x *Bucket) StatFile(ctx context.Context, objectKey string, dest *File) err
 	return nil
 }
 
+// PutFile uploads the file to object storage
 func (x *Bucket) PutFile(ctx context.Context, file *File) error {
 	ctx, span := x.newSpan(ctx, "bucket_put_file")
 	defer span.Send()
 	return x.PutObject(ctx, file.ObjectKey(), NewObject(file.MediaType, nil, file.Bytes))
 }
 
+// Objects are used as the container for storing persistent data.
+// Data using this api should be able to serialize into bytes and have some associated media type.
+// Objects can be stored in in-memory caches or remote object storage.
 type Object struct {
 	ContentType string
 	Tags        map[string]string
@@ -157,12 +187,14 @@ func NewObject(mediaType string, tags map[string]string, payload []byte) *Object
 	}
 }
 
+// NewJSONObject returns an object with media type "application/json".
 func NewJSONObject(payload []byte) *Object {
 	return NewObject("application/json", nil, payload)
 }
 
+// StatObject queries object storage for the object content type and tags.
 func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object) error {
-	if x.minioClient == nil {
+	if x.noOp {
 		return nil
 	}
 
@@ -181,8 +213,9 @@ func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object
 	return nil
 }
 
+// Get object returns the full object payload.
 func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error {
-	if x.minioClient == nil {
+	if x.noOp {
 		return nil
 	}
 
@@ -211,8 +244,9 @@ func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error
 	return err
 }
 
+// Put object uploads the object with the given key.
 func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) error {
-	if x.minioClient == nil {
+	if x.noOp {
 		return nil
 	}
 
@@ -246,8 +280,11 @@ func WithBackup(putObjectFunc func(ctx context.Context, name string, object *Obj
 	}
 }
 
+// DownloadURL queries object storage for a download url to the object key.
+// If the object has a public download policy, then a direct link is returned.
+// Otherwise, this method will query object storage for a presigned url.
 func (x *Bucket) DownloadURL(ctx context.Context, name string) (string, error) {
-	if x.minioClient == nil {
+	if x.noOp {
 		return "#", nil
 	}
 
