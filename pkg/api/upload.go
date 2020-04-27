@@ -209,23 +209,26 @@ func (x UploadHandler) serveUpload(ctx context.Context, upload Upload) UploadSta
 func (x UploadHandler) handleClix(ctx context.Context, upload *Upload) UploadStatus {
 	file := upload.File()
 	if err := file.ValidateMediaType("audio/"); err != nil {
+		logger.WithError(err).Error("file.ValidateMediaType() failed")
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if ok := x.Clix.PutFile(ctx, file); !ok {
+	if err := x.Clix.PutFile(ctx, file); err != nil {
+		logger.WithError(err).Error("x.Clix.PutFile() failed")
 		return uploadInternalServerError(upload)
-	} else {
-		return x.handleParts(ctx, upload, file.ObjectKey())
 	}
+	return x.handleParts(ctx, upload, file.ObjectKey())
 }
 
 func (x UploadHandler) handleSheets(ctx context.Context, upload *Upload) UploadStatus {
 	file := upload.File()
 	if err := file.ValidateMediaType("application/pdf"); err != nil {
+		logger.WithError(err).Error("file.ValidateMediaType() failed")
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if ok := x.Sheets.PutFile(ctx, file); !ok {
+	if err := x.Sheets.PutFile(ctx, file); err != nil {
+		logger.WithError(err).Error("x.Sheets.PutFile() failed")
 		return uploadInternalServerError(upload)
 	} else {
 		return x.handleParts(ctx, upload, file.ObjectKey())
@@ -243,7 +246,8 @@ func (x UploadHandler) handleParts(ctx context.Context, upload *Upload, objectKe
 			uploadParts[i].Clix.NewKey(objectKey)
 		}
 	}
-	if ok := x.Parts.Save(ctx, uploadParts); !ok {
+	if err := x.Parts.Save(ctx, uploadParts); err != nil {
+		logger.WithError(err).Error("x.Parts.Save() failed")
 		return uploadInternalServerError(upload)
 	} else {
 		return uploadSuccess(upload)
