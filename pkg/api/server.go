@@ -42,9 +42,9 @@ type Storage struct {
 
 func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *storage.Warehouse, config StorageConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
-		bucket, err := warehouse.NewBucket(ctx, config.SheetsBucketName)
+		bucket, err := warehouse.NewBucket(ctx, bucketName)
 		if err != nil {
-			logger.WithError(err).WithField("bucket_name", config.SheetsBucketName).Fatal("warehouse.NewBucket() failed")
+			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("warehouse.NewBucket() failed")
 		}
 		return bucket
 	}
@@ -56,6 +56,7 @@ func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *sto
 	partsLocker := locksmith.NewLocker(locker.Opts{RedisKey: config.PartsLockerKey})
 
 	return &Storage{
+		StorageConfig: config,
 		Parts: &parts.Parts{
 			Cache:  partsCache,
 			Locker: partsLocker,
