@@ -161,7 +161,6 @@ func Header() template.HTML {
 
 type NavBar struct {
 	MemberUser      string
-	DiscordLoginUrl string
 	Sessions        *access.Store
 }
 
@@ -170,7 +169,6 @@ type NavBarRenderOpts struct {
 	ShowLogin       bool
 	ShowMemberLinks bool
 	PartsActive     bool
-	DiscordLoginUrl string
 }
 
 func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
@@ -186,7 +184,6 @@ func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
 		Identity:        identity,
 		ShowLogin:       showLogin,
 		ShowMemberLinks: identity.HasRole(access.RoleVVGOMember),
-		DiscordLoginUrl: x.DiscordLoginUrl,
 	}
 	return opts
 }

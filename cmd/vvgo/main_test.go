@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/access"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
@@ -30,9 +29,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_MEMBER_PASS":                "member-pass",
 		"API_PREP_REP_TOKEN":             "prep-rep-token",
 		"API_ADMIN_TOKEN":                "admin-token",
-		"API_DISCORD_LOGIN_URL":          "discord-login-url",
-		"API_DISCORD_GUILD_ID":           "discord-guild-id",
-		"API_DISCORD_ROLE_VVGO_MEMBER":   "discord-role-vvgo-member",
 		"STORAGE_MINIO_ENDPOINT":         "minio-endpoint",
 		"STORAGE_MINIO_REGION":           "minio-region",
 		"STORAGE_MINIO_ACCESSKEY":        "minio-access-key",
@@ -43,11 +39,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"SESSIONS_COOKIE_PATH":           "sessions-cookie-path",
 		"SESSIONS_REDIS_KEY":             "sessions-redis-key",
 		"SESSIONS_SECRET":                "560febda7eae12b8c0cecc7851ca89062623d26de389ebcb5a3097fc6ef622a1",
-		"DISCORD_ENDPOINT":               "discord-endpoint",
-		"DISCORD_BOT_AUTH_TOKEN":         "discord-bot-auth-token",
-		"DISCORD_OAUTH_CLIENT_ID":        "discord-oauth-client-id",
-		"DISCORD_OAUTH_CLIENT_SECRET":    "discord-oauth-client-secret",
-		"DISCORD_OAUTH_REDIRECT_URI":     "discord-oauth-redirect-uri",
 	}
 	want := Config{
 		Secret:            "vvgo-secret",
@@ -64,9 +55,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 			PrepRepToken:          "prep-rep-token",
 			MemberUser:            "member-user",
 			MemberPass:            "member-pass",
-			DiscordGuildID:        "discord-guild-id",
-			DiscordRoleVVGOMember: "discord-role-vvgo-member",
-			DiscordLoginUrl:       "discord-login-url",
 		},
 		ApiStorageConfig: api.StorageConfig{
 			SheetsBucketName: "sheets-bucket-name",
@@ -83,13 +71,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 				SecretKey: "minio-secret-key",
 				UseSSL:    true,
 			},
-		},
-		DiscordConfig: discord.Config{
-			Endpoint:          "discord-endpoint",
-			BotAuthToken:      "discord-bot-auth-token",
-			OAuthClientID:     "discord-oauth-client-id",
-			OAuthClientSecret: "discord-oauth-client-secret",
-			OAuthRedirectURI:  "discord-oauth-redirect-uri",
 		},
 		AccessConfig: access.Config{
 			Secret:       access.Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1},

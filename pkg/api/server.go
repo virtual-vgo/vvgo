@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/access"
-	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -24,9 +23,6 @@ type ServerConfig struct {
 	MemberPass            string `split_words:"true" default:"admin"`
 	PrepRepToken          string `split_words:"true" default:"admin"`
 	AdminToken            string `split_words:"true" default:"admin"`
-	DiscordLoginUrl       string `split_words:"true" default:"#"`
-	DiscordGuildID        string `envconfig:"discord_guild_id"`
-	DiscordRoleVVGOMember string `envconfig:"discord_role_vvgo_member"`
 }
 
 type StorageConfig struct {
@@ -62,15 +58,15 @@ func NewStorage(ctx context.Context, locksmith *locker.Locksmith, sessions *acce
 	partsLocker := locksmith.NewLocker(locker.Opts{RedisKey: config.PartsLockerKey})
 
 	return &Storage{
-		Sessions: sessions,
+		Sessions:      sessions,
 		StorageConfig: config,
 		Parts: &parts.Parts{
 			Cache:  partsCache,
 			Locker: partsLocker,
 		},
-		Sheets:       sheetsBucket,
-		Clix:         clixBucket,
-		Tracks:       tracksBucket,
+		Sheets: sheetsBucket,
+		Clix:   clixBucket,
+		Tracks: tracksBucket,
 	}
 }
 
@@ -85,8 +81,8 @@ func (x *Storage) Init(ctx context.Context) error {
 	}
 }
 
-func NewServer(config ServerConfig, database *Storage, discordClient *discord.Client) *http.Server {
-	navBar := NavBar{MemberUser: config.MemberUser, Sessions: database.Sessions, DiscordLoginUrl: config.DiscordLoginUrl}
+func NewServer(config ServerConfig, database *Storage) *http.Server {
+	navBar := NavBar{MemberUser: config.MemberUser, Sessions: database.Sessions}
 	rbacMux := NewRBACMux(database.Sessions)
 	rbacMux.Handle("/version", http.HandlerFunc(Version), access.RoleAnonymous)
 
@@ -100,6 +96,12 @@ func NewServer(config ServerConfig, database *Storage, discordClient *discord.Cl
 	rbacMux.Handle("/debug/pprof/", pprofMux, access.RoleVVGODeveloper)
 
 	// authentication handlers
+	logoutHandler := LogoutHandler{Sessions: database.Sessions}
+	rbacMux.Handle("/logout", logoutHandler, access.RoleAnonymous)
+
+	loginView := LoginView{NavBar: navBar, Sessions: database.Sessions}
+	rbacMux.Handle("/login", loginView, access.RoleAnonymous)
+
 	passwordLoginHandler := PasswordLoginHandler{
 		Sessions: database.Sessions,
 		Logins: []PasswordLogin{
@@ -110,18 +112,7 @@ func NewServer(config ServerConfig, database *Storage, discordClient *discord.Cl
 			},
 		},
 	}
-	rbacMux.Handle("/auth/password", passwordLoginHandler, access.RoleAnonymous)
-
-	discordLoginHandler := DiscordLoginHandler{
-		GuildID:        discord.GuildID(config.DiscordGuildID),
-		RoleVVGOMember: config.DiscordRoleVVGOMember,
-		Sessions:       database.Sessions,
-		Discord:        discordClient,
-	}
-	rbacMux.Handle("/auth/discord", discordLoginHandler, access.RoleAnonymous)
-
-	logoutHandler := LogoutHandler{Sessions: database.Sessions}
-	rbacMux.Handle("/logout", logoutHandler, access.RoleAnonymous)
+	rbacMux.Handle("/login/password", passwordLoginHandler, access.RoleAnonymous)
 
 	// Upload
 
@@ -140,9 +131,6 @@ func NewServer(config ServerConfig, database *Storage, discordClient *discord.Cl
 	// Views
 	partsView := PartView{NavBar: navBar, Storage: database}
 	rbacMux.Handle("/parts", partsView, access.RoleVVGOMember)
-
-	loginView := LoginView{NavBar: navBar, Sessions: database.Sessions}
-	rbacMux.Handle("/login", loginView, access.RoleAnonymous)
 
 	indexView := IndexView{NavBar: navBar}
 	rbacMux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
