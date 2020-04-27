@@ -35,10 +35,6 @@ type StorageConfig struct {
 	PartsBucketName  string `split_words:"true" default:"parts"`
 	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
 	TracksBucketName string `split_words:"true" default:"tracks"`
-	MemberUser       string `split_words:"true" default:"admin"`
-	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
 }
 
 type Storage struct {
