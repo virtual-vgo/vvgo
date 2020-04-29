@@ -19,25 +19,31 @@ import (
 
 var ErrSessionNotFound = errors.New("session not found")
 
+// Store provides access to the map of session id's to access roles.
+// It can read and validate signed session cookies from incoming requests,
+// and create new signed cookies for authenticated users.
 type Store struct {
 	config Config
 	cache  *storage.Cache
 	locker *locker.Locker
 }
 
-type SessionID uint64
-
-type Session struct {
-	ID      SessionID
-	Expires time.Time
-}
-
 type Config struct {
-	Secret       Secret `default:"0000000000000000000000000000000000000000000000000000000000000000"`
-	CookieName   string `split_words:"true" default:"vvgo-sessions"`
+	// Secret is the secret used to sign the session data
+	Secret Secret `default:"0000000000000000000000000000000000000000000000000000000000000000"`
+
+	// CookieName is the name of the cookies created by the store.
+	CookieName string `split_words:"true" default:"vvgo-sessions"`
+
+	// CookieDomain is the domain where the cookies can be used.
+	// This should be the domain that users visit in their browser.
 	CookieDomain string `split_words:"true" default:"localhost"`
-	CookiePath   string `split_words:"true" default:"/"`
-	RedisKey     string `split_words:"true"`
+
+	// CookiePath is the url path where the cookies can be used.
+	CookiePath string `split_words:"true" default:"/"`
+
+	// RedisKey is the key name used when obtaining locks in redis.
+	RedisKey string `split_words:"true"`
 }
 
 const DataFile = "users.json"
@@ -89,6 +95,30 @@ func (x *Store) ReadSessionFromRequest(r *http.Request, dest *Session) error {
 	return ErrSessionNotFound
 }
 
+// NewCookie returns cookie with a cryptographically signed session payload.
+func (x *Store) NewCookie(session Session) *http.Cookie {
+	return &http.Cookie{
+		Name:     x.config.CookieName,
+		Value:    session.Encode(x.config.Secret),
+		Expires:  time.Unix(0, int64(session.ExpiresNanos)),
+		Domain:   x.config.CookieDomain,
+		Path:     x.config.CookiePath,
+		SameSite: http.SameSiteStrictMode,
+		HttpOnly: true,
+	}
+}
+
+// NewSession returns a new session with a crypto-rand session id.
+func (x *Store) NewSession(expiresAt time.Time) Session {
+	var id SessionID
+	binary.Read(rand.Reader, binary.LittleEndian, &id)
+	return Session{
+		ID:           id,
+		ExpiresNanos: uint64(expiresAt.UnixNano()),
+	}
+}
+
+// GetIdentity reads the login identity for the given session ID.
 func (x *Store) GetIdentity(ctx context.Context, id SessionID, dest *Identity) error {
 	if err := x.locker.Lock(ctx); err != nil {
 		return err
@@ -107,6 +137,7 @@ func (x *Store) GetIdentity(ctx context.Context, id SessionID, dest *Identity) e
 	return nil
 }
 
+// StoreIdentity stores the session id and identity.
 func (x *Store) StoreIdentity(ctx context.Context, id SessionID, src *Identity) error {
 	if err := x.locker.Lock(ctx); err != nil {
 		return err
@@ -122,44 +153,21 @@ func (x *Store) StoreIdentity(ctx context.Context, id SessionID, src *Identity) 
 	return x.writeMap(ctx, &sessions)
 }
 
+// DeleteIdentity deletes the sessionID key from the map.
 func (x *Store) DeleteIdentity(ctx context.Context, id SessionID) error {
-	// read+modify+write
 	if err := x.locker.Lock(ctx); err != nil {
 		return err
 	}
 	defer x.locker.Unlock(ctx)
 
-	// read
 	var sessions map[SessionID]Identity
 	if err := x.getMap(ctx, &sessions); err != nil {
 		return err
 	}
 
-	// modify
 	delete(sessions, id)
 
-	// write
 	return x.writeMap(ctx, &sessions)
-}
-
-func (x *Store) NewCookie(session Session) *http.Cookie {
-	return &http.Cookie{
-		Name:     x.config.CookieName,
-		Value:    session.Encode(x.config.Secret),
-		Expires:  session.Expires,
-		Domain:   x.config.CookieDomain,
-		Path:     x.config.CookiePath,
-		HttpOnly: true,
-	}
-}
-
-func (x *Store) NewSession(expiresAt time.Time) Session {
-	var id SessionID
-	binary.Read(rand.Reader, binary.LittleEndian, &id)
-	return Session{
-		ID:      id,
-		Expires: expiresAt,
-	}
 }
 
 func (x *Store) getMap(ctx context.Context, dest *map[SessionID]Identity) error {
@@ -184,64 +192,74 @@ func (x *Store) writeMap(ctx context.Context, src *map[SessionID]Identity) error
 	return nil
 }
 
-var ErrInvalidSession = errors.New("invalid cookie")
+var ErrInvalidSession = errors.New("invalid session")
+var ErrInvalidSignature = errors.New("invalid signature")
 
 const SessionFormat = "V-i-r-t-u-a-l--V-G-O--%016x%016x%016x%016x%016x%016x"
 
+// Sessions can be encoded as url safe strings and embedded into cookies or http headers.
+// Session id's are used look up user access roles.
+// Each session should get a unique id.
+type Session struct {
+	// Id is a unique random session id
+	ID SessionID
+
+	// ExpiresNanos is the time in second since epoch that this session expires
+	ExpiresNanos uint64
+}
+
+type SessionID uint64
+
+// Encodes the session into a url safe string.
+// The secret is used to cryptographically sign the session data.
 func (x *Session) Encode(secret Secret) string {
-	str := fmt.Sprintf("%s%016x%016x", secret.String(), x.ID, x.Expires.UnixNano())
+	hash := x.makeSignature(secret)
+	return fmt.Sprintf(SessionFormat, hash[0], hash[1], hash[2], hash[3], x.ID, x.ExpiresNanos)
+}
+
+// DecodeCookie reads session data stored in the cookie.
+// Secret is used to validate the cookie's signature.
+func (x *Session) DecodeCookie(secret Secret, src *http.Cookie) error {
+	return x.Decode(secret, src.Value)
+}
+
+// Decode reads session from a string.
+// Secret is used to validate the session signature.
+// * ErrInvalidSession is returned when the session code not be decoded.
+// * ErrInvalidSignature is returned when the session was read successfully, but signature was invalid.
+// * ErrSessionExpired is returned when the session was read and has a valid signature, but the session is expired.
+// If ErrInvalidSignature or ErrSessionExpired, the session data is still written to this object.
+func (x *Session) Decode(secret Secret, value string) error {
+	// read the cookie
+	var sig [4]uint64
+	_, err := fmt.Sscanf(value, SessionFormat,
+		&sig[0], &sig[1], &sig[2], &sig[3], &x.ID, &x.ExpiresNanos)
+	if err != nil {
+		return ErrInvalidSession
+	}
+
+	switch {
+	case x.makeSignature(secret) != sig:
+		return ErrInvalidSignature
+	case uint64(time.Now().UnixNano()) >= x.ExpiresNanos:
+		return ErrSessionExpired
+	default:
+		return nil
+	}
+}
+
+func (x *Session) makeSignature(secret Secret) [4]uint64 {
+	str := fmt.Sprintf("%v|%v|%v", secret, x.ID, x.ExpiresNanos)
 	sum := sha256.Sum256([]byte(str))
 	sumReader := bytes.NewReader(sum[:])
 	var hash [4]uint64
 	for i := range hash {
 		binary.Read(sumReader, binary.LittleEndian, &hash[i])
 	}
-	return fmt.Sprintf(SessionFormat,
-		hash[0], hash[1], hash[2], hash[3], x.ID, uint64(x.Expires.UnixNano()))
-}
-
-func (x *Session) DecodeCookie(secret Secret, src *http.Cookie) error {
-	return x.Decode(secret, src.Value)
-}
-
-func (x *Session) Decode(secret Secret, value string) error {
-	// read the cookie
-	var hash [4]uint64
-	var id SessionID
-	var expiresAt uint64
-	_, err := fmt.Sscanf(value, SessionFormat,
-		&hash[0], &hash[1], &hash[2], &hash[3], &id, &expiresAt)
-	if err != nil {
-		return ErrInvalidSession
-	}
-
-	// validate the cookie
-	str := fmt.Sprintf("%s%016x%016x", secret.String(), id, expiresAt)
-	sum := sha256.Sum256([]byte(str))
-	sumReader := bytes.NewReader(sum[:])
-	var got [4]uint64
-	for i := range hash {
-		binary.Read(sumReader, binary.LittleEndian, &got[i])
-	}
-	if hash != got {
-		return ErrInvalidSession
-	}
-
-	x.ID = id
-	x.Expires = time.Unix(0, int64(expiresAt))
-	return x.Validate()
+	return hash
 }
 
 var ErrSessionExpired = errors.New("session is expired")
-
-func (x *Session) Validate() error {
-	switch {
-	case time.Now().UnixNano() >= x.Expires.UnixNano():
-		return ErrSessionExpired
-	default:
-		return nil
-	}
-}
 
 type Secret [4]uint64
 
