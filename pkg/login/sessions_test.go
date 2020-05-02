@@ -116,18 +116,11 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 		var gotSession Session
 		require.Equal(t, ErrSessionNotFound, store.ReadSessionFromRequest(req, &gotSession))
 	})
-	t.Run("bearer", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Header.Add("Authorization", "Bearer "+session.Encode(secret))
-		var gotSession Session
-		require.NoError(t, store.ReadSessionFromRequest(req, &gotSession))
-		assert.Equal(t, session.ID, gotSession.ID)
-	})
 	t.Run("cookie", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.AddCookie(&http.Cookie{
 			Name:  "vvgo-cookie",
-			Value: session.Encode(secret),
+			Value: session.SignAndEncode(secret),
 		})
 		var gotSession Session
 		require.NoError(t, store.ReadSessionFromRequest(req, &gotSession))
@@ -138,8 +131,8 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 func TestStore_NewSession(t *testing.T) {
 	t.Run("are valid", func(t *testing.T) {
 		store := NewStore(locker.NewLocksmith(locker.Config{}), Config{})
-		session := store.NewSession(time.Unix(0, 0x2642f3cd1200))
-		assert.Equal(t, uint64(0x2642f3cd1200), session.ExpiresNanos)
+		session := store.NewSession(time.Unix(0xa455, 0))
+		assert.Equal(t, uint64(0xa455), session.Expires)
 		assert.NotEqual(t, 0, session.ID)
 	})
 
@@ -161,8 +154,8 @@ func TestStore_NewCookie(t *testing.T) {
 		CookieDomain: "tester.local",
 	})
 	session := Session{
-		ID:           0x7b7cc95133c4265d,
-		ExpiresNanos: uint64(4743644400 * time.Second),
+		ID:      0x7b7cc95133c4265d,
+		Expires: uint64(4743644400 * time.Second),
 	}
 	gotCookie := store.NewCookie(session)
 	wantCookie := &http.Cookie{
@@ -181,11 +174,11 @@ func TestStore_NewCookie(t *testing.T) {
 func TestSession_Encode(t *testing.T) {
 	secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
 	session := Session{
-		ID:           0x7b7cc95133c4265d,
-		ExpiresNanos: uint64(4743644400 * time.Second),
+		ID:      0x7b7cc95133c4265d,
+		Expires: uint64(0xf),
 	}
-	got := session.Encode(secret)
-	want := "V-i-r-t-u-a-l--V-G-O--16b29700a96cd2cf48b91041e552f3f4b3ce87f1c75cb621ca7f97619ce2f88d7b7cc95133c4265d41d4cf72eac56000"
+	got := session.SignAndEncode(secret)
+	want := "V-i-r-t-u-a-l--V-G-O--cb093abe502ae57788fd514550345689d7225b66ba4447b0a811730133890d2e7b7cc95133c4265d000000000000000f"
 	assert.Equal(t, want, got, "value")
 }
 
@@ -194,15 +187,15 @@ func TestSession_Decode(t *testing.T) {
 		secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
 		src := "V-i-r-t-u-a-l--V-G-O--16b29700a96cd2cf48b91041e552f3f4b3ce87f1c75cb621ca7f97619ce2f88d7b7cc95133c4265d41d4cf72eac56000"
 		wantSession := Session{
-			ID:           0x7b7cc95133c4265d,
-			ExpiresNanos: uint64(4743644400 * time.Second),
+			ID:      0x7b7cc95133c4265d,
+			Expires: uint64(4743644400 * time.Second),
 		}
-		t.Log("want session:", wantSession.Encode(secret))
+		t.Log("want session:", wantSession.SignAndEncode(secret))
 
 		var gotSession Session
-		assert.Equal(t, nil, gotSession.Decode(secret, src), "Read()")
+		assert.Equal(t, nil, gotSession.DecodeAndValidate(secret, src), "Read()")
 		assert.Equal(t, wantSession.ID, gotSession.ID, "session.ID")
-		assert.Equal(t, wantSession.ExpiresNanos, gotSession.ExpiresNanos, "session.ExpiresNanos")
+		assert.Equal(t, wantSession.Expires, gotSession.Expires, "session.Expires")
 	})
 
 	t.Run("invalid session", func(t *testing.T) {
@@ -210,34 +203,34 @@ func TestSession_Decode(t *testing.T) {
 		src := "hamster wheel"
 		wantSession := Session{}
 		var gotSession Session
-		assert.Equal(t, ErrInvalidSession, gotSession.Decode(secret, src), "Read()")
+		assert.Equal(t, ErrInvalidSession, gotSession.DecodeAndValidate(secret, src), "Read()")
 		assert.Equal(t, wantSession, gotSession, "session")
 	})
 
 	t.Run("invalid signature and expired", func(t *testing.T) {
 		secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
-		src := "V-i-r-t-u-a-l--V-G-O--00000000b67f71856e83d9aa5ef4644d76c2a8736c440c6851861172e44ae7b07b7cc95133c4265d1607717a7c5d32e1"
+		src := "V-i-r-t-u-a-l--V-G-O--000000000000057788fd514550345689d7225b66ba4447b0a811730133890d2e7b7cc95133c4265d000000000000000f"
 		wantSession := Session{
-			ID:           0x7b7cc95133c4265d,
-			ExpiresNanos: 0x1607717a7c5d32e1,
+			ID:      0x7b7cc95133c4265d,
+			Expires: 0xf,
 		}
-		t.Log("want session:", wantSession.Encode(secret))
+		t.Log("want session:", wantSession.SignAndEncode(secret))
 
 		var gotSession Session
-		assert.Equal(t, ErrInvalidSignature, gotSession.Decode(secret, src), "Read()")
+		assert.Equal(t, ErrInvalidSignature, gotSession.DecodeAndValidate(secret, src), "Read()")
 		assert.Equal(t, wantSession, gotSession, "session")
 	})
 
 	t.Run("expired", func(t *testing.T) {
 		secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
-		src := "V-i-r-t-u-a-l--V-G-O--7f13099d9edb1fa2e54d58404e63ba1a9dd1afbdbeea3f83576cc40232fc9bae7b7cc95133c4265d1607717a7c5d32e1"
+		src := "V-i-r-t-u-a-l--V-G-O--cb093abe502ae57788fd514550345689d7225b66ba4447b0a811730133890d2e7b7cc95133c4265d000000000000000f"
 		wantSession := Session{
-			ID:           0x7b7cc95133c4265d,
-			ExpiresNanos: 0x1607717a7c5d32e1,
+			ID:      0x7b7cc95133c4265d,
+			Expires: 0xf,
 		}
 
 		var gotSession Session
-		assert.Equal(t, ErrSessionExpired, gotSession.Decode(secret, src), "Read()")
+		assert.Equal(t, ErrSessionExpired, gotSession.DecodeAndValidate(secret, src), "Read()")
 		assert.Equal(t, wantSession, gotSession, "session")
 	})
 }
@@ -248,8 +241,8 @@ func TestSession_DecodeCookie(t *testing.T) {
 		Value: "V-i-r-t-u-a-l--V-G-O--16b29700a96cd2cf48b91041e552f3f4b3ce87f1c75cb621ca7f97619ce2f88d7b7cc95133c4265d41d4cf72eac56000",
 	}
 	wantSession := Session{
-		ID:           0x7b7cc95133c4265d,
-		ExpiresNanos: 0x41d4cf72eac56000,
+		ID:      0x7b7cc95133c4265d,
+		Expires: 0x41d4cf72eac56000,
 	}
 
 	var gotSession Session

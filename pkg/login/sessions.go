@@ -13,7 +13,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -77,16 +76,8 @@ func (x *Store) ReadIdentityFromRequest(ctx context.Context, r *http.Request, de
 	return x.GetIdentity(ctx, session.ID, dest)
 }
 
-// Reads the session data from an http request
-// Currently, this function can read sessions from either a cookie or bearer token.
+// Reads the session data from an http request.
 func (x *Store) ReadSessionFromRequest(r *http.Request, dest *Session) error {
-	// check for a bearer token
-	token := r.Header.Get("Authorization")
-	if strings.HasPrefix(token, "Bearer ") {
-		return dest.Decode(x.config.Secret, strings.TrimPrefix(token, "Bearer "))
-	}
-
-	// check for a cookie
 	cookie, err := r.Cookie(x.config.CookieName)
 	if err == nil {
 		return dest.DecodeCookie(x.config.Secret, cookie)
@@ -99,8 +90,8 @@ func (x *Store) ReadSessionFromRequest(r *http.Request, dest *Session) error {
 func (x *Store) NewCookie(session Session) *http.Cookie {
 	return &http.Cookie{
 		Name:     x.config.CookieName,
-		Value:    session.Encode(x.config.Secret),
-		Expires:  time.Unix(0, int64(session.ExpiresNanos)),
+		Value:    session.SignAndEncode(x.config.Secret),
+		Expires:  time.Unix(0, int64(session.Expires)),
 		Domain:   x.config.CookieDomain,
 		Path:     x.config.CookiePath,
 		SameSite: http.SameSiteStrictMode,
@@ -113,8 +104,8 @@ func (x *Store) NewSession(expiresAt time.Time) Session {
 	var id SessionID
 	binary.Read(rand.Reader, binary.LittleEndian, &id)
 	return Session{
-		ID:           id,
-		ExpiresNanos: uint64(expiresAt.UnixNano()),
+		ID:      id,
+		Expires: uint64(expiresAt.Unix()),
 	}
 }
 
@@ -204,36 +195,36 @@ type Session struct {
 	// Id is a unique random session id
 	ID SessionID
 
-	// ExpiresNanos is the time in second since epoch that this session expires
-	ExpiresNanos uint64
+	// Expires is the time in second since epoch that this session expires
+	Expires uint64
 }
 
 type SessionID uint64
 
-// Encodes the session into a url safe string.
+// SignAndEncode signs and encodes the session into a url safe string.
 // The secret is used to cryptographically sign the session data.
-func (x *Session) Encode(secret Secret) string {
+func (x *Session) SignAndEncode(secret Secret) string {
 	hash := x.makeSignature(secret)
-	return fmt.Sprintf(SessionFormat, hash[0], hash[1], hash[2], hash[3], x.ID, x.ExpiresNanos)
+	return fmt.Sprintf(SessionFormat, hash[0], hash[1], hash[2], hash[3], x.ID, x.Expires)
 }
 
 // DecodeCookie reads session data stored in the cookie.
 // Secret is used to validate the cookie's signature.
 func (x *Session) DecodeCookie(secret Secret, src *http.Cookie) error {
-	return x.Decode(secret, src.Value)
+	return x.DecodeAndValidate(secret, src.Value)
 }
 
-// Decode reads session from a string.
+// DecodeAndValidate reads session from a string and validates the signature.
 // Secret is used to validate the session signature.
 // * ErrInvalidSession is returned when the session code not be decoded.
 // * ErrInvalidSignature is returned when the session was read successfully, but signature was invalid.
 // * ErrSessionExpired is returned when the session was read and has a valid signature, but the session is expired.
 // If ErrInvalidSignature or ErrSessionExpired, the session data is still written to this object.
-func (x *Session) Decode(secret Secret, value string) error {
+func (x *Session) DecodeAndValidate(secret Secret, value string) error {
 	// read the cookie
 	var sig [4]uint64
 	_, err := fmt.Sscanf(value, SessionFormat,
-		&sig[0], &sig[1], &sig[2], &sig[3], &x.ID, &x.ExpiresNanos)
+		&sig[0], &sig[1], &sig[2], &sig[3], &x.ID, &x.Expires)
 	if err != nil {
 		return ErrInvalidSession
 	}
@@ -241,7 +232,7 @@ func (x *Session) Decode(secret Secret, value string) error {
 	switch {
 	case x.makeSignature(secret) != sig:
 		return ErrInvalidSignature
-	case uint64(time.Now().UnixNano()) >= x.ExpiresNanos:
+	case uint64(time.Now().Unix()) >= x.Expires:
 		return ErrSessionExpired
 	default:
 		return nil
@@ -249,7 +240,7 @@ func (x *Session) Decode(secret Secret, value string) error {
 }
 
 func (x *Session) makeSignature(secret Secret) [4]uint64 {
-	str := fmt.Sprintf("%v|%v|%v", secret, x.ID, x.ExpiresNanos)
+	str := fmt.Sprintf("%v|%v|%v", secret, x.ID, x.Expires)
 	sum := sha256.Sum256([]byte(str))
 	sumReader := bytes.NewReader(sum[:])
 	var hash [4]uint64
