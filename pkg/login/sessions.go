@@ -41,8 +41,8 @@ type Config struct {
 	// CookiePath is the url path where the cookies can be used.
 	CookiePath string `split_words:"true" default:"/"`
 
-	// RedisKey is the key name used when obtaining locks in redis.
-	RedisKey string `split_words:"true"`
+	// RedisLockKey is the key name used when obtaining locks in redis.
+	RedisLockKey string `split_words:"true"`
 }
 
 const DataFile = "users.json"
@@ -52,7 +52,7 @@ func NewStore(locksmith *locker.Locksmith, config Config) *Store {
 	return &Store{
 		config: config,
 		cache:  storage.NewCache(storage.CacheOpts{}),
-		locker: locksmith.NewLocker(locker.Opts{RedisKey: config.RedisKey}),
+		locker: locksmith.NewLocker(locker.Opts{RedisKey: config.RedisLockKey}),
 	}
 }
 
@@ -101,10 +101,10 @@ func (x *Store) NewCookie(session Session) *http.Cookie {
 
 // NewSession returns a new session with a crypto-rand session id.
 func (x *Store) NewSession(expiresAt time.Time) Session {
-	var id SessionID
-	binary.Read(rand.Reader, binary.LittleEndian, &id)
+	buf := make([]byte, 8)
+	rand.Reader.Read(buf)
 	return Session{
-		ID:      id,
+		ID:      SessionID(binary.BigEndian.Uint64(buf)),
 		Expires: uint64(expiresAt.Unix()),
 	}
 }
@@ -242,10 +242,9 @@ func (x *Session) DecodeAndValidate(secret Secret, value string) error {
 func (x *Session) makeSignature(secret Secret) [4]uint64 {
 	str := fmt.Sprintf("%v|%v|%v", secret, x.ID, x.Expires)
 	sum := sha256.Sum256([]byte(str))
-	sumReader := bytes.NewReader(sum[:])
 	var hash [4]uint64
 	for i := range hash {
-		binary.Read(sumReader, binary.LittleEndian, &hash[i])
+		hash[i] = binary.BigEndian.Uint64(sum[i*8:])
 	}
 	return hash
 }
@@ -260,8 +259,10 @@ var ErrInvalidSecret = errors.New("invalid secret")
 
 func NewSecret() Secret {
 	var token Secret
+	buf := make([]byte, 8)
 	for i := range token {
-		binary.Read(rand.Reader, binary.LittleEndian, &token[i])
+		rand.Reader.Read(buf)
+		token[i] = binary.BigEndian.Uint64(buf)
 	}
 	return token
 }

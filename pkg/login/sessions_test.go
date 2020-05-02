@@ -160,7 +160,7 @@ func TestStore_NewCookie(t *testing.T) {
 	gotCookie := store.NewCookie(session)
 	wantCookie := &http.Cookie{
 		Name:     "cookie-name",
-		Value:    "V-i-r-t-u-a-l--V-G-O--16b29700a96cd2cf48b91041e552f3f4b3ce87f1c75cb621ca7f97619ce2f88d7b7cc95133c4265d41d4cf72eac56000",
+		Value:    "V-i-r-t-u-a-l--V-G-O--cfd26ca90097b216f4f352e54110b94821b65cc7f187ceb38df8e29c61977fca7b7cc95133c4265d41d4cf72eac56000",
 		Path:     "/authorized",
 		Domain:   "tester.local",
 		Expires:  time.Unix(4743644400, 0),
@@ -171,21 +171,21 @@ func TestStore_NewCookie(t *testing.T) {
 	assert.Equal(t, wantCookie, gotCookie)
 }
 
-func TestSession_Encode(t *testing.T) {
+func TestSession_SignAndEncode(t *testing.T) {
 	secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
 	session := Session{
 		ID:      0x7b7cc95133c4265d,
 		Expires: uint64(0xf),
 	}
 	got := session.SignAndEncode(secret)
-	want := "V-i-r-t-u-a-l--V-G-O--cb093abe502ae57788fd514550345689d7225b66ba4447b0a811730133890d2e7b7cc95133c4265d000000000000000f"
+	want := "V-i-r-t-u-a-l--V-G-O--77e52a50be3a09cb895634504551fd88b04744ba665b22d72e0d8933017311a87b7cc95133c4265d000000000000000f"
 	assert.Equal(t, want, got, "value")
 }
 
-func TestSession_Decode(t *testing.T) {
+func TestSession_DecodeAndValidate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
-		src := "V-i-r-t-u-a-l--V-G-O--16b29700a96cd2cf48b91041e552f3f4b3ce87f1c75cb621ca7f97619ce2f88d7b7cc95133c4265d41d4cf72eac56000"
+		src := "V-i-r-t-u-a-l--V-G-O--cfd26ca90097b216f4f352e54110b94821b65cc7f187ceb38df8e29c61977fca7b7cc95133c4265d41d4cf72eac56000"
 		wantSession := Session{
 			ID:      0x7b7cc95133c4265d,
 			Expires: uint64(4743644400 * time.Second),
@@ -223,11 +223,12 @@ func TestSession_Decode(t *testing.T) {
 
 	t.Run("expired", func(t *testing.T) {
 		secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
-		src := "V-i-r-t-u-a-l--V-G-O--cb093abe502ae57788fd514550345689d7225b66ba4447b0a811730133890d2e7b7cc95133c4265d000000000000000f"
+		src := "V-i-r-t-u-a-l--V-G-O--77e52a50be3a09cb895634504551fd88b04744ba665b22d72e0d8933017311a87b7cc95133c4265d000000000000000f"
 		wantSession := Session{
 			ID:      0x7b7cc95133c4265d,
 			Expires: 0xf,
 		}
+		t.Log("want session:", wantSession.SignAndEncode(secret))
 
 		var gotSession Session
 		assert.Equal(t, ErrSessionExpired, gotSession.DecodeAndValidate(secret, src), "Read()")
@@ -238,7 +239,7 @@ func TestSession_Decode(t *testing.T) {
 func TestSession_DecodeCookie(t *testing.T) {
 	secret := Secret{0x560febda7eae12b8, 0xc0cecc7851ca8906, 0x2623d26de389ebcb, 0x5a3097fc6ef622a1}
 	src := http.Cookie{
-		Value: "V-i-r-t-u-a-l--V-G-O--16b29700a96cd2cf48b91041e552f3f4b3ce87f1c75cb621ca7f97619ce2f88d7b7cc95133c4265d41d4cf72eac56000",
+		Value: "V-i-r-t-u-a-l--V-G-O--cfd26ca90097b216f4f352e54110b94821b65cc7f187ceb38df8e29c61977fca7b7cc95133c4265d41d4cf72eac56000",
 	}
 	wantSession := Session{
 		ID:      0x7b7cc95133c4265d,
