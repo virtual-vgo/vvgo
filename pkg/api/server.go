@@ -54,9 +54,10 @@ func NewStorage(ctx context.Context, warehouse *storage.Warehouse, redisClient *
 		Sheets:        newBucket(ctx, config.SheetsBucketName),
 		Clix:          newBucket(ctx, config.ClixBucketName),
 		Tracks:        newBucket(ctx, config.TracksBucketName),
+		Parts:         new(parts.Parts),
 	}
 
-	if redisClient != nil {
+	if config.RedisEnabled {
 		db.Parts.Hash = redisClient.NewHash(config.PartsHashKey)
 		db.Parts.Locker = redisClient.NewLocker(config.PartsLockerKey)
 	} else {

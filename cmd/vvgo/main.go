@@ -18,12 +18,12 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	Secret            string              `envconfig:"vvgo_secret"`
-	ApiConfig         api.ServerConfig    `envconfig:"api"`
-	ApiStorageConfig  api.StorageConfig   `envconfig:"api_storage"`
-	TracingConfig     tracing.Config      `envconfig:"tracing"`
-	StorageConfig     storage.Config      `envconfig:"storage"`
-	RedisConfig       storage.RedisConfig `envconfig:"redis"`
+	Secret           string              `envconfig:"vvgo_secret"`
+	ApiConfig        api.ServerConfig    `envconfig:"api"`
+	ApiStorageConfig api.StorageConfig   `envconfig:"api_storage"`
+	TracingConfig    tracing.Config      `envconfig:"tracing"`
+	StorageConfig    storage.Config      `envconfig:"storage"`
+	RedisConfig      storage.RedisConfig `envconfig:"redis"`
 }
 
 func (x *Config) ParseEnv() {
