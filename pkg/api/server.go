@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -41,7 +40,7 @@ type Storage struct {
 	Tracks *storage.Bucket
 }
 
-func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *storage.Warehouse, redisClient *storage.RedisClient, config StorageConfig) *Storage {
+func NewStorage(ctx context.Context, warehouse *storage.Warehouse, redisClient *storage.RedisClient, config StorageConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := warehouse.NewBucket(ctx, bucketName)
 		if err != nil {
@@ -50,28 +49,21 @@ func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *sto
 		return bucket
 	}
 
-	sheetsBucket := newBucket(ctx, config.SheetsBucketName)
-	clixBucket := newBucket(ctx, config.ClixBucketName)
-	tracksBucket := newBucket(ctx, config.TracksBucketName)
-
-	var partsHash parts.Hash
-	if redisClient != nil {
-		partsHash = redisClient.NewHash(config.PartsHashKey)
-	} else {
-		partsHash = &storage.MemHash{}
-	}
-	partsLocker := locksmith.NewLocker(locker.Opts{RedisKey: config.PartsLockerKey})
-
-	return &Storage{
+	db := Storage{
 		StorageConfig: config,
-		Parts: &parts.Parts{
-			Hash:   partsHash,
-			Locker: partsLocker,
-		},
-		Sheets: sheetsBucket,
-		Clix:   clixBucket,
-		Tracks: tracksBucket,
+		Sheets:        newBucket(ctx, config.SheetsBucketName),
+		Clix:          newBucket(ctx, config.ClixBucketName),
+		Tracks:        newBucket(ctx, config.TracksBucketName),
 	}
+
+	if redisClient != nil {
+		db.Parts.Hash = redisClient.NewHash(config.PartsHashKey)
+		db.Parts.Locker = redisClient.NewLocker(config.PartsLockerKey)
+	} else {
+		db.Parts.Hash = new(storage.MemHash)
+		db.Parts.Locker = new(storage.MemLocker)
+	}
+	return &db
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {

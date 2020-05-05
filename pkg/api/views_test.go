@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
@@ -21,7 +20,6 @@ import (
 )
 
 func TestPartsView_ServeHTTP(t *testing.T) {
-	locker := locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{})
 	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
 	require.NoError(t, err, "storage.NewWarehouse")
 
@@ -30,8 +28,8 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	require.NoError(t, err, "storage.NewBucket")
 	handlerStorage := Storage{
 		Parts: &parts.Parts{
-			Hash:   &storage.MemHash{},
-			Locker: locker,
+			Hash:   new(storage.MemHash),
+			Locker: new(storage.MemLocker),
 		},
 		Sheets: bucket,
 		Clix:   bucket,

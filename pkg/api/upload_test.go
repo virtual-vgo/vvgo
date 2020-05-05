@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -179,7 +178,6 @@ func TestUpload_Validate(t *testing.T) {
 }
 
 func TestUploadHandler_ServeHTTP(t *testing.T) {
-	locker := locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{})
 	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
 	require.NoError(t, err, "storage.NewWarehouse()")
 
@@ -319,8 +317,8 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			require.NoError(t, err, "storage.NewBucket")
 			handlerStorage := Storage{
 				Parts: &parts.Parts{
-					Hash:   &storage.MemHash{},
-					Locker: locker,
+					Hash:   new(storage.MemHash),
+					Locker: new(storage.MemLocker),
 				},
 				Sheets: bucket,
 				Clix:   bucket,

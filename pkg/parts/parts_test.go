@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"sort"
@@ -16,7 +15,7 @@ func TestParts_List(t *testing.T) {
 	ctx := context.Background()
 	parts := Parts{
 		Hash:   new(storage.MemHash),
-		Locker: locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{}),
+		Locker: &storage.MemLocker{},
 	}
 	wantList := []Part{{ID: ID{
 		Project: "cheese",
@@ -36,11 +35,10 @@ func TestParts_List(t *testing.T) {
 }
 
 func TestParts_Save(t *testing.T) {
-	locker := locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{})
 	ctx := context.Background()
 	parts := Parts{
 		Hash:   new(storage.MemHash),
-		Locker: locker,
+		Locker: &storage.MemLocker{},
 	}
 
 	// load some dummy data into the cache

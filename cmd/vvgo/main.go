@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -20,12 +19,10 @@ var logger = log.Logger()
 
 type Config struct {
 	Secret            string              `envconfig:"vvgo_secret"`
-	InitializeStorage bool                `split_words:"true" default:"false"`
 	ApiConfig         api.ServerConfig    `envconfig:"api"`
 	ApiStorageConfig  api.StorageConfig   `envconfig:"api_storage"`
 	TracingConfig     tracing.Config      `envconfig:"tracing"`
 	StorageConfig     storage.Config      `envconfig:"storage"`
-	LockerConfig      locker.Config       `envconfig:"locker"`
 	RedisConfig       storage.RedisConfig `envconfig:"redis"`
 }
 
@@ -67,9 +64,6 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	// Creates mutex locks.
-	locksmith := locker.NewLocksmith(config.LockerConfig)
-
 	// Creates/queries object buckets.
 	warehouse, err := storage.NewWarehouse(config.StorageConfig)
 	if err != nil {
@@ -80,7 +74,7 @@ func main() {
 	redisClient := storage.NewRedisClient(config.RedisConfig)
 
 	// Build the api database.
-	database := api.NewStorage(ctx, locksmith, warehouse, redisClient, config.ApiStorageConfig)
+	database := api.NewStorage(ctx, warehouse, redisClient, config.ApiStorageConfig)
 	if database == nil {
 		os.Exit(1)
 	}

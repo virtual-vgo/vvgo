@@ -6,7 +6,6 @@ import (
 	"encoding"
 	"encoding/gob"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"strings"
@@ -21,27 +20,30 @@ var (
 )
 
 type Hash interface {
-	HKeys(ctx context.Context) ([]string, error)
+	HVals(ctx context.Context) ([][]byte, error)
 	HGet(ctx context.Context, name string, dest encoding.BinaryUnmarshaler) error
 	HSet(ctx context.Context, name string, src encoding.BinaryMarshaler) error
 }
 
+type Locker interface {
+	Lock(ctx context.Context) error
+	Unlock(ctx context.Context)
+}
+
 type Parts struct {
 	Hash
-	*locker.Locker
+	Locker
 }
 
 func (x Parts) List(ctx context.Context) ([]Part, error) {
-	// HGet all the keys
-	keys, err := x.Hash.HKeys(ctx)
+	vals, err := x.Hash.HVals(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Hash.HKeys() failed: %w", err)
+		return nil, err
 	}
-
-	parts := make([]Part, len(keys))
-	for i := range keys {
-		if err := x.Hash.HGet(ctx, keys[i], &parts[i]); err != storage.ErrKeyIsEmpty && err != nil {
-			return nil, fmt.Errorf("Hash.HGet() failed: %w", err)
+	parts := make([]Part, len(vals))
+	for i := range vals {
+		if err := parts[i].UnmarshalBinary(vals[i]); err != nil {
+			return nil, fmt.Errorf("part.UnmarshalBinary() failed: %w", err)
 		}
 	}
 	return parts, nil

@@ -36,7 +36,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 	}
 	want := Config{
 		Secret:            "vvgo-secret",
-		InitializeStorage: true,
 		TracingConfig: tracing.Config{
 			HoneycombWriteKey: "tracing-honeycomb-write-key",
 			HoneycombDataset:  "tracing-honeycomb-dataset",
