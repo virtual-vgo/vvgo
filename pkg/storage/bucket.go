@@ -213,7 +213,7 @@ func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object
 	return nil
 }
 
-// HGet object returns the full object payload.
+// Get object returns the full object payload.
 func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error {
 	if x.noOp {
 		return nil
