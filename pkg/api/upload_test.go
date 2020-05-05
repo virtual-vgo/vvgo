@@ -319,8 +319,8 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			require.NoError(t, err, "storage.NewBucket")
 			handlerStorage := Storage{
 				Parts: &parts.Parts{
-					Cache:  storage.NewCache(storage.CacheOpts{}),
-					Locker: locker,
+					RedisKeySpace: storage.NewCache(storage.CacheOpts{}),
+					Locker:        locker,
 				},
 				Sheets: bucket,
 				Clix:   bucket,

@@ -30,8 +30,8 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	require.NoError(t, err, "storage.NewBucket")
 	handlerStorage := Storage{
 		Parts: &parts.Parts{
-			Cache:  storage.NewCache(storage.CacheOpts{}),
-			Locker: locker,
+			RedisKeySpace: storage.NewCache(storage.CacheOpts{}),
+			Locker:        locker,
 		},
 		Sheets: bucket,
 		Clix:   bucket,
@@ -67,7 +67,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 		},
 	}), "json.Encode()")
 	obj := storage.Object{ContentType: "application/json", Bytes: buf.Bytes()}
-	require.NoError(t, handlerStorage.Parts.Cache.PutObject(ctx, parts.DataFile, &obj), "cache.PutObject()")
+	require.NoError(t, handlerStorage.Parts.RedisKeySpace.PutObject(ctx, parts.DataKey, &obj), "cache.PutObject()")
 
 	server := PartView{NavBar{}, &handlerStorage}
 

@@ -2,60 +2,90 @@ package storage
 
 import (
 	"context"
+	"encoding"
 	"errors"
+	"fmt"
+	"github.com/go-redis/redis/v7"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
+	"sync"
 )
 
-// Cache is an in-memory object cache.
-// This can serve as a cache proxy between object storage, or as a stand-alone cache.
-type Cache struct {
-	cache  map[string]Object // the cache map itself
-	bucket *Bucket           // optional bucket storage
+type RedisHash struct {
+	Name string
+	*redis.Client
 }
 
-type CacheOpts struct {
-	// If this is not nil, each write to the cache will additionally be written to a file in this bucket.
-	Bucket *Bucket
+var ErrKeyIsEmpty = errors.New("key is empty")
+
+func (x *RedisHash) Keys(ctx context.Context) ([]string, error) {
+	ctx, span := tracing.StartSpan(ctx, "RedisHash.Keys")
+	defer span.Send()
+	return x.Client.HKeys(x.Name).Result()
 }
 
-func NewCache(opts CacheOpts) *Cache {
-	return &Cache{
-		bucket: opts.Bucket,
-		cache:  make(map[string]Object),
+func (x *RedisHash) Get(ctx context.Context, name string, dest encoding.BinaryUnmarshaler) error {
+	ctx, span := tracing.StartSpan(ctx, "RedisHash.Get")
+	defer span.Send()
+	destBytes, err := x.Client.WithContext(ctx).HGet(x.Name, name).Bytes()
+	switch true {
+	case err != nil:
+		return err
+	case len(destBytes) == 0:
+		return ErrKeyIsEmpty
+	default:
+		return dest.UnmarshalBinary(destBytes)
 	}
 }
 
-var ErrObjectNotFound = errors.New("object not found")
+func (x *RedisHash) Set(ctx context.Context, name string, src encoding.BinaryMarshaler) error {
+	ctx, span := tracing.StartSpan(ctx, "RedisHash.Set")
+	defer span.Send()
+	return x.Client.WithContext(ctx).HSet(x.Name, name, src, 0).Err()
+}
 
-// GetObject will first try to find the object in the cache.
-// If it's a miss and x.Bucket is not nil, this function will query the bucket and store the results in the cache.
-func (x *Cache) GetObject(ctx context.Context, name string, dest *Object) error {
-	// try to read from the map
-	var ok bool
-	*dest, ok = x.cache[name]
-	if ok {
+type MemCache struct {
+	Map  map[string][]byte
+	lock sync.RWMutex
+}
+
+func (x *MemCache) Keys(_ context.Context) ([]string, error) {
+	x.lock.RLock()
+	defer x.lock.RUnlock()
+
+	keys := make([]string, 0, len(x.Map))
+	for key, _ := range x.Map {
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
+func (x *MemCache) Get(_ context.Context, name string, dest encoding.BinaryUnmarshaler) error {
+	x.lock.RLock()
+	defer x.lock.RUnlock()
+	if x.Map == nil {
 		return nil
 	}
+	switch {
+	case x.Map == nil:
+		return nil
+	case len(x.Map[name]) == 0:
+		return ErrKeyIsEmpty
+	default:
+		return dest.UnmarshalBinary(x.Map[name])
+	}
 
-	// try to read from the bucket
-	if x.bucket == nil {
-		return ErrObjectNotFound
-	}
-	if err := x.bucket.GetObject(ctx, name, dest); err != nil {
-		return err
-	}
-	x.cache[name] = *dest
-	return nil
 }
 
-// PutObject puts an object into the cache.
-// If bucket is not nil, the file will also be written to the bucket.
-func (x *Cache) PutObject(ctx context.Context, name string, object *Object) error {
-	if x.bucket != nil {
-		if err := WithBackup(x.bucket.PutObject)(ctx, name, object); err != nil {
-			return err
-		}
+func (x *MemCache) Set(_ context.Context, name string, src encoding.BinaryMarshaler) error {
+	x.lock.Lock()
+	defer x.lock.Unlock()
+	if x.Map == nil {
+		x.Map = make(map[string][]byte)
 	}
-
-	x.cache[name] = *object
+	got, err := src.MarshalBinary()
+	if err != nil {
+		return fmt.Errorf("src.MarshalBinary() failed: %w", err)
+	}
+	x.Map[name] = got
 	return nil
 }

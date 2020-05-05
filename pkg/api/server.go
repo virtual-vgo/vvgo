@@ -58,8 +58,8 @@ func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *sto
 	return &Storage{
 		StorageConfig: config,
 		Parts: &parts.Parts{
-			Cache:  partsCache,
-			Locker: partsLocker,
+			RedisKeySpace: partsCache,
+			Locker:        partsLocker,
 		},
 		Sheets: sheetsBucket,
 		Clix:   clixBucket,

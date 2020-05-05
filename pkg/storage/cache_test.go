@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCache_GetObject(t *testing.T) {
+func TestMemCache_Get(t *testing.T) {
 	ctx := context.Background()
 	warehouse, err := NewWarehouse(Config{NoOp: true})
 	require.NoError(t, err)
@@ -15,7 +15,7 @@ func TestCache_GetObject(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("doesnt exist", func(t *testing.T) {
-		cache := NewCache(CacheOpts{})
+		cache := &MemCache{}
 		var gotObject Object
 		err := cache.GetObject(context.Background(), "test-file", &gotObject)
 		assert.Equal(t, err, ErrObjectNotFound)

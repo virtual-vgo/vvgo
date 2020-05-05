@@ -3,7 +3,8 @@ package parts
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding"
+	"encoding/gob"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
@@ -12,33 +13,36 @@ import (
 	"time"
 )
 
-const DataFile = "parts.json"
+const DataKey = "parts"
 
 var (
 	ErrInvalidPartName   = fmt.Errorf("invalid part name")
 	ErrInvalidPartNumber = fmt.Errorf("invalid part number")
 )
 
+type Cache interface {
+	Keys(ctx context.Context) ([]string, error)
+	Get(ctx context.Context, name string, dest encoding.BinaryUnmarshaler) error
+	Set(ctx context.Context, name string, src encoding.BinaryMarshaler) error
+}
+
 type Parts struct {
-	*storage.Cache
+	Cache
 	*locker.Locker
 }
 
-func (x Parts) Init(ctx context.Context) error {
-	return x.PutObject(ctx, DataFile, storage.NewJSONObject([]byte(`[]`)))
-}
-
 func (x Parts) List(ctx context.Context) ([]Part, error) {
-	// grab the data file
-	var data storage.Object
-	if err := x.GetObject(ctx, DataFile, &data); err != nil {
-		return nil, err
+	// Get all the keys
+	keys, err := x.Cache.Keys(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Cache.Keys() failed: %w", err)
 	}
 
-	// deserialize the data file
-	var parts []Part
-	if err := json.NewDecoder(bytes.NewReader(data.Bytes)).Decode(&parts); err != nil {
-		return nil, fmt.Errorf("json.Decode() failed: %v", err)
+	parts := make([]Part, len(keys))
+	for i := range keys {
+		if err := x.Cache.Get(ctx, keys[i], &parts[i]); err != storage.ErrKeyIsEmpty && err != nil {
+			return nil, fmt.Errorf("Cache.Get() failed: %w", err)
+		}
 	}
 	return parts, nil
 }
@@ -49,49 +53,34 @@ func (x Parts) Save(ctx context.Context, parts []Part) error {
 		return err
 	}
 
-	// now we update the data file
-	// read+modify+write means we need a lock
+	// we'll be making quite a few changes at once
 	if err := x.Lock(ctx); err != nil {
 		return err
 	}
 	defer x.Unlock(ctx)
 
-	// pull down the parts data
-	allParts, err := x.List(ctx)
-	if allParts == nil {
-		return err
-	}
-
-	// merge the changes
-	allParts = mergeChanges(allParts, parts)
-
-	// encode the data file
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(&allParts); err != nil {
-		return fmt.Errorf("json.Encode() failed: %v", err)
-	}
-
-	return x.PutObject(ctx, DataFile, storage.NewJSONObject(buffer.Bytes()))
-}
-
-func mergeChanges(src []Part, changes []Part) []Part {
-	// merge the changes
-	for _, change := range changes {
-		var ok bool
-		for i := range src {
-			if change.ID.String() == src[i].ID.String() {
-				ok = true
-				// prepend the new fields
-				src[i].Sheets = append(change.Sheets, src[i].Sheets...)
-				src[i].Clix = append(change.Clix, src[i].Clix...)
-				break
-			}
-		}
-		if !ok {
-			src = append(src, change)
+	// read the existing parts
+	cur := make([]Part, len(parts))
+	for i := range parts {
+		if err := x.Cache.Get(ctx, parts[i].ID.String(), &cur[i]); err != storage.ErrKeyIsEmpty && err != nil {
+			return err
 		}
 	}
-	return src
+
+	// merge
+	for i := range parts {
+		// append the old fields
+		parts[i].Sheets = append(parts[i].Sheets, cur[i].Sheets...)
+		parts[i].Clix = append(parts[i].Clix, cur[i].Clix...)
+	}
+
+	// write changes
+	for _, part := range parts {
+		if err := x.Cache.Set(ctx, part.ID.String(), &part); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func validatePart(parts []Part) error {
@@ -105,8 +94,20 @@ func validatePart(parts []Part) error {
 
 type Part struct {
 	ID
-	Clix   Links `json:"click,omitempty"`
-	Sheets Links `json:"sheet,omitempty"`
+	Clix   Links
+	Sheets Links
+}
+
+type Data Part
+
+func (x *Part) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	err := gob.NewEncoder(&buf).Encode((*Data)(x))
+	return buf.Bytes(), err
+}
+
+func (x *Part) UnmarshalBinary(src []byte) error {
+	return gob.NewDecoder(bytes.NewReader(src)).Decode((*Data)(x))
 }
 
 type Link struct {
