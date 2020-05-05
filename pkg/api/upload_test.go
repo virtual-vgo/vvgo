@@ -319,8 +319,8 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			require.NoError(t, err, "storage.NewBucket")
 			handlerStorage := Storage{
 				Parts: &parts.Parts{
-					RedisKeySpace: storage.NewCache(storage.CacheOpts{}),
-					Locker:        locker,
+					Hash:   &storage.MemHash{},
+					Locker: locker,
 				},
 				Sheets: bucket,
 				Clix:   bucket,
@@ -328,11 +328,10 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 				StorageConfig: StorageConfig{
 					SheetsBucketName: "sheets",
 					ClixBucketName:   "clix",
-					PartsBucketName:  "parts",
+					PartsHashKey:  "parts",
 					TracksBucketName: "tracks",
 				},
 			}
-			require.NoError(t, handlerStorage.Parts.Init(ctx), "parts.Init()")
 
 			request := httptest.NewRequest(tt.request.method, "/upload", &tt.request.body)
 			request.Header.Set("Content-Type", tt.request.mediaType)

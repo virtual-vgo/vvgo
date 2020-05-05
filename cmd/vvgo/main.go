@@ -19,13 +19,14 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	Secret            string            `envconfig:"vvgo_secret"`
-	InitializeStorage bool              `split_words:"true" default:"false"`
-	ApiConfig         api.ServerConfig  `envconfig:"api"`
-	ApiStorageConfig  api.StorageConfig `envconfig:"api_storage"`
-	TracingConfig     tracing.Config    `envconfig:"tracing"`
-	StorageConfig     storage.Config    `envconfig:"storage"`
-	LockerConfig      locker.Config     `envconfig:"locker"`
+	Secret            string              `envconfig:"vvgo_secret"`
+	InitializeStorage bool                `split_words:"true" default:"false"`
+	ApiConfig         api.ServerConfig    `envconfig:"api"`
+	ApiStorageConfig  api.StorageConfig   `envconfig:"api_storage"`
+	TracingConfig     tracing.Config      `envconfig:"tracing"`
+	StorageConfig     storage.Config      `envconfig:"storage"`
+	LockerConfig      locker.Config       `envconfig:"locker"`
+	RedisConfig       storage.RedisConfig `envconfig:"redis"`
 }
 
 func (x *Config) ParseEnv() {
@@ -75,17 +76,13 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	// Redis client
+	redisClient := storage.NewRedisClient(config.RedisConfig)
+
 	// Build the api database.
-	database := api.NewStorage(ctx, locksmith, warehouse, config.ApiStorageConfig)
+	database := api.NewStorage(ctx, locksmith, warehouse, redisClient, config.ApiStorageConfig)
 	if database == nil {
 		os.Exit(1)
-	}
-
-	// Initialize the database, if requested
-	if config.InitializeStorage {
-		if err := database.Init(ctx); err != nil {
-			logger.WithError(err).Fatal("failed to initialize storage")
-		}
 	}
 
 	//

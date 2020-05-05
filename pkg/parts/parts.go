@@ -20,28 +20,28 @@ var (
 	ErrInvalidPartNumber = fmt.Errorf("invalid part number")
 )
 
-type Cache interface {
-	Keys(ctx context.Context) ([]string, error)
-	Get(ctx context.Context, name string, dest encoding.BinaryUnmarshaler) error
-	Set(ctx context.Context, name string, src encoding.BinaryMarshaler) error
+type Hash interface {
+	HKeys(ctx context.Context) ([]string, error)
+	HGet(ctx context.Context, name string, dest encoding.BinaryUnmarshaler) error
+	HSet(ctx context.Context, name string, src encoding.BinaryMarshaler) error
 }
 
 type Parts struct {
-	Cache
+	Hash
 	*locker.Locker
 }
 
 func (x Parts) List(ctx context.Context) ([]Part, error) {
-	// Get all the keys
-	keys, err := x.Cache.Keys(ctx)
+	// HGet all the keys
+	keys, err := x.Hash.HKeys(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Cache.Keys() failed: %w", err)
+		return nil, fmt.Errorf("Hash.HKeys() failed: %w", err)
 	}
 
 	parts := make([]Part, len(keys))
 	for i := range keys {
-		if err := x.Cache.Get(ctx, keys[i], &parts[i]); err != storage.ErrKeyIsEmpty && err != nil {
-			return nil, fmt.Errorf("Cache.Get() failed: %w", err)
+		if err := x.Hash.HGet(ctx, keys[i], &parts[i]); err != storage.ErrKeyIsEmpty && err != nil {
+			return nil, fmt.Errorf("Hash.HGet() failed: %w", err)
 		}
 	}
 	return parts, nil
@@ -62,7 +62,7 @@ func (x Parts) Save(ctx context.Context, parts []Part) error {
 	// read the existing parts
 	cur := make([]Part, len(parts))
 	for i := range parts {
-		if err := x.Cache.Get(ctx, parts[i].ID.String(), &cur[i]); err != storage.ErrKeyIsEmpty && err != nil {
+		if err := x.Hash.HGet(ctx, parts[i].ID.String(), &cur[i]); err != storage.ErrKeyIsEmpty && err != nil {
 			return err
 		}
 	}
@@ -76,7 +76,7 @@ func (x Parts) Save(ctx context.Context, parts []Part) error {
 
 	// write changes
 	for _, part := range parts {
-		if err := x.Cache.Set(ctx, part.ID.String(), &part); err != nil {
+		if err := x.Hash.HSet(ctx, part.ID.String(), &part); err != nil {
 			return err
 		}
 	}

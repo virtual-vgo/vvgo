@@ -3,56 +3,52 @@ package storage
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"sort"
 	"testing"
 )
 
-func TestMemCache_Get(t *testing.T) {
+func TestMemHash_Keys(t *testing.T) {
 	ctx := context.Background()
-	warehouse, err := NewWarehouse(Config{NoOp: true})
-	require.NoError(t, err)
-	noOpBucket, err := warehouse.NewBucket(ctx, "test-bucket")
-	require.NoError(t, err)
-
-	t.Run("doesnt exist", func(t *testing.T) {
-		cache := &MemCache{}
-		var gotObject Object
-		err := cache.GetObject(context.Background(), "test-file", &gotObject)
-		assert.Equal(t, err, ErrObjectNotFound)
-	})
-	t.Run("exists/no bucket", func(t *testing.T) {
-		cache := NewCache(CacheOpts{Bucket: noOpBucket})
-		cache.cache["test-file"] = Object{ContentType: "test-media"}
-		var gotObject Object
-		err := cache.GetObject(context.Background(), "test-file", &gotObject)
-		assert.NoError(t, err)
-		assert.Equal(t, Object{ContentType: "test-media"}, gotObject)
-	})
-	t.Run("exists/bucket", func(t *testing.T) {
-		cache := NewCache(CacheOpts{Bucket: noOpBucket})
-		var gotObject Object
-		err := cache.GetObject(context.Background(), "test-file", &gotObject)
-		assert.NoError(t, err)
-		assert.Equal(t, Object{}, gotObject)
-	})
+	hash := MemHash{Map: map[string][]byte{
+		"I'd Say She Found A Way Out": []byte("Wouldn't You?"),
+		"Dying Doesn't Scare Me.":     []byte("I Went To Work Every Day Prepared To Die In A Tiger Cage."),
+	}}
+	wantKeys := []string{"I'd Say She Found A Way Out", "Dying Doesn't Scare Me."}
+	gotKeys, err := hash.HKeys(ctx)
+	assert.NoError(t, err)
+	sort.Strings(gotKeys)
+	sort.Strings(wantKeys)
+	assert.Equal(t, wantKeys, gotKeys)
 }
 
-func TestCache_PutObject(t *testing.T) {
+func TestMemHash_Set(t *testing.T) {
 	ctx := context.Background()
-	warehouse, err := NewWarehouse(Config{NoOp: true})
-	require.NoError(t, err)
-	noOpBucket, err := warehouse.NewBucket(ctx, "test-bucket")
-	require.NoError(t, err)
+	hash := MemHash{}
+	assert.NoError(t, hash.HSet(ctx, "Dying Doesn't Scare Me.",
+		MarshalString("I Went To Work Every Day Prepared To Die In A Tiger Cage.")))
+	wantMap := map[string][]byte{
+		"Dying Doesn't Scare Me.": []byte("I Went To Work Every Day Prepared To Die In A Tiger Cage."),
+	}
+	assert.Equal(t, wantMap, hash.Map)
+}
 
-	t.Run("no bucket", func(t *testing.T) {
-		cache := NewCache(CacheOpts{})
-		require.NoError(t, cache.PutObject(ctx, "test-file", &Object{ContentType: "test-media"}))
-		assert.Equal(t, Object{ContentType: "test-media"}, cache.cache["test-file"])
+func TestMemHash_Get(t *testing.T) {
+	t.Run("exists", func(t *testing.T) {
+		ctx := context.Background()
+		hash := MemHash{Map: map[string][]byte{
+			"Dying Doesn't Scare Me.": []byte("I Went To Work Every Day Prepared To Die In A Tiger Cage."),
+		}}
+		var gotString string
+		assert.NoError(t, hash.HGet(ctx, "Dying Doesn't Scare Me.", (*UnmarshalString)(&gotString)))
+		assert.Equal(t, "I Went To Work Every Day Prepared To Die In A Tiger Cage.", gotString)
+	})
+	t.Run("doesnt exist", func(t *testing.T) {
+		ctx := context.Background()
+		hash := MemHash{Map: map[string][]byte{
+			"Dying Doesn't Scare Me.": []byte("I Went To Work Every Day Prepared To Die In A Tiger Cage."),
+		}}
+		var gotString string
+		assert.Equal(t, ErrKeyIsEmpty, hash.HGet(ctx, "I'd Say She Found A Way Out", (*UnmarshalString)(&gotString)))
 	})
 
-	t.Run("bucket", func(t *testing.T) {
-		cache := NewCache(CacheOpts{noOpBucket})
-		require.NoError(t, cache.PutObject(ctx, "test-file", &Object{ContentType: "test-media"}))
-		assert.Equal(t, Object{ContentType: "test-media"}, cache.cache["test-file"])
-	})
 }

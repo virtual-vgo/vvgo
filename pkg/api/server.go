@@ -27,9 +27,10 @@ type ServerConfig struct {
 type StorageConfig struct {
 	SheetsBucketName string `split_words:"true" default:"sheets"`
 	ClixBucketName   string `split_words:"true" default:"clix"`
-	PartsBucketName  string `split_words:"true" default:"parts"`
+	PartsHashKey     string `split_words:"true" default:"parts"`
 	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
 	TracksBucketName string `split_words:"true" default:"tracks"`
+	RedisEnabled     bool   `split_words:"true" default:"false"`
 }
 
 type Storage struct {
@@ -40,7 +41,7 @@ type Storage struct {
 	Tracks *storage.Bucket
 }
 
-func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *storage.Warehouse, config StorageConfig) *Storage {
+func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *storage.Warehouse, redisClient *storage.RedisClient, config StorageConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := warehouse.NewBucket(ctx, bucketName)
 		if err != nil {
@@ -52,27 +53,24 @@ func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *sto
 	sheetsBucket := newBucket(ctx, config.SheetsBucketName)
 	clixBucket := newBucket(ctx, config.ClixBucketName)
 	tracksBucket := newBucket(ctx, config.TracksBucketName)
-	partsCache := storage.NewCache(storage.CacheOpts{Bucket: newBucket(ctx, config.PartsBucketName)})
+
+	var partsHash parts.Hash
+	if redisClient != nil {
+		partsHash = redisClient.NewHash(config.PartsHashKey)
+	} else {
+		partsHash = &storage.MemHash{}
+	}
 	partsLocker := locksmith.NewLocker(locker.Opts{RedisKey: config.PartsLockerKey})
 
 	return &Storage{
 		StorageConfig: config,
 		Parts: &parts.Parts{
-			RedisKeySpace: partsCache,
-			Locker:        partsLocker,
+			Hash:   partsHash,
+			Locker: partsLocker,
 		},
 		Sheets: sheetsBucket,
 		Clix:   clixBucket,
 		Tracks: tracksBucket,
-	}
-}
-
-func (x *Storage) Init(ctx context.Context) error {
-	if err := x.Parts.Init(ctx); err != nil {
-		return err
-	} else {
-		logger.Info("storage initialized")
-		return nil
 	}
 }
 

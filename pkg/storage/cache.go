@@ -10,21 +10,44 @@ import (
 	"sync"
 )
 
+type RedisClient struct {
+	client redis.Client
+}
+
+type RedisConfig struct {
+	Address string
+}
+
+func NewRedisClient(config RedisConfig) *RedisClient {
+	return &RedisClient{
+		client: *redis.NewClient(&redis.Options{
+			Addr: config.Address,
+		}),
+	}
+}
+
+func (x *RedisClient) NewHash(name string) *RedisHash {
+	return &RedisHash{
+		Name:   name,
+		Client: x.client,
+	}
+}
+
 type RedisHash struct {
 	Name string
-	*redis.Client
+	redis.Client
 }
 
 var ErrKeyIsEmpty = errors.New("key is empty")
 
-func (x *RedisHash) Keys(ctx context.Context) ([]string, error) {
-	ctx, span := tracing.StartSpan(ctx, "RedisHash.Keys")
+func (x *RedisHash) HKeys(ctx context.Context) ([]string, error) {
+	ctx, span := tracing.StartSpan(ctx, "RedisHash.HKeys")
 	defer span.Send()
 	return x.Client.HKeys(x.Name).Result()
 }
 
-func (x *RedisHash) Get(ctx context.Context, name string, dest encoding.BinaryUnmarshaler) error {
-	ctx, span := tracing.StartSpan(ctx, "RedisHash.Get")
+func (x *RedisHash) HGet(ctx context.Context, name string, dest encoding.BinaryUnmarshaler) error {
+	ctx, span := tracing.StartSpan(ctx, "RedisHash.HGet")
 	defer span.Send()
 	destBytes, err := x.Client.WithContext(ctx).HGet(x.Name, name).Bytes()
 	switch true {
@@ -37,18 +60,18 @@ func (x *RedisHash) Get(ctx context.Context, name string, dest encoding.BinaryUn
 	}
 }
 
-func (x *RedisHash) Set(ctx context.Context, name string, src encoding.BinaryMarshaler) error {
-	ctx, span := tracing.StartSpan(ctx, "RedisHash.Set")
+func (x *RedisHash) HSet(ctx context.Context, name string, src encoding.BinaryMarshaler) error {
+	ctx, span := tracing.StartSpan(ctx, "RedisHash.HSet")
 	defer span.Send()
 	return x.Client.WithContext(ctx).HSet(x.Name, name, src, 0).Err()
 }
 
-type MemCache struct {
+type MemHash struct {
 	Map  map[string][]byte
 	lock sync.RWMutex
 }
 
-func (x *MemCache) Keys(_ context.Context) ([]string, error) {
+func (x *MemHash) HKeys(_ context.Context) ([]string, error) {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 
@@ -59,7 +82,7 @@ func (x *MemCache) Keys(_ context.Context) ([]string, error) {
 	return keys, nil
 }
 
-func (x *MemCache) Get(_ context.Context, name string, dest encoding.BinaryUnmarshaler) error {
+func (x *MemHash) HGet(_ context.Context, name string, dest encoding.BinaryUnmarshaler) error {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 	if x.Map == nil {
@@ -67,7 +90,7 @@ func (x *MemCache) Get(_ context.Context, name string, dest encoding.BinaryUnmar
 	}
 	switch {
 	case x.Map == nil:
-		return nil
+		return ErrKeyIsEmpty
 	case len(x.Map[name]) == 0:
 		return ErrKeyIsEmpty
 	default:
@@ -76,7 +99,7 @@ func (x *MemCache) Get(_ context.Context, name string, dest encoding.BinaryUnmar
 
 }
 
-func (x *MemCache) Set(_ context.Context, name string, src encoding.BinaryMarshaler) error {
+func (x *MemHash) HSet(_ context.Context, name string, src encoding.BinaryMarshaler) error {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	if x.Map == nil {
@@ -89,3 +112,9 @@ func (x *MemCache) Set(_ context.Context, name string, src encoding.BinaryMarsha
 	x.Map[name] = got
 	return nil
 }
+
+type MarshalString string
+type UnmarshalString string
+
+func (x MarshalString) MarshalBinary() ([]byte, error)    { return []byte(x), nil }
+func (x *UnmarshalString) UnmarshalBinary(b []byte) error { *x = UnmarshalString(b); return nil }

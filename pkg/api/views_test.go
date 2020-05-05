@@ -30,8 +30,8 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	require.NoError(t, err, "storage.NewBucket")
 	handlerStorage := Storage{
 		Parts: &parts.Parts{
-			RedisKeySpace: storage.NewCache(storage.CacheOpts{}),
-			Locker:        locker,
+			Hash:   &storage.MemHash{},
+			Locker: locker,
 		},
 		Sheets: bucket,
 		Clix:   bucket,
@@ -39,35 +39,30 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 		StorageConfig: StorageConfig{
 			SheetsBucketName: "sheets",
 			ClixBucketName:   "clix",
-			PartsBucketName:  "parts",
+			PartsHashKey:  "parts",
 			TracksBucketName: "tracks",
 		},
 	}
 
 	// load the cache with some dummy data
-	var buf bytes.Buffer
-	require.NoError(t, json.NewEncoder(&buf).Encode([]parts.Part{
-		{
-			ID: parts.ID{
-				Project: "01-snake-eater",
-				Name:    "trumpet",
-				Number:  3,
-			},
-			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+	require.NoError(t, handlerStorage.Parts.Hash.HSet(ctx, "01-snake-eater-trumpet-3", &parts.Part{
+		ID: parts.ID{
+			Project: "01-snake-eater",
+			Name:    "trumpet",
+			Number:  3,
 		},
-		{
-			ID: parts.ID{
-				Project: "02-proof-of-a-hero",
-				Name:    "trumpet",
-				Number:  3,
-			},
-			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+		Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+		Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+	}), "Hash.HSet")
+	require.NoError(t, handlerStorage.Parts.Hash.HSet(ctx, "01-snake-eater-trumpet-3", &parts.Part{
+		ID: parts.ID{
+			Project: "02-proof-of-a-hero",
+			Name:    "trumpet",
+			Number:  3,
 		},
-	}), "json.Encode()")
-	obj := storage.Object{ContentType: "application/json", Bytes: buf.Bytes()}
-	require.NoError(t, handlerStorage.Parts.RedisKeySpace.PutObject(ctx, parts.DataKey, &obj), "cache.PutObject()")
+		Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+		Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+	}), "Hash.HSet")
 
 	server := PartView{NavBar{}, &handlerStorage}
 

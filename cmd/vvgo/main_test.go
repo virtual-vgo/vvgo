@@ -22,7 +22,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_STORAGE_SHEETS_BUCKET_NAME": "sheets-bucket-name",
 		"API_STORAGE_CLIX_BUCKET_NAME":   "clix-bucket-name",
 		"API_STORAGE_TRACKS_BUCKET_NAME": "tracks-bucket-name",
-		"API_STORAGE_PARTS_BUCKET_NAME":  "parts-bucket-name",
+		"API_STORAGE_PARTS_HASH_KEY":     "parts-hash-key",
 		"API_STORAGE_PARTS_LOCKER_KEY":   "parts-locker-key",
 		"API_MEMBER_USER":                "member-user",
 		"API_MEMBER_PASS":                "member-pass",
@@ -54,7 +54,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 			SheetsBucketName: "sheets-bucket-name",
 			ClixBucketName:   "clix-bucket-name",
 			TracksBucketName: "tracks-bucket-name",
-			PartsBucketName:  "parts-bucket-name",
+			PartsHashKey:     "parts-hash-key",
 			PartsLockerKey:   "parts-locker-key",
 		},
 		StorageConfig: storage.Config{

@@ -15,7 +15,7 @@ import (
 func TestParts_List(t *testing.T) {
 	ctx := context.Background()
 	parts := Parts{
-		Cache:  new(storage.MemCache),
+		Hash:   new(storage.MemHash),
 		Locker: locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{}),
 	}
 	wantList := []Part{{ID: ID{
@@ -24,7 +24,7 @@ func TestParts_List(t *testing.T) {
 		Number:  3,
 	}}}
 
-	require.NoError(t, parts.Cache.Set(ctx, DataKey, &Part{ID: ID{
+	require.NoError(t, parts.Hash.HSet(ctx, DataKey, &Part{ID: ID{
 		Project: "cheese",
 		Name:    "broccoli",
 		Number:  3,
@@ -39,22 +39,22 @@ func TestParts_Save(t *testing.T) {
 	locker := locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{})
 	ctx := context.Background()
 	parts := Parts{
-		Cache:  new(storage.MemCache),
+		Hash:   new(storage.MemHash),
 		Locker: locker,
 	}
 
 	// load some dummy data into the cache
 
-	require.NoError(t, parts.Cache.Set(ctx, "01-snake-eater-trumpet-1", &Part{
+	require.NoError(t, parts.Hash.HSet(ctx, "01-snake-eater-trumpet-1", &Part{
 		ID:   ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
 		Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
-	}), "Cache.Set")
+	}), "Hash.HSet")
 
-	require.NoError(t, parts.Cache.Set(ctx, "01-snake-eater-accordion-3", &Part{
+	require.NoError(t, parts.Hash.HSet(ctx, "01-snake-eater-accordion-3", &Part{
 		ID:     ID{Project: "01-snake-eater", Name: "accordion", Number: 3},
 		Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 		Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
-	}), "Cache.Set")
+	}), "Hash.HSet")
 
 	// now save some data
 
@@ -113,7 +113,7 @@ func TestPart_String(t *testing.T) {
 		Clix:   []Link{{"click.mp3", time.Now()}},
 		Sheets: []Link{{"sheet.pdf", time.Now()}},
 	}
-	want := "Project: cheese Part: trumpet #1"
+	want := "Project: cheese Part: Trumpet #1"
 	assert.Equal(t, want, part.String())
 }
 

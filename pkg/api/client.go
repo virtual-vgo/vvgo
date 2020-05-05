@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const ClientUserAgent = "Virtual-VGO Client"
+const ClientUserAgent = "Virtual-VGO client"
 
 type Client struct {
 	ClientConfig
