@@ -39,7 +39,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 		StorageConfig: StorageConfig{
 			SheetsBucketName: "sheets",
 			ClixBucketName:   "clix",
-			PartsHashKey:  "parts",
+			PartsHashKey:     "parts",
 			TracksBucketName: "tracks",
 		},
 	}
