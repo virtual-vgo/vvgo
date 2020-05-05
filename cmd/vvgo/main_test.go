@@ -24,6 +24,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_STORAGE_TRACKS_BUCKET_NAME": "tracks-bucket-name",
 		"API_STORAGE_PARTS_HASH_KEY":     "parts-hash-key",
 		"API_STORAGE_PARTS_LOCKER_KEY":   "parts-locker-key",
+		"API_STORAGE_REDIS_ENABLED":      "true",
 		"API_MEMBER_USER":                "member-user",
 		"API_MEMBER_PASS":                "member-pass",
 		"API_PREP_REP_TOKEN":             "prep-rep-token",
@@ -33,14 +34,10 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"STORAGE_MINIO_ACCESSKEY":        "minio-access-key",
 		"STORAGE_MINIO_SECRETKEY":        "minio-secret-key",
 		"STORAGE_MINIO_USESSL":           "true",
+		"REDIS_ADDRESS":                  "redis-address",
 	}
 	want := Config{
-		Secret:            "vvgo-secret",
-		TracingConfig: tracing.Config{
-			HoneycombWriteKey: "tracing-honeycomb-write-key",
-			HoneycombDataset:  "tracing-honeycomb-dataset",
-			ServiceName:       "tracing-service-name",
-		},
+		Secret: "vvgo-secret",
 		ApiConfig: api.ServerConfig{
 			ListenAddress:    "listen-address",
 			MaxContentLength: 1e6,
@@ -55,6 +52,12 @@ func TestConfig_ParseEnv(t *testing.T) {
 			TracksBucketName: "tracks-bucket-name",
 			PartsHashKey:     "parts-hash-key",
 			PartsLockerKey:   "parts-locker-key",
+			RedisEnabled:     true,
+		},
+		TracingConfig: tracing.Config{
+			HoneycombWriteKey: "tracing-honeycomb-write-key",
+			HoneycombDataset:  "tracing-honeycomb-dataset",
+			ServiceName:       "tracing-service-name",
 		},
 		StorageConfig: storage.Config{
 			Minio: storage.MinioConfig{
@@ -64,6 +67,9 @@ func TestConfig_ParseEnv(t *testing.T) {
 				SecretKey: "minio-secret-key",
 				UseSSL:    true,
 			},
+		},
+		RedisConfig: storage.RedisConfig{
+			Address: "redis-address",
 		},
 	}
 

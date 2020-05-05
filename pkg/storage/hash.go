@@ -17,7 +17,7 @@ type RedisClient struct {
 
 type RedisConfig struct {
 	// Tcp address of the redis server.
-	Address string
+	Address string `default:"localhost:6379"`
 }
 
 func NewRedisClient(config RedisConfig) *RedisClient {
@@ -70,6 +70,7 @@ func (x *RedisHash) HGet(ctx context.Context, name string, dest encoding.BinaryU
 	switch true {
 	case err != nil:
 		return err
+	case err ==
 	case len(destBytes) == 0:
 		return ErrKeyIsEmpty
 	default:
