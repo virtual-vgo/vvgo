@@ -18,7 +18,7 @@ package main
 import "github.com/virtual-vgo/vvgo/pkg/version"
 
 func init() {
- 	version.HSet(version.Version{
+ 	version.Set(version.Version{
 		BuildHost: "{{ .BuildHost }}",
 		BuildTime: "{{ .BuildTime }}",
 		GitSha:    "{{ .GitSha }}",
