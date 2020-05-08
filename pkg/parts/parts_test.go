@@ -37,7 +37,7 @@ func TestParts_List(t *testing.T) {
 
 	gotList, err := parts.List(context.Background())
 	assert.NoError(t, err, "parts.List()")
-	assert.Equal(t, wantList, gotList, "object")
+	assertEqualParts(t, wantList, gotList)
 }
 
 func TestParts_Save(t *testing.T) {
@@ -95,9 +95,7 @@ func TestParts_Save(t *testing.T) {
 	}
 	gotParts, err := parts.List(ctx)
 	assert.NoError(t, err, "parts.List()")
-	SortParts(gotParts).Sort()
-	SortParts(wantParts).Sort()
-	assert.Equal(t, wantParts, gotParts)
+	assertEqualParts(t, wantParts, gotParts)
 }
 
 type SortParts []Part
@@ -106,6 +104,31 @@ func (x SortParts) Sort()              { sort.Sort(x) }
 func (x SortParts) Len() int           { return len(x) }
 func (x SortParts) Less(i, j int) bool { return x[i].ID.String() < x[j].ID.String() }
 func (x SortParts) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+
+func assertEqualParts(t *testing.T, want []Part, got []Part) {
+	SortParts(want).Sort()
+	SortParts(got).Sort()
+
+	if len(want) != len(got) {
+		assert.Equal(t, want, got)
+	}
+	for i := range want {
+		assert.Equal(t, want[i].ID.String(), got[i].ID.String(), "part.ID")
+		assertEqualLinks(t, want[i].Sheets, got[i].Sheets, "part.Sheets")
+		assertEqualLinks(t, want[i].Clix, got[i].Clix, "part.Clix")
+
+	}
+}
+
+func assertEqualLinks(t *testing.T, want []Link, got []Link, pre string) {
+	if len(want) != len(got) {
+		assert.Equal(t, want, got)
+	}
+	for i := range want {
+		assert.Equal(t, want[i].ObjectKey, got[i].ObjectKey, pre+".ObjectKey")
+		assert.Equal(t, want[i].CreatedAt.UTC().String(), got[i].CreatedAt.UTC().String(), pre+".CreatedAt")
+	}
+}
 
 func TestPart_String(t *testing.T) {
 	part := Part{
@@ -232,14 +255,17 @@ func TestID_String(t *testing.T) {
 }
 
 func TestLink_DecodeRedisString(t *testing.T) {
+	linkString := `{"object_key":"New-click.mp3","created_at":"1969-12-31T16:00:02-08:00"}`
 	var got Link
-	got.DecodeRedisString(`{"object_key":"New-click.mp3","created_at":"1969-12-31T16:00:02-08:00"}`)
-	assert.Equal(t, Link{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}, got)
+	got.DecodeRedisString(linkString)
+	assertEqualLinks(t, []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}}, []Link{got}, "link")
 }
 
 func TestLink_EncodeRedisString(t *testing.T) {
 	link := Link{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}
-	assert.Equal(t, `{"object_key":"New-click.mp3","created_at":"1969-12-31T16:00:02-08:00"}`, link.EncodeRedisString())
+	var got Link
+	got.DecodeRedisString(link.EncodeRedisString())
+	assertEqualLinks(t, []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}}, []Link{got}, "link")
 }
 
 func TestLink_ZScore(t *testing.T) {
