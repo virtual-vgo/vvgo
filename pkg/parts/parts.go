@@ -23,14 +23,10 @@ var (
 
 type RedisParts struct {
 	namespace string
-	pool      *redis.Client
 }
 
-func NewParts(client *redis.Client, namespace string) *RedisParts {
-	return &RedisParts{
-		namespace: namespace,
-		pool:      client,
-	}
+func NewParts(namespace string) *RedisParts {
+	return &RedisParts{namespace: namespace}
 }
 
 // List returns a slice of all parts in the database.
@@ -56,13 +52,13 @@ func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 		parts[i].DecodeRedisKey(partKeys[i])
 		go func(key string, dest *Part) {
 			sheetsKey := x.namespace + ":parts:" + key + ":sheets"
-			dest.Sheets = x.readLinks(ctx, sheetsKey)
+			dest.Sheets = readLinks(ctx, sheetsKey)
 			wg.Done()
 		}(partKeys[i], &parts[i])
 
 		go func(key string, dest *Part) {
 			clixKey := x.namespace + ":parts:" + key + ":clix"
-			dest.Clix = x.readLinks(ctx, clixKey)
+			dest.Clix = readLinks(ctx, clixKey)
 			wg.Done()
 		}(partKeys[i], &parts[i])
 	}
@@ -72,23 +68,15 @@ func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 
 func (x *RedisParts) readIndex(localCtx context.Context) ([]string, error) {
 	var partKeys []string
-	if err := x.pool.Do(localCtx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
+	if err := redis.Do(localCtx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
 		return nil, err
 	}
 	return partKeys, nil
 }
 
-func (x *RedisParts) readPart(ctx context.Context, key string, dest *Part) {
-	dest.DecodeRedisKey(key)
-	sheetsKey := x.namespace + ":parts:" + key + ":sheets"
-	dest.Sheets = x.readLinks(ctx, sheetsKey)
-	clixKey := x.namespace + ":parts:" + key + ":clix"
-	dest.Clix = x.readLinks(ctx, clixKey)
-}
-
-func (x *RedisParts) readLinks(ctx context.Context, key string) []Link {
+func readLinks(ctx context.Context, key string) []Link {
 	var raw []string
-	if err := x.pool.Do(ctx, redis.Cmd(&raw, "ZREVRANGE", key, "0", "-1")); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(&raw, "ZREVRANGE", key, "0", "-1")); err != nil {
 		logger.WithError(err).Error("ZREVRANGE")
 	}
 	links := make([]Link, len(raw))
@@ -152,7 +140,7 @@ func (x *RedisParts) saveIndex(parts []Part, ctx context.Context) {
 		args = append(args, score, member)
 	}
 
-	if err := x.pool.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
 		logger.WithError(err).WithField("args", args).Error("ZADD")
 	}
 }
@@ -168,7 +156,7 @@ func (x *RedisParts) saveLinks(ctx context.Context, key string, links []Link) {
 		member := links[i].EncodeRedisString()
 		args = append(args, score, member)
 	}
-	if err := x.pool.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
 		logger.WithError(err).WithField("args", args).Error("ZADD")
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
@@ -39,7 +38,7 @@ type Storage struct {
 	Tracks *storage.Bucket
 }
 
-func NewStorage(ctx context.Context, warehouse *storage.Warehouse, redisClient *redis.Client, config StorageConfig) *Storage {
+func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := warehouse.NewBucket(ctx, bucketName)
 		if err != nil {
@@ -53,7 +52,7 @@ func NewStorage(ctx context.Context, warehouse *storage.Warehouse, redisClient *
 		Sheets:        newBucket(ctx, config.SheetsBucketName),
 		Clix:          newBucket(ctx, config.ClixBucketName),
 		Tracks:        newBucket(ctx, config.TracksBucketName),
-		Parts:         parts.NewParts(redisClient, config.RedisNamespace+":parts"),
+		Parts:         parts.NewParts(config.RedisNamespace+":parts"),
 	}
 	return &db
 }

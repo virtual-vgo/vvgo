@@ -80,3 +80,5 @@ jobs:
 
       - name: Run `go test -v -race ./...`
         run: go generate ./... && go test -v -race ./...
+        env:
+          REDIS_ADDRESS: redis:6379

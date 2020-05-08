@@ -4,7 +4,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
@@ -33,9 +32,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"STORAGE_MINIO_ACCESSKEY":        "minio-access-key",
 		"STORAGE_MINIO_SECRETKEY":        "minio-secret-key",
 		"STORAGE_MINIO_USESSL":           "true",
-		"REDIS_ADDRESS":                  "redis-address",
-		"REDIS_NETWORK":                  "redis-network",
-		"REDIS_POOL_SIZE":                "17",
 	}
 	want := Config{
 		Secret: "vvgo-secret",
@@ -66,11 +62,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 				SecretKey: "minio-secret-key",
 				UseSSL:    true,
 			},
-		},
-		RedisConfig: redis.Config{
-			Network:  "redis-network",
-			Address:  "redis-address",
-			PoolSize: 17,
 		},
 	}
 
