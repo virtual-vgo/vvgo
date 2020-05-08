@@ -247,7 +247,7 @@ func (x UploadHandler) handleParts(ctx context.Context, upload *Upload, objectKe
 		}
 	}
 	if err := x.Parts.Save(ctx, uploadParts); err != nil {
-		logger.WithError(err).Error("x.Parts.Save() failed")
+		logger.WithError(err).Error("x.RedisParts.Save() failed")
 		return uploadInternalServerError(upload)
 	} else {
 		return uploadSuccess(upload)

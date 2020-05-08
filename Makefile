@@ -1,5 +1,6 @@
 # Makefile
 
+PATH := $(GOROOT)/bin:$(PATH)
 GO_PREFIX ?= github.com/virtual-vgo/vvgo
 
 # Quick build cmds
@@ -31,7 +32,7 @@ cmd/vvgo-uploader/info.go:
 # Run tests
 .PHONY: fmt vet test
 fmt:
-	gofmt -d .
+	$(GOFMT) -d .
 vet:
 	go vet $(GO_PREFIX)/...
 TEST_FLAGS ?= -race

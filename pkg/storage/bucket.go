@@ -187,11 +187,6 @@ func NewObject(mediaType string, tags map[string]string, payload []byte) *Object
 	}
 }
 
-// NewJSONObject returns an object with media type "application/json".
-func NewJSONObject(payload []byte) *Object {
-	return NewObject("application/json", nil, payload)
-}
-
 // StatObject queries object storage for the object content type and tags.
 func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object) error {
 	if x.noOp {
@@ -267,17 +262,6 @@ func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) err
 		"object_size": n,
 	}).Info("uploaded object")
 	return nil
-}
-
-// Stores the object and a copy with a timestamp appended to the file name.
-func WithBackup(putObjectFunc func(ctx context.Context, name string, object *Object) error) func(ctx context.Context, name string, object *Object) error {
-	return func(ctx context.Context, name string, object *Object) error {
-		backupName := fmt.Sprintf("%s-%s", name, time.Now().UTC().Format(time.RFC3339))
-		if err := putObjectFunc(ctx, backupName, object); err != nil {
-			return err
-		}
-		return putObjectFunc(ctx, name, object)
-	}
 }
 
 // DownloadURL queries object storage for a download url to the object key.

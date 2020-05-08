@@ -22,8 +22,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_STORAGE_SHEETS_BUCKET_NAME": "sheets-bucket-name",
 		"API_STORAGE_CLIX_BUCKET_NAME":   "clix-bucket-name",
 		"API_STORAGE_TRACKS_BUCKET_NAME": "tracks-bucket-name",
-		"API_STORAGE_PARTS_BUCKET_NAME":  "parts-bucket-name",
-		"API_STORAGE_PARTS_LOCKER_KEY":   "parts-locker-key",
+		"API_STORAGE_REDIS_NAMESPACE":    "redis-namespace",
 		"API_MEMBER_USER":                "member-user",
 		"API_MEMBER_PASS":                "member-pass",
 		"API_PREP_REP_TOKEN":             "prep-rep-token",
@@ -35,13 +34,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"STORAGE_MINIO_USESSL":           "true",
 	}
 	want := Config{
-		Secret:            "vvgo-secret",
-		InitializeStorage: true,
-		TracingConfig: tracing.Config{
-			HoneycombWriteKey: "tracing-honeycomb-write-key",
-			HoneycombDataset:  "tracing-honeycomb-dataset",
-			ServiceName:       "tracing-service-name",
-		},
+		Secret: "vvgo-secret",
 		ApiConfig: api.ServerConfig{
 			ListenAddress:    "listen-address",
 			MaxContentLength: 1e6,
@@ -54,8 +47,12 @@ func TestConfig_ParseEnv(t *testing.T) {
 			SheetsBucketName: "sheets-bucket-name",
 			ClixBucketName:   "clix-bucket-name",
 			TracksBucketName: "tracks-bucket-name",
-			PartsBucketName:  "parts-bucket-name",
-			PartsLockerKey:   "parts-locker-key",
+			RedisNamespace:   "redis-namespace",
+		},
+		TracingConfig: tracing.Config{
+			HoneycombWriteKey: "tracing-honeycomb-write-key",
+			HoneycombDataset:  "tracing-honeycomb-dataset",
+			ServiceName:       "tracing-service-name",
 		},
 		StorageConfig: storage.Config{
 			Minio: storage.MinioConfig{
