@@ -34,25 +34,41 @@ func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 	defer span.Send()
 
 	// Read the all the part _keys_ first.
-	var partKeys []string
-	if err := x.pool.Do(localCtx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
+	partKeys, err := x.readIndex(localCtx)
+	if err != nil {
 		return nil, err
 	}
 
-	// Now we can read each individual part.
+	// Now we can read each individual part data.
 	// Radix will automatically batch/pipeline requests for us, so we can queue up a bunch of requests in go routines.
 	// https://pkg.go.dev/github.com/mediocregopher/radix/v3?tab=doc#hdr-Implicit_pipelining
 	parts := make([]Part, len(partKeys))
 	var wg sync.WaitGroup
-	wg.Add(len(partKeys))
+	wg.Add(2 * len(partKeys))
 	for i := range partKeys {
-		go func(i int) {
-			defer wg.Done()
-			x.readPart(ctx, partKeys[i], &parts[i])
-		}(i)
+		parts[i].DecodeRedisKey(partKeys[i])
+		go func(key string, dest *Part) {
+			sheetsKey := x.namespace + ":parts:" + key + ":sheets"
+			dest.Sheets = x.readLinks(ctx, sheetsKey)
+			wg.Done()
+		}(partKeys[i], &parts[i])
+
+		go func(key string, dest *Part) {
+			clixKey := x.namespace + ":parts:" + key + ":clix"
+			dest.Clix = x.readLinks(ctx, clixKey)
+			wg.Done()
+		}(partKeys[i], &parts[i])
 	}
 	wg.Wait()
 	return parts, nil
+}
+
+func (x *RedisParts) readIndex(localCtx context.Context) ([]string, error) {
+	var partKeys []string
+	if err := x.pool.Do(localCtx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
+		return nil, err
+	}
+	return partKeys, nil
 }
 
 func (x *RedisParts) readPart(ctx context.Context, key string, dest *Part) {
@@ -85,13 +101,42 @@ func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
 		return nil
 	}
 
-	// Validate the parts.
 	for i := range parts {
 		if err := parts[i].Validate(); err != nil {
 			return err
 		}
 	}
 
+	// Like with List(), we'll leverage pipelining and queue up lots of goroutines.
+	var wg sync.WaitGroup
+
+	// Update the index with the new parts.
+	wg.Add(1)
+	go func() {
+		x.saveIndex(parts, localCtx)
+		wg.Done()
+	}()
+
+	// Update all the links.
+	wg.Add(2 * len(parts))
+	for i := range parts {
+		go func(src *Part) {
+			sheetsKey := x.namespace + ":parts:" + src.RedisKey() + ":sheets"
+			x.saveLinks(localCtx, sheetsKey, src.Sheets)
+			wg.Done()
+		}(&parts[i])
+
+		go func(src *Part) {
+			clixKey := x.namespace + ":parts:" + src.RedisKey() + ":clix"
+			x.saveLinks(localCtx, clixKey, src.Clix)
+			wg.Done()
+		}(&parts[i])
+	}
+	wg.Wait()
+	return nil
+}
+
+func (x *RedisParts) saveIndex(parts []Part, ctx context.Context) {
 	args := make([]string, 0, 1+2*len(parts))
 	args = append(args, x.namespace+":parts:index")
 	for i := range parts {
@@ -99,33 +144,10 @@ func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
 		member := parts[i].RedisKey()
 		args = append(args, score, member)
 	}
+
 	if err := x.pool.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
 		logger.WithError(err).WithField("args", args).Error("ZADD")
 	}
-
-	// Like with List(), we'll leverage pipelining and queue up lots of goroutines.
-	var wg sync.WaitGroup
-	wg.Add(len(parts))
-	for i := range parts {
-		go func(src *Part) {
-			defer wg.Done()
-			x.savePart(localCtx, src)
-		}(&parts[i])
-	}
-	wg.Wait()
-	return nil
-}
-
-func (x *RedisParts) savePart(ctx context.Context, src *Part) {
-	score := strconv.Itoa(src.ZScore())
-	partsKey := x.namespace + ":parts:index"
-	if err := x.pool.Do(ctx, redis.Cmd(nil, "ZADD", partsKey, score, src.RedisKey())); err != nil {
-		logger.WithError(err).Error("ZADD")
-	}
-	sheetsKey := x.namespace + ":parts:" + src.RedisKey() + ":sheets"
-	x.saveLinks(ctx, sheetsKey, src.Sheets)
-	clixKey := x.namespace + ":parts:" + src.RedisKey() + ":clix"
-	x.saveLinks(ctx, clixKey, src.Clix)
 }
 
 func (x *RedisParts) saveLinks(ctx context.Context, key string, links []Link) {
