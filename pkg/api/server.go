@@ -52,7 +52,7 @@ func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config Storag
 		Sheets:        newBucket(ctx, config.SheetsBucketName),
 		Clix:          newBucket(ctx, config.ClixBucketName),
 		Tracks:        newBucket(ctx, config.TracksBucketName),
-		Parts:         parts.NewParts(config.RedisNamespace+":parts"),
+		Parts:         parts.NewParts(config.RedisNamespace + ":parts"),
 	}
 	return &db
 }
