@@ -56,6 +56,7 @@ jobs:
         run: go generate ./... && go vet ./...
 
   go-unit-tests:
+    runs-on: ubuntu-latest
     services:
       redis:
         image: redis
@@ -64,8 +65,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
-    runs-on: ubuntu-latest
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/setup-go@v1
         with:
@@ -81,4 +82,4 @@ jobs:
       - name: Run `go test -v -race ./...`
         run: go generate ./... && go test -v -race ./...
         env:
-          REDIS_ADDRESS: redis:6379
+          REDIS_ADDRESS: localhost:6379
