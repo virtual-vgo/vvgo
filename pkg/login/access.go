@@ -1,5 +1,7 @@
 package login
 
+import "strings"
+
 // The kind of login
 // This can be used to access additional metadata fields we might add for a particular login.
 type Kind string
@@ -29,22 +31,23 @@ const (
 // This _absolutely_ should not contain any personally identifiable information.
 // Numeric user id's are fine, but no emails, user names, addresses, etc.
 type Identity struct {
-	Kind  Kind   `json:"kind"`
-	Roles []Role `json:"roles"`
+	Kind  string `json:"kind" redis:"kind"`
+	Roles string `json:"roles" redis:"roles"`
 }
 
-// returns the first role or RoleAnonymous if the identity has no roles.
+// Role returns the first role or RoleAnonymous if the identity has no roles.
 func (x Identity) Role() Role {
 	if len(x.Roles) == 0 {
 		return RoleAnonymous
 	} else {
-		return x.Roles[0]
+		return Role(strings.Split(x.Roles, ":")[0])
 	}
 }
 
 func (x Identity) HasRole(role Role) bool {
-	for _, gotRole := range x.Roles {
-		if gotRole == role {
+
+	for _, gotRole := range strings.Split(x.Roles, ":") {
+		if gotRole == role.String() {
 			return true
 		}
 	}
