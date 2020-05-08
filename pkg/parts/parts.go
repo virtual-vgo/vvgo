@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"strconv"
 	"strings"
@@ -23,7 +23,7 @@ var (
 
 type RedisParts struct {
 	namespace string
-	pool      *radix.Pool
+	pool      *redis.Client
 }
 
 func logOnError(err error, msg string) {
@@ -33,11 +33,11 @@ func logOnError(err error, msg string) {
 }
 
 func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
-	_, span := tracing.StartSpan(ctx, "RedisParts.List()")
+	localCtx, span := tracing.StartSpan(ctx, "RedisParts.List()")
 	defer span.Send()
 
 	var partKeys []string
-	if err := x.pool.Do(radix.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
+	if err := x.pool.Do(localCtx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
 		return nil, err
 	}
 
@@ -51,19 +51,9 @@ func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 			var part Part
 			part.DecodeRedisKey(partKeys[i])
 			sheetsKey := x.namespace + ":parts:" + partKeys[i] + ":sheets"
+			part.Sheets = x.readLinks(localCtx, sheetsKey)
 			clixKey := x.namespace + ":parts:" + partKeys[i] + ":clix"
-			var raw []string
-			logOnError(x.pool.Do(radix.Cmd(&raw, "ZREVRANGE", sheetsKey, "0", "-1")), "ZRANGE")
-			part.Sheets = make([]Link, len(raw))
-			for i := range raw {
-				part.Sheets[i].DecodeRedisString(raw[i])
-			}
-			raw = nil
-			logOnError(x.pool.Do(radix.Cmd(&raw, "ZREVRANGE", clixKey, "0", "-1")), "ZRANGE")
-			part.Clix = make([]Link, len(raw))
-			for i := range raw {
-				part.Clix[i].DecodeRedisString(raw[i])
-			}
+			part.Clix = x.readLinks(localCtx, clixKey)
 			parts[i] = part
 		}(i)
 	}
@@ -71,8 +61,30 @@ func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 	return parts, nil
 }
 
+func (x *RedisParts) readPart(ctx context.Context, key string) Part {
+	var part Part
+	part.DecodeRedisKey(key)
+	sheetsKey := x.namespace + ":parts:" + key + ":sheets"
+	part.Sheets = x.readLinks(ctx, sheetsKey)
+	clixKey := x.namespace + ":parts:" + key + ":clix"
+	part.Clix = x.readLinks(ctx, clixKey)
+	return part
+}
+
+func (x *RedisParts) readLinks(ctx context.Context, key string) []Link {
+	var raw []string
+	if err := x.pool.Do(ctx, redis.Cmd(&raw, "ZREVRANGE", key, "0", "-1")); err != nil {
+		logger.WithError(err).Error("ZREVRANGE")
+	}
+	links := make([]Link, len(raw))
+	for i := range links {
+		links[i].DecodeRedisString(raw[i])
+	}
+	return links
+}
+
 func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
-	_, span := tracing.StartSpan(ctx, "RedisParts.Save")
+	localCtx, span := tracing.StartSpan(ctx, "RedisParts.Save")
 	defer span.Send()
 
 	// first, validate all the parts
@@ -92,18 +104,18 @@ func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
 			sheetsKey := x.namespace + ":parts:" + parts[i].RedisKey() + ":sheets"
 			clixKey := x.namespace + ":parts:" + parts[i].RedisKey() + ":clix"
 
-			logOnError(x.pool.Do(radix.Cmd(nil, "ZADD", partsKey, score, parts[i].RedisKey())), "ZADD")
+			logOnError(x.pool.Do(localCtx, redis.Cmd(nil, "ZADD", partsKey, score, parts[i].RedisKey())), "ZADD")
 
 			for j := range parts[i].Sheets {
 				score := strconv.Itoa(parts[i].Sheets[j].ZScore())
 				member := parts[i].Sheets[j].EncodeRedisString()
-				logOnError(x.pool.Do(radix.Cmd(nil, "ZADD", sheetsKey, score, member)), "ZADD")
+				logOnError(x.pool.Do(localCtx, redis.Cmd(nil, "ZADD", sheetsKey, score, member)), "ZADD")
 			}
 
 			for j := range parts[i].Clix {
 				score := strconv.Itoa(parts[i].Clix[j].ZScore())
 				member := parts[i].Clix[j].EncodeRedisString()
-				logOnError(x.pool.Do(radix.Cmd(nil, "ZADD", clixKey, score, member)), "ZADD")
+				logOnError(x.pool.Do(localCtx, redis.Cmd(nil, "ZADD", clixKey, score, member)), "ZADD")
 			}
 		}(i)
 	}

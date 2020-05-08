@@ -3,10 +3,10 @@ package parts
 import (
 	"context"
 	"github.com/labstack/gommon/random"
-	"github.com/mediocregopher/radix/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"sort"
 	"testing"
 	"time"
@@ -15,7 +15,7 @@ import (
 func TestParts_List(t *testing.T) {
 	ctx := context.Background()
 
-	pool, err := radix.NewPool("tcp", "localhost:6379", 10)
+	pool, err := redis.NewClient("tcp", "localhost:6379", 10)
 	require.NoError(t, err)
 	parts := RedisParts{
 		namespace: "testing" + random.String(5, ""),
@@ -41,7 +41,7 @@ func TestParts_List(t *testing.T) {
 
 func TestParts_Save(t *testing.T) {
 	ctx := context.Background()
-	pool, err := radix.NewPool("tcp", "localhost:6379", 10)
+	pool, err := redis.NewClient("tcp", "localhost:6379", 10)
 	parts := RedisParts{
 		namespace: "testing" + random.String(5, ""),
 		pool:      pool,
