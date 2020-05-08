@@ -34,13 +34,13 @@ type StorageConfig struct {
 
 type Storage struct {
 	StorageConfig
-	Parts  *parts.Parts
+	Parts  *parts.RedisParts
 	Sheets *storage.Bucket
 	Clix   *storage.Bucket
 	Tracks *storage.Bucket
 }
 
-func NewStorage(ctx context.Context, warehouse *storage.Warehouse, redisClient *storage.RedisClient, config StorageConfig) *Storage {
+func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := warehouse.NewBucket(ctx, bucketName)
 		if err != nil {
@@ -54,7 +54,7 @@ func NewStorage(ctx context.Context, warehouse *storage.Warehouse, redisClient *
 		Sheets:        newBucket(ctx, config.SheetsBucketName),
 		Clix:          newBucket(ctx, config.ClixBucketName),
 		Tracks:        newBucket(ctx, config.TracksBucketName),
-		Parts:         new(parts.Parts),
+		Parts:         new(parts.RedisParts),
 	}
 
 	if config.RedisEnabled {

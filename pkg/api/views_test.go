@@ -27,7 +27,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	bucket, err := warehouse.NewBucket(ctx, "testing")
 	require.NoError(t, err, "storage.NewBucket")
 	handlerStorage := Storage{
-		Parts: &parts.Parts{
+		Parts: &parts.RedisParts{
 			Hash:   new(storage.MemHash),
 			Locker: new(storage.MemLocker),
 		},

@@ -2,10 +2,11 @@ package parts
 
 import (
 	"context"
+	"github.com/labstack/gommon/random"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"sort"
 	"testing"
 	"time"
@@ -13,21 +14,25 @@ import (
 
 func TestParts_List(t *testing.T) {
 	ctx := context.Background()
-	parts := Parts{
-		Hash:   new(storage.MemHash),
-		Locker: &storage.MemLocker{},
-	}
-	wantList := []Part{{ID: ID{
-		Project: "cheese",
-		Name:    "broccoli",
-		Number:  3,
-	}}}
 
-	require.NoError(t, parts.Hash.HSet(ctx, DataKey, &Part{ID: ID{
-		Project: "cheese",
-		Name:    "broccoli",
-		Number:  3,
-	}}), "cache.PutObject()")
+	pool, err := radix.NewPool("tcp", "localhost:6379", 10)
+	require.NoError(t, err)
+	parts := RedisParts{
+		namespace: "testing" + random.String(5, ""),
+		pool:      pool,
+	}
+	wantList := []Part{{
+		ID: ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+		Clix: []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)},
+			{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
+		Sheets: []Link{},
+	}}
+
+	require.NoError(t, parts.Save(ctx, []Part{{
+		ID: ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+		Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
+			{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
+	}}))
 
 	gotList, err := parts.List(context.Background())
 	assert.NoError(t, err, "parts.List()")
@@ -36,25 +41,25 @@ func TestParts_List(t *testing.T) {
 
 func TestParts_Save(t *testing.T) {
 	ctx := context.Background()
-	parts := Parts{
-		Hash:   new(storage.MemHash),
-		Locker: &storage.MemLocker{},
+	pool, err := radix.NewPool("tcp", "localhost:6379", 10)
+	parts := RedisParts{
+		namespace: "testing" + random.String(5, ""),
+		pool:      pool,
 	}
 
-	// load some dummy data into the cache
+	require.NoError(t, parts.Save(ctx, []Part{
+		{
+			ID:   ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+			Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
+		},
+		{
+			ID:     ID{Project: "01-snake-eater", Name: "accordion", Number: 3},
+			Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
+			Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
+		},
+	}))
 
-	require.NoError(t, parts.Hash.HSet(ctx, "01-snake-eater-trumpet-1", &Part{
-		ID:   ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
-		Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
-	}), "Hash.HSet")
-
-	require.NoError(t, parts.Hash.HSet(ctx, "01-snake-eater-accordion-3", &Part{
-		ID:     ID{Project: "01-snake-eater", Name: "accordion", Number: 3},
-		Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
-		Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
-	}), "Hash.HSet")
-
-	// now save some data
+	// now save some merging changes
 
 	require.NoError(t, parts.Save(ctx, []Part{
 		{
@@ -202,4 +207,45 @@ func TestPart_Validate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPart_ZScore(t *testing.T) {
+	part := Part{
+		ID:     ID{Project: "01-snake-eater", Name: "triangle", Number: 2},
+		Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
+		Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
+	}
+	assert.Equal(t, 1, part.ZScore())
+}
+
+func TestPart_RedisKey(t *testing.T) {
+	part := Part{ID: ID{Project: "01-snake-eater", Name: "triangle", Number: 2}}
+	assert.Equal(t, "01-snake-eater:triangle:2", part.RedisKey())
+}
+
+func TestPart_DecodeRedisKey(t *testing.T) {
+	var got Part
+	got.DecodeRedisKey("01-snake-eater:triangle:2")
+	assert.Equal(t, Part{ID: ID{Project: "01-snake-eater", Name: "triangle", Number: 2}}, got)
+}
+
+func TestID_String(t *testing.T) {
+	id := ID{Project: "01-snake-eater", Name: "triangle", Number: 2}
+	assert.Equal(t, "01-snake-eater-triangle-2", id.String())
+}
+
+func TestLink_DecodeRedisString(t *testing.T) {
+	var got Link
+	got.DecodeRedisString(`{"object_key":"New-click.mp3","created_at":"1969-12-31T16:00:02-08:00"}`)
+	assert.Equal(t, Link{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}, got)
+}
+
+func TestLink_EncodeRedisString(t *testing.T) {
+	link := Link{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}
+	assert.Equal(t, `{"object_key":"New-click.mp3","created_at":"1969-12-31T16:00:02-08:00"}`, link.EncodeRedisString())
+}
+
+func TestLink_ZScore(t *testing.T) {
+	link := Link{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}
+	assert.Equal(t, 2, link.ZScore())
 }

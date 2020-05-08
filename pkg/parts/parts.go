@@ -1,120 +1,155 @@
 package parts
 
 import (
-	"bytes"
 	"context"
-	"encoding"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"github.com/mediocregopher/radix/v3"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
-const DataKey = "parts"
+var logger = log.Logger()
 
 var (
 	ErrInvalidPartName   = fmt.Errorf("invalid part name")
 	ErrInvalidPartNumber = fmt.Errorf("invalid part number")
 )
 
-type Hash interface {
-	HVals(ctx context.Context) ([][]byte, error)
-	HGet(ctx context.Context, name string, dest encoding.BinaryUnmarshaler) error
-	HSet(ctx context.Context, name string, src encoding.BinaryMarshaler) error
+type RedisParts struct {
+	namespace string
+	pool      *radix.Pool
 }
 
-type Locker interface {
-	Lock(ctx context.Context) error
-	Unlock(ctx context.Context)
-}
-
-type Parts struct {
-	Hash
-	Locker
-}
-
-func (x Parts) List(ctx context.Context) ([]Part, error) {
-	vals, err := x.Hash.HVals(ctx)
+func logOnError(err error, msg string) {
 	if err != nil {
+		logger.WithError(err).Error(msg)
+	}
+}
+
+func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
+	_, span := tracing.StartSpan(ctx, "RedisParts.List()")
+	defer span.Send()
+
+	var partKeys []string
+	if err := x.pool.Do(radix.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
 		return nil, err
 	}
-	parts := make([]Part, len(vals))
-	for i := range vals {
-		if err := parts[i].UnmarshalBinary(vals[i]); err != nil {
-			return nil, fmt.Errorf("part.UnmarshalBinary() failed: %w", err)
-		}
+
+	parts := make([]Part, len(partKeys))
+
+	var wg sync.WaitGroup
+	wg.Add(len(partKeys))
+	for i := range partKeys {
+		go func(i int) {
+			defer wg.Done()
+			var part Part
+			part.DecodeRedisKey(partKeys[i])
+			sheetsKey := x.namespace + ":parts:" + partKeys[i] + ":sheets"
+			clixKey := x.namespace + ":parts:" + partKeys[i] + ":clix"
+			var raw []string
+			logOnError(x.pool.Do(radix.Cmd(&raw, "ZREVRANGE", sheetsKey, "0", "-1")), "ZRANGE")
+			part.Sheets = make([]Link, len(raw))
+			for i := range raw {
+				part.Sheets[i].DecodeRedisString(raw[i])
+			}
+			raw = nil
+			logOnError(x.pool.Do(radix.Cmd(&raw, "ZREVRANGE", clixKey, "0", "-1")), "ZRANGE")
+			part.Clix = make([]Link, len(raw))
+			for i := range raw {
+				part.Clix[i].DecodeRedisString(raw[i])
+			}
+			parts[i] = part
+		}(i)
 	}
+	wg.Wait()
 	return parts, nil
 }
 
-func (x Parts) Save(ctx context.Context, parts []Part) error {
+func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
+	_, span := tracing.StartSpan(ctx, "RedisParts.Save")
+	defer span.Send()
+
 	// first, validate all the parts
-	if err := validatePart(parts); err != nil {
-		return err
-	}
-
-	// we'll be making quite a few changes at once
-	if err := x.Lock(ctx); err != nil {
-		return err
-	}
-	defer x.Unlock(ctx)
-
-	// read the existing parts
-	cur := make([]Part, len(parts))
 	for i := range parts {
-		if err := x.Hash.HGet(ctx, parts[i].ID.String(), &cur[i]); err != storage.ErrKeyIsEmpty && err != nil {
+		if err := parts[i].Validate(); err != nil {
 			return err
 		}
 	}
 
-	// merge
+	var wg sync.WaitGroup
+	wg.Add(len(parts))
 	for i := range parts {
-		// append the old fields
-		parts[i].Sheets = append(parts[i].Sheets, cur[i].Sheets...)
-		parts[i].Clix = append(parts[i].Clix, cur[i].Clix...)
-	}
+		go func(i int) {
+			defer wg.Done()
+			score := strconv.Itoa(parts[i].ZScore())
+			partsKey := x.namespace + ":parts:index"
+			sheetsKey := x.namespace + ":parts:" + parts[i].RedisKey() + ":sheets"
+			clixKey := x.namespace + ":parts:" + parts[i].RedisKey() + ":clix"
 
-	// write changes
-	for _, part := range parts {
-		if err := x.Hash.HSet(ctx, part.ID.String(), &part); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+			logOnError(x.pool.Do(radix.Cmd(nil, "ZADD", partsKey, score, parts[i].RedisKey())), "ZADD")
 
-func validatePart(parts []Part) error {
-	for _, part := range parts {
-		if err := part.Validate(); err != nil {
-			return err
-		}
+			for j := range parts[i].Sheets {
+				score := strconv.Itoa(parts[i].Sheets[j].ZScore())
+				member := parts[i].Sheets[j].EncodeRedisString()
+				logOnError(x.pool.Do(radix.Cmd(nil, "ZADD", sheetsKey, score, member)), "ZADD")
+			}
+
+			for j := range parts[i].Clix {
+				score := strconv.Itoa(parts[i].Clix[j].ZScore())
+				member := parts[i].Clix[j].EncodeRedisString()
+				logOnError(x.pool.Do(radix.Cmd(nil, "ZADD", clixKey, score, member)), "ZADD")
+			}
+		}(i)
 	}
+	wg.Wait()
 	return nil
 }
 
 type Part struct {
 	ID
-	Clix   Links
-	Sheets Links
+	Clix   Links `json:"click,omitempty"`
+	Sheets Links `json:"sheet,omitempty"`
 }
 
-type Data Part
-
-func (x *Part) MarshalBinary() ([]byte, error) {
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode((*Data)(x))
-	return buf.Bytes(), err
+func (x *Part) RedisKey() string {
+	return fmt.Sprintf("%s:%s:%d", x.ID.Project, x.ID.Name, x.ID.Number)
 }
 
-func (x *Part) UnmarshalBinary(src []byte) error {
-	return gob.NewDecoder(bytes.NewReader(src)).Decode((*Data)(x))
+func (x *Part) DecodeRedisKey(str string) {
+	got := strings.SplitN(str, ":", 3)
+	x.ID.Project = got[0]
+	x.ID.Name = got[1]
+	num, _ := strconv.Atoi(got[2])
+	x.ID.Number = uint8(num)
+}
+
+func (x *Part) ZScore() int {
+	projectScore, _ := strconv.Atoi(x.ID.Project[:2])
+	return projectScore
 }
 
 type Link struct {
-	ObjectKey string
-	CreatedAt time.Time
+	ObjectKey string    `json:"object_key"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (x *Link) ZScore() int {
+	return int(x.CreatedAt.Unix())
+}
+
+func (x *Link) EncodeRedisString() string {
+	linkBytes, _ := json.Marshal(x)
+	return string(linkBytes)
+}
+
+func (x *Link) DecodeRedisString(src string) {
+	json.Unmarshal([]byte(src), x)
 }
 
 type Links []Link
@@ -178,10 +213,10 @@ func ValidNumbers(numbers ...uint8) bool {
 	return true
 }
 
-type ID struct {
-	Project string `json:"project"`
-	Name    string `json:"part_name"`
-	Number  uint8  `json:"part_number"`
+type ID struct { // this can be a redis hash
+	Project string `json:"project" redis:"project"`
+	Name    string `json:"part_name" redis:"part_name"`
+	Number  uint8  `json:"part_number" redis:"part_number"`
 }
 
 func (id ID) String() string {
