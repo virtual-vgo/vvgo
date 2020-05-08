@@ -10,8 +10,14 @@ type Client struct {
 	pool *radix.Pool
 }
 
-func NewClient(network, addr string, size int) (*Client, error) {
-	radixPool, err := radix.NewPool(network, addr, size)
+type Config struct {
+	Network  string `default:"tcp"`
+	Address  string `default:"localhost:6379"`
+	PoolSize int    `split_words:"true" default:"10"`
+}
+
+func NewClient(config Config) (*Client, error) {
+	radixPool, err := radix.NewPool(config.Network, config.Address, config.PoolSize)
 	if err != nil {
 		return nil, err
 	}

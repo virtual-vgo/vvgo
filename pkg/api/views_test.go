@@ -27,40 +27,38 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	bucket, err := warehouse.NewBucket(ctx, "testing")
 	require.NoError(t, err, "storage.NewBucket")
 	handlerStorage := Storage{
-		Parts: &parts.RedisParts{
-			Hash:   new(storage.MemHash),
-			Locker: new(storage.MemLocker),
-		},
+		Parts:  newParts(),
 		Sheets: bucket,
 		Clix:   bucket,
 		Tracks: bucket,
 		StorageConfig: StorageConfig{
 			SheetsBucketName: "sheets",
 			ClixBucketName:   "clix",
-			PartsHashKey:     "parts",
 			TracksBucketName: "tracks",
 		},
 	}
 
 	// load the cache with some dummy data
-	require.NoError(t, handlerStorage.Parts.Hash.HSet(ctx, "01-snake-eater-trumpet-3", &parts.Part{
-		ID: parts.ID{
-			Project: "01-snake-eater",
-			Name:    "trumpet",
-			Number:  3,
+	handlerStorage.Parts.Save(ctx, []parts.Part{
+		{
+			ID: parts.ID{
+				Project: "01-snake-eater",
+				Name:    "trumpet",
+				Number:  3,
+			},
+			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 		},
-		Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-		Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-	}), "Hash.HSet")
-	require.NoError(t, handlerStorage.Parts.Hash.HSet(ctx, "01-snake-eater-trumpet-3", &parts.Part{
-		ID: parts.ID{
-			Project: "02-proof-of-a-hero",
-			Name:    "trumpet",
-			Number:  3,
+		{
+			ID: parts.ID{
+				Project: "02-proof-of-a-hero",
+				Name:    "trumpet",
+				Number:  3,
+			},
+			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 		},
-		Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-		Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-	}), "Hash.HSet")
+	})
 
 	server := PartView{NavBar{}, &handlerStorage}
 

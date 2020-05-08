@@ -26,6 +26,13 @@ type RedisParts struct {
 	pool      *redis.Client
 }
 
+func NewParts(client *redis.Client, namespace string) *RedisParts {
+	return &RedisParts{
+		namespace: namespace,
+		pool:      client,
+	}
+}
+
 // List returns a slice of all parts in the database.
 // If the first request to redis fails, this function will return an error.
 // Subsequent errors will only be logged.
@@ -40,7 +47,7 @@ func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 	}
 
 	// Now we can read each individual part data.
-	// Radix will automatically batch/pipeline requests for us, so we can queue up a bunch of requests in go routines.
+	// Radix will automatically batch/pipeline requests for us, so we can queue up a bunch of requests in goroutines.
 	// https://pkg.go.dev/github.com/mediocregopher/radix/v3?tab=doc#hdr-Implicit_pipelining
 	parts := make([]Part, len(partKeys))
 	var wg sync.WaitGroup

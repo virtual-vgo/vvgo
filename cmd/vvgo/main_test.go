@@ -4,6 +4,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
@@ -22,9 +23,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_STORAGE_SHEETS_BUCKET_NAME": "sheets-bucket-name",
 		"API_STORAGE_CLIX_BUCKET_NAME":   "clix-bucket-name",
 		"API_STORAGE_TRACKS_BUCKET_NAME": "tracks-bucket-name",
-		"API_STORAGE_PARTS_HASH_KEY":     "parts-hash-key",
-		"API_STORAGE_PARTS_LOCKER_KEY":   "parts-locker-key",
-		"API_STORAGE_REDIS_ENABLED":      "true",
+		"API_STORAGE_REDIS_NAMESPACE":    "redis-namespace",
 		"API_MEMBER_USER":                "member-user",
 		"API_MEMBER_PASS":                "member-pass",
 		"API_PREP_REP_TOKEN":             "prep-rep-token",
@@ -35,6 +34,8 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"STORAGE_MINIO_SECRETKEY":        "minio-secret-key",
 		"STORAGE_MINIO_USESSL":           "true",
 		"REDIS_ADDRESS":                  "redis-address",
+		"REDIS_NETWORK":                  "redis-network",
+		"REDIS_POOL_SIZE":                "17",
 	}
 	want := Config{
 		Secret: "vvgo-secret",
@@ -50,9 +51,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 			SheetsBucketName: "sheets-bucket-name",
 			ClixBucketName:   "clix-bucket-name",
 			TracksBucketName: "tracks-bucket-name",
-			PartsHashKey:     "parts-hash-key",
-			PartsLockerKey:   "parts-locker-key",
-			RedisEnabled:     true,
+			RedisNamespace:   "redis-namespace",
 		},
 		TracingConfig: tracing.Config{
 			HoneycombWriteKey: "tracing-honeycomb-write-key",
@@ -68,8 +67,10 @@ func TestConfig_ParseEnv(t *testing.T) {
 				UseSSL:    true,
 			},
 		},
-		RedisConfig: storage.RedisConfig{
-			Address: "redis-address",
+		RedisConfig: redis.Config{
+			Network:  "redis-network",
+			Address:  "redis-address",
+			PoolSize: 17,
 		},
 	}
 

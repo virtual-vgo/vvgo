@@ -312,21 +312,18 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
+
 			ctx := context.Background()
 			bucket, err := warehouse.NewBucket(ctx, "testing")
 			require.NoError(t, err, "storage.NewBucket")
 			handlerStorage := Storage{
-				Parts: &parts.RedisParts{
-					Hash:   new(storage.MemHash),
-					Locker: new(storage.MemLocker),
-				},
+				Parts: newParts(),
 				Sheets: bucket,
 				Clix:   bucket,
 				Tracks: bucket,
 				StorageConfig: StorageConfig{
 					SheetsBucketName: "sheets",
 					ClixBucketName:   "clix",
-					PartsHashKey:     "parts",
 					TracksBucketName: "tracks",
 				},
 			}

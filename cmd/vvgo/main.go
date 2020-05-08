@@ -9,6 +9,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
@@ -18,12 +19,12 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	Secret           string              `envconfig:"vvgo_secret"`
-	ApiConfig        api.ServerConfig    `envconfig:"api"`
-	ApiStorageConfig api.StorageConfig   `envconfig:"api_storage"`
-	TracingConfig    tracing.Config      `envconfig:"tracing"`
-	StorageConfig    storage.Config      `envconfig:"storage"`
-	RedisConfig      storage.RedisConfig `envconfig:"redis"`
+	Secret           string            `envconfig:"vvgo_secret"`
+	ApiConfig        api.ServerConfig  `envconfig:"api"`
+	ApiStorageConfig api.StorageConfig `envconfig:"api_storage"`
+	TracingConfig    tracing.Config    `envconfig:"tracing"`
+	StorageConfig    storage.Config    `envconfig:"storage"`
+	RedisConfig      redis.Config      `envconfig:"redis"`
 }
 
 func (x *Config) ParseEnv() {
@@ -71,7 +72,10 @@ func main() {
 	}
 
 	// Redis client
-	redisClient := storage.NewRedisClient(config.RedisConfig)
+	redisClient, err := redis.NewClient(config.RedisConfig)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	// Build the api database.
 	database := api.NewStorage(ctx, warehouse, redisClient, config.ApiStorageConfig)

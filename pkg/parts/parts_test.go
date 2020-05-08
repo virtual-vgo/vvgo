@@ -2,25 +2,42 @@ package parts
 
 import (
 	"context"
-	"github.com/labstack/gommon/random"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
+	"math/rand"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 )
 
+var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
+var redisClient *redis.Client
+
+func newParts() RedisParts {
+	if redisClient == nil {
+		var err error
+		redisClient, err = redis.NewClient(redis.Config{
+			Network:  "tcp",
+			Address:  "localhost:6379",
+			PoolSize: 10,
+		})
+		if err != nil {
+			logger.Fatal(err)
+		}
+	}
+	return RedisParts{
+		namespace: "testing" + strconv.Itoa(lrand.Int()),
+		pool:      redisClient,
+	}
+}
+
 func TestParts_List(t *testing.T) {
 	ctx := context.Background()
+	parts := newParts()
 
-	pool, err := redis.NewClient("tcp", "localhost:6379", 10)
-	require.NoError(t, err)
-	parts := RedisParts{
-		namespace: "testing" + random.String(5, ""),
-		pool:      pool,
-	}
 	wantList := []Part{{
 		ID: ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
 		Clix: []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)},
@@ -41,11 +58,7 @@ func TestParts_List(t *testing.T) {
 
 func TestParts_Save(t *testing.T) {
 	ctx := context.Background()
-	pool, err := redis.NewClient("tcp", "localhost:6379", 10)
-	parts := RedisParts{
-		namespace: "testing" + random.String(5, ""),
-		pool:      pool,
-	}
+	parts := newParts()
 
 	require.NoError(t, parts.Save(ctx, []Part{
 		{

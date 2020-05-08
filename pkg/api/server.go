@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
@@ -26,10 +27,8 @@ type ServerConfig struct {
 type StorageConfig struct {
 	SheetsBucketName string `split_words:"true" default:"sheets"`
 	ClixBucketName   string `split_words:"true" default:"clix"`
-	PartsHashKey     string `split_words:"true" default:"parts"`
-	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
 	TracksBucketName string `split_words:"true" default:"tracks"`
-	RedisEnabled     bool   `split_words:"true" default:"false"`
+	RedisNamespace   string `split_words:"true" default:"local"`
 }
 
 type Storage struct {
@@ -40,7 +39,7 @@ type Storage struct {
 	Tracks *storage.Bucket
 }
 
-func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
+func NewStorage(ctx context.Context, warehouse *storage.Warehouse, redisClient *redis.Client, config StorageConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := warehouse.NewBucket(ctx, bucketName)
 		if err != nil {
@@ -54,15 +53,7 @@ func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config Storag
 		Sheets:        newBucket(ctx, config.SheetsBucketName),
 		Clix:          newBucket(ctx, config.ClixBucketName),
 		Tracks:        newBucket(ctx, config.TracksBucketName),
-		Parts:         new(parts.RedisParts),
-	}
-
-	if config.RedisEnabled {
-		db.Parts.Hash = redisClient.NewHash(config.PartsHashKey)
-		db.Parts.Locker = redisClient.NewLocker(config.PartsLockerKey)
-	} else {
-		db.Parts.Hash = new(storage.MemHash)
-		db.Parts.Locker = new(storage.MemLocker)
+		Parts:         parts.NewParts(redisClient, config.RedisNamespace+":parts"),
 	}
 	return &db
 }
