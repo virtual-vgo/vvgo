@@ -81,11 +81,26 @@ func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
 	localCtx, span := tracing.StartSpan(ctx, "RedisParts.Save")
 	defer span.Send()
 
+	if len(parts) == 0 {
+		return nil
+	}
+
 	// Validate the parts.
 	for i := range parts {
 		if err := parts[i].Validate(); err != nil {
 			return err
 		}
+	}
+
+	args := make([]string, 0, 1+2*len(parts))
+	args = append(args, x.namespace+":parts:index")
+	for i := range parts {
+		score := strconv.Itoa(parts[i].ZScore())
+		member := parts[i].RedisKey()
+		args = append(args, score, member)
+	}
+	if err := x.pool.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
+		logger.WithError(err).WithField("args", args).Error("ZADD")
 	}
 
 	// Like with List(), we'll leverage pipelining and queue up lots of goroutines.
