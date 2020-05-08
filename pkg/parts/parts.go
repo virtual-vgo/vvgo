@@ -26,49 +26,41 @@ type RedisParts struct {
 	pool      *redis.Client
 }
 
-func logOnError(err error, msg string) {
-	if err != nil {
-		logger.WithError(err).Error(msg)
-	}
-}
-
+// List returns a slice of all parts in the database.
+// If the first request to redis fails, this function will return an error.
+// Subsequent errors will only be logged.
 func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 	localCtx, span := tracing.StartSpan(ctx, "RedisParts.List()")
 	defer span.Send()
 
+	// Read the all the part _keys_ first.
 	var partKeys []string
 	if err := x.pool.Do(localCtx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
 		return nil, err
 	}
 
+	// Now we can read each individual part.
+	// Radix will automatically batch/pipeline requests for us, so we can queue up a bunch of requests in go routines.
+	// https://pkg.go.dev/github.com/mediocregopher/radix/v3?tab=doc#hdr-Implicit_pipelining
 	parts := make([]Part, len(partKeys))
-
 	var wg sync.WaitGroup
 	wg.Add(len(partKeys))
 	for i := range partKeys {
 		go func(i int) {
 			defer wg.Done()
-			var part Part
-			part.DecodeRedisKey(partKeys[i])
-			sheetsKey := x.namespace + ":parts:" + partKeys[i] + ":sheets"
-			part.Sheets = x.readLinks(localCtx, sheetsKey)
-			clixKey := x.namespace + ":parts:" + partKeys[i] + ":clix"
-			part.Clix = x.readLinks(localCtx, clixKey)
-			parts[i] = part
+			x.readPart(ctx, partKeys[i], &parts[i])
 		}(i)
 	}
 	wg.Wait()
 	return parts, nil
 }
 
-func (x *RedisParts) readPart(ctx context.Context, key string) Part {
-	var part Part
-	part.DecodeRedisKey(key)
+func (x *RedisParts) readPart(ctx context.Context, key string, dest *Part) {
+	dest.DecodeRedisKey(key)
 	sheetsKey := x.namespace + ":parts:" + key + ":sheets"
-	part.Sheets = x.readLinks(ctx, sheetsKey)
+	dest.Sheets = x.readLinks(ctx, sheetsKey)
 	clixKey := x.namespace + ":parts:" + key + ":clix"
-	part.Clix = x.readLinks(ctx, clixKey)
-	return part
+	dest.Clix = x.readLinks(ctx, clixKey)
 }
 
 func (x *RedisParts) readLinks(ctx context.Context, key string) []Link {
@@ -83,44 +75,58 @@ func (x *RedisParts) readLinks(ctx context.Context, key string) []Link {
 	return links
 }
 
+// Save a slice of parts to redis.
+// This function returns an error if the parts are invalid.
 func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
 	localCtx, span := tracing.StartSpan(ctx, "RedisParts.Save")
 	defer span.Send()
 
-	// first, validate all the parts
+	// Validate the parts.
 	for i := range parts {
 		if err := parts[i].Validate(); err != nil {
 			return err
 		}
 	}
 
+	// Like with List(), we'll leverage pipelining and queue up lots of goroutines.
 	var wg sync.WaitGroup
 	wg.Add(len(parts))
 	for i := range parts {
-		go func(i int) {
+		go func(src *Part) {
 			defer wg.Done()
-			score := strconv.Itoa(parts[i].ZScore())
-			partsKey := x.namespace + ":parts:index"
-			sheetsKey := x.namespace + ":parts:" + parts[i].RedisKey() + ":sheets"
-			clixKey := x.namespace + ":parts:" + parts[i].RedisKey() + ":clix"
-
-			logOnError(x.pool.Do(localCtx, redis.Cmd(nil, "ZADD", partsKey, score, parts[i].RedisKey())), "ZADD")
-
-			for j := range parts[i].Sheets {
-				score := strconv.Itoa(parts[i].Sheets[j].ZScore())
-				member := parts[i].Sheets[j].EncodeRedisString()
-				logOnError(x.pool.Do(localCtx, redis.Cmd(nil, "ZADD", sheetsKey, score, member)), "ZADD")
-			}
-
-			for j := range parts[i].Clix {
-				score := strconv.Itoa(parts[i].Clix[j].ZScore())
-				member := parts[i].Clix[j].EncodeRedisString()
-				logOnError(x.pool.Do(localCtx, redis.Cmd(nil, "ZADD", clixKey, score, member)), "ZADD")
-			}
-		}(i)
+			x.savePart(localCtx, src)
+		}(&parts[i])
 	}
 	wg.Wait()
 	return nil
+}
+
+func (x *RedisParts) savePart(ctx context.Context, src *Part) {
+	score := strconv.Itoa(src.ZScore())
+	partsKey := x.namespace + ":parts:index"
+	if err := x.pool.Do(ctx, redis.Cmd(nil, "ZADD", partsKey, score, src.RedisKey())); err != nil {
+		logger.WithError(err).Error("ZADD")
+	}
+	sheetsKey := x.namespace + ":parts:" + src.RedisKey() + ":sheets"
+	x.saveLinks(ctx, sheetsKey, src.Sheets)
+	clixKey := x.namespace + ":parts:" + src.RedisKey() + ":clix"
+	x.saveLinks(ctx, clixKey, src.Clix)
+}
+
+func (x *RedisParts) saveLinks(ctx context.Context, key string, links []Link) {
+	if len(links) == 0 {
+		return
+	}
+	args := make([]string, 0, 1+2*len(links))
+	args = append(args, key)
+	for i := range links {
+		score := strconv.Itoa(links[i].ZScore())
+		member := links[i].EncodeRedisString()
+		args = append(args, score, member)
+	}
+	if err := x.pool.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
+		logger.WithError(err).WithField("args", args).Error("ZADD")
+	}
 }
 
 type Part struct {
