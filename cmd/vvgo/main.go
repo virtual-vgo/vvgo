@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -19,13 +18,11 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	Secret            string            `envconfig:"vvgo_secret"`
-	InitializeStorage bool              `split_words:"true" default:"false"`
-	ApiConfig         api.ServerConfig  `envconfig:"api"`
-	ApiStorageConfig  api.StorageConfig `envconfig:"api_storage"`
-	TracingConfig     tracing.Config    `envconfig:"tracing"`
-	StorageConfig     storage.Config    `envconfig:"storage"`
-	LockerConfig      locker.Config     `envconfig:"locker"`
+	Secret           string            `envconfig:"vvgo_secret"`
+	ApiConfig        api.ServerConfig  `envconfig:"api"`
+	ApiStorageConfig api.StorageConfig `envconfig:"api_storage"`
+	TracingConfig    tracing.Config    `envconfig:"tracing"`
+	StorageConfig    storage.Config    `envconfig:"storage"`
 }
 
 func (x *Config) ParseEnv() {
@@ -66,9 +63,6 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	// Creates mutex locks.
-	locksmith := locker.NewLocksmith(config.LockerConfig)
-
 	// Creates/queries object buckets.
 	warehouse, err := storage.NewWarehouse(config.StorageConfig)
 	if err != nil {
@@ -76,16 +70,9 @@ func main() {
 	}
 
 	// Build the api database.
-	database := api.NewStorage(ctx, locksmith, warehouse, config.ApiStorageConfig)
+	database := api.NewStorage(ctx, warehouse, config.ApiStorageConfig)
 	if database == nil {
 		os.Exit(1)
-	}
-
-	// Initialize the database, if requested
-	if config.InitializeStorage {
-		if err := database.Init(ctx); err != nil {
-			logger.WithError(err).Fatal("failed to initialize storage")
-		}
 	}
 
 	//

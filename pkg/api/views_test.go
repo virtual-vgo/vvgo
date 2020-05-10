@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
@@ -21,7 +20,6 @@ import (
 )
 
 func TestPartsView_ServeHTTP(t *testing.T) {
-	locker := locker.NewLocksmith(locker.Config{}).NewLocker(locker.Opts{})
 	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
 	require.NoError(t, err, "storage.NewWarehouse")
 
@@ -29,24 +27,19 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	bucket, err := warehouse.NewBucket(ctx, "testing")
 	require.NoError(t, err, "storage.NewBucket")
 	handlerStorage := Storage{
-		Parts: &parts.Parts{
-			Cache:  storage.NewCache(storage.CacheOpts{}),
-			Locker: locker,
-		},
+		Parts:  newParts(),
 		Sheets: bucket,
 		Clix:   bucket,
 		Tracks: bucket,
 		StorageConfig: StorageConfig{
 			SheetsBucketName: "sheets",
 			ClixBucketName:   "clix",
-			PartsBucketName:  "parts",
 			TracksBucketName: "tracks",
 		},
 	}
 
 	// load the cache with some dummy data
-	var buf bytes.Buffer
-	require.NoError(t, json.NewEncoder(&buf).Encode([]parts.Part{
+	handlerStorage.Parts.Save(ctx, []parts.Part{
 		{
 			ID: parts.ID{
 				Project: "01-snake-eater",
@@ -65,9 +58,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
 			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 		},
-	}), "json.Encode()")
-	obj := storage.Object{ContentType: "application/json", Bytes: buf.Bytes()}
-	require.NoError(t, handlerStorage.Parts.Cache.PutObject(ctx, parts.DataFile, &obj), "cache.PutObject()")
+	})
 
 	server := PartView{NavBar{}, &handlerStorage}
 

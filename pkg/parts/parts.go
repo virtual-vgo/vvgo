@@ -1,106 +1,164 @@
 package parts
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
+	"github.com/virtual-vgo/vvgo/pkg/tracing"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
-const DataFile = "parts.json"
+var logger = log.Logger()
 
 var (
 	ErrInvalidPartName   = fmt.Errorf("invalid part name")
 	ErrInvalidPartNumber = fmt.Errorf("invalid part number")
 )
 
-type Parts struct {
-	*storage.Cache
-	*locker.Locker
+type RedisParts struct {
+	namespace string
 }
 
-func (x Parts) Init(ctx context.Context) error {
-	return x.PutObject(ctx, DataFile, storage.NewJSONObject([]byte(`[]`)))
+func NewParts(namespace string) *RedisParts {
+	return &RedisParts{namespace: namespace}
 }
 
-func (x Parts) List(ctx context.Context) ([]Part, error) {
-	// grab the data file
-	var data storage.Object
-	if err := x.GetObject(ctx, DataFile, &data); err != nil {
+// List returns a slice of all parts in the database.
+// If the first request to redis fails, this function will return an error.
+// Subsequent errors will only be logged.
+func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
+	localCtx, span := tracing.StartSpan(ctx, "RedisParts.List()")
+	defer span.Send()
+
+	// Read the all the part _keys_ first.
+	partKeys, err := x.readIndex(localCtx)
+	if err != nil {
 		return nil, err
 	}
 
-	// deserialize the data file
-	var parts []Part
-	if err := json.NewDecoder(bytes.NewReader(data.Bytes)).Decode(&parts); err != nil {
-		return nil, fmt.Errorf("json.Decode() failed: %v", err)
+	// Now we can read each individual part data.
+	// Radix will automatically batch/pipeline requests for us, so we can queue up a bunch of requests in goroutines.
+	// https://pkg.go.dev/github.com/mediocregopher/radix/v3?tab=doc#hdr-Implicit_pipelining
+	parts := make([]Part, len(partKeys))
+	var wg sync.WaitGroup
+	wg.Add(2 * len(partKeys))
+	for i := range partKeys {
+		parts[i].DecodeRedisKey(partKeys[i])
+		go func(key string, dest *Part) {
+			sheetsKey := x.namespace + ":parts:" + key + ":sheets"
+			dest.Sheets = readLinks(ctx, sheetsKey)
+			wg.Done()
+		}(partKeys[i], &parts[i])
+
+		go func(key string, dest *Part) {
+			clixKey := x.namespace + ":parts:" + key + ":clix"
+			dest.Clix = readLinks(ctx, clixKey)
+			wg.Done()
+		}(partKeys[i], &parts[i])
 	}
+	wg.Wait()
 	return parts, nil
 }
 
-func (x Parts) Save(ctx context.Context, parts []Part) error {
-	// first, validate all the parts
-	if err := validatePart(parts); err != nil {
-		return err
+func (x *RedisParts) readIndex(localCtx context.Context) ([]string, error) {
+	var partKeys []string
+	if err := redis.Do(localCtx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
+		return nil, err
 	}
-
-	// now we update the data file
-	// read+modify+write means we need a lock
-	if err := x.Lock(ctx); err != nil {
-		return err
-	}
-	defer x.Unlock(ctx)
-
-	// pull down the parts data
-	allParts, err := x.List(ctx)
-	if allParts == nil {
-		return err
-	}
-
-	// merge the changes
-	allParts = mergeChanges(allParts, parts)
-
-	// encode the data file
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(&allParts); err != nil {
-		return fmt.Errorf("json.Encode() failed: %v", err)
-	}
-
-	return x.PutObject(ctx, DataFile, storage.NewJSONObject(buffer.Bytes()))
+	return partKeys, nil
 }
 
-func mergeChanges(src []Part, changes []Part) []Part {
-	// merge the changes
-	for _, change := range changes {
-		var ok bool
-		for i := range src {
-			if change.ID.String() == src[i].ID.String() {
-				ok = true
-				// prepend the new fields
-				src[i].Sheets = append(change.Sheets, src[i].Sheets...)
-				src[i].Clix = append(change.Clix, src[i].Clix...)
-				break
-			}
-		}
-		if !ok {
-			src = append(src, change)
-		}
+func readLinks(ctx context.Context, key string) []Link {
+	var raw []string
+	if err := redis.Do(ctx, redis.Cmd(&raw, "ZREVRANGE", key, "0", "-1")); err != nil {
+		logger.WithError(err).Error("ZREVRANGE")
 	}
-	return src
+	links := make([]Link, len(raw))
+	for i := range links {
+		links[i].DecodeRedisString(raw[i])
+	}
+	return links
 }
 
-func validatePart(parts []Part) error {
-	for _, part := range parts {
-		if err := part.Validate(); err != nil {
+// Save a slice of parts to redis.
+// This function returns an error if the parts are invalid.
+func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
+	localCtx, span := tracing.StartSpan(ctx, "RedisParts.Save")
+	defer span.Send()
+
+	if len(parts) == 0 {
+		return nil
+	}
+
+	for i := range parts {
+		if err := parts[i].Validate(); err != nil {
 			return err
 		}
 	}
+
+	// Like with List(), we'll leverage pipelining and queue up lots of goroutines.
+	var wg sync.WaitGroup
+
+	// Update the index with the new parts.
+	wg.Add(1)
+	go func() {
+		x.saveIndex(parts, localCtx)
+		wg.Done()
+	}()
+
+	// Update all the links.
+	wg.Add(2 * len(parts))
+	for i := range parts {
+		go func(src *Part) {
+			sheetsKey := x.namespace + ":parts:" + src.RedisKey() + ":sheets"
+			x.saveLinks(localCtx, sheetsKey, src.Sheets)
+			wg.Done()
+		}(&parts[i])
+
+		go func(src *Part) {
+			clixKey := x.namespace + ":parts:" + src.RedisKey() + ":clix"
+			x.saveLinks(localCtx, clixKey, src.Clix)
+			wg.Done()
+		}(&parts[i])
+	}
+	wg.Wait()
 	return nil
+}
+
+func (x *RedisParts) saveIndex(parts []Part, ctx context.Context) {
+	args := make([]string, 0, 1+2*len(parts))
+	args = append(args, x.namespace+":parts:index")
+	for i := range parts {
+		score := strconv.Itoa(parts[i].ZScore())
+		member := parts[i].RedisKey()
+		args = append(args, score, member)
+	}
+
+	if err := redis.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
+		logger.WithError(err).WithField("args", args).Error("ZADD")
+	}
+}
+
+func (x *RedisParts) saveLinks(ctx context.Context, key string, links []Link) {
+	if len(links) == 0 {
+		return
+	}
+	args := make([]string, 0, 1+2*len(links))
+	args = append(args, key)
+	for i := range links {
+		score := strconv.Itoa(links[i].ZScore())
+		member := links[i].EncodeRedisString()
+		args = append(args, score, member)
+	}
+	if err := redis.Do(ctx, redis.Cmd(nil, "ZADD", args...)); err != nil {
+		logger.WithError(err).WithField("args", args).Error("ZADD")
+	}
 }
 
 type Part struct {
@@ -109,9 +167,39 @@ type Part struct {
 	Sheets Links `json:"sheet,omitempty"`
 }
 
+func (x *Part) RedisKey() string {
+	return fmt.Sprintf("%s:%s:%d", x.ID.Project, x.ID.Name, x.ID.Number)
+}
+
+func (x *Part) DecodeRedisKey(str string) {
+	got := strings.SplitN(str, ":", 3)
+	x.ID.Project = got[0]
+	x.ID.Name = got[1]
+	num, _ := strconv.Atoi(got[2])
+	x.ID.Number = uint8(num)
+}
+
+func (x *Part) ZScore() int {
+	projectScore, _ := strconv.Atoi(x.ID.Project[:2])
+	return projectScore
+}
+
 type Link struct {
-	ObjectKey string
-	CreatedAt time.Time
+	ObjectKey string    `json:"object_key"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (x *Link) ZScore() int {
+	return int(x.CreatedAt.Unix())
+}
+
+func (x *Link) EncodeRedisString() string {
+	linkBytes, _ := json.Marshal(x)
+	return string(linkBytes)
+}
+
+func (x *Link) DecodeRedisString(src string) {
+	json.Unmarshal([]byte(src), x)
 }
 
 type Links []Link
@@ -175,10 +263,10 @@ func ValidNumbers(numbers ...uint8) bool {
 	return true
 }
 
-type ID struct {
-	Project string `json:"project"`
-	Name    string `json:"part_name"`
-	Number  uint8  `json:"part_number"`
+type ID struct { // this can be a redis hash
+	Project string `json:"project" redis:"project"`
+	Name    string `json:"part_name" redis:"part_name"`
+	Number  uint8  `json:"part_number" redis:"part_number"`
 }
 
 func (id ID) String() string {

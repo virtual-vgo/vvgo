@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strings"
 	"testing"
 )
 
@@ -159,38 +158,6 @@ func TestNewObject(t *testing.T) {
 		[]byte(`<!doctype html></html>`),
 	)
 	assert.Equal(t, wantObject, gotObject)
-}
-
-func TestNewJSONObject(t *testing.T) {
-	wantObject := &Object{
-		ContentType: "application/json",
-		Bytes:       []byte(`["the", "earth", "is", "flat"]`),
-	}
-	gotObject := NewJSONObject([]byte(`["the", "earth", "is", "flat"]`))
-	assert.Equal(t, wantObject, gotObject)
-}
-
-func TestWithBackup(t *testing.T) {
-	ctx := context.Background()
-	calls := 0
-	putObjectFunc := func(ctx context.Context, gotName string, object *Object) error {
-		defer func() { calls++ }()
-		t.Log("call:", calls, "| got name:", gotName)
-		// first time, we should get the backup name
-		switch calls {
-		case 0:
-			// first time, we should get the backup name
-			assert.True(t, strings.HasPrefix(gotName, "test-data.json-"), gotName)
-		case 1:
-			// second time, we should get the normal name
-			assert.Equal(t, "test-data.json", gotName)
-		default:
-			t.Errorf("too many function calls")
-		}
-		return nil
-	}
-	object := NewObject("application/json", nil, []byte(`[]`))
-	WithBackup(putObjectFunc)(ctx, "test-data.json", object)
 }
 
 func TestBucket_NoOp(t *testing.T) {

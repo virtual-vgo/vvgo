@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/locker"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -27,20 +26,19 @@ type ServerConfig struct {
 type StorageConfig struct {
 	SheetsBucketName string `split_words:"true" default:"sheets"`
 	ClixBucketName   string `split_words:"true" default:"clix"`
-	PartsBucketName  string `split_words:"true" default:"parts"`
-	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
 	TracksBucketName string `split_words:"true" default:"tracks"`
+	RedisNamespace   string `split_words:"true" default:"local"`
 }
 
 type Storage struct {
 	StorageConfig
-	Parts  *parts.Parts
+	Parts  *parts.RedisParts
 	Sheets *storage.Bucket
 	Clix   *storage.Bucket
 	Tracks *storage.Bucket
 }
 
-func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *storage.Warehouse, config StorageConfig) *Storage {
+func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := warehouse.NewBucket(ctx, bucketName)
 		if err != nil {
@@ -49,31 +47,14 @@ func NewStorage(ctx context.Context, locksmith *locker.Locksmith, warehouse *sto
 		return bucket
 	}
 
-	sheetsBucket := newBucket(ctx, config.SheetsBucketName)
-	clixBucket := newBucket(ctx, config.ClixBucketName)
-	tracksBucket := newBucket(ctx, config.TracksBucketName)
-	partsCache := storage.NewCache(storage.CacheOpts{Bucket: newBucket(ctx, config.PartsBucketName)})
-	partsLocker := locksmith.NewLocker(locker.Opts{RedisKey: config.PartsLockerKey})
-
-	return &Storage{
+	db := Storage{
 		StorageConfig: config,
-		Parts: &parts.Parts{
-			Cache:  partsCache,
-			Locker: partsLocker,
-		},
-		Sheets: sheetsBucket,
-		Clix:   clixBucket,
-		Tracks: tracksBucket,
+		Sheets:        newBucket(ctx, config.SheetsBucketName),
+		Clix:          newBucket(ctx, config.ClixBucketName),
+		Tracks:        newBucket(ctx, config.TracksBucketName),
+		Parts:         parts.NewParts(config.RedisNamespace + ":parts"),
 	}
-}
-
-func (x *Storage) Init(ctx context.Context) error {
-	if err := x.Parts.Init(ctx); err != nil {
-		return err
-	} else {
-		logger.Info("storage initialized")
-		return nil
-	}
+	return &db
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {
