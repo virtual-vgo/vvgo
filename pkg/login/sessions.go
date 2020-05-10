@@ -1,9 +1,11 @@
 package login
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
@@ -15,8 +17,7 @@ import (
 var ErrSessionNotFound = errors.New("session not found")
 
 // Store provides access to the map of session id's to access roles.
-// It can read and validate signed session cookies from incoming requests,
-// and create new signed cookies for authenticated users.
+// It can read and validate session cookies from incoming requests,
 type Store struct {
 	config Config
 }
@@ -54,6 +55,14 @@ func (x *Store) ReadSessionFromRequest(ctx context.Context, r *http.Request, des
 	return x.GetSession(ctx, cookie.Value, dest)
 }
 
+func (x *Store) DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
+	cookie, err := r.Cookie(x.config.CookieName)
+	if err != nil {
+		return nil
+	}
+	return x.DeleteSession(ctx, cookie.Value)
+}
+
 // NewCookie returns cookie with a cryptographically signed session payload.
 func (x *Store) NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http.Cookie, error) {
 	session, err := x.NewSession(ctx, src, expires)
@@ -81,10 +90,9 @@ func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Dura
 	}
 
 	key := x.config.Namespace + ":sessions:" + result
-	if err := redis.Do(ctx, redis.FlatCmd(nil, "HSET", key, src)); err != nil {
-		return "", err
-	}
-	if err := redis.Do(ctx, redis.Cmd(nil, "EXPIRE", key, strconv.Itoa(int(expires.Seconds())))); err != nil {
+	stringExpires := strconv.Itoa(int(expires.Seconds()))
+	srcBytes, _ := json.Marshal(src)
+	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, stringExpires, string(srcBytes))); err != nil {
 		return "", err
 	}
 	return result, nil
@@ -92,18 +100,19 @@ func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Dura
 
 // GetSession reads the login identity for the given session ID.
 func (x *Store) GetSession(ctx context.Context, id string, dest *Identity) error {
-	err := redis.Do(ctx, redis.Cmd(dest, "HGETALL", x.config.Namespace+":sessions:"+id))
+	var gotBytes []byte
+	err := redis.Do(ctx, redis.Cmd(&gotBytes, "GET", x.config.Namespace+":sessions:"+id))
 	switch {
 	case err != nil:
 		return err
-	case dest.Kind == "":
+	case len(gotBytes) == 0:
 		return ErrSessionNotFound
 	default:
-		return nil
+		return json.NewDecoder(bytes.NewReader(gotBytes)).Decode(dest)
 	}
 }
 
-// DeleteSession deletes the sessionID key from the map.
+// DeleteSession deletes the sessionID key from redis.
 func (x *Store) DeleteSession(ctx context.Context, id string) error {
 	return redis.Do(ctx, redis.Cmd(nil, "DEL", x.config.Namespace+":sessions:"+id))
 }

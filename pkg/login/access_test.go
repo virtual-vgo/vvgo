@@ -14,79 +14,42 @@ func TestRole_String(t *testing.T) {
 }
 
 func TestIdentity_HasRole(t *testing.T) {
-	type fields struct {
-		Kind  string
-		Roles string
-	}
-	type args struct {
-		role Role
-	}
-	for _, tt := range []struct {
-		name   string
-		fields fields
-		args   args
-		want   bool
-	}{
-		{
-			name:   "success",
-			fields: fields{Roles: "Tester"},
-			args:   args{"Tester"},
-			want:   true,
-		},
-		{
-			name:   "failure",
-			fields: fields{Roles: "Cheater"},
-			args:   args{"Tester"},
-			want:   false,
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			x := Identity{
-				Kind:  tt.fields.Kind,
-				Roles: tt.fields.Roles,
-			}
-			if got := x.HasRole(tt.args.role); got != tt.want {
-				t.Errorf("HasRole() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Run("success", func(t *testing.T) {
+		identity := Identity{Roles: []Role{"Tester"}}
+		assert.True(t, identity.HasRole("Tester"))
+	})
+	t.Run("failure", func(t *testing.T) {
+		identity := Identity{Roles: []Role{"Tester"}}
+		assert.False(t, identity.HasRole("Baker"))
+	})
 }
 
 func TestIdentity_Role(t *testing.T) {
-	type fields struct {
-		Kind  string
-		Roles string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   Role
-	}{
-		{
-			name:   "no roles",
-			fields: fields{Roles: ""},
-			want:   RoleAnonymous,
-		},
-		{
-			name:   "one role",
-			fields: fields{Roles: "Tester"},
-			want:   "Tester",
-		},
-		{
-			name:   "two roles",
-			fields: fields{Roles: "Tester:Cheater"},
-			want:   "Tester",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			x := Identity{
-				Kind:  tt.fields.Kind,
-				Roles: tt.fields.Roles,
-			}
-			if got := x.Role(); got != tt.want {
-				t.Errorf("Role() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Run("no roles", func(t *testing.T) {
+		identity := Identity{Roles: []Role{}}
+		assert.Equal(t, identity.Role(), RoleAnonymous)
+	})
+	t.Run("one role", func(t *testing.T) {
+		identity := Identity{Roles: []Role{"Tester"}}
+		assert.Equal(t, identity.Role(), Role("Tester"))
+	})
+	t.Run("two roles", func(t *testing.T) {
+		identity := Identity{Roles: []Role{"Tester", "Baker"}}
+		assert.Equal(t, identity.Role(), Role("Tester"))
+	})
+}
+
+func TestAnonymous(t *testing.T) {
+	assert.Equal(t, Anonymous(), anonymous)
+}
+
+func TestIdentity_IsAnonymous(t *testing.T) {
+	t.Run("no roles", func(t *testing.T) {
+		identity := Identity{Roles: []Role{}}
+		assert.True(t, identity.IsAnonymous())
+	})
+	t.Run("one role", func(t *testing.T) {
+		identity := Identity{Roles: []Role{"Tester"}}
+		assert.False(t, identity.IsAnonymous())
+	})
 }
