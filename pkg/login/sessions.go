@@ -63,7 +63,7 @@ func (x *Store) DeleteSessionFromRequest(ctx context.Context, r *http.Request) e
 	return x.DeleteSession(ctx, cookie.Value)
 }
 
-// NewCookie returns cookie with a cryptographically signed session payload.
+// NewCookie returns cookie with a crypto-rand session id.
 func (x *Store) NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http.Cookie, error) {
 	session, err := x.NewSession(ctx, src, expires)
 	if err != nil {
