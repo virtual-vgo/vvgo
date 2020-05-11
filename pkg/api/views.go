@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
@@ -10,13 +11,13 @@ import (
 	"strings"
 )
 
-type PartsHandler struct {
+type PartView struct {
 	NavBar
 	*Storage
 }
 
-func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "parts_handler")
+func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "parts_view")
 	defer span.Send()
 
 	if r.Method != http.MethodGet {
@@ -33,7 +34,13 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ReferenceTrack string `json:"reference_track"`
 	}
 
-	parts := x.Parts.List(ctx)
+	parts, err := x.Parts.List(ctx)
+	if err != nil {
+		logger.WithError(err).Error("x.Parts.List() failed")
+		internalServerError(w)
+		return
+	}
+
 	want := len(parts)
 	for i := 0; i < want; i++ {
 		if parts[i].Validate() == nil &&
@@ -58,7 +65,7 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	navBarOpts := x.NavBar.NewOpts(r)
+	navBarOpts := x.NavBar.NewOpts(ctx, r)
 	navBarOpts.PartsActive = true
 	page := struct {
 		Header template.HTML
@@ -83,12 +90,12 @@ func (x PartsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-type IndexHandler struct {
+type IndexView struct {
 	NavBar
 }
 
-func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, span := tracing.StartSpan(r.Context(), "parts_handler")
+func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "index_view")
 	defer span.Send()
 
 	if r.Method != http.MethodGet {
@@ -96,7 +103,7 @@ func (x IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	navBarOpts := x.NavBar.NewOpts(r)
+	navBarOpts := x.NavBar.NewOpts(ctx, r)
 	page := struct {
 		Header template.HTML
 		NavBar template.HTML
@@ -129,7 +136,7 @@ type NavBarRenderOpts struct {
 	PartsActive     bool
 }
 
-func (x NavBar) NewOpts(r *http.Request) NavBarRenderOpts {
+func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
 	var opts NavBarRenderOpts
 	user, _, _ := r.BasicAuth()
 	switch user {

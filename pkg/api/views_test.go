@@ -19,50 +19,48 @@ import (
 	"time"
 )
 
-func TestPartsHandler_ServeHTTP(t *testing.T) {
-	clixBucket := "clix"
-	sheetsBucket := "sheets"
-	mockBucket := MockBucket{getObject: func(ctx context.Context, name string, dest *storage.Object) bool {
-		if name == parts.DataFile {
-			parts := []parts.Part{
-				{
-					ID: parts.ID{
-						Project: "01-snake-eater",
-						Name:    "trumpet",
-						Number:  3,
-					},
-					Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-					Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-				},
-				{
-					ID: parts.ID{
-						Project: "02-proof-of-a-hero",
-						Name:    "trumpet",
-						Number:  3,
-					},
-					Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-					Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-				},
-			}
-			var buffer bytes.Buffer
-			json.NewEncoder(&buffer).Encode(parts)
-			*dest = storage.Object{
-				ContentType: "application/json",
-				Buffer:      buffer,
-			}
-		}
-		return true
-	}}
+func TestPartsView_ServeHTTP(t *testing.T) {
+	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
+	require.NoError(t, err, "storage.NewWarehouse")
 
-	server := PartsHandler{NavBar{}, &Storage{
-		Parts:  parts.Parts{Bucket: &mockBucket},
-		Sheets: &mockBucket,
-		Clix:   &mockBucket,
-		ServerConfig: ServerConfig{
-			SheetsBucketName: sheetsBucket,
-			ClixBucketName:   clixBucket,
+	ctx := context.Background()
+	bucket, err := warehouse.NewBucket(ctx, "testing")
+	require.NoError(t, err, "storage.NewBucket")
+	handlerStorage := Storage{
+		Parts:  newParts(),
+		Sheets: bucket,
+		Clix:   bucket,
+		Tracks: bucket,
+		StorageConfig: StorageConfig{
+			SheetsBucketName: "sheets",
+			ClixBucketName:   "clix",
+			TracksBucketName: "tracks",
 		},
-	}}
+	}
+
+	// load the cache with some dummy data
+	handlerStorage.Parts.Save(ctx, []parts.Part{
+		{
+			ID: parts.ID{
+				Project: "01-snake-eater",
+				Name:    "trumpet",
+				Number:  3,
+			},
+			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+		},
+		{
+			ID: parts.ID{
+				Project: "02-proof-of-a-hero",
+				Name:    "trumpet",
+				Number:  3,
+			},
+			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+		},
+	})
+
+	server := PartView{NavBar{}, &handlerStorage}
 
 	t.Run("accept:application/json", func(t *testing.T) {
 		var wantBody bytes.Buffer
@@ -117,14 +115,14 @@ func TestPartsHandler_ServeHTTP(t *testing.T) {
 	})
 }
 
-func TestIndexHandler_ServeHTTP(t *testing.T) {
+func TestIndexView_ServeHTTP(t *testing.T) {
 	wantCode := http.StatusOK
 	wantBytes, err := ioutil.ReadFile("testdata/index.html")
 	if err != nil {
 		t.Fatalf("ioutil.ReadFile() failed: %v", err)
 	}
 
-	server := IndexHandler{}
+	server := IndexView{}
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	server.ServeHTTP(recorder, request)

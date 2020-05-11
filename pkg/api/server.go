@@ -17,50 +17,44 @@ var PublicFiles = "public"
 type ServerConfig struct {
 	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
 	MaxContentLength int64  `split_words:"true" default:"10000000"`
-	SheetsBucketName string `split_words:"true" default:"sheets"`
-	ClixBucketName   string `split_words:"true" default:"clix"`
-	PartsBucketName  string `split_words:"true" default:"parts"`
-	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
-	TracksBucketName string `split_words:"true" default:"tracks"`
 	MemberUser       string `split_words:"true" default:"admin"`
 	MemberPass       string `split_words:"true" default:"admin"`
 	PrepRepToken     string `split_words:"true" default:"admin"`
 	AdminToken       string `split_words:"true" default:"admin"`
 }
 
-type FileBucket interface {
-	PutFile(ctx context.Context, file *storage.File) bool
-	DownloadURL(ctx context.Context, name string) (string, error)
+type StorageConfig struct {
+	SheetsBucketName string `split_words:"true" default:"sheets"`
+	ClixBucketName   string `split_words:"true" default:"clix"`
+	TracksBucketName string `split_words:"true" default:"tracks"`
+	RedisNamespace   string `split_words:"true" default:"local"`
 }
 
 type Storage struct {
-	parts.Parts
-	Sheets FileBucket
-	Clix   FileBucket
-	Tracks FileBucket
-	ServerConfig
+	StorageConfig
+	Parts  *parts.RedisParts
+	Sheets *storage.Bucket
+	Clix   *storage.Bucket
+	Tracks *storage.Bucket
 }
 
-func NewStorage(client *storage.Client, config ServerConfig) *Storage {
-	sheetsBucket := client.NewBucket(config.SheetsBucketName)
-	clixBucket := client.NewBucket(config.ClixBucketName)
-	partsBucket := client.NewBucket(config.PartsBucketName)
-	partsLocker := client.NewLocker(config.PartsLockerKey)
-	tracksBucket := client.NewBucket(config.TracksBucketName)
-	if sheetsBucket == nil || clixBucket == nil || partsBucket == nil || partsLocker == nil {
-		return nil
+func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
+	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
+		bucket, err := warehouse.NewBucket(ctx, bucketName)
+		if err != nil {
+			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("warehouse.NewBucket() failed")
+		}
+		return bucket
 	}
 
-	return &Storage{
-		Parts: parts.Parts{
-			Bucket: partsBucket,
-			Locker: partsLocker,
-		},
-		Sheets:       sheetsBucket,
-		Clix:         clixBucket,
-		Tracks:       tracksBucket,
-		ServerConfig: config,
+	db := Storage{
+		StorageConfig: config,
+		Sheets:        newBucket(ctx, config.SheetsBucketName),
+		Clix:          newBucket(ctx, config.ClixBucketName),
+		Tracks:        newBucket(ctx, config.TracksBucketName),
+		Parts:         parts.NewParts(config.RedisNamespace + ":parts"),
 	}
+	return &db
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {
@@ -86,14 +80,14 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
 
-	partsHandler := members.Authenticate(&PartsHandler{NavBar: navBar, Storage: database})
+	partsHandler := members.Authenticate(&PartView{NavBar: navBar, Storage: database})
 	mux.Handle("/parts", partsHandler)
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
-		config.SheetsBucketName: database.Sheets.DownloadURL,
-		config.ClixBucketName:   database.Clix.DownloadURL,
-		config.TracksBucketName: database.Tracks.DownloadURL,
+		database.SheetsBucketName: database.Sheets.DownloadURL,
+		database.ClixBucketName:   database.Clix.DownloadURL,
+		database.TracksBucketName: database.Tracks.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 
@@ -107,7 +101,7 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexHandler{NavBar: navBar}.ServeHTTP(w, r)
+			IndexView{NavBar: navBar}.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}

@@ -178,27 +178,8 @@ func TestUpload_Validate(t *testing.T) {
 }
 
 func TestUploadHandler_ServeHTTP(t *testing.T) {
-
-	// all the mocks always return true
-	mocks := struct {
-		bucket MockBucket
-		locker MockLocker
-	}{
-		bucket: MockBucket{
-			getObject: func(ctx context.Context, name string, object *storage.Object) bool {
-				*object = storage.Object{ContentType: "", Buffer: *bytes.NewBuffer([]byte(`[]`))}
-				return true
-			},
-			putObject: func(context.Context, string, *storage.Object) bool { return true },
-			putFile: func(ctx context.Context, file *storage.File) bool {
-				return true
-			},
-		},
-		locker: MockLocker{
-			lock:   func(ctx context.Context) bool { return true },
-			unlock: func(ctx context.Context) {},
-		},
-	}
+	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
+	require.NoError(t, err, "storage.NewWarehouse()")
 
 	// read test data from files
 	var sheetBytes, clickBytes bytes.Buffer
@@ -255,7 +236,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 	require.NoError(t, gob.NewEncoder(&wantStatusGob).Encode(wantStatus), "gob.Encode()")
 	require.NoError(t, json.NewEncoder(&wantStatusJSON).Encode(wantStatus), "json.Encode()")
 	gzipWriter := gzip.NewWriter(&uploadGobGzip)
-	_, err := gzipWriter.Write(uploadGob.Bytes())
+	_, err = gzipWriter.Write(uploadGob.Bytes())
 	require.NoError(t, err, "gzip.Write()")
 	require.NoError(t, gzipWriter.Close(), "gzip.Close()")
 
@@ -331,19 +312,28 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
+
+			ctx := context.Background()
+			bucket, err := warehouse.NewBucket(ctx, "testing")
+			require.NoError(t, err, "storage.NewBucket")
+			handlerStorage := Storage{
+				Parts:  newParts(),
+				Sheets: bucket,
+				Clix:   bucket,
+				Tracks: bucket,
+				StorageConfig: StorageConfig{
+					SheetsBucketName: "sheets",
+					ClixBucketName:   "clix",
+					TracksBucketName: "tracks",
+				},
+			}
+
 			request := httptest.NewRequest(tt.request.method, "/upload", &tt.request.body)
 			request.Header.Set("Content-Type", tt.request.mediaType)
 			request.Header.Set("Content-Encoding", tt.request.encoding)
 			request.Header.Set("Accept", tt.request.accept)
 			recorder := httptest.NewRecorder()
-			UploadHandler{&Storage{
-				Parts: parts.Parts{
-					Bucket: &mocks.bucket,
-					Locker: &mocks.locker,
-				},
-				Sheets: &mocks.bucket,
-				Clix:   &mocks.bucket,
-			}}.ServeHTTP(recorder, request)
+			UploadHandler{&handlerStorage}.ServeHTTP(recorder, request)
 			resp := recorder.Result()
 			var respBody bytes.Buffer
 			respBody.ReadFrom(resp.Body)
