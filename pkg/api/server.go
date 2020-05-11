@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -19,23 +20,25 @@ type ServerConfig struct {
 	MaxContentLength int64  `split_words:"true" default:"10000000"`
 	MemberUser       string `split_words:"true" default:"admin"`
 	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
+	UploaderToken    string `split_words:"true" default:"admin"`
+	DeveloperToken   string `split_words:"true" default:"admin"`
 }
 
 type StorageConfig struct {
-	SheetsBucketName string `split_words:"true" default:"sheets"`
-	ClixBucketName   string `split_words:"true" default:"clix"`
-	TracksBucketName string `split_words:"true" default:"tracks"`
-	RedisNamespace   string `split_words:"true" default:"local"`
+	SheetsBucketName string       `split_words:"true" default:"sheets"`
+	ClixBucketName   string       `split_words:"true" default:"clix"`
+	TracksBucketName string       `split_words:"true" default:"tracks"`
+	RedisNamespace   string       `split_words:"true" default:"local"`
+	SessionsConfig   login.Config `envconfig:"sessions"`
 }
 
 type Storage struct {
 	StorageConfig
-	Parts  *parts.RedisParts
-	Sheets *storage.Bucket
-	Clix   *storage.Bucket
-	Tracks *storage.Bucket
+	Parts    *parts.RedisParts
+	Sheets   *storage.Bucket
+	Clix     *storage.Bucket
+	Tracks   *storage.Bucket
+	Sessions *login.Store
 }
 
 func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
@@ -52,64 +55,74 @@ func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config Storag
 		Sheets:        newBucket(ctx, config.SheetsBucketName),
 		Clix:          newBucket(ctx, config.ClixBucketName),
 		Tracks:        newBucket(ctx, config.TracksBucketName),
-		Parts:         parts.NewParts(config.RedisNamespace + ":parts"),
+		Parts:         parts.NewParts(config.RedisNamespace),
+		Sessions:      login.NewStore(config.RedisNamespace, config.SessionsConfig),
 	}
 	return &db
 }
 
 func NewServer(config ServerConfig, database *Storage) *http.Server {
-	navBar := NavBar{MemberUser: config.MemberUser}
-	members := BasicAuth{config.MemberUser: config.MemberPass}
-	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
-	admin := TokenAuth{config.AdminToken}
+	rbacMux := RBACMux{
+		Basic: map[[2]string][]login.Role{
+			{config.MemberUser, config.MemberPass}: {login.RoleVVGOMember},
+		},
+		Bearer: map[string][]login.Role{
+			config.UploaderToken:  {login.RoleVVGOUploader, login.RoleVVGOMember},
+			config.DeveloperToken: {login.RoleVVGODeveloper, login.RoleVVGOMember},
+		},
+		Sessions: database.Sessions,
+		ServeMux: http.NewServeMux(),
+	}
 
-	mux := http.NewServeMux()
+	rbacMux.Handle("/login", LoginView{
+		Sessions: database.Sessions,
+	}, login.RoleAnonymous)
 
-	mux.Handle("/auth",
-		prepRep.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("authenticated"))
-		})),
-	)
+	rbacMux.Handle("/login/password", PasswordLoginHandler{
+		Sessions: database.Sessions,
+		Logins: map[[2]string][]login.Role{
+			{config.MemberUser, config.MemberPass}: {login.RoleVVGOMember},
+		},
+	}, login.RoleAnonymous)
+
+	rbacMux.Handle("/logout", LogoutHandler{Sessions: database.Sessions}, login.RoleAnonymous)
+
+	rbacMux.Handle("/auth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("authenticated"))
+	}), login.RoleVVGOMember)
 
 	// debug endpoints from net/http/pprof
-	pprofMux := http.NewServeMux()
-	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
-	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
+	rbacMux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGODeveloper)
+	rbacMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGODeveloper)
+	rbacMux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGODeveloper)
+	rbacMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
+	rbacMux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
 
-	partsHandler := members.Authenticate(&PartView{NavBar: navBar, Storage: database})
-	mux.Handle("/parts", partsHandler)
-	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
+	rbacMux.Handle("/parts", PartView{Storage: database}, login.RoleVVGOMember)
 
-	downloadHandler := members.Authenticate(&DownloadHandler{
+	rbacMux.Handle("/download", DownloadHandler{
 		database.SheetsBucketName: database.Sheets.DownloadURL,
 		database.ClixBucketName:   database.Clix.DownloadURL,
 		database.TracksBucketName: database.Tracks.DownloadURL,
-	})
-	mux.Handle("/download", members.Authenticate(downloadHandler))
+	}, login.RoleVVGOMember)
 
 	// Uploads
-	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
-	mux.Handle("/upload", uploadHandler)
+	rbacMux.Handle("/upload", UploadHandler{
+		Storage: database,
+	}, login.RoleVVGOUploader)
 
-	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))
-	mux.Handle("/login", loginHandler)
-
-	mux.Handle("/version", http.HandlerFunc(Version))
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	rbacMux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
+	rbacMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexView{NavBar: navBar}.ServeHTTP(w, r)
+			IndexView{}.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}
-	}))
+	}, login.RoleAnonymous)
 
 	return &http.Server{
 		Addr:     config.ListenAddress,
-		Handler:  tracing.WrapHandler(mux),
+		Handler:  tracing.WrapHandler(&rbacMux),
 		ErrorLog: log.StdLogger(),
 	}
 }

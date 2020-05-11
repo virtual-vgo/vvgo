@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/gob"
 	"io/ioutil"
 	"net/http"
@@ -31,15 +32,12 @@ func TestClient_Upload(t *testing.T) {
 	var gotRequest *http.Request
 	var gotAuthorized bool
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotRequest = r
-		auth := TokenAuth{"Dio Brando"}
-		auth.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotAuthorized = true
-			gob.NewEncoder(w).Encode([]UploadStatus{{
-				FileName: "Dio_Brando.pdf",
-				Code:     http.StatusOK,
-			}})
-		})).ServeHTTP(w, r)
+		gotRequest = r.Clone(context.Background())
+		gotAuthorized = true
+		gob.NewEncoder(w).Encode([]UploadStatus{{
+			FileName: "Dio_Brando.pdf",
+			Code:     http.StatusOK,
+		}})
 	}))
 	defer ts.Close()
 	client.Client.ServerAddress = ts.URL
