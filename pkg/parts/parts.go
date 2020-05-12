@@ -29,6 +29,22 @@ func NewParts(namespace string) *RedisParts {
 	return &RedisParts{namespace: namespace}
 }
 
+func (x *RedisParts) DeleteAll(ctx context.Context) error {
+	localCtx, span := tracing.StartSpan(ctx, "RedisParts.List()")
+	defer span.Send()
+	partKeys, err := x.readIndex(localCtx)
+	if err != nil {
+		return err
+	}
+
+	allKeys := make([]string, 0, 1+3*len(partKeys))
+	allKeys = append(allKeys, x.namespace+":parts:index")
+	for _, key := range partKeys {
+		allKeys = append(allKeys, key, key+":sheets", key+":clix")
+	}
+	return redis.Do(localCtx, redis.Cmd(nil, "DEL", allKeys...))
+}
+
 // List returns a slice of all parts in the database.
 // If the first request to redis fails, this function will return an error.
 // Subsequent errors will only be logged.
