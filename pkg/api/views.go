@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
@@ -10,6 +11,38 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+type LoginView struct {
+	NavBar   NavBar
+	Sessions *login.Store
+}
+
+func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "login_view")
+	defer span.Send()
+
+	var identity login.Identity
+	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil && !identity.IsAnonymous() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
+	opts := x.NavBar.NewOpts(ctx, r)
+	page := struct {
+		Header template.HTML
+		NavBar template.HTML
+	}{
+		Header: Header(),
+		NavBar: x.NavBar.RenderHTML(opts),
+	}
+
+	var buf bytes.Buffer
+	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	buf.WriteTo(w)
+}
 
 type PartView struct {
 	NavBar

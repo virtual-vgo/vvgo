@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
@@ -18,6 +19,46 @@ import (
 	"testing"
 	"time"
 )
+
+func TestLoginView_ServeHTTP(t *testing.T) {
+	t.Run("not logged in", func(t *testing.T) {
+		wantCode := http.StatusOK
+		wantBytes, err := ioutil.ReadFile("testdata/login.html")
+		if err != nil {
+			t.Fatalf("ioutil.ReadFile() failed: %v", err)
+		}
+
+		server := LoginView{Sessions: newSessions()}
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+		server.ServeHTTP(recorder, request)
+		gotResp := recorder.Result()
+		if expected, got := wantCode, gotResp.StatusCode; expected != got {
+			t.Errorf("expected code %v, got %v", expected, got)
+		}
+		assertEqualHtml(t, wantBytes, recorder)
+	})
+
+	t.Run("logged in", func(t *testing.T) {
+		ctx := context.Background()
+
+		server := LoginView{Sessions: newSessions()}
+
+		cookie, err := server.Sessions.NewCookie(ctx, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}}, 600*time.Second)
+		require.NoError(t, err, "sessions.NewCookie()")
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+		request.AddCookie(cookie)
+		server.ServeHTTP(recorder, request)
+		gotResp := recorder.Result()
+		if expected, got := http.StatusFound, gotResp.StatusCode; expected != got {
+			t.Errorf("expected code %v, got %v", expected, got)
+		}
+		assertEqualHtml(t, []byte("<a href=/>Found</a>."), recorder)
+	})
+}
 
 func TestPartsView_ServeHTTP(t *testing.T) {
 	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
@@ -98,20 +139,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/sheets", nil)
 		request.Header.Set("Accept", "text/html")
 		server.ServeHTTP(recorder, request)
-
-		wantRaw, gotRaw := strings.TrimSpace(wantBody.String()), strings.TrimSpace(recorder.Body.String())
-		m := minify.New()
-		m.AddFunc("text/html", html.Minify)
-		var wantMin bytes.Buffer
-		err = m.Minify("text/html", &wantMin, &wantBody)
-		require.NoError(t, err, "m.Minify")
-		var gotMin bytes.Buffer
-		err = m.Minify("text/html", &gotMin, recorder.Body)
-		assert.NoError(t, err, "m.Minify")
-		if !assert.Equal(t, wantMin.String(), gotMin.String(), "body") {
-			t.Logf("Expected body:\n%s\n", wantRaw)
-			t.Logf("Got body:\n%s\n", gotRaw)
-		}
+		assertEqualHtml(t, wantBody.Bytes(), recorder)
 	})
 }
 
@@ -130,7 +158,10 @@ func TestIndexView_ServeHTTP(t *testing.T) {
 	if expected, got := wantCode, gotResp.StatusCode; expected != got {
 		t.Errorf("expected code %v, got %v", expected, got)
 	}
+	assertEqualHtml(t, wantBytes, recorder)
+}
 
+func assertEqualHtml(t *testing.T, wantBytes []byte, recorder *httptest.ResponseRecorder) {
 	m := minify.New()
 	m.AddFunc("text/html", html.Minify)
 	var gotBuf bytes.Buffer

@@ -26,7 +26,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	t.Run("post/failure", func(t *testing.T) {
 		ts := httptest.NewServer(&loginHandler)
 		defer ts.Close()
-		loginHandler.Sessions = newSessions(strings.TrimPrefix(ts.URL, "http://"))
+		loginHandler.Sessions = newSessions()
 
 		urlValues := make(url.Values)
 		urlValues.Add("user", "vvgo-user")
@@ -43,7 +43,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		ctx := context.Background()
 		ts := httptest.NewServer(&loginHandler)
 		defer ts.Close()
-		loginHandler.Sessions = newSessions(strings.TrimPrefix(ts.URL, "http://"))
+		loginHandler.Sessions = newSessions()
 
 		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 		require.NoError(t, err, "cookiejar.New")
@@ -79,7 +79,7 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 
 	ts := httptest.NewServer(&logoutHandler)
 	defer ts.Close()
-	logoutHandler.Sessions = newSessions(strings.TrimPrefix(ts.URL, "http://"))
+	logoutHandler.Sessions = newSessions()
 
 	// create a session and cookie
 	cookie, err := logoutHandler.Sessions.NewCookie(ctx, &login.Identity{
