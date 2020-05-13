@@ -1,14 +1,9 @@
 package api
 
 import (
-	"crypto/rand"
-	"encoding/binary"
-	"errors"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -74,48 +69,4 @@ func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
 			unauthorized(w)
 		}
 	})
-}
-
-type Token [4]uint64
-
-var ErrInvalidToken = errors.New("invalid token")
-
-func NewToken() Token {
-	var token Token
-	for i := range token {
-		binary.Read(rand.Reader, binary.LittleEndian, &token[i])
-	}
-	return token
-}
-
-func (token Token) String() string {
-	var got [len(token)]string
-	for i := range token {
-		got[i] = fmt.Sprintf("%016x", token[i])
-	}
-	return strings.Join(got[:], "-")
-}
-
-func DecodeToken(tokenString string) (Token, error) {
-	tokenParts := strings.Split(tokenString, "-")
-	var token Token
-	if len(tokenParts) != len(token) {
-		return Token{}, ErrInvalidToken
-	}
-	for i := range token {
-		if len(tokenParts[i]) != 16 {
-			return Token{}, ErrInvalidToken
-		}
-		token[i], _ = strconv.ParseUint(tokenParts[i], 16, 64)
-	}
-	return token, token.Validate()
-}
-
-func (token Token) Validate() error {
-	for i := range token {
-		if token[i] == 0 {
-			return ErrInvalidToken
-		}
-	}
-	return nil
 }
