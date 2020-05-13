@@ -1,0 +1,29 @@
+version: "3.7"
+services:
+  minio:
+    image: minio/minio
+    command: server /data
+    ports:
+      - target: 9000
+        published: 9000
+        protocol: tcp
+        mode: host
+
+  redis:
+    image: redis:5.0.8
+    ports:
+      - target: 6379
+        published: 6379
+        protocol: tcp
+        mode: host
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - target: 8081
+        published: 8081
+        protocol: tcp
+        mode: host

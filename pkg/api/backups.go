@@ -1,15 +1,22 @@
 package api
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
+	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
+	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
-	"strconv"
+	"time"
 )
 
 type BackupDocument struct {
-	Parts []parts.Part
+	Timestamp time.Time       `json:"timestamp"`
+	Parts     []parts.Part    `json:"parts"`
+	Version   json.RawMessage `json:"version"`
 }
 
 type BackupHandler struct {
@@ -25,14 +32,13 @@ func (x BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gotParts, err := x.Parts.List(ctx)
+	document, err := x.Backup(ctx)
 	if err != nil {
-		logger.WithError(err).Error("Parts.List() failed")
+		logger.WithError(err).Error("Backup() failed")
 		internalServerError(w)
 		return
 	}
-
-	jsonEncode(w, &BackupDocument{Parts: gotParts})
+	jsonEncode(w, &document)
 }
 
 type RestoreHandler struct {
@@ -48,24 +54,71 @@ func (x RestoreHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check if we should truncate existing dbs
-	if truncateParts, _ := strconv.ParseBool(r.FormValue("truncate_parts")); truncateParts {
-		if err := x.Parts.DeleteAll(ctx); err != nil {
-			logger.WithError(err).Error("Parts.DeleteAll() failed")
-			internalServerError(w)
-		}
+	// read the request body
+	var buf bytes.Buffer
+	if ok := readBody(&buf, r); !ok {
+		badRequest(w, "invalid body")
+		return
 	}
 
-	// parse the document
+	// read the document
 	var document BackupDocument
-	if err := json.NewDecoder(r.Body).Decode(&document); err != nil {
+	if err := json.NewDecoder(&buf).Decode(&document); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
 		badRequest(w, err.Error())
+		return
 	}
 
-	// save the new parts
-	if err := x.Parts.Save(ctx, document.Parts); err != nil {
-		logger.WithError(err).Error("Parts.Save() failed")
+	if err := x.Restore(ctx, document); err != nil {
+		logger.WithError(err).Error("Restore() failed")
 		internalServerError(w)
+		return
 	}
+}
+
+func (x *Storage) Backup(ctx context.Context) (BackupDocument, error) {
+	gotParts, err := x.Parts.List(ctx)
+	if err != nil {
+		return BackupDocument{}, fmt.Errorf("parts.List() failed: %w", err)
+	}
+	return BackupDocument{
+		Timestamp: time.Now(),
+		Parts:     gotParts,
+		Version:   version.JSON(),
+	}, nil
+}
+
+func (x *Storage) Restore(ctx context.Context, src BackupDocument) error {
+	// truncate existing dbs
+	if err := x.Parts.DeleteAll(ctx); err != nil {
+		return fmt.Errorf("parts.DeleteAll() failed: %w", err)
+	}
+	// save the new parts
+	if err := x.Parts.Save(ctx, src.Parts); err != nil {
+		return fmt.Errorf("parts.Save() failed: %w", err)
+	}
+	return nil
+}
+
+func BackupToBucket(ctx context.Context, db *Storage, bucket *storage.Bucket) error {
+	// make the backup
+	backup, err := db.Backup(ctx)
+	if err != nil {
+		return err
+	}
+
+	backupBytes, err := json.Marshal(&backup)
+	if err != nil {
+		return fmt.Errorf("json.Marshal() failed: %w", err)
+	}
+
+	obj := storage.Object{
+		ContentType: "application/json",
+		Tags: map[string]string{
+			"api_version": version.String(),
+		},
+		Bytes: backupBytes,
+	}
+	name := "dump." + backup.Timestamp.Format(time.RFC3339) + ".json.gz"
+	return bucket.PutObject(ctx, name, &obj)
 }
