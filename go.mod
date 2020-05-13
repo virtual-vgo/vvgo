@@ -12,5 +12,6 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/tdewolff/minify/v2 v2.7.3
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d // indirect
 )
