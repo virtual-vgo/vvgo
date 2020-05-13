@@ -71,11 +71,17 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a login session
-	x.Sessions.NewCookie(ctx, &login.Identity{
+	cookie, err := x.Sessions.NewCookie(ctx, &login.Identity{
 		Kind:  login.KindDiscord,
 		Roles: []login.Role{login.RoleVVGOMember},
 	}, DiscordLoginExpires)
+	if err != nil {
+		logger.WithError(err).Error("sessions.NewCookie() failed")
+		internalServerError(w)
+		return
+	}
 
 	// redirect to home
+	http.SetCookie(w, cookie)
 	http.Redirect(w, r, "/", http.StatusFound)
 }

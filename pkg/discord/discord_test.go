@@ -13,7 +13,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	ctx := context.Background()
 	client := Client{
 		config: Config{
-			BotAuthToken:      "test-bot-auth-token",
+			BotAuthToken: "test-bot-auth-token",
 		},
 	}
 	token := &OAuthToken{
@@ -54,7 +54,7 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	ctx := context.Background()
 	client := Client{
 		config: Config{
-			BotAuthToken:      "test-bot-auth-token",
+			BotAuthToken: "test-bot-auth-token",
 		},
 	}
 

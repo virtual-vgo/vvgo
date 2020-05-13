@@ -24,7 +24,7 @@ func NewClient(config Config) *Client {
 	return &Client{config: config}
 }
 
-var ErrInvalidOAuthCode = errors.New("invalid oauth code")
+var ErrNon200Response = errors.New("non-200 response from discord")
 
 // Config for discord requests.
 type Config struct {
@@ -142,8 +142,10 @@ func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, erro
 		logger.WithError(err).Error("tracing.DoHttpRequest() failed")
 
 	case resp.StatusCode != http.StatusOK:
+		err = ErrNon200Response
 		var buf bytes.Buffer
 		buf.ReadFrom(resp.Body)
+
 		logger.WithFields(logrus.Fields{
 			"method": req.Method,
 			"status": resp.StatusCode,
