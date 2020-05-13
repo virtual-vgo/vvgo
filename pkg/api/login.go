@@ -8,9 +8,13 @@ import (
 	"time"
 )
 
+// PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.
+// If the user pass combo exists in the map, then a login cookie with the mapped roles is create and sent in the response.
 type PasswordLoginHandler struct {
 	Sessions *login.Store
-	Logins   map[[2]string][]login.Role
+
+	// Logins is a map of login user and pass to a slice of roles for that login.
+	Logins map[[2]string][]login.Role
 }
 
 func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +64,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+// LogoutHandler deletes the login session from the incoming request, if it exists.
 type LogoutHandler struct {
 	Sessions *login.Store
 }
