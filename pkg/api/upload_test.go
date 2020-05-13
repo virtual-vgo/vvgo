@@ -178,7 +178,7 @@ func TestUpload_Validate(t *testing.T) {
 }
 
 func TestUploadHandler_ServeHTTP(t *testing.T) {
-	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
+	warehouse, err := storage.NewWarehouse(storage.Config{})
 	require.NoError(t, err, "storage.NewWarehouse()")
 
 	// read test data from files

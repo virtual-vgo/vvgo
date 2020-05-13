@@ -29,10 +29,6 @@ type Warehouse struct {
 }
 
 type Config struct {
-	// If this is enabled, the low-level api methods StatObject, GetObject, and PutObject will make no rpc calls
-	// and always return nil. DownloadURL will always return "#", nil.
-	NoOp bool
-
 	// Minio config used to build the minio client.
 	Minio MinioConfig `envconfig:"minio"`
 }
@@ -48,10 +44,6 @@ type MinioConfig struct {
 // Returns a new warehouse that build buckets.
 func NewWarehouse(config Config) (*Warehouse, error) {
 	client := Warehouse{config: config}
-	if config.NoOp {
-		return &client, nil
-	}
-
 	var err error
 	client.minioClient, err = minio.New(config.Minio.Endpoint, config.Minio.AccessKey, config.Minio.SecretKey, config.Minio.UseSSL)
 	if err != nil {
@@ -63,7 +55,6 @@ func NewWarehouse(config Config) (*Warehouse, error) {
 // Buckets are an abstraction on top of the minio client for object storage
 type Bucket struct {
 	Name        string
-	noOp        bool
 	minioRegion string
 	minioClient *minio.Client
 }
@@ -71,12 +62,8 @@ type Bucket struct {
 func (x *Warehouse) NewBucket(ctx context.Context, name string) (*Bucket, error) {
 	bucket := Bucket{
 		Name:        name,
-		noOp:        x.config.NoOp,
 		minioRegion: x.config.Minio.Region,
 		minioClient: x.minioClient,
-	}
-	if x.config.NoOp {
-		return &bucket, nil
 	}
 
 	_, span := x.newSpan(ctx, "warehouse_new_bucket")
@@ -179,6 +166,14 @@ type Object struct {
 	Bytes       []byte
 }
 
+type ObjectInfo struct {
+	Key          string    // Name of the object
+	LastModified time.Time // Date and time the object was last modified.
+	Size         int64     // Size in bytes of the object.
+	ContentType  string    // A standard MIME type describing the format of the object data.
+	Tags         map[string]string
+}
+
 func NewObject(mediaType string, tags map[string]string, payload []byte) *Object {
 	return &Object{
 		ContentType: mediaType,
@@ -187,12 +182,26 @@ func NewObject(mediaType string, tags map[string]string, payload []byte) *Object
 	}
 }
 
+func (x *Bucket) ListObjects(ctx context.Context, pre string) []ObjectInfo {
+	done := make(chan struct{})
+	defer close(done)
+	_, span := x.newSpan(ctx, "bucket_list_objects")
+	defer span.Send()
+	var info []ObjectInfo
+	for objectInfo := range x.minioClient.ListObjects(x.Name, pre, false, done) {
+		info = append(info, ObjectInfo{
+			Key:          objectInfo.Key,
+			LastModified: objectInfo.LastModified,
+			Size:         objectInfo.Size,
+			ContentType:  objectInfo.ContentType,
+			Tags:         objectInfo.UserMetadata,
+		})
+	}
+	return info
+}
+
 // StatObject queries object storage for the object content type and tags.
 func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object) error {
-	if x.noOp {
-		return nil
-	}
-
 	_, span := x.newSpan(ctx, "bucket_stat_object")
 	defer span.Send()
 	opts := minio.StatObjectOptions{}
@@ -210,10 +219,6 @@ func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object
 
 // Get object returns the full object payload.
 func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error {
-	if x.noOp {
-		return nil
-	}
-
 	_, span := x.newSpan(ctx, "bucket_get_object")
 	defer span.Send()
 	minioObject, err := x.minioClient.GetObject(x.Name, name, minio.GetObjectOptions{})
@@ -241,10 +246,6 @@ func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error
 
 // Put object uploads the object with the given key.
 func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) error {
-	if x.noOp {
-		return nil
-	}
-
 	ctx, span := x.newSpan(ctx, "bucket_put_object")
 	defer span.Send()
 	opts := minio.PutObjectOptions{
@@ -268,10 +269,6 @@ func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) err
 // If the object has a public download policy, then a direct link is returned.
 // Otherwise, this method will query object storage for a presigned url.
 func (x *Bucket) DownloadURL(ctx context.Context, name string) (string, error) {
-	if x.noOp {
-		return "#", nil
-	}
-
 	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
 	defer span.Send()
 	policy, err := x.minioClient.GetBucketPolicy(x.Name)

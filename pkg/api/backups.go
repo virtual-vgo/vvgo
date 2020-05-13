@@ -20,60 +20,77 @@ type BackupDocument struct {
 }
 
 type BackupHandler struct {
-	Storage
+	Database *Storage
 }
 
-func (x BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "backups_handler")
+func (x *BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "backup_admin_handler")
 	defer span.Send()
 
-	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
+	switch r.FormValue("cmd") {
+	case "backup":
+		if err := x.backupToBucket(ctx); err != nil {
+			logger.WithError(err).Error("backup failed")
+			internalServerError(w)
+			return
+		}
+	case "restore":
+		key := r.FormValue("object")
+		if key == "" {
+			badRequest(w, "missing form field `object`")
+			return
+		}
+		if err := x.restoreFromBucket(ctx, r.FormValue("object")); err != nil {
+			logger.WithError(err).Error("restore failed")
+			internalServerError(w)
+			return
+		}
+	default:
+		badRequest(w, "missing form field `cmd`")
 		return
 	}
 
-	document, err := x.Backup(ctx)
-	if err != nil {
-		logger.WithError(err).Error("Backup() failed")
-		internalServerError(w)
-		return
+	if acceptsType(r, "text/html") {
+		http.Redirect(w, r, "/backups", http.StatusFound)
 	}
-	jsonEncode(w, &document)
 }
 
-type RestoreHandler struct {
-	Storage
-}
-
-func (x RestoreHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "backups_handler")
-	defer span.Send()
-
-	if r.Method != http.MethodPost {
-		methodNotAllowed(w)
-		return
+func (x *BackupHandler) restoreFromBucket(ctx context.Context, objectName string) error {
+	var obj storage.Object
+	if err := x.Database.Backups.GetObject(ctx, objectName, &obj); err != nil {
+		return fmt.Errorf("backups.GetObject() failed: %w", err)
 	}
 
-	// read the request body
-	var buf bytes.Buffer
-	if ok := readBody(&buf, r); !ok {
-		badRequest(w, "invalid body")
-		return
-	}
-
-	// read the document
 	var document BackupDocument
-	if err := json.NewDecoder(&buf).Decode(&document); err != nil {
-		logger.WithError(err).Error("json.Decode() failed")
-		badRequest(w, err.Error())
-		return
+	if err := json.NewDecoder(bytes.NewReader(obj.Bytes)).Decode(&document); err != nil {
+		return fmt.Errorf("json.Decode() failed: %w", err)
+	}
+	if err := x.Database.Restore(ctx, document); err != nil {
+		return fmt.Errorf("database.Restore() failed: %w", err)
+	}
+	return nil
+}
+
+func (x *BackupHandler) backupToBucket(ctx context.Context) error {
+	backup, err := x.Database.Backup(ctx)
+	if err != nil {
+		return err
 	}
 
-	if err := x.Restore(ctx, document); err != nil {
-		logger.WithError(err).Error("Restore() failed")
-		internalServerError(w)
-		return
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(backup); err != nil {
+		return fmt.Errorf("json.Encode() failed: %w", err)
 	}
+
+	obj := storage.Object{
+		Bytes:       buf.Bytes(),
+		ContentType: "application/json",
+	}
+	name := "dump-" + backup.Timestamp.Format(time.RFC3339) + ".json"
+	if err := x.Database.Backups.PutObject(ctx, name, &obj); err != nil {
+		return fmt.Errorf("bucket.PutObject() failed: %w", err)
+	}
+	return nil
 }
 
 func (x *Storage) Backup(ctx context.Context) (BackupDocument, error) {
@@ -98,27 +115,4 @@ func (x *Storage) Restore(ctx context.Context, src BackupDocument) error {
 		return fmt.Errorf("parts.Save() failed: %w", err)
 	}
 	return nil
-}
-
-func BackupToBucket(ctx context.Context, db *Storage, bucket *storage.Bucket) error {
-	// make the backup
-	backup, err := db.Backup(ctx)
-	if err != nil {
-		return err
-	}
-
-	backupBytes, err := json.Marshal(&backup)
-	if err != nil {
-		return fmt.Errorf("json.Marshal() failed: %w", err)
-	}
-
-	obj := storage.Object{
-		ContentType: "application/json",
-		Tags: map[string]string{
-			"api_version": version.String(),
-		},
-		Bytes: backupBytes,
-	}
-	name := "dump." + backup.Timestamp.Format(time.RFC3339) + ".json.gz"
-	return bucket.PutObject(ctx, name, &obj)
 }

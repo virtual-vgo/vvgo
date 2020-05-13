@@ -11,7 +11,6 @@ func TestNewWarehouse(t *testing.T) {
 	t.Run("noop=false", func(t *testing.T) {
 		t.Run("endpoint=localhost:9000", func(t *testing.T) {
 			gotWarehouse, err := NewWarehouse(Config{
-				NoOp: false,
 				Minio: MinioConfig{
 					Endpoint: "localhost:9000",
 				},
@@ -19,7 +18,6 @@ func TestNewWarehouse(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, gotWarehouse, "warehouse")
 			assert.Equal(t, Config{
-				NoOp: false,
 				Minio: MinioConfig{
 					Endpoint: "localhost:9000",
 				},
@@ -29,7 +27,6 @@ func TestNewWarehouse(t *testing.T) {
 
 		t.Run("endpoint=::invalid::endpoint::", func(t *testing.T) {
 			gotWarehouse, err := NewWarehouse(Config{
-				NoOp: false,
 				Minio: MinioConfig{
 					Endpoint: "::invalid::endpoint::",
 				},
@@ -43,7 +40,6 @@ func TestNewWarehouse(t *testing.T) {
 		for _, endpoint := range []string{"", "localhost:9000", "::invalid::endpoint::"} {
 			t.Run("endpoint="+endpoint, func(t *testing.T) {
 				gotWarehouse, err := NewWarehouse(Config{
-					NoOp: true,
 					Minio: MinioConfig{
 						Endpoint: endpoint,
 					},
@@ -51,7 +47,6 @@ func TestNewWarehouse(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, gotWarehouse, "warehouse")
 				assert.Equal(t, Config{
-					NoOp: true,
 					Minio: MinioConfig{
 						Endpoint: endpoint,
 					},
@@ -66,7 +61,6 @@ func TestWarehouse_NewBucket(t *testing.T) {
 	ctx := context.Background()
 	t.Run("noop=false/endpoint=", func(t *testing.T) {
 		warehouse, err := NewWarehouse(Config{
-			NoOp: false,
 			Minio: MinioConfig{
 				Endpoint: "localhost:9000",
 			},
@@ -78,11 +72,11 @@ func TestWarehouse_NewBucket(t *testing.T) {
 	})
 
 	t.Run("noop=true", func(t *testing.T) {
-		warehouse, err := NewWarehouse(Config{NoOp: true})
+		warehouse, err := NewWarehouse(Config{})
 		require.NoError(t, err)
 		gotBucket, err := warehouse.NewBucket(ctx, "test-bucket")
 		require.NoError(t, err)
-		assert.Equal(t, &Bucket{Name: "test-bucket", noOp: true}, gotBucket)
+		assert.Equal(t, &Bucket{Name: "test-bucket"}, gotBucket)
 	})
 }
 
@@ -162,7 +156,7 @@ func TestNewObject(t *testing.T) {
 
 func TestBucket_NoOp(t *testing.T) {
 	ctx := context.Background()
-	warehouse, err := NewWarehouse(Config{NoOp: true})
+	warehouse, err := NewWarehouse(Config{})
 	require.NoError(t, err)
 	bucket, err := warehouse.NewBucket(ctx, "test-bucket")
 	require.NoError(t, err)

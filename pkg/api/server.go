@@ -32,10 +32,11 @@ type StorageConfig struct {
 
 type Storage struct {
 	StorageConfig
-	Parts  *parts.RedisParts
-	Sheets *storage.Bucket
-	Clix   *storage.Bucket
-	Tracks *storage.Bucket
+	Parts   *parts.RedisParts
+	Sheets  *storage.Bucket
+	Clix    *storage.Bucket
+	Tracks  *storage.Bucket
+	Backups *storage.Bucket
 }
 
 func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
@@ -52,6 +53,7 @@ func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config Storag
 		Sheets:        newBucket(ctx, config.SheetsBucketName),
 		Clix:          newBucket(ctx, config.ClixBucketName),
 		Tracks:        newBucket(ctx, config.TracksBucketName),
+		Backups:       newBucket(ctx, "vvgo-data"),
 		Parts:         parts.NewParts(config.RedisNamespace + ":parts"),
 	}
 	return &db
@@ -84,10 +86,19 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	mux.Handle("/parts", partsHandler)
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
+	mux.Handle("/backups", &BackupsView{
+		Backups: database.Backups,
+		NavBar:  navBar,
+	})
+	mux.Handle("/backups/do", &BackupHandler{
+		Database: database,
+	})
+
 	downloadHandler := members.Authenticate(&DownloadHandler{
 		database.SheetsBucketName: database.Sheets.DownloadURL,
 		database.ClixBucketName:   database.Clix.DownloadURL,
 		database.TracksBucketName: database.Tracks.DownloadURL,
+		database.Backups.Name:     database.Backups.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 

@@ -20,7 +20,7 @@ import (
 )
 
 func TestPartsView_ServeHTTP(t *testing.T) {
-	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
+	warehouse, err := storage.NewWarehouse(storage.Config{})
 	require.NoError(t, err, "storage.NewWarehouse")
 
 	ctx := context.Background()
