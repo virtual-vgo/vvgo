@@ -11,8 +11,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
 )
 
 var logger = log.Logger()
@@ -36,18 +34,6 @@ type Config struct {
 	// BotAuthToken is used for making queries about our discord guild.
 	// This is found in the bot tab for the discord app.
 	BotAuthToken string `split_words:"true"`
-
-	// OAuthClientID is the client id used in oauth requests.
-	// This is found in the oauth2 tab for the discord app.
-	OAuthClientID string `envconfig:"oauth_client_id"`
-
-	// OAuthClientSecret is the secret used in oauth requets.
-	// This is found in the oauth2 tab for the discord app.
-	OAuthClientSecret string `envconfig:"oauth_client_secret"`
-
-	// OAuthRedirectURI is the redirect uri we set in discord.
-	// This is found in the oauth2 tab for the discord app.
-	OAuthRedirectURI string `envconfig:"oauth_redirect_uri"`
 }
 
 // This is the oauth token returned by discord after a successful oauth request.
@@ -86,44 +72,6 @@ type User struct {
 // https://discordapp.com/developers/docs/resources/guild#guild-member-object
 type GuildMember struct {
 	Roles []string `json:"roles"`
-}
-
-// Query oauth token from discord.
-// We use the authorization code grant.
-func (x Client) QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
-	req, err := x.newOAuthRequest(ctx, code)
-	if err != nil {
-		return nil, err
-	}
-
-	var oauthToken OAuthToken
-	if _, err := doDiscordRequest(req, &oauthToken); err != nil {
-		return nil, err
-	}
-	return &oauthToken, nil
-}
-
-// build the oauth request
-func (x Client) newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
-	if code == "" {
-		return nil, ErrInvalidOAuthCode
-	}
-
-	// build the authorization request
-	form := make(url.Values)
-	form.Add("client_id", x.config.OAuthClientID)
-	form.Add("client_secret", x.config.OAuthClientSecret)
-	form.Add("grant_type", "authorization_code")
-	form.Add("code", code)
-	form.Add("redirect_uri", x.config.OAuthRedirectURI)
-	form.Add("scope", "identify")
-
-	req, err := x.newRequest(ctx, http.MethodPost, "/oauth2/token", strings.NewReader(form.Encode()))
-	if err != nil {
-		return nil, fmt.Errorf("http.NewRequestWithContext() failed: %v", err)
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	return req, err
 }
 
 // Query discord for the token's identity.

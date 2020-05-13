@@ -1,16 +1,26 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
+	"time"
 )
 
+const DiscordLoginExpires = 7 * 24 * 3600 * time.Second // 1 week
+
+// DiscordLoginHandler accepts an oauth token in the request body and uses the token to query for discord identity.
+// If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
+// authentication is established and a login session cookie is sent in the response.
+// Otherwise, 401 unauthorized.
 type DiscordLoginHandler struct {
 	GuildID        discord.GuildID
 	RoleVVGOMember string
 	Discord        *discord.Client
+	Sessions       *login.Store
 }
 
 var ErrNotAMember = errors.New("not a member")
@@ -29,15 +39,14 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	// get an oauth token from discord
-	code := r.FormValue("code")
-	oauthToken, err := x.Discord.QueryOAuth(ctx, code)
-	if ok := handleError(err); !ok {
+	// read the oauth token from the request
+	var oauthToken discord.OAuthToken
+	if ok := handleError(json.NewDecoder(r.Body).Decode(&oauthToken)); !ok {
 		return
 	}
 
 	// get the user id
-	discordUser, err := x.Discord.QueryIdentity(ctx, oauthToken)
+	discordUser, err := x.Discord.QueryIdentity(ctx, &oauthToken)
 	if ok := handleError(err); !ok {
 		return
 	}
@@ -60,5 +69,13 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		handleError(ErrNotAMember)
 		return
 	}
-	w.Write([]byte("authorized"))
+
+	// Create a login session
+	x.Sessions.NewCookie(ctx, &login.Identity{
+		Kind:  login.KindDiscord,
+		Roles: []login.Role{login.RoleVVGOMember},
+	}, DiscordLoginExpires)
+
+	// redirect to home
+	http.Redirect(w, r, "/", http.StatusFound)
 }
