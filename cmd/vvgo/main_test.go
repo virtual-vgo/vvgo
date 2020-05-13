@@ -4,6 +4,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
@@ -19,6 +20,8 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"TRACING_SERVICE_NAME":           "tracing-service-name",
 		"API_LISTEN_ADDRESS":             "listen-address",
 		"API_MAX_CONTENT_LENGTH":         "1000000",
+		"API_DISCORD_GUILD_ID":           "discord-guild-id",
+		"API_DISCORD_ROLE_VVGO_MEMBER":   "discord-role-vvgo-member",
 		"API_STORAGE_SHEETS_BUCKET_NAME": "sheets-bucket-name",
 		"API_STORAGE_CLIX_BUCKET_NAME":   "clix-bucket-name",
 		"API_STORAGE_TRACKS_BUCKET_NAME": "tracks-bucket-name",
@@ -32,16 +35,20 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"STORAGE_MINIO_ACCESSKEY":        "minio-access-key",
 		"STORAGE_MINIO_SECRETKEY":        "minio-secret-key",
 		"STORAGE_MINIO_USESSL":           "true",
+		"DISCORD_ENDPOINT":               "discord-endpoint",
+		"DISCORD_BOT_AUTH_TOKEN":         "discord-bot-auth-token",
 	}
 	want := Config{
 		Secret: "vvgo-secret",
 		ApiConfig: api.ServerConfig{
-			ListenAddress:    "listen-address",
-			MaxContentLength: 1e6,
-			AdminToken:       "admin-token",
-			PrepRepToken:     "prep-rep-token",
-			MemberUser:       "member-user",
-			MemberPass:       "member-pass",
+			ListenAddress:         "listen-address",
+			MaxContentLength:      1e6,
+			AdminToken:            "admin-token",
+			PrepRepToken:          "prep-rep-token",
+			MemberUser:            "member-user",
+			MemberPass:            "member-pass",
+			DiscordGuildID:        "discord-guild-id",
+			DiscordRoleVVGOMember: "discord-role-vvgo-member",
 		},
 		ApiStorageConfig: api.StorageConfig{
 			SheetsBucketName: "sheets-bucket-name",
@@ -62,6 +69,10 @@ func TestConfig_ParseEnv(t *testing.T) {
 				SecretKey: "minio-secret-key",
 				UseSSL:    true,
 			},
+		},
+		DiscordConfig: discord.Config{
+			Endpoint:     "discord-endpoint",
+			BotAuthToken: "discord-bot-auth-token",
 		},
 	}
 

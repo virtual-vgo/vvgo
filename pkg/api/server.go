@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -15,12 +16,14 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
-	MaxContentLength int64  `split_words:"true" default:"10000000"`
-	MemberUser       string `split_words:"true" default:"admin"`
-	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
+	ListenAddress         string `split_words:"true" default:"0.0.0.0:8080"`
+	MaxContentLength      int64  `split_words:"true" default:"10000000"`
+	MemberUser            string `split_words:"true" default:"admin"`
+	MemberPass            string `split_words:"true" default:"admin"`
+	PrepRepToken          string `split_words:"true" default:"admin"`
+	AdminToken            string `split_words:"true" default:"admin"`
+	DiscordGuildID        string `envconfig:"discord_guild_id"`
+	DiscordRoleVVGOMember string `envconfig:"discord_role_vvgo_member"`
 }
 
 type StorageConfig struct {
@@ -57,7 +60,7 @@ func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config Storag
 	return &db
 }
 
-func NewServer(config ServerConfig, database *Storage) *http.Server {
+func NewServer(config ServerConfig, database *Storage, discordClient *discord.Client) *http.Server {
 	navBar := NavBar{MemberUser: config.MemberUser}
 	members := BasicAuth{config.MemberUser: config.MemberPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
@@ -97,6 +100,11 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 
 	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))
 	mux.Handle("/login", loginHandler)
+	mux.Handle("/login/discord", &DiscordLoginHandler{
+		GuildID:        discord.GuildID(config.DiscordGuildID),
+		RoleVVGOMember: config.DiscordRoleVVGOMember,
+		Discord:        discordClient,
+	})
 
 	mux.Handle("/version", http.HandlerFunc(Version))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

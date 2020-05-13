@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -23,6 +24,7 @@ type Config struct {
 	ApiStorageConfig api.StorageConfig `envconfig:"api_storage"`
 	TracingConfig    tracing.Config    `envconfig:"tracing"`
 	StorageConfig    storage.Config    `envconfig:"storage"`
+	DiscordConfig    discord.Config    `envconfig:"discord"`
 }
 
 func (x *Config) ParseEnv() {
@@ -69,14 +71,17 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	// Build the discord client.
+	discordClient := discord.NewClient(config.DiscordConfig)
+
 	// Build the api database.
 	database := api.NewStorage(ctx, warehouse, config.ApiStorageConfig)
 	if database == nil {
 		os.Exit(1)
 	}
 
-	//
-	apiServer := api.NewServer(config.ApiConfig, database)
+	// Build the api server
+	apiServer := api.NewServer(config.ApiConfig, database, discordClient)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}
