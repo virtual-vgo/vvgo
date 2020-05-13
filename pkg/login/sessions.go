@@ -35,8 +35,6 @@ type Config struct {
 	CookiePath string `split_words:"true" default:"/"`
 }
 
-const DataFile = "users.json"
-
 // NewStore returns a new sessions client.
 func NewStore(namespace string, config Config) *Store {
 	return &Store{
