@@ -15,16 +15,17 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
-	MaxContentLength int64  `split_words:"true" default:"10000000"`
-	MemberUser       string `split_words:"true" default:"admin"`
-	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
-	SheetsBucketName string `split_words:"true" default:"sheets"`
-	ClixBucketName   string `split_words:"true" default:"clix"`
-	TracksBucketName string `split_words:"true" default:"tracks"`
-	RedisNamespace   string `split_words:"true" default:"local"`
+	ListenAddress     string `split_words:"true" default:"0.0.0.0:8080"`
+	MaxContentLength  int64  `split_words:"true" default:"10000000"`
+	MemberUser        string `split_words:"true" default:"admin"`
+	MemberPass        string `split_words:"true" default:"admin"`
+	PrepRepToken      string `split_words:"true" default:"admin"`
+	AdminToken        string `split_words:"true" default:"admin"`
+	SheetsBucketName  string `split_words:"true" default:"sheets"`
+	ClixBucketName    string `split_words:"true" default:"clix"`
+	TracksBucketName  string `split_words:"true" default:"tracks"`
+	BackupsBucketName string `split_words:"true" default:"backups"`
+	RedisNamespace    string `split_words:"true" default:"local"`
 }
 
 type Database struct {
@@ -85,14 +86,14 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 		NavBar:  navBar,
 	})
 	mux.Handle("/backups/do", &BackupHandler{
-		Database: database,
+		Database: &database,
 	})
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
-		config.SheetsBucketName: database.Sheets.DownloadURL,
-		config.ClixBucketName:   database.Clix.DownloadURL,
-		config.TracksBucketName: database.Tracks.DownloadURL,
-		config.Backups.Name:     database.Backups.DownloadURL,
+		config.SheetsBucketName:  database.Sheets.DownloadURL,
+		config.ClixBucketName:    database.Clix.DownloadURL,
+		config.TracksBucketName:  database.Tracks.DownloadURL,
+		config.BackupsBucketName: database.Backups.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 

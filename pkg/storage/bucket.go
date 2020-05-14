@@ -12,7 +12,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"mime"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -175,6 +174,14 @@ func NewObject(mediaType string, tags map[string]string, payload []byte) *Object
 		Tags:        tags,
 		Bytes:       payload,
 	}
+}
+
+type ObjectInfo struct {
+	Key          string
+	LastModified time.Time
+	Size         int64
+	ContentType  string
+	Tags         map[string]string
 }
 
 func (x *Bucket) ListObjects(ctx context.Context, pre string) []ObjectInfo {

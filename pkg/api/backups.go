@@ -20,7 +20,7 @@ type BackupDocument struct {
 }
 
 type BackupHandler struct {
-	Database *Storage
+	Database *Database
 }
 
 func (x *BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func (x *BackupHandler) backupToBucket(ctx context.Context) error {
 	return nil
 }
 
-func (x *Storage) Backup(ctx context.Context) (BackupDocument, error) {
+func (x *Database) Backup(ctx context.Context) (BackupDocument, error) {
 	gotParts, err := x.Parts.List(ctx)
 	if err != nil {
 		return BackupDocument{}, fmt.Errorf("parts.List() failed: %w", err)
@@ -105,7 +105,7 @@ func (x *Storage) Backup(ctx context.Context) (BackupDocument, error) {
 	}, nil
 }
 
-func (x *Storage) Restore(ctx context.Context, src BackupDocument) error {
+func (x *Database) Restore(ctx context.Context, src BackupDocument) error {
 	// truncate existing dbs
 	if err := x.Parts.DeleteAll(ctx); err != nil {
 		return fmt.Errorf("parts.DeleteAll() failed: %w", err)
