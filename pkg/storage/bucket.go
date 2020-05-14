@@ -12,7 +12,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"mime"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -22,23 +21,23 @@ const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
 var logger = log.Logger()
 
+var warehouse Warehouse
+
+func init() {
+	var config Config
+	envconfig.MustProcess("MINIO", &config)
+	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
+	if err != nil {
+		logger.WithError(err).Fatal("minio.New() failed")
+	}
+	warehouse = Warehouse{config: config, minioClient: minioClient}
+}
+
 // Warehouse builds new object storage buckets.
 // Minio is the underlying driver.
 type Warehouse struct {
 	config      Config
 	minioClient *minio.Client
-}
-
-var warehouse *Warehouse
-
-func NewBucket(ctx context.Context, name string) (*Bucket, error) {
-	return warehouse.NewBucket(ctx, name)
-}
-
-func init() {
-	var config Config
-	envconfig.MustProcess("MINIO", &config)
-	warehouse = NewWarehouseMust(config)
 }
 
 type Config struct {
@@ -49,31 +48,16 @@ type Config struct {
 	UseSSL    bool   `default:"false"`
 }
 
-// Returns a new warehouse that build buckets.
-func NewWarehouse(config Config) (*Warehouse, error) {
-	client := Warehouse{config: config}
-
-	var err error
-	client.minioClient, err = minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
-	if err != nil {
-		return nil, fmt.Errorf("minio.New() failed: %v", err)
-	}
-	return &client, nil
-}
-
-func NewWarehouseMust(config Config) *Warehouse {
-	client, err := NewWarehouse(config)
-	if err != nil {
-		logger.WithError(err).Fatal("storage.NewWarehouse() failed")
-	}
-	return client
-}
-
 // Buckets are an abstraction on top of the minio client for object storage
 type Bucket struct {
 	Name        string
 	minioRegion string
 	minioClient *minio.Client
+}
+
+// NewBucket returns a client for the bucket with name `name`, and creates the bucket if it does not exist.
+func NewBucket(ctx context.Context, name string) (*Bucket, error) {
+	return warehouse.NewBucket(ctx, name)
 }
 
 func (x *Warehouse) NewBucket(ctx context.Context, name string) (*Bucket, error) {
@@ -191,7 +175,7 @@ func NewObject(mediaType string, tags map[string]string, payload []byte) *Object
 	}
 }
 
-// StatObject queries object storage for the object content type and tags.
+// StatObject returns only the object content type and tags.
 func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object) error {
 	_, span := x.newSpan(ctx, "bucket_stat_object")
 	defer span.Send()
@@ -208,34 +192,38 @@ func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object
 	return nil
 }
 
-// Get object returns the full object payload.
+// GetObject returns the full object meta and contents.
 func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error {
 	_, span := x.newSpan(ctx, "bucket_get_object")
 	defer span.Send()
+
 	minioObject, err := x.minioClient.GetObject(x.Name, name, minio.GetObjectOptions{})
 	if err != nil {
 		span.AddField("error", err)
 		return err
 	}
+
 	info, err := minioObject.Stat()
 	if err != nil {
 		span.AddField("error", err)
 		return err
 	}
+
 	var buffer bytes.Buffer
-	if _, err := buffer.ReadFrom(minioObject); err != nil {
+	if _, err = buffer.ReadFrom(minioObject); err != nil {
 		span.AddField("error", err)
 		return err
 	}
+
 	*dest = Object{
 		ContentType: info.ContentType,
 		Tags:        info.UserMetadata,
 		Bytes:       buffer.Bytes(),
 	}
-	return err
+	return nil
 }
 
-// Put object uploads the object with the given key.
+// PutObject uploads the object with the given key.
 func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) error {
 	ctx, span := x.newSpan(ctx, "bucket_put_object")
 	defer span.Send()
@@ -262,18 +250,7 @@ func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) err
 func (x *Bucket) DownloadURL(ctx context.Context, name string) (string, error) {
 	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
 	defer span.Send()
-	policy, err := x.minioClient.GetBucketPolicy(x.Name)
-	if err != nil {
-		return "", err
-	}
-
-	var downloadUrl *url.URL
-	switch policy {
-	case "download":
-		downloadUrl, err = url.Parse(fmt.Sprintf("%s/%s/%s", x.minioClient.EndpointURL(), x.Name, name))
-	default:
-		downloadUrl, err = x.minioClient.PresignedGetObject(x.Name, name, ProtectedLinkExpiry, nil)
-	}
+	downloadUrl, err := x.minioClient.PresignedGetObject(x.Name, name, ProtectedLinkExpiry, nil)
 	if err != nil {
 		return "", err
 	} else {
