@@ -3,6 +3,11 @@ services:
   minio:
     image: minio/minio
     command: server /data
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - target: 9000
         published: 9000
@@ -11,19 +16,13 @@ services:
 
   redis:
     image: redis:5.0.8
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - target: 6379
         published: 6379
-        protocol: tcp
-        mode: host
-
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    restart: always
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-    ports:
-      - target: 8081
-        published: 8081
         protocol: tcp
         mode: host
