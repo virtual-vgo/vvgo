@@ -19,7 +19,7 @@ import (
 
 const UploadsTimeout = 5 * 60 * time.Second
 
-type UploadHandler struct{ *Storage }
+type UploadHandler struct{ *Database }
 
 type UploadType string
 
