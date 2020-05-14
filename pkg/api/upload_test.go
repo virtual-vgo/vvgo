@@ -312,9 +312,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 			require.NoError(t, err, "storage.NewBucket")
 			handlerStorage := Database{
 				Parts:  newParts(),
-				Sheets: bucket,
-				Clix:   bucket,
-				Tracks: bucket,
+				Distro: bucket,
 			}
 
 			request := httptest.NewRequest(tt.request.method, "/upload", &tt.request.body)

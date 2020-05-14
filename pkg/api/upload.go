@@ -213,7 +213,7 @@ func (x UploadHandler) handleClix(ctx context.Context, upload *Upload) UploadSta
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if err := x.Clix.PutFile(ctx, file); err != nil {
+	if err := x.Distro.PutFile(ctx, file); err != nil {
 		logger.WithError(err).Error("x.Clix.PutFile() failed")
 		return uploadInternalServerError(upload)
 	}
@@ -227,7 +227,7 @@ func (x UploadHandler) handleSheets(ctx context.Context, upload *Upload) UploadS
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if err := x.Sheets.PutFile(ctx, file); err != nil {
+	if err := x.Distro.PutFile(ctx, file); err != nil {
 		logger.WithError(err).Error("x.Sheets.PutFile() failed")
 		return uploadInternalServerError(upload)
 	} else {

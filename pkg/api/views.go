@@ -59,9 +59,9 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Project:        projects.GetName(part.Project).Title,
 			PartName:       strings.Title(part.Name),
 			PartNumber:     part.Number,
-			SheetMusic:     part.SheetLink(x.Sheets.Name),
-			ClickTrack:     part.ClickLink(x.Clix.Name),
-			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.Tracks.Name),
+			SheetMusic:     part.SheetLink(x.Distro.Name),
+			ClickTrack:     part.ClickLink(x.Distro.Name),
+			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.Distro.Name),
 		})
 	}
 

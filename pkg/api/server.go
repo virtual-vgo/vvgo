@@ -21,35 +21,27 @@ type ServerConfig struct {
 	MemberPass       string `split_words:"true" default:"admin"`
 	PrepRepToken     string `split_words:"true" default:"admin"`
 	AdminToken       string `split_words:"true" default:"admin"`
-	SheetsBucketName string `split_words:"true" default:"sheets"`
-	ClixBucketName   string `split_words:"true" default:"clix"`
-	TracksBucketName string `split_words:"true" default:"tracks"`
+	DistroBucketName string `split_words:"true" default:"vvgo-distro"`
 	RedisNamespace   string `split_words:"true" default:"local"`
 }
 
 type Database struct {
-	ServerConfig
 	Parts  *parts.RedisParts
-	Sheets *storage.Bucket
-	Clix   *storage.Bucket
-	Tracks *storage.Bucket
+	Distro *storage.Bucket
 }
 
 func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := storage.NewBucket(ctx, bucketName)
 		if err != nil {
-			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("warehouse.NewBucket() failed")
+			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("storage.NewBucket() failed")
 		}
 		return bucket
 	}
 
 	database := Database{
-		ServerConfig: config,
-		Sheets:       newBucket(ctx, config.SheetsBucketName),
-		Clix:         newBucket(ctx, config.ClixBucketName),
-		Tracks:       newBucket(ctx, config.TracksBucketName),
-		Parts:        parts.NewParts(config.RedisNamespace + ":parts"),
+		Distro: newBucket(ctx, config.DistroBucketName),
+		Parts:  parts.NewParts(config.RedisNamespace + ":parts"),
 	}
 
 	navBar := NavBar{MemberUser: config.MemberUser}
@@ -79,9 +71,7 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
-		config.SheetsBucketName: database.Sheets.DownloadURL,
-		config.ClixBucketName:   database.Clix.DownloadURL,
-		config.TracksBucketName: database.Tracks.DownloadURL,
+		config.DistroBucketName: database.Distro.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 
