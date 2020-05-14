@@ -21,19 +21,14 @@ type ServerConfig struct {
 	MemberPass        string `split_words:"true" default:"admin"`
 	PrepRepToken      string `split_words:"true" default:"admin"`
 	AdminToken        string `split_words:"true" default:"admin"`
-	SheetsBucketName  string `split_words:"true" default:"sheets"`
-	ClixBucketName    string `split_words:"true" default:"clix"`
-	TracksBucketName  string `split_words:"true" default:"tracks"`
+	DistroBucketName  string `split_words:"true" default:"vvgo-distro"`
 	BackupsBucketName string `split_words:"true" default:"backups"`
 	RedisNamespace    string `split_words:"true" default:"local"`
 }
 
 type Database struct {
-	ServerConfig
 	Parts   *parts.RedisParts
-	Sheets  *storage.Bucket
-	Clix    *storage.Bucket
-	Tracks  *storage.Bucket
+	Distro  *storage.Bucket
 	Backups *storage.Bucket
 }
 
@@ -47,12 +42,9 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	}
 
 	database := Database{
-		ServerConfig: config,
-		Sheets:       newBucket(ctx, config.SheetsBucketName),
-		Clix:         newBucket(ctx, config.ClixBucketName),
-		Tracks:       newBucket(ctx, config.TracksBucketName),
-		Backups:      newBucket(ctx, "vvgo-data"),
-		Parts:        parts.NewParts(config.RedisNamespace + ":parts"),
+		Distro:  newBucket(ctx, config.DistroBucketName),
+		Backups: newBucket(ctx, "vvgo-data"),
+		Parts:   parts.NewParts(config.RedisNamespace),
 	}
 
 	navBar := NavBar{MemberUser: config.MemberUser}
@@ -90,9 +82,7 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	})
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
-		config.SheetsBucketName:  database.Sheets.DownloadURL,
-		config.ClixBucketName:    database.Clix.DownloadURL,
-		config.TracksBucketName:  database.Tracks.DownloadURL,
+		config.DistroBucketName: database.Distro.DownloadURL,
 		config.BackupsBucketName: database.Backups.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))

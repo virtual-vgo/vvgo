@@ -23,9 +23,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	handlerStorage := Database{
 		Parts:  newParts(),
-		Sheets: &storage.Bucket{Name: "sheets"},
-		Clix:   &storage.Bucket{Name: "clix"},
-		Tracks: &storage.Bucket{Name: "tracks"},
+		Distro: &storage.Bucket{Name: "distro"},
 	}
 
 	// load the cache with some dummy data
