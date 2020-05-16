@@ -40,8 +40,7 @@ func (x *RedisParts) DeleteAll(ctx context.Context) error {
 	allKeys := make([]string, 0, 1+3*len(partKeys))
 	allKeys = append(allKeys, x.namespace+":parts:index")
 	for _, key := range partKeys {
-		allKeys = append(allKeys, x.namespace+":parts:"+key+":sheets", x.namespace+":parts:"+key+":clix",
-		)
+		allKeys = append(allKeys, x.namespace+":parts:"+key+":sheets", x.namespace+":parts:"+key+":clix")
 	}
 	return redis.Do(localCtx, redis.Cmd(nil, "DEL", allKeys...))
 }
