@@ -2,7 +2,11 @@
 <html lang="en">
 
 <head>
-    {{ .Header }}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Virtual Video Game Orchestra">
+    <link rel="icon" href="images/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+
     <title>Virtual Video Game Orchestra</title>
     <meta name="description" content="">
 
@@ -23,7 +27,48 @@
 </head>
 
 <body>
-{{ .NavBar }}
+<div class="container">
+    <nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border m-2">
+        <a class="nav-link text-light" href="/">
+            <i class="fas fa-home fa-2x mr-2"></i>Virtual VGO
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <li class="nav-item btn">
+
+                <a class="nav-link disabled text-monospace"
+                   href="#" tabindex="-1" aria-disabled="true"> :hello:
+                </a>
+
+            </li>
+
+            <ul class="navbar-nav container">
+                <li class="nav-item">
+                    <a class=" nav-link text-monospace"
+                       href="/parts"> Parts
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link btn-outline-primary" href="https://www.facebook.com/groups/1080154885682377/">
+                        <i class="fab fa-facebook-square fa-2x"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link btn-outline-primary" href="https://github.com/virtual-vgo/vvgo">
+                        <i class="fab fa-github-square fa-2x"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+
 <main role="main">
     <div class="container">
         <div class="jumbotron bg-transparent">
@@ -41,25 +86,6 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {{- range .Rows}}
-                        <tr>
-                            <td>{{.Timestamp}}</td>
-                            <td>{{.SizeKB}} KB</td>
-                            <td>
-                                <a href="{{.DownloadLink}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    download
-                                </a>
-                                <form>
-                                    <input type="hidden" name="object" value="{{.Object}}">
-                                    <input type="hidden" name="cmd" value="restore">
-                                    <input
-                                            class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
-                                            type="submit" value="restore" formmethod="post">
-                                </form>
-                            </td>
-                        </tr>
-                    {{- end }}
                     </tbody>
                 </table>
             </div>

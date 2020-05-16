@@ -10,6 +10,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"html/template"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"time"
 )
@@ -35,23 +36,24 @@ func (x *BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (x *BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx context.Context) {
 	type tableRow struct {
 		Timestamp    string `json:"timestamp"`
-		Size         int64  `json:"size"`
+		SizeKB       int64  `json:"size_kb"`
 		Version      string `json:"version"`
+		Object       string `json:"object"`
 		DownloadLink string `json:"download_link"`
-		RestoreLink  string `json:"restore_link"`
 	}
 
-	info := x.Backups.ListObjects(ctx, "")
+	info := x.Backups.ListObjects(ctx, "backups/")
 	rows := make([]tableRow, len(info))
 	for i := range info {
+		dlValues := make(url.Values)
+		dlValues.Add("bucket", x.Backups.Name)
+		dlValues.Add("object", info[i].Key)
 		rows[i] = tableRow{
-			Timestamp:    info[i].LastModified.String(),
-			Size:         info[i].Size,
-			DownloadLink: fmt.Sprintf("/download?bucket=%s&object=%s", x.Backups.Name, info[i].Key),
-			RestoreLink:  fmt.Sprintf("/backup?cmd=restore&object=%s", info[i].Key),
+			Timestamp:    info[i].LastModified.Local().Format(time.RFC822),
+			SizeKB:       info[i].Size / 1000,
+			DownloadLink: "/download?" + dlValues.Encode(),
+			Object:       info[i].Key,
 		}
-		rows[i].Size = info[i].Size
-		rows[i].Timestamp = info[i].LastModified.Local().Format(time.RFC822)
 		fmt.Printf("%#v\n", info[i])
 	}
 
@@ -83,6 +85,9 @@ func (x *BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx con
 			internalServerError(w)
 			return
 		}
+		if acceptsType(r, "text/html") {
+			http.Redirect(w, r, r.URL.Path, http.StatusFound)
+		}
 
 	case "restore":
 		key := r.FormValue("object")
@@ -99,10 +104,6 @@ func (x *BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx con
 	default:
 		badRequest(w, "missing form field `cmd`")
 		return
-	}
-
-	if acceptsType(r, "text/html") {
-		http.Redirect(w, r, r.URL.Path, http.StatusFound)
 	}
 	return
 }
@@ -141,7 +142,7 @@ func (x *BackupHandler) backupToBucket(ctx context.Context) error {
 			"Vvgo-Api-Version": version.String(),
 		},
 	}
-	name := "dump-" + backup.Timestamp.Format(time.RFC3339) + ".json"
+	name := "backups/dump-" + backup.Timestamp.Format(time.RFC3339) + ".json"
 	if err := x.Backups.PutObject(ctx, name, &obj); err != nil {
 		return fmt.Errorf("bucket.PutObject() failed: %w", err)
 	}

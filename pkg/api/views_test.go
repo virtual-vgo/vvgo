@@ -13,7 +13,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -51,24 +50,16 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	server := PartView{NavBar{}, &handlerStorage}
 
 	t.Run("accept:application/json", func(t *testing.T) {
-		var wantBody bytes.Buffer
-		file, err := os.Open("testdata/parts.json")
-		require.NoError(t, err, "os.Open")
-		_, err = wantBody.ReadFrom(file)
-		require.NoError(t, err, "file.Read")
-
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, "/sheets", nil)
 		request.Header.Set("Accept", "application/json")
 		server.ServeHTTP(recorder, request)
 
-		wantRaw, gotRaw := strings.TrimSpace(wantBody.String()), strings.TrimSpace(recorder.Body.String())
+		wantRaw, gotRaw := strings.TrimSpace(mustReadFile(t, "testdata/parts.json")), strings.TrimSpace(recorder.Body.String())
 		var wantMap []map[string]interface{}
-		err = json.Unmarshal(wantBody.Bytes(), &wantMap)
-		require.NoError(t, err, "json.Unmarshal")
+		require.NoError(t, json.Unmarshal([]byte(wantRaw), &wantMap), "json.Unmarshal")
 		var gotMap []map[string]interface{}
-		err = json.Unmarshal(recorder.Body.Bytes(), &gotMap)
-		assert.NoError(t, err, "json.Unmarshal")
+		assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &gotMap), "json.Unmarshal")
 		if !assert.Equal(t, wantMap, gotMap, "body") {
 			t.Logf("Expected body:\n%s\n", wantRaw)
 			t.Logf("Got body:\n%s\n", gotRaw)
@@ -76,63 +67,52 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("accept:text/html", func(t *testing.T) {
-		var wantBody bytes.Buffer
-		file, err := os.Open("testdata/parts.html")
-		require.NoError(t, err, "os.Open")
-		_, err = wantBody.ReadFrom(file)
-		require.NoError(t, err, "file.Read")
-
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, "/sheets", nil)
 		request.Header.Set("Accept", "text/html")
 		server.ServeHTTP(recorder, request)
-
-		wantRaw, gotRaw := strings.TrimSpace(wantBody.String()), strings.TrimSpace(recorder.Body.String())
-		m := minify.New()
-		m.AddFunc("text/html", html.Minify)
-		var wantMin bytes.Buffer
-		err = m.Minify("text/html", &wantMin, &wantBody)
-		require.NoError(t, err, "m.Minify")
-		var gotMin bytes.Buffer
-		err = m.Minify("text/html", &gotMin, recorder.Body)
-		assert.NoError(t, err, "m.Minify")
-		if !assert.Equal(t, wantMin.String(), gotMin.String(), "body") {
-			t.Logf("Expected body:\n%s\n", wantRaw)
-			t.Logf("Got body:\n%s\n", gotRaw)
-		}
+		got := recorder.Result()
+		assert.Equal(t, http.StatusOK, got.StatusCode)
+		assertEqualHTML(t, mustReadFile(t, "testdata/parts.html"), recorder.Body.String())
 	})
 }
 
 func TestIndexView_ServeHTTP(t *testing.T) {
-	wantCode := http.StatusOK
-	wantBytes, err := ioutil.ReadFile("testdata/index.html")
-	if err != nil {
-		t.Fatalf("ioutil.ReadFile() failed: %v", err)
-	}
-
 	server := IndexView{}
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	server.ServeHTTP(recorder, request)
-	gotResp := recorder.Result()
-	if expected, got := wantCode, gotResp.StatusCode; expected != got {
-		t.Errorf("expected code %v, got %v", expected, got)
-	}
+	got := recorder.Result()
+	assert.Equal(t, http.StatusOK, got.StatusCode)
+	assertEqualHTML(t, mustReadFile(t, "testdata/index.html"), recorder.Body.String())
+}
 
+func mustReadFile(t *testing.T, fileName string) string {
+	wantBytes, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		t.Fatalf("ioutil.ReadFile() failed: %v", err)
+	}
+	return string(wantBytes)
+}
+
+func assertEqualHTML(t *testing.T, want string, got string) {
+	want = strings.TrimSpace(want)
+	got = strings.TrimSpace(got)
+	gotRaw := got + "\n"
 	m := minify.New()
 	m.AddFunc("text/html", html.Minify)
 	var gotBuf bytes.Buffer
-	if err := m.Minify("text/html", &gotBuf, recorder.Body); err != nil {
+	if err := m.Minify("text/html", &gotBuf, strings.NewReader(got)); err != nil {
 		panic(err)
 	}
 	gotBody := gotBuf.String()
 
 	var wantBuf bytes.Buffer
-	if err := m.Minify("text/html", &wantBuf, bytes.NewReader(wantBytes)); err != nil {
+	if err := m.Minify("text/html", &wantBuf, strings.NewReader(want)); err != nil {
 		panic(err)
 	}
 	wantBody := wantBuf.String()
 	if !assert.Equal(t, wantBody, gotBody, "body") {
-		t.Logf("Got Body:\n%s\n", strings.TrimSpace(recorder.Body.String()))
+		t.Logf("Got Body:\n%s\n", strings.TrimSpace(gotRaw))
 	}
 }
