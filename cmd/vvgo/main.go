@@ -9,7 +9,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
@@ -18,11 +17,9 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	Secret           string            `envconfig:"vvgo_secret"`
-	ApiConfig        api.ServerConfig  `envconfig:"api"`
-	ApiStorageConfig api.StorageConfig `envconfig:"api_storage"`
-	TracingConfig    tracing.Config    `envconfig:"tracing"`
-	StorageConfig    storage.Config    `envconfig:"storage"`
+	Secret        string           `envconfig:"vvgo_secret"`
+	ApiConfig     api.ServerConfig `envconfig:"api"`
+	TracingConfig tracing.Config   `envconfig:"tracing"`
 }
 
 func (x *Config) ParseEnv() {
@@ -63,20 +60,8 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	// Creates/queries object buckets.
-	warehouse, err := storage.NewWarehouse(config.StorageConfig)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	// Build the api database.
-	database := api.NewStorage(ctx, warehouse, config.ApiStorageConfig)
-	if database == nil {
-		os.Exit(1)
-	}
-
 	//
-	apiServer := api.NewServer(config.ApiConfig, database)
+	apiServer := api.NewServer(ctx, config.ApiConfig)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}

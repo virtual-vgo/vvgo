@@ -20,26 +20,14 @@ import (
 )
 
 func TestPartsView_ServeHTTP(t *testing.T) {
-	warehouse, err := storage.NewWarehouse(storage.Config{NoOp: true})
-	require.NoError(t, err, "storage.NewWarehouse")
-
 	ctx := context.Background()
-	bucket, err := warehouse.NewBucket(ctx, "testing")
-	require.NoError(t, err, "storage.NewBucket")
-	handlerStorage := Storage{
+	handlerStorage := Database{
 		Parts:  newParts(),
-		Sheets: bucket,
-		Clix:   bucket,
-		Tracks: bucket,
-		StorageConfig: StorageConfig{
-			SheetsBucketName: "sheets",
-			ClixBucketName:   "clix",
-			TracksBucketName: "tracks",
-		},
+		Distro: &storage.Bucket{Name: "distro"},
 	}
 
 	// load the cache with some dummy data
-	handlerStorage.Parts.Save(ctx, []parts.Part{
+	require.NoError(t, handlerStorage.Parts.Save(ctx, []parts.Part{
 		{
 			ID: parts.ID{
 				Project: "01-snake-eater",
@@ -58,7 +46,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
 			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 		},
-	})
+	}), "parts.Save()")
 
 	server := PartView{NavBar{}, &handlerStorage}
 

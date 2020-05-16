@@ -21,43 +21,29 @@ type ServerConfig struct {
 	MemberPass       string `split_words:"true" default:"admin"`
 	PrepRepToken     string `split_words:"true" default:"admin"`
 	AdminToken       string `split_words:"true" default:"admin"`
-}
-
-type StorageConfig struct {
-	SheetsBucketName string `split_words:"true" default:"sheets"`
-	ClixBucketName   string `split_words:"true" default:"clix"`
-	TracksBucketName string `split_words:"true" default:"tracks"`
+	DistroBucketName string `split_words:"true" default:"vvgo-distro"`
 	RedisNamespace   string `split_words:"true" default:"local"`
 }
 
-type Storage struct {
-	StorageConfig
+type Database struct {
 	Parts  *parts.RedisParts
-	Sheets *storage.Bucket
-	Clix   *storage.Bucket
-	Tracks *storage.Bucket
+	Distro *storage.Bucket
 }
 
-func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
+func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
-		bucket, err := warehouse.NewBucket(ctx, bucketName)
+		bucket, err := storage.NewBucket(ctx, bucketName)
 		if err != nil {
-			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("warehouse.NewBucket() failed")
+			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("storage.NewBucket() failed")
 		}
 		return bucket
 	}
 
-	db := Storage{
-		StorageConfig: config,
-		Sheets:        newBucket(ctx, config.SheetsBucketName),
-		Clix:          newBucket(ctx, config.ClixBucketName),
-		Tracks:        newBucket(ctx, config.TracksBucketName),
-		Parts:         parts.NewParts(config.RedisNamespace + ":parts"),
+	database := Database{
+		Distro: newBucket(ctx, config.DistroBucketName),
+		Parts:  parts.NewParts(config.RedisNamespace + ":parts"),
 	}
-	return &db
-}
 
-func NewServer(config ServerConfig, database *Storage) *http.Server {
 	navBar := NavBar{MemberUser: config.MemberUser}
 	members := BasicAuth{config.MemberUser: config.MemberPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
@@ -80,19 +66,17 @@ func NewServer(config ServerConfig, database *Storage) *http.Server {
 	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
 
-	partsHandler := members.Authenticate(&PartView{NavBar: navBar, Storage: database})
+	partsHandler := members.Authenticate(&PartView{NavBar: navBar, Database: &database})
 	mux.Handle("/parts", partsHandler)
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
-		database.SheetsBucketName: database.Sheets.DownloadURL,
-		database.ClixBucketName:   database.Clix.DownloadURL,
-		database.TracksBucketName: database.Tracks.DownloadURL,
+		config.DistroBucketName: database.Distro.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 
 	// Uploads
-	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
+	uploadHandler := prepRep.Authenticate(&UploadHandler{&database})
 	mux.Handle("/upload", uploadHandler)
 
 	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))

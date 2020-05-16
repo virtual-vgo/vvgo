@@ -13,7 +13,7 @@ import (
 
 type PartView struct {
 	NavBar
-	*Storage
+	*Database
 }
 
 func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -59,9 +59,9 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Project:        projects.GetName(part.Project).Title,
 			PartName:       strings.Title(part.Name),
 			PartNumber:     part.Number,
-			SheetMusic:     part.SheetLink(x.SheetsBucketName),
-			ClickTrack:     part.ClickLink(x.ClixBucketName),
-			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.TracksBucketName),
+			SheetMusic:     part.SheetLink(x.Distro.Name),
+			ClickTrack:     part.ClickLink(x.Distro.Name),
+			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.Distro.Name),
 		})
 	}
 
