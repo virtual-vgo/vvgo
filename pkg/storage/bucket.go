@@ -51,7 +51,6 @@ type Config struct {
 // Buckets are an abstraction on top of the minio client for object storage
 type Bucket struct {
 	Name        string
-	noOp        bool
 	minioRegion string
 	minioClient *minio.Client
 }

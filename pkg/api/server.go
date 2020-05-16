@@ -30,7 +30,7 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := storage.NewBucket(ctx, bucketName)
 		if err != nil {
-			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("warehouse.NewBucket() failed")
+			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("storage.NewBucket() failed")
 		}
 		return bucket
 	}
