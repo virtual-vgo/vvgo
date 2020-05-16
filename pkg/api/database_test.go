@@ -39,21 +39,21 @@ func TestDatabase_Restore(t *testing.T) {
 	}
 	require.NoError(t, database.Parts.Save(ctx, []parts.Part{{
 		ID:     parts.ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
-		Clix:   []parts.Link{{ObjectKey: "OLD-click.mp3", CreatedAt: time.Unix(1, 0)}},
-		Sheets: []parts.Link{{ObjectKey: "OLD-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
+		Clix:   []parts.Link{{ObjectKey: "OLD-click.mp3", CreatedAt: time.Unix(1, 0).UTC()}},
+		Sheets: []parts.Link{{ObjectKey: "OLD-sheet.pdf", CreatedAt: time.Unix(1, 0).UTC()}},
 	}}), "parts.Save()")
 
 	require.NoError(t, database.Restore(ctx, DatabaseBackup{Parts: []parts.Part{{
 		ID:     parts.ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
-		Clix:   []parts.Link{{ObjectKey: "NEW-click.mp3", CreatedAt: time.Unix(2, 0)}},
-		Sheets: []parts.Link{{ObjectKey: "NEW-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
+		Clix:   []parts.Link{{ObjectKey: "NEW-click.mp3", CreatedAt: time.Unix(2, 0).UTC()}},
+		Sheets: []parts.Link{{ObjectKey: "NEW-sheet.pdf", CreatedAt: time.Unix(2, 0).UTC()}},
 	}}}))
 
 	gotList, err := database.Parts.List(ctx)
 	assert.NoError(t, err, "parts.List()")
 	assert.Equal(t, []parts.Part{{
 		ID:     parts.ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
-		Clix:   []parts.Link{{ObjectKey: "NEW-click.mp3", CreatedAt: time.Unix(2, 0)}},
-		Sheets: []parts.Link{{ObjectKey: "NEW-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
+		Clix:   []parts.Link{{ObjectKey: "NEW-click.mp3", CreatedAt: time.Unix(2, 0).UTC()}},
+		Sheets: []parts.Link{{ObjectKey: "NEW-sheet.pdf", CreatedAt: time.Unix(2, 0).UTC()}},
 	}}, gotList)
 }
