@@ -26,12 +26,6 @@ type ServerConfig struct {
 	RedisNamespace    string `split_words:"true" default:"local"`
 }
 
-type Database struct {
-	Parts   *parts.RedisParts
-	Distro  *storage.Bucket
-	Backups *storage.Bucket
-}
-
 func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := storage.NewBucket(ctx, bucketName)
@@ -42,9 +36,8 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	}
 
 	database := Database{
-		Distro:  newBucket(ctx, config.DistroBucketName),
-		Backups: newBucket(ctx, "vvgo-data"),
-		Parts:   parts.NewParts(config.RedisNamespace),
+		Distro: newBucket(ctx, config.DistroBucketName),
+		Parts:  parts.NewParts(config.RedisNamespace),
 	}
 
 	navBar := NavBar{MemberUser: config.MemberUser}
@@ -73,17 +66,16 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	mux.Handle("/parts", partsHandler)
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
-	mux.Handle("/backups", &BackupsView{
-		Backups: database.Backups,
-		NavBar:  navBar,
-	})
-	mux.Handle("/backups/do", &BackupHandler{
+	backups := newBucket(ctx, config.BackupsBucketName)
+	mux.Handle("/backups", &BackupHandler{
 		Database: &database,
+		Backups:  backups,
+		NavBar:   navBar,
 	})
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
-		config.DistroBucketName: database.Distro.DownloadURL,
-		config.BackupsBucketName: database.Backups.DownloadURL,
+		config.DistroBucketName:  database.Distro.DownloadURL,
+		config.BackupsBucketName: backups.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 

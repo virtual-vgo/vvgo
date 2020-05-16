@@ -14,7 +14,6 @@ func Set(ver Version)       { version = ver }
 func String() string        { return version.String() }
 func JSON() json.RawMessage { return version.JSON() }
 func Header() http.Header   { return version.Header() }
-func ReleaseTags() []string { return version.ReleaseTags() }
 
 type Version struct {
 	BuildHost string `json:"build_host"`
@@ -25,7 +24,7 @@ type Version struct {
 }
 
 func (x Version) String() string {
-	return fmt.Sprintf("%s-%s", x.GitBranch, x.GitSha)
+	return fmt.Sprintf("%s", x.GitSha)
 }
 
 func (x Version) JSON() json.RawMessage {
@@ -41,11 +40,4 @@ func (x Version) Header() http.Header {
 	header.Set("Git-Branch", x.GitBranch)
 	header.Set("Go-Version", x.GoVersion)
 	return header
-}
-
-func (x Version) ReleaseTags() []string {
-	return []string{
-		x.GitBranch,
-		fmt.Sprintf("%s-%s", x.GitBranch, x.GitSha),
-	}
 }

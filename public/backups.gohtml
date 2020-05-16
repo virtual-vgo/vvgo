@@ -29,13 +29,15 @@
         <div class="jumbotron bg-transparent">
             <div class="bg-terminal p-3 thick-border rounded">
                 <h1 class="title text-monospace mb-3">~ Backups ~</h1>
-                <a href="/backups/do?cmd=backup">Click here to make a backup!</a>
+
+                <form><input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                             type="submit" name="cmd" value="backup" id="cmd" formmethod="post"></form>
                 <table id="parts" class="table text-light">
                     <thead>
                     <tr>
                         <th>Timestamp</th>
                         <th>Size</th>
-                        <th>Links</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -46,12 +48,11 @@
                             <td>
                                 <a href="{{.DownloadLink}}"
                                    class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    &raquo; download &laquo;
+                                    download
                                 </a>
-                                <a href="{{.RestoreLink}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    &raquo; restore &laquo;
-                                </a>
+                                <form><input
+                                            class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                                            type="submit" name="cmd" value="restore" id="cmd" formmethod="post"></form>
                             </td>
                         </tr>
                     {{- end }}

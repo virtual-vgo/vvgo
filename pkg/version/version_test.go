@@ -3,6 +3,7 @@ package version
 import (
 	"bytes"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"sort"
 	"strings"
@@ -25,10 +26,7 @@ func TestHeader(t *testing.T) {
 		"Go-Version": []string{"1.14.1"},
 	}
 	gotHeader := Header()
-
-	if expected, got := headerToString(wantHeader), headerToString(gotHeader); expected != got {
-		t.Errorf("\nwant: `%v`\n got: `%v`", expected, got)
-	}
+	assert.Equal(t, wantHeader, gotHeader)
 }
 
 func headerToString(header http.Header) string {
@@ -86,28 +84,10 @@ func TestString(t *testing.T) {
 		GitBranch: "best-branch",
 		GoVersion: "1.14.1",
 	}
-	wantString := "best-branch-yeet"
+	wantString := "yeet"
 	gotString := String()
 
 	if expected, got := wantString, gotString; expected != got {
 		t.Errorf("\nwant: `%v`\n got: `%v`", expected, got)
-	}
-}
-
-func TestReleaseTags(t *testing.T) {
-	version = Version{
-		BuildHost: "tuba-international.xyz",
-		BuildTime: "today",
-		GitSha:    "yeet",
-		GitBranch: "best-branch",
-		GoVersion: "1.14.1",
-	}
-	wantTags := []string{
-		version.GitBranch,
-		fmt.Sprintf("%s-%s", version.GitBranch, version.GitSha),
-	}
-	gotTags := ReleaseTags()
-	if want, got := strings.Join(wantTags, ", "), strings.Join(gotTags, ", "); want != got {
-		t.Errorf("wanted `%s`, got `%s`", want, got)
 	}
 }

@@ -40,6 +40,22 @@ func TestParts_List(t *testing.T) {
 	assertEqualParts(t, wantList, gotList)
 }
 
+func TestRedisParts_DeleteAll(t *testing.T) {
+	ctx := context.Background()
+	parts := newParts()
+
+	require.NoError(t, parts.Save(ctx, []Part{{
+		ID: ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+		Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
+			{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
+	}}))
+
+	parts.DeleteAll(ctx)
+	gotList, err := parts.List(context.Background())
+	assert.NoError(t, err, "parts.List()")
+	assert.Empty(t, gotList)
+}
+
 func TestParts_Save(t *testing.T) {
 	ctx := context.Background()
 	parts := newParts()

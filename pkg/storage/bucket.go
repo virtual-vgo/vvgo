@@ -181,7 +181,6 @@ type ObjectInfo struct {
 	LastModified time.Time
 	Size         int64
 	ContentType  string
-	Tags         map[string]string
 }
 
 func (x *Bucket) ListObjects(ctx context.Context, pre string) []ObjectInfo {
@@ -196,7 +195,6 @@ func (x *Bucket) ListObjects(ctx context.Context, pre string) []ObjectInfo {
 			LastModified: objectInfo.LastModified,
 			Size:         objectInfo.Size,
 			ContentType:  objectInfo.ContentType,
-			Tags:         objectInfo.UserMetadata,
 		})
 	}
 	return info
