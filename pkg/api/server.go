@@ -15,19 +15,15 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
-	MaxContentLength int64  `split_words:"true" default:"10000000"`
-	MemberUser       string `split_words:"true" default:"admin"`
-	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
-	DistroBucketName string `split_words:"true" default:"vvgo-distro"`
-	RedisNamespace   string `split_words:"true" default:"local"`
-}
-
-type Database struct {
-	Parts  *parts.RedisParts
-	Distro *storage.Bucket
+	ListenAddress     string `split_words:"true" default:"0.0.0.0:8080"`
+	MaxContentLength  int64  `split_words:"true" default:"10000000"`
+	MemberUser        string `split_words:"true" default:"admin"`
+	MemberPass        string `split_words:"true" default:"admin"`
+	PrepRepToken      string `split_words:"true" default:"admin"`
+	AdminToken        string `split_words:"true" default:"admin"`
+	DistroBucketName  string `split_words:"true" default:"vvgo-distro"`
+	BackupsBucketName string `split_words:"true" default:"backups"`
+	RedisNamespace    string `split_words:"true" default:"local"`
 }
 
 func NewServer(ctx context.Context, config ServerConfig) *http.Server {
@@ -41,13 +37,13 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 
 	database := Database{
 		Distro: newBucket(ctx, config.DistroBucketName),
-		Parts:  parts.NewParts(config.RedisNamespace + ":parts"),
+		Parts:  parts.NewParts(config.RedisNamespace),
 	}
 
 	navBar := NavBar{MemberUser: config.MemberUser}
 	members := BasicAuth{config.MemberUser: config.MemberPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
-	admin := TokenAuth{config.AdminToken}
+	admin := BasicAuth{"admin": config.AdminToken}
 
 	mux := http.NewServeMux()
 
@@ -70,8 +66,17 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	mux.Handle("/parts", partsHandler)
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
+	backups := newBucket(ctx, config.BackupsBucketName)
+	backupsHandler := admin.Authenticate(&BackupHandler{
+		Database: &database,
+		Backups:  backups,
+		NavBar:   navBar,
+	})
+	mux.Handle("/backups", backupsHandler)
+
 	downloadHandler := members.Authenticate(&DownloadHandler{
-		config.DistroBucketName: database.Distro.DownloadURL,
+		config.DistroBucketName:  database.Distro.DownloadURL,
+		config.BackupsBucketName: backups.DownloadURL,
 	})
 	mux.Handle("/download", members.Authenticate(downloadHandler))
 

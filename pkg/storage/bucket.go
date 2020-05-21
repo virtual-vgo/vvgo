@@ -175,6 +175,30 @@ func NewObject(mediaType string, tags map[string]string, payload []byte) *Object
 	}
 }
 
+type ObjectInfo struct {
+	Key          string
+	LastModified time.Time
+	Size         int64
+	ContentType  string
+}
+
+func (x *Bucket) ListObjects(ctx context.Context, pre string) []ObjectInfo {
+	done := make(chan struct{})
+	defer close(done)
+	_, span := x.newSpan(ctx, "bucket_list_objects")
+	defer span.Send()
+	var info []ObjectInfo
+	for objectInfo := range x.minioClient.ListObjects(x.Name, pre, false, done) {
+		info = append(info, ObjectInfo{
+			Key:          objectInfo.Key,
+			LastModified: objectInfo.LastModified,
+			Size:         objectInfo.Size,
+			ContentType:  objectInfo.ContentType,
+		})
+	}
+	return info
+}
+
 // StatObject returns only the object content type and tags.
 func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object) error {
 	_, span := x.newSpan(ctx, "bucket_stat_object")

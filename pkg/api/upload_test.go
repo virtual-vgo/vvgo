@@ -309,7 +309,6 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			bucket := newBucket(t)
-			require.NoError(t, err, "storage.NewBucket")
 			handlerStorage := Database{
 				Parts:  newParts(),
 				Distro: bucket,
