@@ -18,7 +18,7 @@ func TestDatabase_Backup(t *testing.T) {
 	}
 	require.NoError(t, database.Parts.Save(ctx, []parts.Part{{
 		ID:   parts.ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
-		Clix: []parts.Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
+		Clix: []parts.Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0).UTC()}},
 	}}))
 	got, err := database.Backup(ctx)
 	require.NoError(t, err, "database.Backup()")
@@ -26,7 +26,7 @@ func TestDatabase_Backup(t *testing.T) {
 	assert.Equal(t, []parts.Part{{
 		ID:     parts.ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
 		Sheets: []parts.Link{},
-		Clix:   []parts.Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
+		Clix:   []parts.Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0).UTC()}},
 	}}, got.Parts)
 	assert.Equal(t, string(version.JSON()), string(got.ApiVersion))
 }
