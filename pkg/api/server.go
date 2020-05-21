@@ -43,7 +43,7 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	navBar := NavBar{MemberUser: config.MemberUser}
 	members := BasicAuth{config.MemberUser: config.MemberPass}
 	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
-	admin := TokenAuth{config.AdminToken}
+	admin := BasicAuth{"admin": config.AdminToken}
 
 	mux := http.NewServeMux()
 
@@ -67,11 +67,12 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
 
 	backups := newBucket(ctx, config.BackupsBucketName)
-	mux.Handle("/backups", &BackupHandler{
+	backupsHandler := admin.Authenticate(&BackupHandler{
 		Database: &database,
 		Backups:  backups,
 		NavBar:   navBar,
 	})
+	mux.Handle("/backups", backupsHandler)
 
 	downloadHandler := members.Authenticate(&DownloadHandler{
 		config.DistroBucketName:  database.Distro.DownloadURL,
