@@ -64,6 +64,23 @@ var project = Projects{projects: []Project{
 		AddlContent:    []string{"Chris Suzuki", "Brandon Harnish", "Jerome Landingin", "Joselyn DeSoto"},
 		ReferenceTrack: "02_MH_Proof-of-a-Hero_Reference-Track_W-CLIX.mp3",
 	},
+		{
+		Name:           "03-the-end-begins-to-rock",
+		Title:          "The End Begins To Rock",
+		Released:       false,
+		Archived:       false,
+		Sources:        []string{"God of War II"},
+		Composers:      []string{"Gerard K. Marino"},
+		Arrangers:      []string{"Shota Nakama", "Thomas Håkanson"},
+		Editors:        []string{},
+		Transcribers:   []string{},
+		Preparers:      []string{"Thomas Håkanson"},
+		ClixBy:         []string{"Jacob Zeleny"},
+		Reviewers:      []string{"Brandon Harnish", "Elliot McAuley", "Jerome Landingin", "Thomas Håkanson"},
+		Lyricists:      []string{},
+		AddlContent:    []string{},
+		ReferenceTrack: "",
+	},
 }}
 
 func (x Project) ReferenceTrackLink(bucket string) string {
