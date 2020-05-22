@@ -64,7 +64,7 @@ var project = Projects{projects: []Project{
 		AddlContent:    []string{"Chris Suzuki", "Brandon Harnish", "Jerome Landingin", "Joselyn DeSoto"},
 		ReferenceTrack: "02_MH_Proof-of-a-Hero_Reference-Track_W-CLIX.mp3",
 	},
-		{
+	{
 		Name:           "03-the-end-begins-to-rock",
 		Title:          "The End Begins To Rock",
 		Released:       false,
