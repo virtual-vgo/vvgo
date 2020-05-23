@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -19,8 +20,8 @@ type ServerConfig struct {
 	MaxContentLength  int64  `split_words:"true" default:"10000000"`
 	MemberUser        string `split_words:"true" default:"admin"`
 	MemberPass        string `split_words:"true" default:"admin"`
-	PrepRepToken      string `split_words:"true" default:"admin"`
-	AdminToken        string `split_words:"true" default:"admin"`
+	UploaderToken     string `split_words:"true" default:"admin"`
+	DeveloperToken    string `split_words:"true" default:"admin"`
 	DistroBucketName  string `split_words:"true" default:"vvgo-distro"`
 	BackupsBucketName string `split_words:"true" default:"backups"`
 	RedisNamespace    string `split_words:"true" default:"local"`
@@ -40,65 +41,58 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 		Parts:  parts.NewParts(config.RedisNamespace),
 	}
 
-	navBar := NavBar{MemberUser: config.MemberUser}
-	members := BasicAuth{config.MemberUser: config.MemberPass}
-	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
-	admin := BasicAuth{"admin": config.AdminToken}
+	rbacMux := RBACMux{
+		Basic: map[[2]string][]login.Role{
+			{config.MemberUser, config.MemberPass}: {login.RoleVVGOMember},
+		},
+		Bearer: map[string][]login.Role{
+			config.UploaderToken:  {login.RoleVVGOUploader, login.RoleVVGOMember},
+			config.DeveloperToken: {login.RoleVVGODeveloper, login.RoleVVGOMember},
+		},
+		ServeMux: http.NewServeMux(),
+	}
 
-	mux := http.NewServeMux()
-
-	mux.Handle("/auth",
-		prepRep.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("authenticated"))
-		})),
-	)
+	rbacMux.Handle("/auth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("authenticated"))
+	}), login.RoleVVGOUploader)
 
 	// debug endpoints from net/http/pprof
-	pprofMux := http.NewServeMux()
-	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
-	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
+	rbacMux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGODeveloper)
+	rbacMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGODeveloper)
+	rbacMux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGODeveloper)
+	rbacMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
+	rbacMux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
 
-	partsHandler := members.Authenticate(&PartView{NavBar: navBar, Database: &database})
-	mux.Handle("/parts", partsHandler)
-	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
+	rbacMux.Handle("/parts", PartView{Database: &database}, login.RoleVVGOMember)
 
 	backups := newBucket(ctx, config.BackupsBucketName)
-	backupsHandler := admin.Authenticate(&BackupHandler{
+	rbacMux.Handle("/backups", &BackupHandler{
 		Database: &database,
 		Backups:  backups,
-		NavBar:   navBar,
-	})
-	mux.Handle("/backups", backupsHandler)
+	}, login.RoleVVGODeveloper)
 
-	downloadHandler := members.Authenticate(&DownloadHandler{
+	rbacMux.Handle("/download", DownloadHandler{
 		config.DistroBucketName:  database.Distro.DownloadURL,
 		config.BackupsBucketName: backups.DownloadURL,
-	})
-	mux.Handle("/download", members.Authenticate(downloadHandler))
+	}, login.RoleVVGOMember)
 
 	// Uploads
-	uploadHandler := prepRep.Authenticate(&UploadHandler{&database})
-	mux.Handle("/upload", uploadHandler)
+	rbacMux.Handle("/upload", UploadHandler{
+		Database: &database,
+	}, login.RoleVVGOUploader)
 
-	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))
-	mux.Handle("/login", loginHandler)
-
-	mux.Handle("/version", http.HandlerFunc(Version))
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	rbacMux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
+	rbacMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexView{NavBar: navBar}.ServeHTTP(w, r)
+			IndexView{}.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}
-	}))
+	}, login.RoleAnonymous)
 
 	return &http.Server{
 		Addr:     config.ListenAddress,
-		Handler:  tracing.WrapHandler(mux),
+		Handler:  tracing.WrapHandler(&rbacMux),
 		ErrorLog: log.StdLogger(),
 	}
 }

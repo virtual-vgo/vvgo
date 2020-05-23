@@ -31,8 +31,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 		ApiConfig: api.ServerConfig{
 			ListenAddress:     "listen-address",
 			MaxContentLength:  1e6,
-			AdminToken:        "admin-token",
-			PrepRepToken:      "prep-rep-token",
 			MemberUser:        "member-user",
 			MemberPass:        "member-pass",
 			DistroBucketName:  "distro-bucket-name",
