@@ -48,6 +48,11 @@ a:hover.nav-login {
     background-color: #000000;
 }
 
+.bg-solid-snake {
+    background-image: url('/images/snake-eater-banner-solid-snake.png');
+    background-repeat: no-repeat;
+}
+
 .thick-border {
     border-style: solid;
     border-width: thick;
