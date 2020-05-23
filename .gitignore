@@ -1,10 +1,10 @@
-vvgo
-vvgo-uploader*
-.idea
-info.go
 !cmd/*
 !infra/*
 *.exe
-data/statik
-node_modules
+.idea
 __uploader.out
+data/statik
+info.go
+node_modules
+vvgo
+vvgo-uploader*
