@@ -160,7 +160,7 @@ func TestPart_String(t *testing.T) {
 		Clix:   []Link{{"click.mp3", time.Now()}},
 		Sheets: []Link{{"sheet.pdf", time.Now()}},
 	}
-	want := "GetProject: cheese Part: Trumpet #1"
+	want := "Project: cheese Part: Trumpet #1"
 	assert.Equal(t, want, part.String())
 }
 
