@@ -9,6 +9,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
+	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
@@ -17,9 +19,10 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	Secret        string           `envconfig:"vvgo_secret"`
 	ApiConfig     api.ServerConfig `envconfig:"api"`
 	TracingConfig tracing.Config   `envconfig:"tracing"`
+	RedisConfig   redis.Config     `envconfig:"redis"`
+	MinioConfig   storage.Config   `envconfig:"minio"`
 }
 
 func (x *Config) ParseEnv() {
@@ -55,7 +58,9 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	//
+	storage.Initialize(config.MinioConfig)
+	redis.Initialize(config.RedisConfig)
+
 	apiServer := api.NewServer(ctx, config.ApiConfig)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
