@@ -42,8 +42,8 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archived := true
-	released := false
+	archived := false
+	released := true
 
 	if want := r.FormValue("archived"); want != "" {
 		archived, _ = strconv.ParseBool(want)
