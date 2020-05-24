@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -41,11 +42,22 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	archived := true
+	released := false
+
+	if want := r.FormValue("archived"); want != "" {
+		archived, _ = strconv.ParseBool(want)
+	}
+
+	if want := r.FormValue("released"); want != "" {
+		released, _ = strconv.ParseBool(want)
+	}
+
 	want := len(parts)
 	for i := 0; i < want; i++ {
 		if parts[i].Validate() == nil &&
-			projects.GetName(parts[i].Project).Archived == false &&
-			projects.GetName(parts[i].Project).Released == true {
+			projects.GetName(parts[i].Project).Archived == archived &&
+			projects.GetName(parts[i].Project).Released == released {
 			continue
 		}
 		parts[i], parts[want-1] = parts[want-1], parts[i]
