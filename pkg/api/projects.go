@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type ProjectsHandler struct {}
+type ProjectsHandler struct{}
 
 func (x ProjectsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	projectName := r.FormValue("name")
