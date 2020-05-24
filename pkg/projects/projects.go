@@ -79,7 +79,7 @@ var project = Projects{projects: []Project{
 		Reviewers:      []string{"Brandon Harnish", "Elliot McAuley", "Jerome Landingin", "Thomas Håkanson"},
 		Lyricists:      []string{},
 		AddlContent:    []string{},
-		ReferenceTrack: "",
+		ReferenceTrack: "03_The-End-Begins-to-Rock_Reference-Track-NoCLIX.mp3",
 	},
 }}
 
