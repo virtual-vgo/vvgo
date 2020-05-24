@@ -84,6 +84,10 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	uploadHandler := prepRep.Authenticate(&UploadHandler{&database})
 	mux.Handle("/upload", uploadHandler)
 
+	// Projects
+	projectsHandler := prepRep.Authenticate(&ProjectsHandler{})
+	mux.Handle("/projects", projectsHandler)
+
 	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))
 	mux.Handle("/login", loginHandler)
 

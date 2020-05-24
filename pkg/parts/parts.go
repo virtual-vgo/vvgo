@@ -229,7 +229,7 @@ func (x *Links) NewKey(key string) {
 }
 
 func (x Part) String() string {
-	return fmt.Sprintf("Project: %s Part: %s #%d", x.Project, strings.Title(x.Name), x.Number)
+	return fmt.Sprintf("GetProject: %s Part: %s #%d", x.Project, strings.Title(x.Name), x.Number)
 }
 
 func (x Part) SheetLink(bucket string) string {
