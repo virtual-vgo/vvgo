@@ -33,8 +33,7 @@ func TestUpload_Validate(t *testing.T) {
 		{
 			name: "invalid type",
 			upload: Upload{
-				PartNames:   []string{"trumpet"},
-				PartNumbers: []uint8{1},
+				PartNames:   []string{"trumpet 1"},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
 				FileBytes:   sheetBytes,
@@ -43,23 +42,10 @@ func TestUpload_Validate(t *testing.T) {
 			want: ErrInvalidUploadType,
 		},
 		{
-			name: "missing part names",
-			upload: Upload{
-				UploadType:  UploadTypeSheets,
-				PartNumbers: []uint8{1},
-				Project:     "01-snake-eater",
-				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
-				FileBytes:   sheetBytes,
-				ContentType: "application/pdf",
-			},
-			want: ErrMissingPartNames,
-		},
-		{
 			name: "invalid part names",
 			upload: Upload{
 				UploadType:  UploadTypeSheets,
 				PartNames:   []string{""},
-				PartNumbers: []uint8{1},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
 				FileBytes:   sheetBytes,
@@ -68,37 +54,11 @@ func TestUpload_Validate(t *testing.T) {
 			want: parts.ErrInvalidPartName,
 		},
 		{
-			name: "missing part numbers",
-			upload: Upload{
-				UploadType:  UploadTypeClix,
-				PartNames:   []string{"trumpet"},
-				Project:     "01-snake-eater",
-				FileName:    filepath.Join("testdata", "click-track.mp3"),
-				FileBytes:   clickBytes,
-				ContentType: "audio/mpeg",
-			},
-			want: ErrMissingPartNumbers,
-		},
-		{
-			name: "invalid part numbers",
-			upload: Upload{
-				UploadType:  UploadTypeClix,
-				PartNames:   []string{"trumpet"},
-				PartNumbers: []uint8{0},
-				Project:     "01-snake-eater",
-				FileName:    filepath.Join("testdata", "click-track.mp3"),
-				FileBytes:   clickBytes,
-				ContentType: "audio/mpeg",
-			},
-			want: parts.ErrInvalidPartNumber,
-		},
-		{
 			name: "invalid project",
 			upload: Upload{
 				UploadType:  UploadTypeClix,
-				Project:     "00-mighty-morphin-power-ranger",
-				PartNames:   []string{"trumpet"},
-				PartNumbers: []uint8{1},
+				Project:     "00-mighty-morphin-power-rangers",
+				PartNames:   []string{"trumpet 1"},
 				FileName:    filepath.Join("testdata", "click-track.mp3"),
 				FileBytes:   clickBytes,
 				ContentType: "audio/mpeg",
@@ -109,8 +69,7 @@ func TestUpload_Validate(t *testing.T) {
 			name: "empty file bytes",
 			upload: Upload{
 				UploadType:  UploadTypeClix,
-				PartNames:   []string{"trumpet"},
-				PartNumbers: []uint8{1},
+				PartNames:   []string{"trumpet 1"},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "click-track.mp3"),
 				ContentType: "audio/mpeg",
@@ -121,8 +80,7 @@ func TestUpload_Validate(t *testing.T) {
 			name: "click/invalid",
 			upload: Upload{
 				UploadType:  UploadTypeClix,
-				PartNames:   []string{"trumpet"},
-				PartNumbers: []uint8{1},
+				PartNames:   []string{"trumpet 1"},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "click-track.mp3"),
 				FileBytes:   sheetBytes,
@@ -134,8 +92,7 @@ func TestUpload_Validate(t *testing.T) {
 			name: "click/valid",
 			upload: Upload{
 				UploadType:  UploadTypeClix,
-				PartNames:   []string{"trumpet"},
-				PartNumbers: []uint8{1},
+				PartNames:   []string{"trumpet 1"},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "click-track.mp3"),
 				FileBytes:   clickBytes,
@@ -147,8 +104,7 @@ func TestUpload_Validate(t *testing.T) {
 			name: "sheet/invalid",
 			upload: Upload{
 				UploadType:  UploadTypeSheets,
-				PartNames:   []string{"trumpet"},
-				PartNumbers: []uint8{1},
+				PartNames:   []string{"trumpet 1"},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
 				FileBytes:   clickBytes,
@@ -160,8 +116,7 @@ func TestUpload_Validate(t *testing.T) {
 			name: "sheet/valid",
 			upload: Upload{
 				UploadType:  UploadTypeSheets,
-				PartNames:   []string{"trumpet"},
-				PartNumbers: []uint8{1},
+				PartNames:   []string{"trumpet 1"},
 				Project:     "01-snake-eater",
 				FileName:    filepath.Join("testdata", "sheet-music.pdf"),
 				FileBytes:   sheetBytes,
@@ -196,8 +151,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 	upload := []Upload{
 		{
 			UploadType:  "sheets",
-			PartNames:   []string{"trumpet"},
-			PartNumbers: []uint8{1},
+			PartNames:   []string{"trumpet 1"},
 			Project:     "01-snake-eater",
 			FileName:    "testdata/sheet-music.pdf",
 			FileBytes:   sheetBytes.Bytes(),
@@ -205,8 +159,7 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		},
 		{
 			UploadType:  "clix",
-			PartNames:   []string{"trumpet"},
-			PartNumbers: []uint8{1},
+			PartNames:   []string{"trumpet 1"},
 			Project:     "01-snake-eater",
 			FileName:    "testdata/click-track.mp3",
 			FileBytes:   clickBytes.Bytes(),

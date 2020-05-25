@@ -51,8 +51,7 @@ func TestClient_Upload(t *testing.T) {
 
 	uploads := []Upload{{
 		UploadType:  UploadTypeSheets,
-		PartNames:   []string{"trumpet"},
-		PartNumbers: []uint8{2},
+		PartNames:   []string{"trumpet 2"},
 		Project:     "01-snake-eater",
 		FileName:    "Dio_Brando.pdf",
 		FileBytes:   fileBytes,

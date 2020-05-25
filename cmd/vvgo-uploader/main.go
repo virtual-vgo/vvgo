@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -213,18 +212,16 @@ func readUpload(writer io.Writer, reader *bufio.Reader, upload *api.Upload, proj
 		color.New(color.Italic).Sprint("leave empty to skip"),
 		color.New(color.Italic).Sprint("Ctrl+C to quit"))
 	partNames := readPartNames(writer, reader)
-	partNumbers := readPartNumbers(writer, reader)
 	*upload = api.Upload{
 		UploadType:  uploadType,
 		PartNames:   partNames,
-		PartNumbers: partNumbers,
 		Project:     project,
 		FileName:    fileName,
 		FileBytes:   fileBytes,
 		ContentType: contentType,
 	}
 
-	if partNames == nil && partNumbers == nil {
+	if partNames == nil{
 		return ErrSkipped
 	}
 	return upload.Validate()
@@ -255,34 +252,6 @@ func readUploadType(writer io.Writer, reader *bufio.Reader, mediaType string) (a
 	default:
 		return "", fmt.Errorf("i don't know how to handle media type: `%s`. (´･ω･`)", mediaType)
 	}
-}
-
-func readPartNumbers(writer io.Writer, reader *bufio.Reader) []uint8 {
-	fmt.Fprint(writer, ":: part numbers (ex. 1, 2): ")
-	rawNumbers, err := reader.ReadString('\n')
-	if err != nil {
-		printError(err)
-		return nil
-	}
-
-	rawNumbers = strings.TrimSpace(rawNumbers)
-	if rawNumbers == "" {
-		return nil
-	}
-
-	var partNums []uint8
-	for _, raw := range strings.Split(rawNumbers, ",") {
-		bigNum, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 8)
-		num := uint8(bigNum)
-		switch {
-		case err != nil:
-			printError(err)
-			return nil
-		default:
-			partNums = append(partNums, num)
-		}
-	}
-	return partNums
 }
 
 func readPartNames(writer io.Writer, reader *bufio.Reader) []string {

@@ -184,15 +184,13 @@ type Part struct {
 }
 
 func (x *Part) RedisKey() string {
-	return fmt.Sprintf("%s:%s:%d", x.ID.Project, x.ID.Name, x.ID.Number)
+	return x.ID.Project + ":" + x.ID.Name
 }
 
 func (x *Part) DecodeRedisKey(str string) {
-	got := strings.SplitN(str, ":", 3)
+	got := strings.SplitN(str, ":", 2)
 	x.ID.Project = got[0]
 	x.ID.Name = got[1]
-	num, _ := strconv.Atoi(got[2])
-	x.ID.Number = uint8(num)
 }
 
 func (x *Part) ZScore() int {
@@ -229,7 +227,7 @@ func (x *Links) NewKey(key string) {
 }
 
 func (x Part) String() string {
-	return fmt.Sprintf("Project: %s Part: %s #%d", x.Project, strings.Title(x.Name), x.Number)
+	return fmt.Sprintf("Project: %s Part: %s", x.Project, strings.Title(x.Name))
 }
 
 func (x Part) SheetLink(bucket string) string {
@@ -254,8 +252,6 @@ func (x Part) Validate() error {
 		return projects.ErrNotFound
 	case ValidNames(x.Name) == false:
 		return ErrInvalidPartName
-	case ValidNumbers(x.Number) == false:
-		return ErrInvalidPartNumber
 	default:
 		return nil
 	}
@@ -270,21 +266,7 @@ func ValidNames(names ...string) bool {
 	return true
 }
 
-func ValidNumbers(numbers ...uint8) bool {
-	for _, n := range numbers {
-		if n == 0 {
-			return false
-		}
-	}
-	return true
-}
-
 type ID struct { // this can be a redis hash
 	Project string `json:"project" redis:"project"`
 	Name    string `json:"part_name" redis:"part_name"`
-	Number  uint8  `json:"part_number" redis:"part_number"`
-}
-
-func (id ID) String() string {
-	return fmt.Sprintf("%s-%s-%d", id.Project, id.Name, id.Number)
 }
