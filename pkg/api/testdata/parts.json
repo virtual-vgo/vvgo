@@ -1,9 +1,9 @@
 [
   {
-    "project": "Proof of a Hero",
+    "project": "The End Begins To Rock",
     "part_name": "Trumpet 3",
-    "sheet_music": "/download?bucket=distro\u0026object=sheet.pdf",
-    "click_track": "/download?bucket=distro\u0026object=click.mp3",
-    "reference_track": "/download?bucket=distro&object=02_MH_Proof-of-a-Hero_Reference-Track_W-CLIX.mp3"
+    "sheet_music": "/download?bucket=vvgo-distro\u0026object=sheet.pdf",
+    "click_track": "/download?bucket=vvgo-distro\u0026object=click.mp3",
+    "reference_track": "/download?bucket=vvgo-distro&object=03_The-End-Begins-to-Rock_Reference-Track-NoCLIX.mp3"
   }
 ]

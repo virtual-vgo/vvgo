@@ -17,8 +17,7 @@ import (
 var logger = log.Logger()
 
 var (
-	ErrInvalidPartName   = fmt.Errorf("invalid part name")
-	ErrInvalidPartNumber = fmt.Errorf("invalid part number")
+	ErrInvalidPartName = fmt.Errorf("invalid part name")
 )
 
 type RedisParts struct {
