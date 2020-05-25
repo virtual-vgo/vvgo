@@ -54,7 +54,6 @@ func (x BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx co
 			DownloadLink: "/download?" + dlValues.Encode(),
 			Object:       info[i].Key,
 		}
-		fmt.Printf("%#v\n", info[i])
 	}
 
 	navBarOpts := x.NavBar.NewOpts(ctx, r)
@@ -85,9 +84,6 @@ func (x BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx cont
 			internalServerError(w)
 			return
 		}
-		if acceptsType(r, "text/html") {
-			http.Redirect(w, r, r.URL.Path, http.StatusFound)
-		}
 
 	case "restore":
 		key := r.FormValue("object")
@@ -104,6 +100,10 @@ func (x BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx cont
 	default:
 		badRequest(w, "missing form field `cmd`")
 		return
+	}
+
+	if acceptsType(r, "text/html") {
+		http.Redirect(w, r, r.URL.Path, http.StatusFound)
 	}
 	return
 }

@@ -30,8 +30,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 		{
 			ID: parts.ID{
 				Project: "01-snake-eater",
-				Name:    "trumpet",
-				Number:  3,
+				Name:    "trumpet 3",
 			},
 			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
 			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
@@ -39,8 +38,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 		{
 			ID: parts.ID{
 				Project: "02-proof-of-a-hero",
-				Name:    "trumpet",
-				Number:  3,
+				Name:    "trumpet 3",
 			},
 			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
 			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},

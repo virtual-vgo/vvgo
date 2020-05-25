@@ -26,43 +26,39 @@
 {{ .NavBar }}
 <main role="main">
     <div class="container">
-        <div class="jumbotron bg-transparent">
-            <div class="bg-terminal p-3 thick-border rounded">
-                <h1 class="title text-monospace mb-3">~ Backups ~</h1>
-
-                <form><input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
-                             type="submit" name="cmd" value="backup" id="cmd" formmethod="post"></form>
-                <table id="backups" class="table text-light">
-                    <thead>
+        <div class="bg-terminal p-3 mt-4 border rounded">
+            <h1 class="title text-monospace mb-3">~ Backups ~</h1>
+            <form><input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                         type="submit" name="cmd" value="backup" id="cmd" formmethod="post"></form>
+            <table id="backups" class="table text-light">
+                <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Size</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{- range .Rows}}
                     <tr>
-                        <th>Timestamp</th>
-                        <th>Size</th>
-                        <th>Actions</th>
+                        <td>{{.Timestamp}}</td>
+                        <td>{{.SizeKB}} KB</td>
+                        <td>
+                            <a href="{{.DownloadLink}}"
+                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace float-left">
+                                download
+                            </a>
+                            <form class="float-left ml-1">
+                                <input type="hidden" name="object" value="{{.Object}}">
+                                <input type="hidden" name="cmd" value="restore">
+                                <input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                                       type="submit" value="restore" formmethod="post">
+                            </form>
+                        </td>
                     </tr>
-                    </thead>
-                    <tbody>
-                    {{- range .Rows}}
-                        <tr>
-                            <td>{{.Timestamp}}</td>
-                            <td>{{.SizeKB}} KB</td>
-                            <td>
-                                <a href="{{.DownloadLink}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    download
-                                </a>
-                                <form>
-                                    <input type="hidden" name="object" value="{{.Object}}">
-                                    <input type="hidden" name="cmd" value="restore">
-                                    <input
-                                            class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
-                                            type="submit" value="restore" formmethod="post">
-                                </form>
-                            </td>
-                        </tr>
-                    {{- end }}
-                    </tbody>
-                </table>
-            </div>
+                {{- end }}
+                </tbody>
+            </table>
         </div>
     </div>
 </main>

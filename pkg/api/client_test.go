@@ -3,12 +3,30 @@ package api
 import (
 	"context"
 	"encoding/gob"
+	"github.com/stretchr/testify/assert"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 )
+
+func TestClient_GetProject(t *testing.T) {
+	ts := httptest.NewServer(ProjectsHandler{})
+	defer ts.Close()
+	client := NewAsyncClient(AsyncClientConfig{
+		ClientConfig: ClientConfig{
+			Token:         "Dio Brando",
+			ServerAddress: ts.URL,
+		},
+		MaxParallel: 32,
+		QueueLength: 64,
+	})
+	got, err := client.GetProject("01-snake-eater")
+	assert.NoError(t, err)
+	assert.Equal(t, projects.GetName("01-snake-eater"), got)
+}
 
 func TestClient_Upload(t *testing.T) {
 	wantURI := "/upload"
@@ -49,8 +67,7 @@ func TestClient_Upload(t *testing.T) {
 
 	uploads := []Upload{{
 		UploadType:  UploadTypeSheets,
-		PartNames:   []string{"trumpet"},
-		PartNumbers: []uint8{2},
+		PartNames:   []string{"trumpet 2"},
 		Project:     "01-snake-eater",
 		FileName:    "Dio_Brando.pdf",
 		FileBytes:   fileBytes,

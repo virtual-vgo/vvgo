@@ -86,6 +86,9 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 		Database: &database,
 	}, login.RoleVVGOUploader)
 
+	// Projects
+	rbacMux.Handle("/projects", ProjectsHandler{}, login.RoleVVGOUploader)
+
 	rbacMux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
 	rbacMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
