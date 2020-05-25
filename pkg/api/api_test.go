@@ -30,8 +30,8 @@ var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func newSessions() *login.Store {
 	return login.NewStore("testing"+strconv.Itoa(lrand.Int()), login.Config{
-		CookieName:   "vvgo-test-cookie",
-		CookiePath:   "/",
+		CookieName: "vvgo-test-cookie",
+		CookiePath: "/",
 	})
 }
 
