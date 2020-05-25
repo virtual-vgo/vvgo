@@ -18,7 +18,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"TRACING_HONEYCOMB_WRITE_KEY": "tracing-honeycomb-write-key",
 		"TRACING_SERVICE_NAME":        "tracing-service-name",
 		"API_LISTEN_ADDRESS":          "listen-address",
-		"API_MAX_CONTENT_LENGTH":      "1000000",
 		"API_DISTRO_BUCKET_NAME":      "distro-bucket-name",
 		"API_BACKUPS_BUCKET_NAME":     "backups-bucket-name",
 		"API_REDIS_NAMESPACE":         "redis-namespace",
@@ -41,7 +40,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 	want := Config{
 		ApiConfig: api.ServerConfig{
 			ListenAddress:     "listen-address",
-			MaxContentLength:  1e6,
 			MemberUser:        "member-user",
 			MemberPass:        "member-pass",
 			DistroBucketName:  "distro-bucket-name",

@@ -17,7 +17,6 @@ var PublicFiles = "public"
 
 type ServerConfig struct {
 	ListenAddress     string       `split_words:"true" default:"0.0.0.0:8080"`
-	MaxContentLength  int64        `split_words:"true" default:"10000000"`
 	MemberUser        string       `split_words:"true" default:"admin"`
 	MemberPass        string       `split_words:"true" default:"admin"`
 	UploaderToken     string       `split_words:"true" default:"admin"`
@@ -28,7 +27,13 @@ type ServerConfig struct {
 	Login             login.Config `envconfig:"login"`
 }
 
-func NewServer(ctx context.Context, config ServerConfig) *http.Server {
+type Server struct {
+	config   ServerConfig
+	database Database
+	*http.Server
+}
+
+func NewServer(ctx context.Context, config ServerConfig) *Server {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := storage.NewBucket(ctx, bucketName)
 		if err != nil {
@@ -71,10 +76,10 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	mux.Handle("/parts", PartView{Database: &database}, login.RoleVVGOMember)
 
 	backups := newBucket(ctx, config.BackupsBucketName)
-	mux.Handle("/backups", &BackupHandler{
+	mux.Handle("/backups", BackupHandler{
 		Database: &database,
 		Backups:  backups,
-	}, login.RoleVVGODeveloper)
+	}, login.RoleVVGOUploader)
 
 	mux.Handle("/download", DownloadHandler{
 		config.DistroBucketName:  database.Distro.DownloadURL,
@@ -98,9 +103,13 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 		}
 	}, login.RoleAnonymous)
 
-	return &http.Server{
-		Addr:     config.ListenAddress,
-		Handler:  tracing.WrapHandler(&mux),
-		ErrorLog: log.StdLogger(),
+	return &Server{
+		config:   config,
+		database: database,
+		Server: &http.Server{
+			Addr:     config.ListenAddress,
+			Handler:  tracing.WrapHandler(&mux),
+			ErrorLog: log.StdLogger(),
+		},
 	}
 }
