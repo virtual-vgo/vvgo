@@ -51,7 +51,7 @@ var project = Projects{projects: []Project{
 		Name:           "02-proof-of-a-hero",
 		Title:          "Proof of a Hero",
 		Released:       true,
-		Archived:       false,
+		Archived:       true,
 		Sources:        []string{"Monster Hunter"},
 		Composers:      []string{"Masato Kohda (甲田 雅人)"},
 		Arrangers:      []string{"Jacob Zeleny"},
@@ -67,7 +67,7 @@ var project = Projects{projects: []Project{
 	{
 		Name:           "03-the-end-begins-to-rock",
 		Title:          "The End Begins To Rock",
-		Released:       false,
+		Released:       true,
 		Archived:       false,
 		Sources:        []string{"God of War II"},
 		Composers:      []string{"Gerard K. Marino"},
