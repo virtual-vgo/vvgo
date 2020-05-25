@@ -44,10 +44,10 @@ type Upload struct {
 }
 
 var (
-	ErrInvalidUploadType  = errors.New("invalid upload type")
-	ErrMissingProject     = errors.New("missing project")
-	ErrMissingPartNames   = errors.New("missing part names")
-	ErrEmptyFileBytes     = errors.New("empty file bytes")
+	ErrInvalidUploadType = errors.New("invalid upload type")
+	ErrMissingProject    = errors.New("missing project")
+	ErrMissingPartNames  = errors.New("missing part names")
+	ErrEmptyFileBytes    = errors.New("empty file bytes")
 )
 
 func (upload *Upload) Validate() error {
