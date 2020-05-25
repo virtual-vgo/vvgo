@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
@@ -11,6 +12,38 @@ import (
 	"strconv"
 	"strings"
 )
+
+type LoginView struct {
+	NavBar   NavBar
+	Sessions *login.Store
+}
+
+func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "login_view")
+	defer span.Send()
+
+	var identity login.Identity
+	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil && !identity.IsAnonymous() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
+	opts := x.NavBar.NewOpts(ctx, r)
+	page := struct {
+		Header template.HTML
+		NavBar template.HTML
+	}{
+		Header: Header(),
+		NavBar: x.NavBar.RenderHTML(opts),
+	}
+
+	var buf bytes.Buffer
+	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	buf.WriteTo(w)
+}
 
 type PartView struct {
 	NavBar
@@ -137,7 +170,6 @@ func Header() template.HTML {
 }
 
 type NavBar struct {
-	MemberUser string
 }
 
 type NavBarRenderOpts struct {
@@ -146,20 +178,28 @@ type NavBarRenderOpts struct {
 	PartsActive     bool
 }
 
+const CtxKeyVVGOIdentity = "vvgo_identity"
+
 func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
-	var opts NavBarRenderOpts
-	user, _, _ := r.BasicAuth()
-	switch user {
-	case x.MemberUser:
-		opts.ShowMemberLinks = true
-	default:
-		opts.ShowLogin = true
+	identity := identityFromContext(ctx)
+	return NavBarRenderOpts{
+		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
+		ShowLogin:       identity.IsAnonymous(),
 	}
-	return opts
 }
 
 func (x NavBar) RenderHTML(opts NavBarRenderOpts) template.HTML {
 	var buffer bytes.Buffer
 	parseAndExecute(&buffer, &opts, filepath.Join(PublicFiles, "navbar.gohtml"))
 	return template.HTML(buffer.String())
+}
+
+func identityFromContext(ctx context.Context) *login.Identity {
+	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
+	identity, ok := ctxIdentity.(*login.Identity)
+	if !ok {
+		identity = new(login.Identity)
+		*identity = login.Anonymous()
+	}
+	return identity
 }

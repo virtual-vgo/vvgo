@@ -14,5 +14,6 @@ func (x ProjectsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		notFound(w)
 		return
 	}
+	w.Header().Add("Content-Type", "application/json")
 	jsonEncode(w, project)
 }
