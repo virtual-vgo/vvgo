@@ -32,7 +32,7 @@ func TestClient_Upload(t *testing.T) {
 	var gotRequest *http.Request
 	var gotAuthorized bool
 	mux := RBACMux{
-		Bearer: map[string][]login.Role{"Dio Brando": {login.RoleVVGOUploader}},
+		Bearer:   map[string][]login.Role{"Dio Brando": {login.RoleVVGOUploader}},
 		ServeMux: http.NewServeMux(),
 	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +48,7 @@ func TestClient_Upload(t *testing.T) {
 
 	client := NewAsyncClient(AsyncClientConfig{
 		ClientConfig: ClientConfig{
-			Token: "Dio Brando",
+			Token:         "Dio Brando",
 			ServerAddress: ts.URL,
 		},
 		MaxParallel: 32,
