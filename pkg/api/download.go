@@ -32,7 +32,6 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		badRequest(w, "object required")
 	}
 
-
 	urlFunc, ok := x[bucketName]
 	if !ok {
 		unauthorized(w)
