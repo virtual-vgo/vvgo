@@ -50,6 +50,7 @@ a:hover.nav-login {
 
 .bg-solid-snake {
     background-image: url('/images/snake-eater-banner-solid-snake.png');
+    background-size: contain;
     background-repeat: no-repeat;
 }
 
