@@ -21,6 +21,7 @@ type RBACMux struct {
 func (auth *RBACMux) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request), role login.Role) {
 	auth.Handle(pattern, http.HandlerFunc(handler), role)
 }
+
 func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Role) {
 	auth.ServeMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := tracing.StartSpan(r.Context(), "rbac_mux")

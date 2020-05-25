@@ -28,10 +28,9 @@ func init() {
 
 var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func newSessions(cookieDomain string) *login.Store {
+func newSessions() *login.Store {
 	return login.NewStore("testing"+strconv.Itoa(lrand.Int()), login.Config{
 		CookieName:   "vvgo-test-cookie",
-		CookieDomain: cookieDomain,
 		CookiePath:   "/",
 	})
 }
