@@ -47,7 +47,6 @@ var (
 	ErrInvalidUploadType  = errors.New("invalid upload type")
 	ErrMissingProject     = errors.New("missing project")
 	ErrMissingPartNames   = errors.New("missing part names")
-	ErrMissingPartNumbers = errors.New("missing part numbers")
 	ErrEmptyFileBytes     = errors.New("empty file bytes")
 )
 

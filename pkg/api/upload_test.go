@@ -10,6 +10,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -132,20 +133,18 @@ func TestUpload_Validate(t *testing.T) {
 }
 
 func TestUploadHandler_ServeHTTP(t *testing.T) {
-	// read test data from files
-	var sheetBytes, clickBytes bytes.Buffer
-	for _, args := range []struct {
-		buffer *bytes.Buffer
-		file   string
-	}{
-		{&sheetBytes, "testdata/sheet-music.pdf"},
-		{&clickBytes, "testdata/click-track.mp3"},
-	} {
-		file, err := os.Open(args.file)
-		require.NoError(t, err, "os.Open()  `%s`", file)
-		_, err = args.buffer.ReadFrom(file)
+	readFile := func(name string) *bytes.Buffer {
+		var dest bytes.Buffer
+		file, err := os.Open(name)
+		require.NoError(t, err, "os.Open() `%s`", file)
+		_, err = dest.ReadFrom(file)
 		require.NoError(t, err, "file.Read() `%s`", file)
+		return &dest
 	}
+
+	// read test data from files
+	sheetBytes := readFile("testdata/sheet-music.pdf")
+	clickBytes := readFile("testdata/click-track.mp3")
 
 	// create our own upload document
 	upload := []Upload{
@@ -178,115 +177,97 @@ func TestUploadHandler_ServeHTTP(t *testing.T) {
 		},
 	}
 
-	// encode it in our various encodings
-	var uploadGob, uploadGobGzip, uploadJSON, wantStatusGob, wantStatusJSON bytes.Buffer
-	require.NoError(t, gob.NewEncoder(&uploadGob).Encode(upload), "gob.Encode()")
-	require.NoError(t, json.NewEncoder(&uploadJSON).Encode(upload), "json.Encode()")
-	require.NoError(t, gob.NewEncoder(&wantStatusGob).Encode(wantStatus), "gob.Encode()")
-	require.NoError(t, json.NewEncoder(&wantStatusJSON).Encode(wantStatus), "json.Encode()")
-	gzipWriter := gzip.NewWriter(&uploadGobGzip)
-	_, err := gzipWriter.Write(uploadGob.Bytes())
-	require.NoError(t, err, "gzip.Write()")
-	require.NoError(t, gzipWriter.Close(), "gzip.Close()")
-
-	type request struct {
-		method    string
-		mediaType string
-		accept    string
-		encoding  string
-		body      bytes.Buffer
+	newRequest := func(t *testing.T, method string, url string, body io.Reader) *http.Request {
+		req, err := http.NewRequest(method, url, body)
+		assert.NoError(t, err, "http.NewRequest()")
+		return req
 	}
 
-	type wants struct {
-		code int
-		body bytes.Buffer
-	}
+	t.Run("invalid method", func(t *testing.T) {
+		ts := httptest.NewServer(UploadHandler{&Database{
+			Parts:  newParts(),
+			Distro: newBucket(t),
+		}})
+		defer ts.Close()
 
-	for _, tt := range []struct {
-		name    string
-		request request
-		wants   wants
-	}{
-		{
-			name: "method:get",
-			request: request{
-				method:    http.MethodGet,
-				mediaType: "application/json",
-				body:      *bytes.NewBuffer([]byte("[]")),
-			},
-			wants: wants{
-				body: *bytes.NewBuffer([]byte("\n")),
-				code: http.StatusMethodNotAllowed,
-			},
-		},
-		{
-			name: "content-type:application/json/success",
-			request: request{
-				method:    http.MethodPost,
-				mediaType: "application/json",
-				accept:    "application/json",
-				body:      uploadJSON,
-			},
-			wants: wants{
-				body: wantStatusJSON,
-				code: http.StatusOK,
-			},
-		},
-		{
-			name: "content-type:application/" + MediaTypeUploadsGob + "/success",
-			request: request{
-				method:    http.MethodPost,
-				mediaType: MediaTypeUploadsGob,
-				accept:    MediaTypeUploadStatusesGob,
-				body:      uploadGob,
-			},
-			wants: wants{
-				body: wantStatusGob,
-				code: http.StatusOK,
-			},
-		},
-		{
-			name: "content-encoding/gzip/success",
-			request: request{
-				method:    http.MethodPost,
-				mediaType: MediaTypeUploadsGob,
-				accept:    MediaTypeUploadStatusesGob,
-				encoding:  "application/gzip",
-				body:      uploadGobGzip,
-			},
-			wants: wants{
-				body: wantStatusGob,
-				code: http.StatusOK,
-			},
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			bucket := newBucket(t)
-			handlerStorage := Database{
-				Parts:  newParts(),
-				Distro: bucket,
-			}
+		req := newRequest(t, http.MethodGet, ts.URL, nil)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "http.Do()")
+		assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+	})
 
-			request := httptest.NewRequest(tt.request.method, "/upload", &tt.request.body)
-			request.Header.Set("Content-Type", tt.request.mediaType)
-			request.Header.Set("Content-Encoding", tt.request.encoding)
-			request.Header.Set("Accept", tt.request.accept)
-			recorder := httptest.NewRecorder()
-			UploadHandler{&handlerStorage}.ServeHTTP(recorder, request)
-			resp := recorder.Result()
-			var respBody bytes.Buffer
-			respBody.ReadFrom(resp.Body)
-			resp.Body.Close()
-			assert.Equal(t, tt.wants.code, resp.StatusCode, "code")
-			if !assert.Equal(t, tt.wants.body.String(), respBody.String(), "body") {
-				var gotStatus []UploadStatus
-				gob.NewDecoder(recorder.Body).Decode(&gotStatus)
-				sort.Sort(statusSort(wantStatus))
-				sort.Sort(statusSort(gotStatus))
-				assert.Equal(t, wantStatus, gotStatus)
-			}
-		})
-	}
+	t.Run("content-type:application/json", func(t *testing.T) {
+		ts := httptest.NewServer(UploadHandler{&Database{
+			Parts:  newParts(),
+			Distro: newBucket(t),
+		}})
+		defer ts.Close()
+
+		var uploadJSON bytes.Buffer
+		require.NoError(t, json.NewEncoder(&uploadJSON).Encode(upload), "json.Encode()")
+
+		req := newRequest(t, http.MethodPost, ts.URL, &uploadJSON)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "http.Do()")
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var gotStatus []UploadStatus
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&gotStatus))
+		assertEqualStatus(t, wantStatus, gotStatus)
+	})
+
+	t.Run("content-type:application/"+MediaTypeUploadsGob, func(t *testing.T) {
+		ts := httptest.NewServer(UploadHandler{&Database{
+			Parts:  newParts(),
+			Distro: newBucket(t),
+		}})
+		defer ts.Close()
+
+		var uploadGob bytes.Buffer
+		require.NoError(t, gob.NewEncoder(&uploadGob).Encode(upload), "gob.Encode()")
+
+		req := newRequest(t, http.MethodPost, ts.URL, &uploadGob)
+		req.Header.Set("Content-Type", MediaTypeUploadsGob)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "http.Do()")
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var gotStatus []UploadStatus
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&gotStatus))
+		assertEqualStatus(t, wantStatus, gotStatus)
+	})
+
+	t.Run("content-encoding:gzip", func(t *testing.T) {
+		ts := httptest.NewServer(UploadHandler{&Database{
+			Parts:  newParts(),
+			Distro: newBucket(t),
+		}})
+		defer ts.Close()
+
+		var uploadGobGzip bytes.Buffer
+		gzipWriter := gzip.NewWriter(&uploadGobGzip)
+		require.NoError(t, gob.NewEncoder(gzipWriter).Encode(upload), "gob.Encode()")
+		require.NoError(t, gzipWriter.Close(), "gzip.Close()")
+
+		req := newRequest(t, http.MethodPost, ts.URL, &uploadGobGzip)
+		req.Header.Set("Content-Type", MediaTypeUploadsGob)
+		req.Header.Set("Content-Encoding", "application/gzip")
+		req.Header.Set("Accept", MediaTypeUploadStatusesGob)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "http.Do()")
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var gotStatus []UploadStatus
+		require.NoError(t, gob.NewDecoder(resp.Body).Decode(&gotStatus))
+		assertEqualStatus(t, wantStatus, gotStatus)
+	})
+}
+
+func assertEqualStatus(t *testing.T, want []UploadStatus, got []UploadStatus) {
+	sort.Sort(statusSort(want))
+	sort.Sort(statusSort(got))
+	assert.Equal(t, want, got)
 }
 
 type statusSort []UploadStatus
