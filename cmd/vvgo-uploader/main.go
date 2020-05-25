@@ -221,7 +221,7 @@ func readUpload(writer io.Writer, reader *bufio.Reader, upload *api.Upload, proj
 		ContentType: contentType,
 	}
 
-	if partNames == nil{
+	if partNames == nil {
 		return ErrSkipped
 	}
 	return upload.Validate()
