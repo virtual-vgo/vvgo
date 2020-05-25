@@ -43,11 +43,13 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 
 	rbacMux := RBACMux{
 		Basic: map[[2]string][]login.Role{
-			{config.MemberUser, config.MemberPass}: {login.RoleVVGOMember},
+			{config.MemberUser, config.MemberPass}:  {login.RoleVVGOMember},
+			{"vvgo-uploader", config.UploaderToken}: {login.RoleVVGOUploader, login.RoleVVGOMember},
+			{"vvgo-developer", config.DeveloperToken}:  {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
 		},
 		Bearer: map[string][]login.Role{
 			config.UploaderToken:  {login.RoleVVGOUploader, login.RoleVVGOMember},
-			config.DeveloperToken: {login.RoleVVGODeveloper, login.RoleVVGOMember},
+			config.DeveloperToken: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
 		},
 		ServeMux: http.NewServeMux(),
 	}

@@ -23,8 +23,8 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_REDIS_NAMESPACE":         "redis-namespace",
 		"API_MEMBER_USER":             "member-user",
 		"API_MEMBER_PASS":             "member-pass",
-		"API_PREP_REP_TOKEN":          "prep-rep-token",
-		"API_ADMIN_TOKEN":             "admin-token",
+		"API_UPLOADER_TOKEN":          "uploader-token",
+		"API_DEVELOPER_TOKEN":         "developer-token",
 	}
 	want := Config{
 		Secret: "vvgo-secret",
@@ -36,6 +36,8 @@ func TestConfig_ParseEnv(t *testing.T) {
 			DistroBucketName:  "distro-bucket-name",
 			BackupsBucketName: "backups-bucket-name",
 			RedisNamespace:    "redis-namespace",
+			DeveloperToken:    "developer-token",
+			UploaderToken:     "uploader-token",
 		},
 		TracingConfig: tracing.Config{
 			HoneycombWriteKey: "tracing-honeycomb-write-key",
