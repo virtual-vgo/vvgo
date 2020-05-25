@@ -4,6 +4,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
 	"testing"
@@ -25,6 +26,9 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_MEMBER_PASS":             "member-pass",
 		"API_UPLOADER_TOKEN":          "uploader-token",
 		"API_DEVELOPER_TOKEN":         "developer-token",
+		"API_LOGIN_COOKIE_NAME":       "login-cookie-name",
+		"API_LOGIN_COOKIE_DOMAIN":     "login-cookie-domain",
+		"API_LOGIN_COOKIE_PATH":       "login-cookie-path",
 	}
 	want := Config{
 		Secret: "vvgo-secret",
@@ -38,6 +42,11 @@ func TestConfig_ParseEnv(t *testing.T) {
 			RedisNamespace:    "redis-namespace",
 			DeveloperToken:    "developer-token",
 			UploaderToken:     "uploader-token",
+			Login: login.Config{
+				CookieName:   "login-cookie-name",
+				CookieDomain: "login-cookie-domain",
+				CookiePath:   "login-cookie-path",
+			},
 		},
 		TracingConfig: tracing.Config{
 			HoneycombWriteKey: "tracing-honeycomb-write-key",

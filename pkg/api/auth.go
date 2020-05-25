@@ -42,6 +42,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 			}
 			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, CtxKeyVVGOIdentity, &identity)))
 		} else {
+			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
 			unauthorized(w)
 		}
 	})

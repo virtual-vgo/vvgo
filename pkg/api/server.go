@@ -16,15 +16,16 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress     string `split_words:"true" default:"0.0.0.0:8080"`
-	MaxContentLength  int64  `split_words:"true" default:"10000000"`
-	MemberUser        string `split_words:"true" default:"admin"`
-	MemberPass        string `split_words:"true" default:"admin"`
-	UploaderToken     string `split_words:"true" default:"admin"`
-	DeveloperToken    string `split_words:"true" default:"admin"`
-	DistroBucketName  string `split_words:"true" default:"vvgo-distro"`
-	BackupsBucketName string `split_words:"true" default:"backups"`
-	RedisNamespace    string `split_words:"true" default:"local"`
+	ListenAddress     string       `split_words:"true" default:"0.0.0.0:8080"`
+	MaxContentLength  int64        `split_words:"true" default:"10000000"`
+	MemberUser        string       `split_words:"true" default:"admin"`
+	MemberPass        string       `split_words:"true" default:"admin"`
+	UploaderToken     string       `split_words:"true" default:"admin"`
+	DeveloperToken    string       `split_words:"true" default:"admin"`
+	DistroBucketName  string       `split_words:"true" default:"vvgo-distro"`
+	BackupsBucketName string       `split_words:"true" default:"backups"`
+	RedisNamespace    string       `split_words:"true" default:"local"`
+	Login             login.Config `envconfig:"login"`
 }
 
 func NewServer(ctx context.Context, config ServerConfig) *http.Server {
@@ -37,21 +38,23 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 	}
 
 	database := Database{
-		Distro: newBucket(ctx, config.DistroBucketName),
-		Parts:  parts.NewParts(config.RedisNamespace),
+		Distro:   newBucket(ctx, config.DistroBucketName),
+		Parts:    parts.NewParts(config.RedisNamespace),
+		Sessions: login.NewStore(config.RedisNamespace, config.Login),
 	}
 
 	rbacMux := RBACMux{
 		Basic: map[[2]string][]login.Role{
-			{config.MemberUser, config.MemberPass}:  {login.RoleVVGOMember},
-			{"vvgo-uploader", config.UploaderToken}: {login.RoleVVGOUploader, login.RoleVVGOMember},
-			{"vvgo-developer", config.DeveloperToken}:  {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
+			{config.MemberUser, config.MemberPass}:    {login.RoleVVGOMember},
+			{"vvgo-uploader", config.UploaderToken}:   {login.RoleVVGOUploader, login.RoleVVGOMember},
+			{"vvgo-developer", config.DeveloperToken}: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
 		},
 		Bearer: map[string][]login.Role{
 			config.UploaderToken:  {login.RoleVVGOUploader, login.RoleVVGOMember},
 			config.DeveloperToken: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
 		},
 		ServeMux: http.NewServeMux(),
+		Sessions: database.Sessions,
 	}
 
 	rbacMux.Handle("/auth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
