@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -24,6 +27,32 @@ type ClientConfig struct {
 
 func NewClient(config ClientConfig) *Client {
 	return &Client{config}
+}
+
+// GetProject queries the api server for the project data.
+func (x *Client) GetProject(name string) (*projects.Project, error) {
+	values := url.Values{"name": []string{name}}
+	req, err := x.newRequest(http.MethodGet, x.ServerAddress+"/projects?"+values.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var project projects.Project
+		if err := json.NewDecoder(resp.Body).Decode(&project); err != nil {
+			return nil, err
+		}
+		return &project, nil
+	case http.StatusNotFound:
+		return nil, projects.ErrNotFound
+	default:
+		return nil, fmt.Errorf("received non-200 status: %d", resp.StatusCode)
+	}
 }
 
 func (x *Client) Upload(uploads ...Upload) []UploadStatus {

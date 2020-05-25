@@ -67,10 +67,6 @@ func main() {
 			os.Exit(0)
 		}
 
-		if projects.Exists(flags.project) == false {
-			return fmt.Errorf("unkown project: %s", flags.project)
-		}
-
 		// Build a new client
 		token := readApiKey()
 		client := CmdClient{
@@ -88,6 +84,17 @@ func main() {
 		// Make sure we can authenticate
 		if err := client.Authenticate(); err != nil {
 			return fmt.Errorf("unable to authenticate client: %v", err)
+		}
+
+		// check if the project exists
+		_, err := client.GetProject(flags.project)
+		switch err {
+		case nil:
+			break
+		case projects.ErrNotFound:
+			return fmt.Errorf("unkown project: %s", flags.project)
+		default:
+			return err
 		}
 
 		// Close the client on interrupt
