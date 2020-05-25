@@ -14,8 +14,6 @@ import (
 
 func TestConfig_ParseEnv(t *testing.T) {
 	envs := map[string]string{
-		"VVGO_SECRET":                 "vvgo-secret",
-		"INITIALIZE_STORAGE":          "true",
 		"TRACING_HONEYCOMB_DATASET":   "tracing-honeycomb-dataset",
 		"TRACING_HONEYCOMB_WRITE_KEY": "tracing-honeycomb-write-key",
 		"TRACING_SERVICE_NAME":        "tracing-service-name",
