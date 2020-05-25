@@ -67,7 +67,7 @@ var project = Projects{projects: []Project{
 	{
 		Name:           "03-the-end-begins-to-rock",
 		Title:          "The End Begins To Rock",
-		Released:       false,
+		Released:       true,
 		Archived:       false,
 		Sources:        []string{"God of War II"},
 		Composers:      []string{"Gerard K. Marino"},
