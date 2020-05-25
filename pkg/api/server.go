@@ -43,7 +43,7 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 		Sessions: login.NewStore(config.RedisNamespace, config.Login),
 	}
 
-	rbacMux := RBACMux{
+	mux := RBACMux{
 		Basic: map[[2]string][]login.Role{
 			{config.MemberUser, config.MemberPass}:    {login.RoleVVGOMember},
 			{"vvgo-uploader", config.UploaderToken}:   {login.RoleVVGOUploader, login.RoleVVGOMember},
@@ -57,40 +57,40 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 		Sessions: database.Sessions,
 	}
 
-	rbacMux.Handle("/auth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/auth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("authenticated"))
 	}), login.RoleVVGOUploader)
 
 	// debug endpoints from net/http/pprof
-	rbacMux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGODeveloper)
-	rbacMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGODeveloper)
-	rbacMux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGODeveloper)
-	rbacMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
-	rbacMux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
 
-	rbacMux.Handle("/parts", PartView{Database: &database}, login.RoleVVGOMember)
+	mux.Handle("/parts", PartView{Database: &database}, login.RoleVVGOMember)
 
 	backups := newBucket(ctx, config.BackupsBucketName)
-	rbacMux.Handle("/backups", &BackupHandler{
+	mux.Handle("/backups", &BackupHandler{
 		Database: &database,
 		Backups:  backups,
 	}, login.RoleVVGODeveloper)
 
-	rbacMux.Handle("/download", DownloadHandler{
+	mux.Handle("/download", DownloadHandler{
 		config.DistroBucketName:  database.Distro.DownloadURL,
 		config.BackupsBucketName: backups.DownloadURL,
 	}, login.RoleVVGOMember)
 
 	// Uploads
-	rbacMux.Handle("/upload", UploadHandler{
+	mux.Handle("/upload", UploadHandler{
 		Database: &database,
 	}, login.RoleVVGOUploader)
 
 	// Projects
-	rbacMux.Handle("/projects", ProjectsHandler{}, login.RoleVVGOUploader)
+	mux.Handle("/projects", ProjectsHandler{}, login.RoleVVGOUploader)
 
-	rbacMux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
-	rbacMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			IndexView{}.ServeHTTP(w, r)
 		} else {
@@ -100,7 +100,7 @@ func NewServer(ctx context.Context, config ServerConfig) *http.Server {
 
 	return &http.Server{
 		Addr:     config.ListenAddress,
-		Handler:  tracing.WrapHandler(&rbacMux),
+		Handler:  tracing.WrapHandler(&mux),
 		ErrorLog: log.StdLogger(),
 	}
 }
