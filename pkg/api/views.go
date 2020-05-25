@@ -181,13 +181,7 @@ type NavBarRenderOpts struct {
 const CtxKeyVVGOIdentity = "vvgo_identity"
 
 func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
-	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
-	identity, ok := ctxIdentity.(*login.Identity)
-	if !ok {
-		identity = new(login.Identity)
-		*identity = login.Anonymous()
-	}
-
+	identity := identityFromContext(ctx)
 	return NavBarRenderOpts{
 		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
 		ShowLogin:       identity.IsAnonymous(),
@@ -198,4 +192,14 @@ func (x NavBar) RenderHTML(opts NavBarRenderOpts) template.HTML {
 	var buffer bytes.Buffer
 	parseAndExecute(&buffer, &opts, filepath.Join(PublicFiles, "navbar.gohtml"))
 	return template.HTML(buffer.String())
+}
+
+func identityFromContext(ctx context.Context) *login.Identity {
+	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
+	identity, ok := ctxIdentity.(*login.Identity)
+	if !ok {
+		identity = new(login.Identity)
+		*identity = login.Anonymous()
+	}
+	return identity
 }

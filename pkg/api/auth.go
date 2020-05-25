@@ -50,6 +50,10 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 }
 
 func (auth *RBACMux) readBasicAuth(r *http.Request, dest *login.Identity) bool {
+	if auth.Basic == nil {
+		return false
+	}
+
 	user, pass, _ := r.BasicAuth()
 	gotRoles, ok := auth.Basic[[2]string{user, pass}]
 	if !ok {
@@ -64,6 +68,10 @@ func (auth *RBACMux) readBasicAuth(r *http.Request, dest *login.Identity) bool {
 }
 
 func (auth *RBACMux) readBearer(r *http.Request, dest *login.Identity) bool {
+	if auth.Bearer == nil {
+		return false
+	}
+
 	bearer := strings.TrimSpace(r.Header.Get("Authorization"))
 	if !strings.HasPrefix(bearer, "Bearer ") {
 		return false
@@ -83,5 +91,8 @@ func (auth *RBACMux) readBearer(r *http.Request, dest *login.Identity) bool {
 }
 
 func (auth *RBACMux) readSession(ctx context.Context, r *http.Request, dest *login.Identity) bool {
+	if auth.Sessions == nil {
+		return false
+	}
 	return auth.Sessions.ReadSessionFromRequest(ctx, r, dest) == nil
 }

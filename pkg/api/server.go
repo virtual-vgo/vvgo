@@ -62,9 +62,10 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		Sessions: database.Sessions,
 	}
 
-	mux.Handle("/auth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("authenticated"))
-	}), login.RoleVVGOUploader)
+	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		identity := identityFromContext(r.Context())
+		jsonEncode(w, &identity.Roles)
+	}), login.RoleAnonymous)
 
 	// debug endpoints from net/http/pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGODeveloper)

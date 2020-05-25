@@ -14,15 +14,6 @@ import (
 
 func TestRBACMux_Handle(t *testing.T) {
 	mux := RBACMux{
-		Basic: map[[2]string][]login.Role{
-			{"uploader", "uploader"}: {login.RoleVVGOUploader},
-			{"member", "member"}:     {login.RoleVVGOMember},
-		},
-		Bearer: map[string][]login.Role{
-			"uploader": {login.RoleVVGOUploader},
-			"member":   {login.RoleVVGOMember},
-		},
-		Sessions: newSessions(),
 		ServeMux: http.NewServeMux(),
 	}
 
@@ -32,7 +23,20 @@ func TestRBACMux_Handle(t *testing.T) {
 	ts := httptest.NewServer(mux)
 	defer ts.Close()
 
+	t.Run("no auth", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
+		require.NoError(t, err, "http.NewRequest()")
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "http.Do()")
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	})
+
 	t.Run("basic auth", func(t *testing.T) {
+		mux.Basic = map[[2]string][]login.Role{
+			{"uploader", "uploader"}: {login.RoleVVGOUploader},
+			{"member", "member"}:     {login.RoleVVGOMember},
+		}
+
 		newAuthRequest := func(t *testing.T, user, pass string) *http.Request {
 			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
 			require.NoError(t, err, "http.NewRequest")
@@ -67,6 +71,10 @@ func TestRBACMux_Handle(t *testing.T) {
 	})
 
 	t.Run("token auth", func(t *testing.T) {
+		mux.Bearer = map[string][]login.Role{
+			"uploader": {login.RoleVVGOUploader},
+			"member":   {login.RoleVVGOMember},
+		}
 		newAuthRequest := func(t *testing.T, token string) *http.Request {
 			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
 			require.NoError(t, err, "http.NewRequest")
@@ -95,6 +103,8 @@ func TestRBACMux_Handle(t *testing.T) {
 	})
 
 	t.Run("login session", func(t *testing.T) {
+		mux.Sessions = newSessions()
+
 		newAuthRequest := func(t *testing.T, identity *login.Identity) *http.Request {
 			cookie, err := mux.Sessions.NewCookie(context.Background(), identity, 3600*time.Second)
 			require.NoError(t, err, "Sessions.NewCookie()")
@@ -120,13 +130,5 @@ func TestRBACMux_Handle(t *testing.T) {
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
-	})
-
-	t.Run("no auth", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
-		require.NoError(t, err, "http.NewRequest()")
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err, "http.Do()")
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 }

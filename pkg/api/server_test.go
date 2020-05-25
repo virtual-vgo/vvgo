@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/login"
@@ -12,7 +13,7 @@ import (
 	"time"
 )
 
-func TestNewServerAuthorization(t *testing.T) {
+func TestServerAuthorization(t *testing.T) {
 	server := NewServer(context.Background(), ServerConfig{
 		MemberUser:        "vvgo-member",
 		MemberPass:        "vvgo-member",
@@ -28,12 +29,12 @@ func TestNewServerAuthorization(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(server.Server.Handler.ServeHTTP))
 	defer ts.Close()
 
-	newRequest := func(t *testing.T, method, url string, role login.Role) *http.Request {
+	newRequest := func(t *testing.T, method, url string, roles ...login.Role) *http.Request {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err, "http.NewRequest")
-		if role != login.RoleAnonymous {
+		if len(roles) != 0 {
 			cookie, err := server.database.Sessions.NewCookie(context.Background(), &login.Identity{
-				Roles: []login.Role{role},
+				Roles: roles,
 			}, 3600*time.Second)
 			require.NoError(t, err, "sessions.NewCookie")
 			req.AddCookie(cookie)
@@ -48,14 +49,14 @@ func TestNewServerAuthorization(t *testing.T) {
 	}
 
 	t.Run("index", func(t *testing.T) {
-		req := newRequest(t, http.MethodGet, ts.URL, login.RoleAnonymous)
+		req := newRequest(t, http.MethodGet, ts.URL)
 		resp := doRequest(t, req)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("parts", func(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/parts", login.RoleAnonymous)
+			req := newRequest(t, http.MethodGet, ts.URL+"/parts")
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -68,7 +69,7 @@ func TestNewServerAuthorization(t *testing.T) {
 
 	t.Run("download", func(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/download", login.RoleAnonymous)
+			req := newRequest(t, http.MethodGet, ts.URL+"/download")
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -81,7 +82,7 @@ func TestNewServerAuthorization(t *testing.T) {
 
 	t.Run("projects", func(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/projects", login.RoleAnonymous)
+			req := newRequest(t, http.MethodGet, ts.URL+"/projects")
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -99,7 +100,7 @@ func TestNewServerAuthorization(t *testing.T) {
 
 	t.Run("backups", func(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/backups", login.RoleAnonymous)
+			req := newRequest(t, http.MethodGet, ts.URL+"/backups")
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -112,6 +113,25 @@ func TestNewServerAuthorization(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/backups", login.RoleVVGOUploader)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
+		})
+	})
+
+	t.Run("roles", func(t *testing.T) {
+		t.Run("anonymous", func(t *testing.T) {
+			req := newRequest(t, http.MethodGet, ts.URL+"/roles")
+			resp := doRequest(t, req)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			var got []login.Role
+			assert.NoError(t, json.NewDecoder(resp.Body).Decode(&got))
+			assert.Equal(t, []login.Role{login.RoleAnonymous}, got)
+		})
+		t.Run("vvgo-uploader", func(t *testing.T) {
+			req := newRequest(t, http.MethodGet, ts.URL+"/roles", login.RoleVVGOUploader, login.RoleVVGOMember)
+			resp := doRequest(t, req)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			var got []login.Role
+			assert.NoError(t, json.NewDecoder(resp.Body).Decode(&got))
+			assert.Equal(t, []login.Role{login.RoleVVGOUploader, login.RoleVVGOMember}, got)
 		})
 	})
 }
