@@ -55,6 +55,7 @@ type Action struct {
 func Cmd(rcv interface{}, cmd string, args ...string) Action {
 	return Action{
 		cmd:         cmd,
+		args:        args,
 		radixAction: radix.Cmd(rcv, cmd, args...),
 	}
 }

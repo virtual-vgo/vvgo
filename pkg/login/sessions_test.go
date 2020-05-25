@@ -23,7 +23,7 @@ func init() {
 }
 
 func newStore() *Store {
-	return NewStore(Config{Namespace: "testing" + strconv.Itoa(lrand.Int())})
+	return NewStore("testing"+strconv.Itoa(lrand.Int()), Config{})
 }
 
 func TestStore_GetIdentity(t *testing.T) {

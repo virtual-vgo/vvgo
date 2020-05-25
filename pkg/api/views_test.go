@@ -22,7 +22,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	handlerStorage := Database{
 		Parts:  newParts(),
-		Distro: &storage.Bucket{Name: "distro"},
+		Distro: &storage.Bucket{Name: "vvgo-distro"},
 	}
 
 	// load the cache with some dummy data
@@ -38,6 +38,14 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 		{
 			ID: parts.ID{
 				Project: "02-proof-of-a-hero",
+				Name:    "trumpet 3",
+			},
+			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+		},
+		{
+			ID: parts.ID{
+				Project: "03-the-end-begins-to-rock",
 				Name:    "trumpet 3",
 			},
 			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},

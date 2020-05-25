@@ -4,6 +4,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -17,14 +18,11 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"TRACING_HONEYCOMB_WRITE_KEY": "tracing-honeycomb-write-key",
 		"TRACING_SERVICE_NAME":        "tracing-service-name",
 		"API_LISTEN_ADDRESS":          "listen-address",
-		"API_MAX_CONTENT_LENGTH":      "1000000",
 		"API_DISTRO_BUCKET_NAME":      "distro-bucket-name",
 		"API_BACKUPS_BUCKET_NAME":     "backups-bucket-name",
 		"API_REDIS_NAMESPACE":         "redis-namespace",
 		"API_MEMBER_USER":             "member-user",
 		"API_MEMBER_PASS":             "member-pass",
-		"API_PREP_REP_TOKEN":          "prep-rep-token",
-		"API_ADMIN_TOKEN":             "admin-token",
 		"REDIS_ADDRESS":               "redis-address",
 		"REDIS_NETWORK":               "redis-network",
 		"REDIS_POOL_SIZE":             "17",
@@ -33,18 +31,27 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"MINIO_ACCESSKEY":             "minio-access-key",
 		"MINIO_SECRETKEY":             "minio-secret-key",
 		"MINIO_USESSL":                "true",
+		"API_UPLOADER_TOKEN":          "uploader-token",
+		"API_DEVELOPER_TOKEN":         "developer-token",
+		"API_LOGIN_COOKIE_NAME":       "login-cookie-name",
+		"API_LOGIN_COOKIE_DOMAIN":     "login-cookie-domain",
+		"API_LOGIN_COOKIE_PATH":       "login-cookie-path",
 	}
 	want := Config{
 		ApiConfig: api.ServerConfig{
 			ListenAddress:     "listen-address",
-			MaxContentLength:  1e6,
-			AdminToken:        "admin-token",
-			PrepRepToken:      "prep-rep-token",
 			MemberUser:        "member-user",
 			MemberPass:        "member-pass",
 			DistroBucketName:  "distro-bucket-name",
 			BackupsBucketName: "backups-bucket-name",
 			RedisNamespace:    "redis-namespace",
+			DeveloperToken:    "developer-token",
+			UploaderToken:     "uploader-token",
+			Login: login.Config{
+				CookieName:   "login-cookie-name",
+				CookieDomain: "login-cookie-domain",
+				CookiePath:   "login-cookie-path",
+			},
 		},
 		TracingConfig: tracing.Config{
 			HoneycombWriteKey: "tracing-honeycomb-write-key",

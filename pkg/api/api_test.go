@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -26,6 +27,13 @@ func init() {
 }
 
 var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func newSessions() *login.Store {
+	return login.NewStore("testing"+strconv.Itoa(lrand.Int()), login.Config{
+		CookieName: "vvgo-test-cookie",
+		CookiePath: "/",
+	})
+}
 
 func newParts() *parts.RedisParts {
 	return parts.NewParts("testing" + strconv.Itoa(lrand.Int()))

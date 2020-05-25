@@ -19,7 +19,8 @@ var ErrSessionNotFound = errors.New("session not found")
 // Store provides access to the map of session id's to access roles.
 // It can read and validate session cookies from incoming requests,
 type Store struct {
-	config Config
+	namespace string
+	config    Config
 }
 
 type Config struct {
@@ -32,17 +33,15 @@ type Config struct {
 
 	// CookiePath is the url path where the cookies can be used.
 	CookiePath string `split_words:"true" default:"/"`
-
-	// Namespace is prefixed to all redis keys.
-	Namespace string `split_words:"true"`
 }
 
 const DataFile = "users.json"
 
 // NewStore returns a new sessions client.
-func NewStore(config Config) *Store {
+func NewStore(namespace string, config Config) *Store {
 	return &Store{
-		config: config,
+		namespace: namespace,
+		config:    config,
 	}
 }
 
@@ -89,7 +88,7 @@ func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Dura
 		result += fmt.Sprintf("%013s", strconv.FormatUint(binary.BigEndian.Uint64(buf), 36))
 	}
 
-	key := x.config.Namespace + ":sessions:" + result
+	key := x.namespace + ":sessions:" + result
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
 	srcBytes, _ := json.Marshal(src)
 	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, stringExpires, string(srcBytes))); err != nil {
@@ -101,7 +100,7 @@ func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Dura
 // GetSession reads the login identity for the given session ID.
 func (x *Store) GetSession(ctx context.Context, id string, dest *Identity) error {
 	var gotBytes []byte
-	err := redis.Do(ctx, redis.Cmd(&gotBytes, "GET", x.config.Namespace+":sessions:"+id))
+	err := redis.Do(ctx, redis.Cmd(&gotBytes, "GET", x.namespace+":sessions:"+id))
 	switch {
 	case err != nil:
 		return err
@@ -114,5 +113,5 @@ func (x *Store) GetSession(ctx context.Context, id string, dest *Identity) error
 
 // DeleteSession deletes the sessionID key from redis.
 func (x *Store) DeleteSession(ctx context.Context, id string) error {
-	return redis.Do(ctx, redis.Cmd(nil, "DEL", x.config.Namespace+":sessions:"+id))
+	return redis.Do(ctx, redis.Cmd(nil, "DEL", x.namespace+":sessions:"+id))
 }
