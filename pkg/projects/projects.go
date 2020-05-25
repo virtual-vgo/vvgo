@@ -51,7 +51,7 @@ var project = Projects{projects: []Project{
 		Name:           "02-proof-of-a-hero",
 		Title:          "Proof of a Hero",
 		Released:       true,
-		Archived:       true,
+		Archived:       false,
 		Sources:        []string{"Monster Hunter"},
 		Composers:      []string{"Masato Kohda (甲田 雅人)"},
 		Arrangers:      []string{"Jacob Zeleny"},
