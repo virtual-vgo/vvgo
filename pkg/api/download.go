@@ -25,6 +25,13 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	objectName := values.Get("object")
 	bucketName := values.Get("bucket")
 
+	if bucketName == "" {
+		badRequest(w, "bucket required")
+	}
+	if objectName == "" {
+		badRequest(w, "object required")
+	}
+
 	urlFunc, ok := x[bucketName]
 	if !ok {
 		unauthorized(w)

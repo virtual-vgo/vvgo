@@ -9,12 +9,18 @@ import (
 	"github.com/stretchr/testify/require"
 	"math/rand"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 )
+
+func init() {
+	var config Config
+	envconfig.MustProcess("MINIO", &config)
+	Initialize(config)
+
+}
 
 var localRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -22,31 +28,6 @@ func newBucket(t *testing.T) *Bucket {
 	bucket, err := NewBucket(context.Background(), "testing"+strconv.Itoa(localRand.Int()))
 	require.NoError(t, err, "storage.NewBucket()")
 	return bucket
-}
-
-func TestConfig_ParseEnv(t *testing.T) {
-	envs := map[string]string{
-		"MINIO_ENDPOINT":  "minio-endpoint",
-		"MINIO_REGION":    "minio-region",
-		"MINIO_ACCESSKEY": "minio-access-key",
-		"MINIO_SECRETKEY": "minio-secret-key",
-		"MINIO_USESSL":    "true",
-	}
-	want := Config{
-		Endpoint:  "minio-endpoint",
-		Region:    "minio-region",
-		AccessKey: "minio-access-key",
-		SecretKey: "minio-secret-key",
-		UseSSL:    true,
-	}
-
-	for k, v := range envs {
-		require.NoError(t, os.Setenv(k, v))
-	}
-	var got Config
-	envconfig.Usage("MINIO", &got)
-	require.NoError(t, envconfig.Process("MINIO", &got))
-	assert.Equal(t, want, got)
 }
 
 func TestNewBucket(t *testing.T) {

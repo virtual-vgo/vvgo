@@ -53,11 +53,6 @@ func hostname() string {
 }
 
 func gitSha() string {
-	// github runners pass this var
-	if sha := os.Getenv("GITHUB_SHA"); sha != "" {
-		return sha
-	}
-	// for local builds, we use the current branch
 	output, err := exec.Command("git", "rev-parse", "HEAD").Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "command `git rev-parse HEAD` failed!")
@@ -67,11 +62,6 @@ func gitSha() string {
 }
 
 func gitBranch() string {
-	// github runners pass this var
-	if branch := os.Getenv("GITHUB_REF"); branch != "" {
-		return branch
-	}
-	// for local builds, we use the current branch name
 	output, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "command `git rev-parse --abbrev-ref HEAD` failed!")

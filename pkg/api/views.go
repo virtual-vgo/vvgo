@@ -3,13 +3,47 @@ package api
 import (
 	"bytes"
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
+
+type LoginView struct {
+	NavBar   NavBar
+	Sessions *login.Store
+}
+
+func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "login_view")
+	defer span.Send()
+
+	var identity login.Identity
+	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil && !identity.IsAnonymous() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
+	opts := x.NavBar.NewOpts(ctx, r)
+	page := struct {
+		Header template.HTML
+		NavBar template.HTML
+	}{
+		Header: Header(),
+		NavBar: x.NavBar.RenderHTML(opts),
+	}
+
+	var buf bytes.Buffer
+	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	buf.WriteTo(w)
+}
 
 type PartView struct {
 	NavBar
@@ -28,7 +62,6 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	type tableRow struct {
 		Project        string `json:"project"`
 		PartName       string `json:"part_name"`
-		PartNumber     uint8  `json:"part_number"`
 		SheetMusic     string `json:"sheet_music"`
 		ClickTrack     string `json:"click_track"`
 		ReferenceTrack string `json:"reference_track"`
@@ -41,11 +74,22 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	archived := false
+	released := true
+
+	if want := r.FormValue("archived"); want != "" {
+		archived, _ = strconv.ParseBool(want)
+	}
+
+	if want := r.FormValue("released"); want != "" {
+		released, _ = strconv.ParseBool(want)
+	}
+
 	want := len(parts)
 	for i := 0; i < want; i++ {
 		if parts[i].Validate() == nil &&
-			projects.GetName(parts[i].Project).Archived == false &&
-			projects.GetName(parts[i].Project).Released == true {
+			projects.GetName(parts[i].Project).Archived == archived &&
+			projects.GetName(parts[i].Project).Released == released {
 			continue
 		}
 		parts[i], parts[want-1] = parts[want-1], parts[i]
@@ -58,7 +102,6 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rows = append(rows, tableRow{
 			Project:        projects.GetName(part.Project).Title,
 			PartName:       strings.Title(part.Name),
-			PartNumber:     part.Number,
 			SheetMusic:     part.SheetLink(x.Distro.Name),
 			ClickTrack:     part.ClickLink(x.Distro.Name),
 			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.Distro.Name),
@@ -127,7 +170,6 @@ func Header() template.HTML {
 }
 
 type NavBar struct {
-	MemberUser string
 }
 
 type NavBarRenderOpts struct {
@@ -136,20 +178,28 @@ type NavBarRenderOpts struct {
 	PartsActive     bool
 }
 
+const CtxKeyVVGOIdentity = "vvgo_identity"
+
 func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
-	var opts NavBarRenderOpts
-	user, _, _ := r.BasicAuth()
-	switch user {
-	case x.MemberUser:
-		opts.ShowMemberLinks = true
-	default:
-		opts.ShowLogin = true
+	identity := identityFromContext(ctx)
+	return NavBarRenderOpts{
+		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
+		ShowLogin:       identity.IsAnonymous(),
 	}
-	return opts
 }
 
 func (x NavBar) RenderHTML(opts NavBarRenderOpts) template.HTML {
 	var buffer bytes.Buffer
 	parseAndExecute(&buffer, &opts, filepath.Join(PublicFiles, "navbar.gohtml"))
 	return template.HTML(buffer.String())
+}
+
+func identityFromContext(ctx context.Context) *login.Identity {
+	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
+	identity, ok := ctxIdentity.(*login.Identity)
+	if !ok {
+		identity = new(login.Identity)
+		*identity = login.Anonymous()
+	}
+	return identity
 }

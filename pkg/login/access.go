@@ -52,6 +52,9 @@ func (x Identity) Role() Role {
 }
 
 func (x Identity) HasRole(role Role) bool {
+	if role == RoleAnonymous {
+		return true
+	}
 	for _, gotRole := range x.Roles {
 		if gotRole == role {
 			return true

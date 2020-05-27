@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/version"
@@ -12,8 +13,9 @@ import (
 
 // Database acts as the wrapper/driver for any stateful data.
 type Database struct {
-	Parts  *parts.RedisParts
-	Distro *storage.Bucket
+	Parts    *parts.RedisParts
+	Distro   *storage.Bucket
+	Sessions *login.Store
 }
 
 // DatabaseBackup is a document containing a snapshot of the stateful data we want to backup.

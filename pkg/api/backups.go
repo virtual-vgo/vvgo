@@ -21,7 +21,7 @@ type BackupHandler struct {
 	NavBar
 }
 
-func (x *BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (x BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "backups_admin_view")
 	defer span.Send()
 
@@ -33,7 +33,7 @@ func (x *BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (x *BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx context.Context) {
+func (x BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx context.Context) {
 	type tableRow struct {
 		Timestamp    string `json:"timestamp"`
 		SizeKB       int64  `json:"size_kb"`
@@ -54,7 +54,6 @@ func (x *BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx c
 			DownloadLink: "/download?" + dlValues.Encode(),
 			Object:       info[i].Key,
 		}
-		fmt.Printf("%#v\n", info[i])
 	}
 
 	navBarOpts := x.NavBar.NewOpts(ctx, r)
@@ -77,16 +76,13 @@ func (x *BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx c
 	buffer.WriteTo(w)
 }
 
-func (x *BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx context.Context) {
+func (x BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx context.Context) {
 	switch r.FormValue("cmd") {
 	case "backup":
 		if err := x.backupToBucket(ctx); err != nil {
 			logger.WithError(err).Error("backup failed")
 			internalServerError(w)
 			return
-		}
-		if acceptsType(r, "text/html") {
-			http.Redirect(w, r, r.URL.Path, http.StatusFound)
 		}
 
 	case "restore":
@@ -105,10 +101,14 @@ func (x *BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx con
 		badRequest(w, "missing form field `cmd`")
 		return
 	}
+
+	if acceptsType(r, "text/html") {
+		http.Redirect(w, r, r.URL.Path, http.StatusFound)
+	}
 	return
 }
 
-func (x *BackupHandler) restoreFromBucket(ctx context.Context, objectName string) error {
+func (x BackupHandler) restoreFromBucket(ctx context.Context, objectName string) error {
 	var obj storage.Object
 	if err := x.Backups.GetObject(ctx, objectName, &obj); err != nil {
 		return fmt.Errorf("backups.GetObject() failed: %w", err)
@@ -124,7 +124,7 @@ func (x *BackupHandler) restoreFromBucket(ctx context.Context, objectName string
 	return nil
 }
 
-func (x *BackupHandler) backupToBucket(ctx context.Context) error {
+func (x BackupHandler) backupToBucket(ctx context.Context) error {
 	backup, err := x.Database.Backup(ctx)
 	if err != nil {
 		return err
