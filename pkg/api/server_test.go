@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestServerAuthorization(t *testing.T) {
+func TestServer(t *testing.T) {
 	server := NewServer(context.Background(), ServerConfig{
 		MemberUser:        "vvgo-member",
 		MemberPass:        "vvgo-member",
@@ -43,7 +43,7 @@ func TestServerAuthorization(t *testing.T) {
 	}
 
 	doRequest := func(t *testing.T, req *http.Request) *http.Response {
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := noFollow(http.DefaultClient).Do(req)
 		require.NoError(t, err, "http.Do")
 		return resp
 	}
@@ -134,4 +134,26 @@ func TestServerAuthorization(t *testing.T) {
 			assert.Equal(t, []login.Role{login.RoleVVGOUploader, login.RoleVVGOMember}, got)
 		})
 	})
+
+	t.Run("login", func(t *testing.T) {
+		t.Run("anonymous", func(t *testing.T) {
+			req := newRequest(t, http.MethodGet, ts.URL+"/login")
+			resp := doRequest(t, req)
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, `Basic charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
+		})
+		t.Run("vvgo-member", func(t *testing.T) {
+			req := newRequest(t, http.MethodGet, ts.URL+"/login", login.RoleVVGOMember)
+			resp := doRequest(t, req)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/", resp.Header.Get("Location"))
+		})
+	})
+}
+
+func noFollow(client *http.Client) *http.Client {
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	return client
 }

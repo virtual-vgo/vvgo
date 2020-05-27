@@ -74,6 +74,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
 
+	mux.Handle("/login", http.RedirectHandler("/", http.StatusFound), login.RoleVVGOMember)
 	mux.Handle("/parts", PartView{Database: &database}, login.RoleVVGOMember)
 
 	backups := newBucket(ctx, config.BackupsBucketName)
