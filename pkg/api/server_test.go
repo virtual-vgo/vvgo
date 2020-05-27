@@ -136,10 +136,18 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("login", func(t *testing.T) {
-		req := newRequest(t, http.MethodGet, ts.URL+"/login", login.RoleVVGOMember)
-		resp := doRequest(t, req)
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, "/", resp.Header.Get("Location"))
+		t.Run("anonymous", func(t *testing.T) {
+			req := newRequest(t, http.MethodGet, ts.URL+"/login")
+			resp := doRequest(t, req)
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, `Basic charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
+		})
+		t.Run("vvgo-member", func(t *testing.T) {
+			req := newRequest(t, http.MethodGet, ts.URL+"/login", login.RoleVVGOMember)
+			resp := doRequest(t, req)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/", resp.Header.Get("Location"))
+		})
 	})
 }
 
