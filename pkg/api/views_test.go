@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
@@ -20,22 +21,15 @@ import (
 
 func TestLoginView_ServeHTTP(t *testing.T) {
 	t.Run("not logged in", func(t *testing.T) {
-		wantCode := http.StatusOK
-		wantBytes, err := ioutil.ReadFile("testdata/login.html")
-		if err != nil {
-			t.Fatalf("ioutil.ReadFile() failed: %v", err)
-		}
-
 		server := LoginView{Sessions: newSessions()}
 
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, "/", nil)
 		server.ServeHTTP(recorder, request)
 		gotResp := recorder.Result()
-		if expected, got := wantCode, gotResp.StatusCode; expected != got {
-			t.Errorf("expected code %v, got %v", expected, got)
-		}
-		assertEqualHtml(t, wantBytes, recorder)
+		assert.Equal(t, http.StatusOK, gotResp.StatusCode)
+		wantRaw, gotRaw := strings.TrimSpace(mustReadFile(t, "testdata/login.html")), strings.TrimSpace(recorder.Body.String())
+		assertEqualHTML(t, wantRaw, gotRaw)
 	})
 
 	t.Run("logged in", func(t *testing.T) {
@@ -54,7 +48,7 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 		if expected, got := http.StatusFound, gotResp.StatusCode; expected != got {
 			t.Errorf("expected code %v, got %v", expected, got)
 		}
-		assertEqualHtml(t, []byte("<a href=/>Found</a>."), recorder)
+		assertEqualHTML(t, "<a href=/>Found</a>.", strings.TrimSpace(recorder.Body.String()))
 	})
 }
 

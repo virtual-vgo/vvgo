@@ -101,10 +101,3 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	var dest login.Identity
 	assert.Equal(t, login.ErrSessionNotFound, logoutHandler.Sessions.GetSession(ctx, cookie.Value, &dest))
 }
-
-func noFollow(client *http.Client) *http.Client {
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-	return client
-}

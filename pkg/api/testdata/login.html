@@ -59,55 +59,56 @@
 
 
 <body class="text-center">
-<div class="container">
-    <nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border m-2">
-        <a class="nav-link text-light" href="/">
-            <i class="fas fa-home fa-2x mr-2"></i>Virtual VGO
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
-                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarCollapse">
-            <li class="nav-item btn">
-                <a class="nav-link disabled text-monospace"
-                   href="#" tabindex="-1" aria-disabled="true"> :hello:
+<nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
+    <a class="nav-link text-light" href="/">
+        <i class="fas fa-home fa-2x mr-2"></i>Virtual VGO
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+            aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+        <div class="nav-item btn">
+
+            <a class="nav-login nav-link text-monospace text-info" href="/login"> Login</a>
+
+        </div>
+
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link btn-outline-primary" href="https://www.facebook.com/groups/1080154885682377/">
+                    <i class="fab fa-facebook-square fa-2x"></i>
                 </a>
             </li>
-            <ul class="navbar-nav container">
-                <li class="nav-item">
-                    <a class=" nav-link text-monospace"
-                       href="/parts"> Parts
-                    </a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link btn-outline-primary" href="https://www.facebook.com/groups/1080154885682377/">
-                        <i class="fab fa-facebook-square fa-2x"></i>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link btn-outline-primary" href="https://github.com/virtual-vgo/vvgo">
-                        <i class="fab fa-github-square fa-2x"></i>
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
-</div>
+            <li class="nav-item">
+                <a class="nav-link btn-outline-primary" href="https://github.com/virtual-vgo/vvgo">
+                    <i class="fab fa-github-square fa-2x"></i>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link btn-outline-primary"
+                   href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
+                    <i class="fab fa-youtube-square fa-2x"></i>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
 
 <form class="form-signin" action="/login/password" method="post">
     <img class="mb-4 mt-4" src="images/logo.svg" alt="" width="100%">
     <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+
     <div>
         <label for="inputUser" class="sr-only">VVGO User</label>
         <input name="user" type="text" id="inputUser" class="form-control" placeholder="vvgo user" required autofocus>
     </div>
+
     <div class="mt-1">
         <label for="inputPassword" class="sr-only">Password</label>
         <input name="pass" type="password" id="inputPassword" class="form-control" placeholder="password" required>
     </div>
+
     <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
 </form>
 </body>
