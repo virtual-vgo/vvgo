@@ -2,8 +2,10 @@ package login
 
 import (
 	"context"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -14,8 +16,14 @@ import (
 
 var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+func init() {
+	var redisConfig redis.Config
+	envconfig.MustProcess("REDIS", &redisConfig)
+	redis.Initialize(redisConfig)
+}
+
 func newStore() *Store {
-	return NewStore(Config{Namespace: "testing" + strconv.Itoa(lrand.Int())})
+	return NewStore("testing"+strconv.Itoa(lrand.Int()), Config{})
 }
 
 func TestStore_GetIdentity(t *testing.T) {

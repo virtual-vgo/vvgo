@@ -67,17 +67,16 @@ func Test_readUpload(t *testing.T) {
 		{
 			name: "click/success",
 			args: args{
-				input:    "trumpet , baritone\n1, 2\n",
+				input:    "trumpet 1, trumpet 2,  baritone 1,baritone 2\n",
 				project:  "01-snake-eater",
 				fileName: filepath.Join(testData, "click-track.mp3"),
 			},
 			wants: wants{
 				ok:     true,
-				output: ":: upload type: clix\n:: leave empty to skip | Ctrl+C to quit\n:: part names (ex. trumpet, flute): :: part numbers (ex. 1, 2): ",
+				output: ":: upload type: clix\n:: leave empty to skip | Ctrl+C to quit\n:: part names (ex. trumpet, flute): ",
 				upload: api.Upload{
 					UploadType:  api.UploadTypeClix,
-					PartNames:   []string{"trumpet", "baritone"},
-					PartNumbers: []uint8{1, 2},
+					PartNames:   []string{"trumpet 1", "trumpet 2", "baritone 1", "baritone 2"},
 					Project:     "01-snake-eater",
 					FileName:    filepath.Join(testData, "click-track.mp3"),
 					FileBytes:   clickBytes,
@@ -88,17 +87,16 @@ func Test_readUpload(t *testing.T) {
 		{
 			name: "sheet/success",
 			args: args{
-				input:    "trumpet , baritone\n1, 2\n",
+				input:    "trumpet 1, trumpet 2,  baritone 1,baritone 2\n",
 				project:  "01-snake-eater",
 				fileName: filepath.Join(testData, "sheet-music.pdf"),
 			},
 			wants: wants{
 				ok:     true,
-				output: ":: upload type: sheets\n:: leave empty to skip | Ctrl+C to quit\n:: part names (ex. trumpet, flute): :: part numbers (ex. 1, 2): ",
+				output: ":: upload type: sheets\n:: leave empty to skip | Ctrl+C to quit\n:: part names (ex. trumpet, flute): ",
 				upload: api.Upload{
 					UploadType:  api.UploadTypeSheets,
-					PartNames:   []string{"trumpet", "baritone"},
-					PartNumbers: []uint8{1, 2},
+					PartNames:   []string{"trumpet 1", "trumpet 2", "baritone 1", "baritone 2"},
 					Project:     "01-snake-eater",
 					FileName:    filepath.Join(testData, "sheet-music.pdf"),
 					FileBytes:   sheetBytes,
@@ -130,7 +128,6 @@ func compareUploads(t *testing.T, want, got *api.Upload) {
 		type flatUpload struct {
 			UploadType   string
 			PartNames    string
-			PartNumbers  string
 			Project      string
 			FileName     string
 			FileBytesSum string
@@ -141,7 +138,6 @@ func compareUploads(t *testing.T, want, got *api.Upload) {
 			return &flatUpload{
 				UploadType:   upload.UploadType.String(),
 				PartNames:    strings.Join(upload.PartNames, ","),
-				PartNumbers:  fmt.Sprintf("%#v", upload.PartNumbers),
 				Project:      upload.Project,
 				FileName:     upload.FileName,
 				FileBytesSum: fmt.Sprintf("%x", md5.Sum(upload.FileBytes)),
@@ -206,59 +202,6 @@ func Test_yesNo(t *testing.T) {
 			if got := yesNo(&writer, reader, ""); got != tt.want {
 				t.Errorf("yesNo() = %v, want %v", got, tt.want)
 			}
-		})
-	}
-}
-
-func Test_readPartNumbers(t *testing.T) {
-	type wants struct {
-		output  string
-		numbers []uint8
-	}
-	for _, tt := range []struct {
-		name  string
-		input string
-		wants wants
-	}{
-		{
-			name:  "1",
-			input: "1\n",
-			wants: wants{
-				output:  ":: part numbers (ex. 1, 2): ",
-				numbers: []uint8{1},
-			},
-		},
-		{
-			name:  "1, 2",
-			input: "1, 2\n",
-			wants: wants{
-				output:  ":: part numbers (ex. 1, 2): ",
-				numbers: []uint8{1, 2},
-			},
-		},
-		{
-			name:  "invalid number",
-			input: "cheese\n",
-			wants: wants{
-				output:  ":: part numbers (ex. 1, 2): ",
-				numbers: nil,
-			},
-		},
-		{
-			name:  "EOF",
-			input: "",
-			wants: wants{
-				output:  ":: part numbers (ex. 1, 2): ",
-				numbers: nil,
-			},
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			var writer bytes.Buffer
-			reader := bufio.NewReader(strings.NewReader(tt.input))
-			gotNumbers := readPartNumbers(&writer, reader)
-			assert.Equal(t, tt.wants.output, writer.String(), "output")
-			assert.Equal(t, tt.wants.numbers, gotNumbers, "numbers")
 		})
 	}
 }

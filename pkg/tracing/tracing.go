@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"context"
+	"fmt"
 	"github.com/honeycombio/beeline-go"
 	"github.com/honeycombio/beeline-go/trace"
 	"github.com/honeycombio/beeline-go/wrappers/hnynethttp"
@@ -38,7 +39,23 @@ func StartSpan(ctx context.Context, name string) (context.Context, Span) {
 func WrapHandler(handler http.Handler) http.Handler {
 	return hnynethttp.WrapHandler(handler)
 }
-
+func AddError(ctx context.Context, err error) { AddField(ctx, "error", err) }
 func AddField(ctx context.Context, key string, val interface{}) {
 	beeline.AddField(ctx, key, val)
+}
+
+func DoHttpRequest(r *http.Request) (*http.Response, error) {
+	_, span := StartSpan(r.Context(), fmt.Sprintf("%s: %s", r.Method, r.URL.String()))
+	defer span.Send()
+	span.AddField("request_method", r.Method)
+	span.AddField("request_uri", r.URL.String())
+	span.AddField("request_content_length", r.ContentLength)
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		span.AddField("error", err.Error())
+	} else {
+		span.AddField("response_code", resp.StatusCode)
+		span.AddField("response_content_length", resp.ContentLength)
+	}
+	return resp, err
 }

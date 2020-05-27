@@ -1,144 +1,137 @@
 package api
 
 import (
+	"context"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
-func TestTokenAuth_Authenticate(t *testing.T) {
-	var newRequest = func(url string, headers map[string]string) *http.Request {
-		req := httptest.NewRequest(http.MethodGet, url, strings.NewReader(""))
-		for k, v := range headers {
-			req.Header.Set(k, v)
+func TestRBACMux_Handle(t *testing.T) {
+	mux := RBACMux{
+		ServeMux: http.NewServeMux(),
+	}
+
+	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		// do nothing
+	}, login.RoleVVGOUploader)
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	t.Run("no auth", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
+		require.NoError(t, err, "http.NewRequest()")
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "http.Do()")
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	t.Run("basic auth", func(t *testing.T) {
+		mux.Basic = map[[2]string][]login.Role{
+			{"uploader", "uploader"}: {login.RoleVVGOUploader},
+			{"member", "member"}:     {login.RoleVVGOMember},
 		}
-		return req
-	}
-	for _, tt := range []struct {
-		name      string
-		request   *http.Request
-		tokenAuth TokenAuth
-		wantCode  int
-	}{
-		{
-			name:      "success",
-			request:   newRequest("/", map[string]string{"Authorization": "Bearer 196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
-			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
-			wantCode:  http.StatusOK,
-		},
-		{
-			name:      "empty map",
-			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "Bearer 196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
-			tokenAuth: TokenAuth{},
-			wantCode:  http.StatusUnauthorized,
-		},
-		{
-			name:      "no token",
-			request:   newRequest("/", map[string]string{}),
-			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
-			wantCode:  http.StatusUnauthorized,
-		},
-		{
-			name:      "incorrect token",
-			request:   newRequest("/", map[string]string{"Virtual-VGO-Api-Token": "Bearer 8d32ff4a91a530bc-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"}),
-			tokenAuth: TokenAuth{"196ddf804c7666d4-8d32ff4a91a530bc-c5c7cde4a26096ad-67758135226bfb2e"},
-			wantCode:  http.StatusUnauthorized,
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			recorder := httptest.NewRecorder()
-			tt.tokenAuth.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// do nothing
-			})).ServeHTTP(recorder, tt.request)
 
-			gotCode := recorder.Code
+		newAuthRequest := func(t *testing.T, user, pass string) *http.Request {
+			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
+			require.NoError(t, err, "http.NewRequest")
+			req.SetBasicAuth(user, pass)
+			return req
+		}
 
-			if expected, got := tt.wantCode, gotCode; expected != got {
-				t.Errorf("expected %v, got %v", expected, got)
-			}
+		t.Run("success", func(t *testing.T) {
+			req := newAuthRequest(t, "uploader", "uploader")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
-	}
-}
-
-func TestBasicAuth_Authenticate(t *testing.T) {
-	type wants struct {
-		code   int
-		body   string
-		header map[string]string
-	}
-
-	var newAuthRequest = func(url, user, pass string) *http.Request {
-		req := httptest.NewRequest(http.MethodGet, url, strings.NewReader(""))
-		req.SetBasicAuth(user, pass)
-		return req
-	}
-
-	for _, tt := range []struct {
-		name    string
-		config  ServerConfig
-		request *http.Request
-		wants   wants
-	}{
-		{
-			name:    "success",
-			request: newAuthRequest("/", "jackson", "the-earth-is-flat"),
-			config:  ServerConfig{MemberUser: "jackson", MemberPass: "the-earth-is-flat"},
-			wants:   wants{code: http.StatusOK},
-		},
-		{
-			name:    "incorrect user",
-			request: newAuthRequest("/", "", "the-earth-is-flat"),
-			config:  ServerConfig{MemberUser: "jackson", MemberPass: "the-earth-is-flat"},
-			wants: wants{
-				code:   http.StatusUnauthorized,
-				body:   "authorization failed",
-				header: map[string]string{"WWW-Authenticate": `Basic charset="UTF-8"`},
-			},
-		},
-		{
-			name:    "incorrect pass",
-			request: newAuthRequest("/", "jackson", ""),
-			config:  ServerConfig{MemberUser: "jackson", MemberPass: "the-earth-is-flat"},
-			wants: wants{
-				code:   http.StatusUnauthorized,
-				body:   "authorization failed",
-				header: map[string]string{"WWW-Authenticate": `Basic charset="UTF-8"`},
-			},
-		},
-		{
-			name:    "no auth",
-			request: httptest.NewRequest(http.MethodGet, "/", strings.NewReader("")),
-			config:  ServerConfig{MemberUser: "jackson", MemberPass: "the-earth-is-flat"},
-			wants: wants{
-				code:   http.StatusUnauthorized,
-				body:   "authorization failed",
-				header: map[string]string{"WWW-Authenticate": `Basic charset="UTF-8"`},
-			},
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			recorder := httptest.NewRecorder()
-			server := BasicAuth{tt.config.MemberUser: tt.config.MemberPass}
-			server.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// do nothing
-			})).ServeHTTP(recorder, tt.request)
-
-			gotCode := recorder.Code
-			gotBody := strings.TrimSpace(recorder.Body.String())
-
-			if expected, got := tt.wants.code, gotCode; expected != got {
-				t.Errorf("expected %v, got %v", expected, got)
-			}
-			if expected, got := tt.wants.body, gotBody; expected != got {
-				t.Errorf("expected %v, got %v", expected, got)
-			}
-
-			for wantK := range tt.wants.header {
-				if expected, got := tt.wants.header[wantK], recorder.Header().Get(wantK); expected != got {
-					t.Errorf("expected `%s: %v`, got `%s: %v`", wantK, expected, wantK, got)
-				}
-			}
+		t.Run("incorrect user", func(t *testing.T) {
+			req := newAuthRequest(t, "", "uploader")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, `Basic charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 		})
-	}
+		t.Run("incorrect pass", func(t *testing.T) {
+			req := newAuthRequest(t, "uploader", "")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, `Basic charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
+		})
+		t.Run("incorrect role", func(t *testing.T) {
+			req := newAuthRequest(t, "member", "member")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, `Basic charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
+		})
+	})
+
+	t.Run("token auth", func(t *testing.T) {
+		mux.Bearer = map[string][]login.Role{
+			"uploader": {login.RoleVVGOUploader},
+			"member":   {login.RoleVVGOMember},
+		}
+		newAuthRequest := func(t *testing.T, token string) *http.Request {
+			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
+			require.NoError(t, err, "http.NewRequest")
+			req.Header.Set("Authorization", "Bearer "+token)
+			return req
+		}
+
+		t.Run("success", func(t *testing.T) {
+			req := newAuthRequest(t, "uploader")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+		})
+		t.Run("incorrect token", func(t *testing.T) {
+			req := newAuthRequest(t, "asdfa")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		})
+		t.Run("incorrect role", func(t *testing.T) {
+			req := newAuthRequest(t, "member")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		})
+	})
+
+	t.Run("login session", func(t *testing.T) {
+		mux.Sessions = newSessions()
+
+		newAuthRequest := func(t *testing.T, identity *login.Identity) *http.Request {
+			cookie, err := mux.Sessions.NewCookie(context.Background(), identity, 3600*time.Second)
+			require.NoError(t, err, "Sessions.NewCookie()")
+			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
+			require.NoError(t, err, "http.NewRequest")
+			req.AddCookie(cookie)
+			return req
+		}
+
+		t.Run("success", func(t *testing.T) {
+			req := newAuthRequest(t, &login.Identity{
+				Roles: []login.Role{login.RoleVVGOUploader},
+			})
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+		})
+		t.Run("incorrect role", func(t *testing.T) {
+			req := newAuthRequest(t, &login.Identity{
+				Roles: []login.Role{login.RoleVVGOMember},
+			})
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "http.Do()")
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		})
+	})
 }

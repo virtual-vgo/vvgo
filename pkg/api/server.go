@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -15,101 +16,102 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
-	MaxContentLength int64  `split_words:"true" default:"10000000"`
-	MemberUser       string `split_words:"true" default:"admin"`
-	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
+	ListenAddress     string       `split_words:"true" default:"0.0.0.0:8080"`
+	MemberUser        string       `split_words:"true" default:"admin"`
+	MemberPass        string       `split_words:"true" default:"admin"`
+	UploaderToken     string       `split_words:"true" default:"admin"`
+	DeveloperToken    string       `split_words:"true" default:"admin"`
+	DistroBucketName  string       `split_words:"true" default:"vvgo-distro"`
+	BackupsBucketName string       `split_words:"true" default:"backups"`
+	RedisNamespace    string       `split_words:"true" default:"local"`
+	Login             login.Config `envconfig:"login"`
 }
 
-type StorageConfig struct {
-	SheetsBucketName string `split_words:"true" default:"sheets"`
-	ClixBucketName   string `split_words:"true" default:"clix"`
-	TracksBucketName string `split_words:"true" default:"tracks"`
-	RedisNamespace   string `split_words:"true" default:"local"`
+type Server struct {
+	config   ServerConfig
+	database Database
+	*http.Server
 }
 
-type Storage struct {
-	StorageConfig
-	Parts  *parts.RedisParts
-	Sheets *storage.Bucket
-	Clix   *storage.Bucket
-	Tracks *storage.Bucket
-}
-
-func NewStorage(ctx context.Context, warehouse *storage.Warehouse, config StorageConfig) *Storage {
+func NewServer(ctx context.Context, config ServerConfig) *Server {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
-		bucket, err := warehouse.NewBucket(ctx, bucketName)
+		bucket, err := storage.NewBucket(ctx, bucketName)
 		if err != nil {
-			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("warehouse.NewBucket() failed")
+			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("storage.NewBucket() failed")
 		}
 		return bucket
 	}
 
-	db := Storage{
-		StorageConfig: config,
-		Sheets:        newBucket(ctx, config.SheetsBucketName),
-		Clix:          newBucket(ctx, config.ClixBucketName),
-		Tracks:        newBucket(ctx, config.TracksBucketName),
-		Parts:         parts.NewParts(config.RedisNamespace + ":parts"),
+	database := Database{
+		Distro:   newBucket(ctx, config.DistroBucketName),
+		Parts:    parts.NewParts(config.RedisNamespace),
+		Sessions: login.NewStore(config.RedisNamespace, config.Login),
 	}
-	return &db
-}
 
-func NewServer(config ServerConfig, database *Storage) *http.Server {
-	navBar := NavBar{MemberUser: config.MemberUser}
-	members := BasicAuth{config.MemberUser: config.MemberPass}
-	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
-	admin := TokenAuth{config.AdminToken}
+	mux := RBACMux{
+		Basic: map[[2]string][]login.Role{
+			{config.MemberUser, config.MemberPass}:    {login.RoleVVGOMember},
+			{"vvgo-uploader", config.UploaderToken}:   {login.RoleVVGOUploader, login.RoleVVGOMember},
+			{"vvgo-developer", config.DeveloperToken}: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
+		},
+		Bearer: map[string][]login.Role{
+			config.UploaderToken:  {login.RoleVVGOUploader, login.RoleVVGOMember},
+			config.DeveloperToken: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
+		},
+		ServeMux: http.NewServeMux(),
+		Sessions: database.Sessions,
+	}
 
-	mux := http.NewServeMux()
-
-	mux.Handle("/auth",
-		prepRep.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("authenticated"))
-		})),
-	)
+	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		identity := identityFromContext(r.Context())
+		jsonEncode(w, &identity.Roles)
+	}), login.RoleAnonymous)
 
 	// debug endpoints from net/http/pprof
-	pprofMux := http.NewServeMux()
-	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
-	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
+	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
 
-	partsHandler := members.Authenticate(&PartView{NavBar: navBar, Storage: database})
-	mux.Handle("/parts", partsHandler)
-	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
+	mux.Handle("/login", http.RedirectHandler("/", http.StatusFound), login.RoleVVGOMember)
+	mux.Handle("/parts", PartView{Database: &database}, login.RoleVVGOMember)
 
-	downloadHandler := members.Authenticate(&DownloadHandler{
-		database.SheetsBucketName: database.Sheets.DownloadURL,
-		database.ClixBucketName:   database.Clix.DownloadURL,
-		database.TracksBucketName: database.Tracks.DownloadURL,
-	})
-	mux.Handle("/download", members.Authenticate(downloadHandler))
+	backups := newBucket(ctx, config.BackupsBucketName)
+	mux.Handle("/backups", BackupHandler{
+		Database: &database,
+		Backups:  backups,
+	}, login.RoleVVGOUploader)
+
+	mux.Handle("/download", DownloadHandler{
+		config.DistroBucketName:  database.Distro.DownloadURL,
+		config.BackupsBucketName: backups.DownloadURL,
+	}, login.RoleVVGOMember)
 
 	// Uploads
-	uploadHandler := prepRep.Authenticate(&UploadHandler{database})
-	mux.Handle("/upload", uploadHandler)
+	mux.Handle("/upload", UploadHandler{
+		Database: &database,
+	}, login.RoleVVGOUploader)
 
-	loginHandler := members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect))
-	mux.Handle("/login", loginHandler)
+	// Projects
+	mux.Handle("/projects", ProjectsHandler{}, login.RoleVVGOUploader)
 
-	mux.Handle("/version", http.HandlerFunc(Version))
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexView{NavBar: navBar}.ServeHTTP(w, r)
+			IndexView{}.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}
-	}))
+	}, login.RoleAnonymous)
 
-	return &http.Server{
-		Addr:     config.ListenAddress,
-		Handler:  tracing.WrapHandler(mux),
-		ErrorLog: log.StdLogger(),
+	return &Server{
+		config:   config,
+		database: database,
+		Server: &http.Server{
+			Addr:     config.ListenAddress,
+			Handler:  tracing.WrapHandler(&mux),
+			ErrorLog: log.StdLogger(),
+		},
 	}
 }

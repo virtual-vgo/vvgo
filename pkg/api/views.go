@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -46,7 +47,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 type PartView struct {
 	NavBar
-	*Storage
+	*Database
 }
 
 func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +62,6 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	type tableRow struct {
 		Project        string `json:"project"`
 		PartName       string `json:"part_name"`
-		PartNumber     uint8  `json:"part_number"`
 		SheetMusic     string `json:"sheet_music"`
 		ClickTrack     string `json:"click_track"`
 		ReferenceTrack string `json:"reference_track"`
@@ -74,11 +74,22 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	archived := false
+	released := true
+
+	if want := r.FormValue("archived"); want != "" {
+		archived, _ = strconv.ParseBool(want)
+	}
+
+	if want := r.FormValue("released"); want != "" {
+		released, _ = strconv.ParseBool(want)
+	}
+
 	want := len(parts)
 	for i := 0; i < want; i++ {
 		if parts[i].Validate() == nil &&
-			projects.GetName(parts[i].Project).Archived == false &&
-			projects.GetName(parts[i].Project).Released == true {
+			projects.GetName(parts[i].Project).Archived == archived &&
+			projects.GetName(parts[i].Project).Released == released {
 			continue
 		}
 		parts[i], parts[want-1] = parts[want-1], parts[i]
@@ -91,10 +102,9 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rows = append(rows, tableRow{
 			Project:        projects.GetName(part.Project).Title,
 			PartName:       strings.Title(part.Name),
-			PartNumber:     part.Number,
-			SheetMusic:     part.SheetLink(x.SheetsBucketName),
-			ClickTrack:     part.ClickLink(x.ClixBucketName),
-			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.TracksBucketName),
+			SheetMusic:     part.SheetLink(x.Distro.Name),
+			ClickTrack:     part.ClickLink(x.Distro.Name),
+			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.Distro.Name),
 		})
 	}
 
@@ -160,7 +170,6 @@ func Header() template.HTML {
 }
 
 type NavBar struct {
-	MemberUser string
 }
 
 type NavBarRenderOpts struct {
@@ -169,20 +178,28 @@ type NavBarRenderOpts struct {
 	PartsActive     bool
 }
 
+const CtxKeyVVGOIdentity = "vvgo_identity"
+
 func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
-	var opts NavBarRenderOpts
-	user, _, _ := r.BasicAuth()
-	switch user {
-	case x.MemberUser:
-		opts.ShowMemberLinks = true
-	default:
-		opts.ShowLogin = true
+	identity := identityFromContext(ctx)
+	return NavBarRenderOpts{
+		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
+		ShowLogin:       identity.IsAnonymous(),
 	}
-	return opts
 }
 
 func (x NavBar) RenderHTML(opts NavBarRenderOpts) template.HTML {
 	var buffer bytes.Buffer
 	parseAndExecute(&buffer, &opts, filepath.Join(PublicFiles, "navbar.gohtml"))
 	return template.HTML(buffer.String())
+}
+
+func identityFromContext(ctx context.Context) *login.Identity {
+	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
+	identity, ok := ctxIdentity.(*login.Identity)
+	if !ok {
+		identity = new(login.Identity)
+		*identity = login.Anonymous()
+	}
+	return identity
 }

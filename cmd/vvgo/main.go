@@ -9,6 +9,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
@@ -18,11 +19,10 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	Secret           string            `envconfig:"vvgo_secret"`
-	ApiConfig        api.ServerConfig  `envconfig:"api"`
-	ApiStorageConfig api.StorageConfig `envconfig:"api_storage"`
-	TracingConfig    tracing.Config    `envconfig:"tracing"`
-	StorageConfig    storage.Config    `envconfig:"storage"`
+	ApiConfig     api.ServerConfig `envconfig:"api"`
+	TracingConfig tracing.Config   `envconfig:"tracing"`
+	RedisConfig   redis.Config     `envconfig:"redis"`
+	MinioConfig   storage.Config   `envconfig:"minio"`
 }
 
 func (x *Config) ParseEnv() {
@@ -43,11 +43,6 @@ func (x Config) ParseFlags() {
 	case showVersion:
 		fmt.Println(string(version.JSON()))
 		os.Exit(0)
-	case showReleaseTags:
-		for _, tag := range version.ReleaseTags() {
-			fmt.Println(tag)
-		}
-		os.Exit(0)
 	case showEnvConfig:
 		envconfig.Usage("", &x)
 		os.Exit(0)
@@ -63,20 +58,10 @@ func main() {
 	tracing.Initialize(config.TracingConfig)
 	defer tracing.Close()
 
-	// Creates/queries object buckets.
-	warehouse, err := storage.NewWarehouse(config.StorageConfig)
-	if err != nil {
-		logger.Fatal(err)
-	}
+	storage.Initialize(config.MinioConfig)
+	redis.Initialize(config.RedisConfig)
 
-	// Build the api database.
-	database := api.NewStorage(ctx, warehouse, config.ApiStorageConfig)
-	if database == nil {
-		os.Exit(1)
-	}
-
-	//
-	apiServer := api.NewServer(config.ApiConfig, database)
+	apiServer := api.NewServer(ctx, config.ApiConfig)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}

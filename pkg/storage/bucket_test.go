@@ -1,89 +1,226 @@
 package storage
 
 import (
+	"bytes"
 	"context"
+	"github.com/kelseyhightower/envconfig"
+	"github.com/minio/minio-go/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"math/rand"
+	"net/http"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 )
 
-func TestNewWarehouse(t *testing.T) {
-	t.Run("noop=false", func(t *testing.T) {
-		t.Run("endpoint=localhost:9000", func(t *testing.T) {
-			gotWarehouse, err := NewWarehouse(Config{
-				NoOp: false,
-				Minio: MinioConfig{
-					Endpoint: "localhost:9000",
-				},
-			})
-			require.NoError(t, err)
-			require.NotNil(t, gotWarehouse, "warehouse")
-			assert.Equal(t, Config{
-				NoOp: false,
-				Minio: MinioConfig{
-					Endpoint: "localhost:9000",
-				},
-			}, gotWarehouse.config, "warehouse.config")
-			assert.NotNil(t, gotWarehouse.minioClient, "warehouse.minioClient")
-		})
+func init() {
+	var config Config
+	envconfig.MustProcess("MINIO", &config)
+	Initialize(config)
 
-		t.Run("endpoint=::invalid::endpoint::", func(t *testing.T) {
-			gotWarehouse, err := NewWarehouse(Config{
-				NoOp: false,
-				Minio: MinioConfig{
-					Endpoint: "::invalid::endpoint::",
-				},
-			})
-			require.Error(t, err)
-			assert.Nil(t, gotWarehouse)
-		})
+}
+
+var localRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func newBucket(t *testing.T) *Bucket {
+	bucket, err := NewBucket(context.Background(), "testing"+strconv.Itoa(localRand.Int()))
+	require.NoError(t, err, "storage.NewBucket()")
+	return bucket
+}
+
+func TestNewBucket(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		bucketName := "testing" + strconv.Itoa(localRand.Int())
+		gotBucket, err := NewBucket(ctx, bucketName)
+		require.NoError(t, err, "NewBucket()")
+		assert.Equal(t, &Bucket{
+			Name:        bucketName,
+			minioRegion: warehouse.config.Region,
+			minioClient: warehouse.minioClient,
+		}, gotBucket)
+	})
+	t.Run("failure", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := NewBucket(ctx, "")
+		require.Error(t, err, "NewBucket()")
 	})
 
-	t.Run("noop=true", func(t *testing.T) {
-		for _, endpoint := range []string{"", "localhost:9000", "::invalid::endpoint::"} {
-			t.Run("endpoint="+endpoint, func(t *testing.T) {
-				gotWarehouse, err := NewWarehouse(Config{
-					NoOp: true,
-					Minio: MinioConfig{
-						Endpoint: endpoint,
-					},
-				})
-				require.NoError(t, err)
-				require.NotNil(t, gotWarehouse, "warehouse")
-				assert.Equal(t, Config{
-					NoOp: true,
-					Minio: MinioConfig{
-						Endpoint: endpoint,
-					},
-				}, gotWarehouse.config, "warehouse.config")
-				assert.Nil(t, gotWarehouse.minioClient, "warehouse.minioClient")
-			})
-		}
+}
+
+func TestFile_ObjectKey(t *testing.T) {
+	wantKey := "c54ee0315feb10edabf66fa45fe1b916.html"
+	gotKey := File{MediaType: "text/html", Ext: ".html", Bytes: []byte(`<!doctype html></html>`)}.ObjectKey()
+	assert.Equal(t, wantKey, gotKey)
+}
+
+func TestNewObject(t *testing.T) {
+	wantObject := &Object{
+		ContentType: "text/html",
+		Tags:        map[string]string{"howdy": "there"},
+		Bytes:       []byte(`<!doctype html></html>`),
+	}
+	gotObject := NewObject(
+		"text/html",
+		map[string]string{"howdy": "there"},
+		[]byte(`<!doctype html></html>`),
+	)
+	assert.Equal(t, wantObject, gotObject)
+}
+
+func TestBucket_StatFile(t *testing.T) {
+	ctx := context.Background()
+	bucket := newBucket(t)
+	key := "key.json"
+	_, err := bucket.minioClient.PutObject(bucket.Name, key, strings.NewReader(`{}`), -1, minio.PutObjectOptions{
+		ContentType: "text/plain",
+	})
+	require.NoError(t, err, "bucket.PutObject() failed")
+	var got File
+	assert.NoError(t, bucket.StatFile(ctx, key, &got))
+	assert.Equal(t, File{
+		MediaType: "text/plain",
+		Ext:       ".json",
+		objectKey: "key.json",
+	}, got)
+}
+
+func TestBucket_PutFile(t *testing.T) {
+	ctx := context.Background()
+	bucket := newBucket(t)
+	assert.NoError(t, bucket.PutFile(ctx, &File{
+		MediaType: "text/plain",
+		Ext:       ".json",
+		Bytes:     []byte(`{}`),
+	}), "bucket.PutFile() failed")
+
+	var got Object
+	assert.NoError(t, bucket.GetObject(ctx, "99914b932bd37a50b983c5e7c90ae93b.json", &got))
+	assert.Equal(t, Object{
+		ContentType: "text/plain",
+		Tags:        map[string]string{},
+		Bytes:       []byte(`{}`),
+	}, got)
+}
+
+func TestBucket_StatObject(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		bucket := newBucket(t)
+		key := "test-key"
+		_, err := bucket.minioClient.PutObject(bucket.Name, key, strings.NewReader(`the earth is flat`), -1, minio.PutObjectOptions{
+			ContentType:  "text/plain",
+			UserMetadata: map[string]string{"facts": "only"},
+		})
+		require.NoError(t, err, "bucket.PutObject() failed")
+		var got Object
+		assert.NoError(t, bucket.StatObject(ctx, key, &got))
+		assert.Equal(t, Object{
+			ContentType: "text/plain",
+			Tags:        map[string]string{"Facts": "only"},
+		}, got)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		ctx := context.Background()
+		bucket := newBucket(t)
+		key := "test-key"
+		require.NoError(t, bucket.PutObject(ctx, key, &Object{
+			ContentType: "text/plain",
+			Tags:        map[string]string{"facts": "only"},
+			Bytes:       []byte(`the earth is flat`),
+		}), "bucket.PutObject() failed")
+		var got Object
+		assert.Error(t, bucket.StatObject(ctx, "", &got))
 	})
 }
 
-func TestWarehouse_NewBucket(t *testing.T) {
-	ctx := context.Background()
-	t.Run("noop=false/endpoint=", func(t *testing.T) {
-		warehouse, err := NewWarehouse(Config{
-			NoOp: false,
-			Minio: MinioConfig{
-				Endpoint: "localhost:9000",
-			},
+func TestBucket_GetObject(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		bucket := newBucket(t)
+		key := "test-key"
+		_, err := bucket.minioClient.PutObject(bucket.Name, key, strings.NewReader(`the earth is flat`), -1, minio.PutObjectOptions{
+			ContentType:  "text/plain",
+			UserMetadata: map[string]string{"facts": "only"},
 		})
-		require.NoError(t, err)
-		gotBucket, err := warehouse.NewBucket(ctx, "test-bucket")
-		assert.Error(t, err)
-		assert.Nil(t, gotBucket)
+		require.NoError(t, err, "bucket.PutObject() failed")
+		var got Object
+		assert.NoError(t, bucket.GetObject(ctx, key, &got))
+		assert.Equal(t, Object{
+			ContentType: "text/plain",
+			Tags:        map[string]string{"Facts": "only"},
+			Bytes:       []byte(`the earth is flat`),
+		}, got)
 	})
 
-	t.Run("noop=true", func(t *testing.T) {
-		warehouse, err := NewWarehouse(Config{NoOp: true})
-		require.NoError(t, err)
-		gotBucket, err := warehouse.NewBucket(ctx, "test-bucket")
-		require.NoError(t, err)
-		assert.Equal(t, &Bucket{Name: "test-bucket", noOp: true}, gotBucket)
+	t.Run("failure", func(t *testing.T) {
+		ctx := context.Background()
+		bucket := newBucket(t)
+		key := "test-key"
+		require.NoError(t, bucket.PutObject(ctx, key, &Object{
+			ContentType: "text/plain",
+			Tags:        map[string]string{"facts": "only"},
+			Bytes:       []byte(`the earth is flat`),
+		}), "bucket.PutObject() failed")
+		var got Object
+		assert.Error(t, bucket.GetObject(ctx, "", &got))
 	})
+}
+
+func TestBucket_PutObject(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		bucket := newBucket(t)
+		key := "test-key"
+		require.NoError(t, bucket.PutObject(ctx, key, &Object{
+			ContentType: "text/plain",
+			Tags:        map[string]string{"facts": "only"},
+			Bytes:       []byte(`the earth is flat`),
+		}), "bucket.PutObject() failed")
+		var got Object
+		assert.NoError(t, bucket.GetObject(ctx, key, &got))
+		assert.Equal(t, Object{
+			ContentType: "text/plain",
+			Tags:        map[string]string{"Facts": "only"},
+			Bytes:       []byte(`the earth is flat`),
+		}, got)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		ctx := context.Background()
+		bucket := newBucket(t)
+		key := "test-key"
+		require.Error(t, bucket.PutObject(ctx, "", &Object{
+			ContentType: "text/plain",
+			Tags:        map[string]string{"facts": "only"},
+			Bytes:       []byte(`the earth is flat`),
+		}), "bucket.PutObject() failed")
+		var got Object
+		assert.Error(t, bucket.GetObject(ctx, key, &got))
+	})
+}
+
+func TestBucket_DownloadURL(t *testing.T) {
+	ctx := context.Background()
+	bucket := newBucket(t)
+	key := "test-key"
+	require.NoError(t, bucket.PutObject(ctx, key, &Object{
+		ContentType: "text/plain",
+		Bytes:       []byte(`the earth is flat`),
+	}), "bucket.PutObject() failed")
+
+	downloadUrl, err := bucket.DownloadURL(ctx, key)
+	require.NoError(t, err, "bucket.DownloadURL")
+
+	resp, err := http.Get(downloadUrl)
+	require.NoError(t, err, "http.Get() failed")
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "resp.StatusCode")
+	var gotBody bytes.Buffer
+	gotBody.ReadFrom(resp.Body)
+	assert.Equal(t, `the earth is flat`, gotBody.String())
 }
 
 func TestFile_ValidateMediaType(t *testing.T) {
@@ -138,42 +275,4 @@ func TestFile_ValidateMediaType(t *testing.T) {
 			assert.Equal(t, tt.wantError, tt.file.ValidateMediaType(tt.pre))
 		})
 	}
-}
-
-func TestFile_ObjectKey(t *testing.T) {
-	wantKey := "c54ee0315feb10edabf66fa45fe1b916.html"
-	gotKey := File{MediaType: "text/html", Ext: ".html", Bytes: []byte(`<!doctype html></html>`)}.ObjectKey()
-	assert.Equal(t, wantKey, gotKey)
-}
-
-func TestNewObject(t *testing.T) {
-	wantObject := &Object{
-		ContentType: "text/html",
-		Tags:        map[string]string{"howdy": "there"},
-		Bytes:       []byte(`<!doctype html></html>`),
-	}
-	gotObject := NewObject(
-		"text/html",
-		map[string]string{"howdy": "there"},
-		[]byte(`<!doctype html></html>`),
-	)
-	assert.Equal(t, wantObject, gotObject)
-}
-
-func TestBucket_NoOp(t *testing.T) {
-	ctx := context.Background()
-	warehouse, err := NewWarehouse(Config{NoOp: true})
-	require.NoError(t, err)
-	bucket, err := warehouse.NewBucket(ctx, "test-bucket")
-	require.NoError(t, err)
-	var object Object
-	var file File
-	assert.NoError(t, bucket.StatFile(ctx, "test-file", &file), "bucket.StatFile")
-	assert.NoError(t, bucket.PutFile(ctx, &file), "bucket.StatFile")
-	assert.NoError(t, bucket.StatObject(ctx, "test-object", &object), "bucket.StatObject()")
-	assert.NoError(t, bucket.GetObject(ctx, "test-object", &object), "bucket.StatObject()")
-	assert.NoError(t, bucket.PutObject(ctx, "test-object", &object), "bucket.StatObject()")
-	gotUrl, gotErr := bucket.DownloadURL(ctx, "test-object")
-	assert.NoError(t, gotErr, "bucket.DownloadURL")
-	assert.Equal(t, "#", gotUrl)
 }
