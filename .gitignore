@@ -4,8 +4,7 @@
 *.env
 *.exe
 *.pem
-./vvgo
-./vvgo-uploader*
+vvgo-*
 .idea
 .mypy_cache/
 .venv/
