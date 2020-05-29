@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 const ClientUserAgent = "Virtual-VGO Client"
@@ -27,6 +28,27 @@ type ClientConfig struct {
 
 func NewClient(config ClientConfig) *Client {
 	return &Client{config}
+}
+
+// Backup sends a request to the server to make a backup
+func (x *Client) Backup() error {
+	form := make(url.Values)
+	form.Set("cmd", "backup")
+	req, err := x.newRequest(http.MethodPost, x.ServerAddress+"/backups?cmd=backup", strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return nil
+	default:
+		return fmt.Errorf("received non-200 status: %d", resp.StatusCode)
+	}
 }
 
 // GetProject queries the api server for the project data.

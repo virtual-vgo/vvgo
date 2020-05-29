@@ -9,8 +9,34 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 )
+
+func TestClient_Backup(t *testing.T) {
+	server := NewServer(context.Background(), ServerConfig{
+		MemberUser:        "vvgo-member",
+		MemberPass:        "vvgo-member",
+		UploaderToken:     "vvgo-uploader",
+		DeveloperToken:    "vvgo-developer",
+		DistroBucketName:  "vvgo-distro" + strconv.Itoa(lrand.Int()),
+		BackupsBucketName: "vvgo-backups" + strconv.Itoa(lrand.Int()),
+		RedisNamespace:    "vvgo-testing" + strconv.Itoa(lrand.Int()),
+		Login: login.Config{
+			CookieName: "vvgo-cookie",
+		},
+	})
+	ts := httptest.NewServer(http.HandlerFunc(server.Server.Handler.ServeHTTP))
+	defer ts.Close()
+
+	client := NewAsyncClient(AsyncClientConfig{
+		ClientConfig: ClientConfig{
+			ServerAddress: ts.URL,
+			Token:         "vvgo-uploader",
+		},
+	})
+	assert.NoError(t, client.Backup())
+}
 
 func TestClient_GetProject(t *testing.T) {
 	ts := httptest.NewServer(ProjectsHandler{})

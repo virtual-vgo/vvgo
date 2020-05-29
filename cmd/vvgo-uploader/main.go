@@ -147,6 +147,7 @@ func shutdown(client CmdClient, sigCh chan os.Signal) {
 			}
 			close(done)
 		}()
+		client.Backup()
 
 		select {
 		case sig := <-sigCh:
