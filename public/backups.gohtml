@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    {{ .Header }}
+    {{ template "header.gohtml" }}
     <title>Virtual Video Game Orchestra</title>
     <meta name="description" content="">
 
@@ -23,7 +23,7 @@
 </head>
 
 <body>
-{{ .NavBar }}
+{{ template "navbar.gohtml" .NavBar }}
 <main role="main">
     <div class="container">
         <div class="bg-terminal p-3 mt-4 border rounded">

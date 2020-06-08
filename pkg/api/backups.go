@@ -8,7 +8,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
-	"html/template"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -56,15 +55,12 @@ func (x BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx co
 		}
 	}
 
-	navBarOpts := x.NavBar.NewOpts(ctx, r)
+	opts := NewNavBarOpts(ctx, r)
 	page := struct {
-		Header    template.HTML
-		NavBar    template.HTML
-		Rows      []tableRow
-		StartLink string
+		NavBar NavBarOpts
+		Rows   []tableRow
 	}{
-		Header: Header(),
-		NavBar: x.NavBar.RenderHTML(navBarOpts),
+		NavBar: opts,
 		Rows:   rows,
 	}
 

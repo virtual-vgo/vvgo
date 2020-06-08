@@ -6,44 +6,11 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
-	"html/template"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 )
-
-type LoginView struct {
-	NavBar   NavBar
-	Sessions *login.Store
-}
-
-func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "login_view")
-	defer span.Send()
-
-	var identity login.Identity
-	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil && !identity.IsAnonymous() {
-		http.Redirect(w, r, "/", http.StatusFound)
-		return
-	}
-
-	opts := x.NavBar.NewOpts(ctx, r)
-	page := struct {
-		Header template.HTML
-		NavBar template.HTML
-	}{
-		Header: Header(),
-		NavBar: x.NavBar.RenderHTML(opts),
-	}
-
-	var buf bytes.Buffer
-	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
-		internalServerError(w)
-		return
-	}
-	buf.WriteTo(w)
-}
 
 type PartView struct {
 	NavBar
@@ -108,15 +75,13 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	navBarOpts := x.NavBar.NewOpts(ctx, r)
-	navBarOpts.PartsActive = true
+	opts := NewNavBarOpts(ctx, r)
+	opts.PartsActive = true
 	page := struct {
-		Header template.HTML
-		NavBar template.HTML
+		NavBar NavBarOpts
 		Rows   []tableRow
 	}{
-		Header: Header(),
-		NavBar: x.NavBar.RenderHTML(navBarOpts),
+		NavBar: opts,
 		Rows:   rows,
 	}
 
@@ -146,13 +111,11 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	navBarOpts := x.NavBar.NewOpts(ctx, r)
+	opts := NewNavBarOpts(ctx, r)
 	page := struct {
-		Header template.HTML
-		NavBar template.HTML
+		NavBar NavBarOpts
 	}{
-		Header: Header(),
-		NavBar: x.NavBar.RenderHTML(navBarOpts),
+		NavBar: opts,
 	}
 
 	var buffer bytes.Buffer
@@ -163,16 +126,10 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-func Header() template.HTML {
-	var buffer bytes.Buffer
-	parseAndExecute(&buffer, &struct{}{}, filepath.Join(PublicFiles, "header.gohtml"))
-	return template.HTML(buffer.String())
-}
-
 type NavBar struct {
 }
 
-type NavBarRenderOpts struct {
+type NavBarOpts struct {
 	ShowLogin       bool
 	ShowMemberLinks bool
 	PartsActive     bool
@@ -180,18 +137,12 @@ type NavBarRenderOpts struct {
 
 const CtxKeyVVGOIdentity = "vvgo_identity"
 
-func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
+func NewNavBarOpts(ctx context.Context, r *http.Request) NavBarOpts {
 	identity := identityFromContext(ctx)
-	return NavBarRenderOpts{
+	return NavBarOpts{
 		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
 		ShowLogin:       identity.IsAnonymous(),
 	}
-}
-
-func (x NavBar) RenderHTML(opts NavBarRenderOpts) template.HTML {
-	var buffer bytes.Buffer
-	parseAndExecute(&buffer, &opts, filepath.Join(PublicFiles, "navbar.gohtml"))
-	return template.HTML(buffer.String())
 }
 
 func identityFromContext(ctx context.Context) *login.Identity {
