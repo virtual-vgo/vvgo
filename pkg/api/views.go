@@ -6,6 +6,8 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
+	"html/template"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -145,4 +147,22 @@ func identityFromContext(ctx context.Context) *login.Identity {
 		*identity = login.Anonymous()
 	}
 	return identity
+}
+
+func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) bool {
+	templateFiles = append(templateFiles,
+		filepath.Join(PublicFiles, "header.gohtml"),
+		filepath.Join(PublicFiles, "navbar.gohtml"),
+		filepath.Join(PublicFiles, "footer.gohtml"),
+	)
+	uploadTemplate, err := template.ParseFiles(templateFiles...)
+	if err != nil {
+		logger.WithError(err).Error("template.ParseFiles() failed")
+		return false
+	}
+	if err := uploadTemplate.Execute(dest, &data); err != nil {
+		logger.WithError(err).Error("template.Execute() failed")
+		return false
+	}
+	return true
 }
