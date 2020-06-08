@@ -59,7 +59,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 
 	mux.Handle("/login/password", PasswordLoginHandler{
 		Sessions: database.Sessions,
-		Logins:   map[[2]string][]login.Role{
+		Logins: map[[2]string][]login.Role{
 			{config.MemberUser, config.MemberPass}:    {login.RoleVVGOMember},
 			{"vvgo-uploader", config.UploaderToken}:   {login.RoleVVGOUploader, login.RoleVVGOMember},
 			{"vvgo-developer", config.DeveloperToken}: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
