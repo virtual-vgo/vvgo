@@ -97,7 +97,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-type IndexView struct {}
+type IndexView struct{}
 
 func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "index_view")
