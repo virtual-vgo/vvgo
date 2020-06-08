@@ -49,11 +49,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	}
 
 	mux := RBACMux{
-		Basic: map[[2]string][]login.Role{
-			{config.MemberUser, config.MemberPass}:    {login.RoleVVGOMember},
-			{"vvgo-uploader", config.UploaderToken}:   {login.RoleVVGOUploader, login.RoleVVGOMember},
-			{"vvgo-developer", config.DeveloperToken}: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
-		},
 		Bearer: map[string][]login.Role{
 			config.UploaderToken:  {login.RoleVVGOUploader, login.RoleVVGOMember},
 			config.DeveloperToken: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
@@ -61,6 +56,23 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		ServeMux: http.NewServeMux(),
 		Sessions: database.Sessions,
 	}
+
+	mux.Handle("/login/password", PasswordLoginHandler{
+		Sessions: database.Sessions,
+		Logins:   map[[2]string][]login.Role{
+			{config.MemberUser, config.MemberPass}:    {login.RoleVVGOMember},
+			{"vvgo-uploader", config.UploaderToken}:   {login.RoleVVGOUploader, login.RoleVVGOMember},
+			{"vvgo-developer", config.DeveloperToken}: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
+		},
+	}, login.RoleAnonymous)
+
+	mux.Handle("/login", LoginView{
+		Sessions: database.Sessions,
+	}, login.RoleAnonymous)
+
+	mux.Handle("/logout", LogoutHandler{
+		Sessions: database.Sessions,
+	}, login.RoleAnonymous)
 
 	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		identity := identityFromContext(r.Context())
@@ -74,7 +86,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
 
-	mux.Handle("/login", http.RedirectHandler("/", http.StatusFound), login.RoleVVGOMember)
 	mux.Handle("/parts", PartView{Database: &database}, login.RoleVVGOMember)
 
 	backups := newBucket(ctx, config.BackupsBucketName)
