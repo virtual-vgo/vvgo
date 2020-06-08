@@ -13,7 +13,6 @@ import (
 )
 
 type PartView struct {
-	NavBar
 	*Database
 }
 
@@ -75,7 +74,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	opts := NewNavBarOpts(ctx, r)
+	opts := NewNavBarOpts(ctx)
 	opts.PartsActive = true
 	page := struct {
 		NavBar NavBarOpts
@@ -98,9 +97,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-type IndexView struct {
-	NavBar
-}
+type IndexView struct {}
 
 func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "index_view")
@@ -111,7 +108,7 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	opts := NewNavBarOpts(ctx, r)
+	opts := NewNavBarOpts(ctx)
 	page := struct {
 		NavBar NavBarOpts
 	}{
@@ -126,18 +123,13 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-type NavBar struct {
-}
-
 type NavBarOpts struct {
 	ShowLogin       bool
 	ShowMemberLinks bool
 	PartsActive     bool
 }
 
-const CtxKeyVVGOIdentity = "vvgo_identity"
-
-func NewNavBarOpts(ctx context.Context, r *http.Request) NavBarOpts {
+func NewNavBarOpts(ctx context.Context) NavBarOpts {
 	identity := identityFromContext(ctx)
 	return NavBarOpts{
 		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),

@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const CtxKeyVVGOIdentity = "vvgo_identity"
+
 // Authenticate http requests using the sessions api
 // If the request has a valid session or token with the required role, it is allowed access.
 type RBACMux struct {

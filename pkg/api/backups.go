@@ -17,7 +17,6 @@ import (
 type BackupHandler struct {
 	Database *Database
 	Backups  *storage.Bucket
-	NavBar
 }
 
 func (x BackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +54,7 @@ func (x BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx co
 		}
 	}
 
-	opts := NewNavBarOpts(ctx, r)
+	opts := NewNavBarOpts(ctx)
 	page := struct {
 		NavBar NavBarOpts
 		Rows   []tableRow
