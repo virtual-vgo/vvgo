@@ -1,20 +1,6 @@
 body {
-    background-color: rgba(10, 10, 10, 0.95);
+    background-color: rgba(12, 2, 12, 0.95);
     color: #E9E9E9;
-}
-
-.logo-main {
-    display: block;
-    margin: 20px auto;
-    width: 90%;
-    height: 90%;
-}
-
-.logo-small {
-    display: block;
-    margin: 20px auto;
-    width: 20%;
-    height: 20%;
 }
 
 .title {
@@ -28,14 +14,6 @@ body {
     background-color: rgba(71, 54, 80, 0.57);
 }
 
-.nav-selected {
-    background-color: rgba(14, 57, 5, 0.62);
-}
-
-a:hover.nav-login {
-    background: #1e7e34;
-}
-
 .bg-green {
     background-color: rgba(14, 57, 5, 0.62);
 }
@@ -46,20 +24,6 @@ a:hover.nav-login {
 
 .bg-black {
     background-color: #000000;
-}
-
-.bg-logo {
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: url("/images/logo.svg");
-}
-
-.bg-logo-sm {
-    background-size: 80%;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: url("/images/logo.svg");
 }
 
 .bg-solid-snake {
