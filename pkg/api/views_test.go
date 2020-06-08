@@ -53,7 +53,7 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 		},
 	}), "parts.Save()")
 
-	server := PartView{NavBar{}, &handlerStorage}
+	server := PartView{&handlerStorage}
 
 	t.Run("accept:application/json", func(t *testing.T) {
 		recorder := httptest.NewRecorder()

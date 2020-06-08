@@ -27,45 +27,28 @@
 </head>
 
 <body>
-<nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
-    <a class="nav-link text-light" href="/">
-        <i class="fas fa-home fa-2x mr-2"></i>Virtual VGO
-    </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
-            aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarCollapse">
-        <div class="nav-item btn">
-
-            <a class="nav-login nav-link text-monospace text-info" href="/login"> Login</a>
-
+<div class="container">
+    <nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
+        <a class="nav-link text-light" href="/">
+            <img src="/images/favicons/favicon-32x32.png">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link text-monospace" href="/login">Login</a>
+                </li>
+            </ul>
         </div>
-
-        <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-                <a class="nav-link btn-outline-primary" href="https://www.facebook.com/groups/1080154885682377/">
-                    <i class="fab fa-facebook-square fa-2x"></i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link btn-outline-primary" href="https://github.com/virtual-vgo/vvgo">
-                    <i class="fab fa-github-square fa-2x"></i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link btn-outline-primary"
-                   href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
-                    <i class="fab fa-youtube-square fa-2x"></i>
-                </a>
-            </li>
-        </ul>
-    </div>
-</nav>
+    </nav>
+</div>
 
 <main role="main">
     <div class="container">
-        <div class="bg-terminal p-3 mt-4 border rounded">
+        <div class="bg-terminal p-3 mt-4 border rounded-sm">
             <h1 class="title text-monospace mb-3">~ Backups ~</h1>
             <form><input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
                          type="submit" name="cmd" value="backup" id="cmd" formmethod="post"></form>
@@ -83,5 +66,19 @@
         </div>
     </div>
 </main>
+<footer class="footer">
+    <div class="container mt-3 text-center">
+        <a class="text-light" href="https://www.facebook.com/groups/1080154885682377/">
+            <i class="fab fa-facebook-square fa-2x"></i>
+        </a>
+        <a class="text-light" href="https://github.com/virtual-vgo/vvgo">
+            <i class="fab fa-github-square fa-2x"></i>
+        </a>
+        <a class="text-light"
+           href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
+            <i class="fab fa-youtube-square fa-2x"></i>
+        </a>
+    </div>
+</footer>
 </body>
 </html>
