@@ -55,6 +55,7 @@ func (x BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx co
 	}
 
 	opts := NewNavBarOpts(ctx)
+	opts.BackupsActive = true
 	page := struct {
 		NavBar NavBarOpts
 		Rows   []tableRow

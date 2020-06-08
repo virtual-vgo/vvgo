@@ -7,7 +7,7 @@
     <meta name="author" content="Virtual Video Game Orchestra">
     <link rel="icon" href="/images/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
 
-    <title>Virtual Video Game Orchestra</title>
+    <title>Parts</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
@@ -15,7 +15,6 @@
     <link rel="stylesheet" type="text/css" href="/npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="/css/theme.css">
-    <link rel="stylesheet" type="text/css" href="/css/parts.css">
 
     <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
     <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -27,43 +26,32 @@
 </head>
 
 <body>
-<nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
-    <a class="nav-link text-light" href="/">
-        <i class="fas fa-home fa-2x mr-2"></i>Virtual VGO
-    </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
-            aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarCollapse">
-        <div class="nav-item btn">
-            <a class="nav-login nav-link text-monospace text-info" href="/login"> Login</a>
-        </div>
+<div class="container">
+    <nav class="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
+        <a class="nav-link text-light" href="/">
+            <img src="/images/favicons/favicon-32x32.png">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav">
+                <li class="nav-item">
 
-        <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-                <a class="nav-link btn-outline-primary" href="https://www.facebook.com/groups/1080154885682377/">
-                    <i class="fab fa-facebook-square fa-2x"></i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link btn-outline-primary" href="https://github.com/virtual-vgo/vvgo">
-                    <i class="fab fa-github-square fa-2x"></i>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link btn-outline-primary"
-                   href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
-                    <i class="fab fa-youtube-square fa-2x"></i>
-                </a>
-            </li>
-        </ul>
-    </div>
-</nav>
+                    <a class="nav-link text-monospace" href="/login"> Login</a>
+
+                </li>
+            </ul>
+
+
+        </div>
+    </nav>
+</div>
 
 <main role="main">
     <div class="container parts-table">
-        <div class="bg-terminal p-3 border rounded mt-4">
+        <div class="bg-terminal p-3 border rounded-sm mt-4">
             <h1 class="title text-monospace mb-3">~ Parts ~</h1>
             <h4 class="text-center mb-3"><em><strong>Submission Deadline:</strong>
                     Sunday, Jun 14, 2020 at 11:59 PM (Hawaii Time)</em></h4>
@@ -121,5 +109,20 @@
         </div>
     </div>
 </main>
+<footer class="footer">
+    <div class="container mt-3 text-center">
+        <a class="text-light" href="https://www.facebook.com/groups/1080154885682377/">
+            <i class="fab fa-facebook-square fa-2x"></i>
+        </a>
+        <a class="text-light" href="https://github.com/virtual-vgo/vvgo">
+            <i class="fab fa-github-square fa-2x"></i>
+        </a>
+        <a class="text-light"
+           href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
+            <i class="fab fa-youtube-square fa-2x"></i>
+        </a>
+    </div>
+</footer>
+
 </body>
 </html>

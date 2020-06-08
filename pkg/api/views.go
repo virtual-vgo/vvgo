@@ -128,13 +128,16 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type NavBarOpts struct {
 	ShowLogin       bool
 	ShowMemberLinks bool
+	ShowAdminLinks  bool
 	PartsActive     bool
+	BackupsActive   bool
 }
 
 func NewNavBarOpts(ctx context.Context) NavBarOpts {
 	identity := identityFromContext(ctx)
 	return NavBarOpts{
 		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
+		ShowAdminLinks:  identity.HasRole(login.RoleVVGOUploader),
 		ShowLogin:       identity.IsAnonymous(),
 	}
 }
