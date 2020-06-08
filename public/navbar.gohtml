@@ -7,15 +7,19 @@
         <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarCollapse">
-        <div class="nav-item btn">
-            {{ if .ShowLogin }}
-                <a class="nav-login nav-link text-monospace text-info" href="/login"> Login</a>
-            {{ else }}
-                <a class="nav-link disabled text-monospace"
-                   href="#" tabindex="-1" aria-disabled="true"> :hello:
-                </a>
-            {{ end }}
-        </div>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                {{ if .ShowLogin }}
+                    <a class="{{- if .LoginActive }}bg-primary{{ end }} nav-link text-monospace"
+                       href="/login">Login
+                    </a>
+                {{ else }}
+                    <a class="nav-link text-monospace" href="/logout">
+                        Logout
+                    </a>
+                {{ end }}
+            </li>
+        </ul>
         {{ if .ShowMemberLinks }}
             <ul class="navbar-nav">
                 <li class="nav-item">

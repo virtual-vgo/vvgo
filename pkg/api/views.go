@@ -29,6 +29,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	opts := x.NavBar.NewOpts(ctx, r)
+	opts.LoginActive = true
 	page := struct {
 		Header template.HTML
 		NavBar template.HTML
@@ -176,6 +177,7 @@ type NavBarRenderOpts struct {
 	ShowLogin       bool
 	ShowMemberLinks bool
 	PartsActive     bool
+	LoginActive     bool
 }
 
 const CtxKeyVVGOIdentity = "vvgo_identity"
