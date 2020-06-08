@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const LoginCookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
+
 // PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.
 // If the user pass combo exists in the map, then a login cookie with the mapped roles is create and sent in the response.
 type PasswordLoginHandler struct {
@@ -49,7 +51,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		Roles: gotRoles,
 	}
 
-	cookie, err := x.Sessions.NewCookie(ctx, &identity, 31557600*time.Second)
+	cookie, err := x.Sessions.NewCookie(ctx, &identity, LoginCookieDuration)
 	if err != nil {
 		logger.WithError(err).Error("store.NewCookie() failed")
 		internalServerError(w)
