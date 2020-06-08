@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    {{ .Header }}
+    {{ template "header.gohtml" }}
     <title>Virtual Video Game Orchestra</title>
     <meta name="description" content="">
 
@@ -23,10 +23,10 @@
 </head>
 
 <body>
-{{ .NavBar }}
+{{ template "navbar.gohtml" .NavBar }}
 <main role="main">
     <div class="container">
-        <div class="bg-terminal p-3 mt-4 border rounded">
+        <div class="bg-terminal p-3 mt-4 border rounded-sm">
             <h1 class="title text-monospace mb-3">~ Backups ~</h1>
             <form><input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
                          type="submit" name="cmd" value="backup" id="cmd" formmethod="post"></form>
@@ -62,5 +62,6 @@
         </div>
     </div>
 </main>
+{{ template "footer.gohtml" }}
 </body>
 </html>

@@ -7,6 +7,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 )
 
 type LoginView struct {
-	NavBar   NavBar
 	Sessions *login.Store
 }
 
@@ -28,14 +28,12 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	opts := x.NavBar.NewOpts(ctx, r)
+	opts := NewNavBarOpts(ctx)
 	opts.LoginActive = true
 	page := struct {
-		Header template.HTML
-		NavBar template.HTML
+		NavBar NavBarOpts
 	}{
-		Header: Header(),
-		NavBar: x.NavBar.RenderHTML(opts),
+		NavBar: opts,
 	}
 
 	var buf bytes.Buffer
@@ -47,7 +45,6 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type PartView struct {
-	NavBar
 	*Database
 }
 
@@ -109,15 +106,13 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	navBarOpts := x.NavBar.NewOpts(ctx, r)
-	navBarOpts.PartsActive = true
+	opts := NewNavBarOpts(ctx)
+	opts.PartsActive = true
 	page := struct {
-		Header template.HTML
-		NavBar template.HTML
+		NavBar NavBarOpts
 		Rows   []tableRow
 	}{
-		Header: Header(),
-		NavBar: x.NavBar.RenderHTML(navBarOpts),
+		NavBar: opts,
 		Rows:   rows,
 	}
 
@@ -134,9 +129,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-type IndexView struct {
-	NavBar
-}
+type IndexView struct{}
 
 func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "index_view")
@@ -147,13 +140,11 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	navBarOpts := x.NavBar.NewOpts(ctx, r)
+	opts := NewNavBarOpts(ctx)
 	page := struct {
-		Header template.HTML
-		NavBar template.HTML
+		NavBar NavBarOpts
 	}{
-		Header: Header(),
-		NavBar: x.NavBar.RenderHTML(navBarOpts),
+		NavBar: opts,
 	}
 
 	var buffer bytes.Buffer
@@ -164,36 +155,22 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	buffer.WriteTo(w)
 }
 
-func Header() template.HTML {
-	var buffer bytes.Buffer
-	parseAndExecute(&buffer, &struct{}{}, filepath.Join(PublicFiles, "header.gohtml"))
-	return template.HTML(buffer.String())
-}
-
-type NavBar struct {
-}
-
-type NavBarRenderOpts struct {
+type NavBarOpts struct {
 	ShowLogin       bool
 	ShowMemberLinks bool
+	ShowAdminLinks  bool
 	PartsActive     bool
 	LoginActive     bool
+	BackupsActive   bool
 }
 
-const CtxKeyVVGOIdentity = "vvgo_identity"
-
-func (x NavBar) NewOpts(ctx context.Context, r *http.Request) NavBarRenderOpts {
+func NewNavBarOpts(ctx context.Context) NavBarOpts {
 	identity := identityFromContext(ctx)
-	return NavBarRenderOpts{
+	return NavBarOpts{
 		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
+		ShowAdminLinks:  identity.HasRole(login.RoleVVGOUploader),
 		ShowLogin:       identity.IsAnonymous(),
 	}
-}
-
-func (x NavBar) RenderHTML(opts NavBarRenderOpts) template.HTML {
-	var buffer bytes.Buffer
-	parseAndExecute(&buffer, &opts, filepath.Join(PublicFiles, "navbar.gohtml"))
-	return template.HTML(buffer.String())
 }
 
 func identityFromContext(ctx context.Context) *login.Identity {
@@ -204,4 +181,22 @@ func identityFromContext(ctx context.Context) *login.Identity {
 		*identity = login.Anonymous()
 	}
 	return identity
+}
+
+func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) bool {
+	templateFiles = append(templateFiles,
+		filepath.Join(PublicFiles, "header.gohtml"),
+		filepath.Join(PublicFiles, "navbar.gohtml"),
+		filepath.Join(PublicFiles, "footer.gohtml"),
+	)
+	uploadTemplate, err := template.ParseFiles(templateFiles...)
+	if err != nil {
+		logger.WithError(err).Error("template.ParseFiles() failed")
+		return false
+	}
+	if err := uploadTemplate.Execute(dest, &data); err != nil {
+		logger.WithError(err).Error("template.Execute() failed")
+		return false
+	}
+	return true
 }

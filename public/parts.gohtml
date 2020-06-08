@@ -2,8 +2,8 @@
 <html lang="en">
 
 <head>
-    {{ .Header }}
-    <title>Virtual Video Game Orchestra</title>
+    {{ template "header.gohtml" }}
+    <title>Parts</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
@@ -11,7 +11,6 @@
     <link rel="stylesheet" type="text/css" href="/npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="/css/theme.css">
-    <link rel="stylesheet" type="text/css" href="/css/parts.css">
 
     <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
     <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -23,10 +22,10 @@
 </head>
 
 <body>
-{{ .NavBar }}
+{{ template "navbar.gohtml" .NavBar }}
 <main role="main">
     <div class="container parts-table">
-        <div class="bg-terminal p-3 border rounded mt-4">
+        <div class="bg-terminal p-3 border rounded-sm mt-4">
             <h1 class="title text-monospace mb-3">~ Parts ~</h1>
             <h4 class="text-center mb-3"><em><strong>Submission Deadline:</strong>
                     Sunday, Jun 14, 2020 at 11:59 PM (Hawaii Time)</em></h4>
@@ -86,5 +85,6 @@
         </div>
     </div>
 </main>
+{{ template "footer.gohtml" }}
 </body>
 </html>

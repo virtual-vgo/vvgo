@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"encoding/gob"
 	"encoding/json"
-	"html/template"
 	"io"
 	"net/http"
 	"strings"
@@ -32,19 +31,6 @@ func readBody(dest io.Writer, r *http.Request) bool {
 			logger.WithError(err).Error("r.body.Read() failed")
 			return false
 		}
-	}
-	return true
-}
-
-func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) bool {
-	uploadTemplate, err := template.ParseFiles(templateFiles...)
-	if err != nil {
-		logger.WithError(err).Error("template.ParseFiles() failed")
-		return false
-	}
-	if err := uploadTemplate.Execute(dest, &data); err != nil {
-		logger.WithError(err).Error("template.Execute() failed")
-		return false
 	}
 	return true
 }
