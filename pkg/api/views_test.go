@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
@@ -17,6 +18,39 @@ import (
 	"testing"
 	"time"
 )
+
+func TestLoginView_ServeHTTP(t *testing.T) {
+	t.Run("not logged in", func(t *testing.T) {
+		server := LoginView{Sessions: newSessions()}
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+		server.ServeHTTP(recorder, request)
+		gotResp := recorder.Result()
+		assert.Equal(t, http.StatusOK, gotResp.StatusCode)
+		wantRaw, gotRaw := strings.TrimSpace(mustReadFile(t, "testdata/login.html")), strings.TrimSpace(recorder.Body.String())
+		assertEqualHTML(t, wantRaw, gotRaw)
+	})
+
+	t.Run("logged in", func(t *testing.T) {
+		ctx := context.Background()
+
+		server := LoginView{Sessions: newSessions()}
+
+		cookie, err := server.Sessions.NewCookie(ctx, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}}, 600*time.Second)
+		require.NoError(t, err, "sessions.NewCookie()")
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+		request.AddCookie(cookie)
+		server.ServeHTTP(recorder, request)
+		gotResp := recorder.Result()
+		if expected, got := http.StatusFound, gotResp.StatusCode; expected != got {
+			t.Errorf("expected code %v, got %v", expected, got)
+		}
+		assertEqualHTML(t, "<a href=/>Found</a>.", strings.TrimSpace(recorder.Body.String()))
+	})
+}
 
 func TestPartsView_ServeHTTP(t *testing.T) {
 	ctx := context.Background()

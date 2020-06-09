@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{ template "header.gohtml" }}
+    <title>Virtual Video Game Orchestra</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/theme.css">
+    <link rel="stylesheet" type="text/css" href="/css/login.css">
+
+    <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
+</head>
+
+<body class="text-center">
+{{ template "navbar.gohtml" .NavBar }}
+<form class="form-signin" action="/login/password" method="post">
+    <img class="mb-4 mt-4" src="images/logo.svg" alt="" width="100%">
+    <div>
+        <label for="inputUser" class="sr-only">VVGO User</label>
+        <input name="user" type="text" id="inputUser" class="form-control" placeholder="user" required autofocus>
+    </div>
+
+    <div class="mt-1">
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input name="pass" type="password" id="inputPassword" class="form-control" placeholder="password" required>
+    </div>
+
+    <button class="btn btn-lg btn-block bg-vvgo-purple text-light" type="submit">Sign in</button>
+</form>
+</body>
+{{ template "footer.gohtml" }}
+</html>
