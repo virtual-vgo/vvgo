@@ -14,6 +14,36 @@ import (
 	"strings"
 )
 
+type LoginView struct {
+	Sessions *login.Store
+}
+
+func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "login_view")
+	defer span.Send()
+
+	var identity login.Identity
+	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil && !identity.IsAnonymous() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
+	opts := NewNavBarOpts(ctx)
+	opts.LoginActive = true
+	page := struct {
+		NavBar NavBarOpts
+	}{
+		NavBar: opts,
+	}
+
+	var buf bytes.Buffer
+	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	buf.WriteTo(w)
+}
+
 type PartView struct {
 	*Database
 }
@@ -130,6 +160,7 @@ type NavBarOpts struct {
 	ShowMemberLinks bool
 	ShowAdminLinks  bool
 	PartsActive     bool
+	LoginActive     bool
 	BackupsActive   bool
 }
 

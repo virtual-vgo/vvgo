@@ -26,6 +26,10 @@ body {
     background-color: #000000;
 }
 
+.bg-vvgo-purple {
+    background-color: #8C17D9;
+}
+
 .bg-solid-snake {
     background-image: url('/images/snake-eater-banner-solid-snake.png');
     background-size: contain;
