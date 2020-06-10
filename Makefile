@@ -13,9 +13,9 @@ default: vvgo
 all: node_modules test releases images
 
 vvgo:
-	go generate ./... && go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo
+	go generate ./... && go build -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo
 vvgo-uploader:
-	go generate ./... && go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo-uploader
+	go generate ./... && go build -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/vvgo-uploader
 
 # Download external dependencies (yarn)
 .PHONY: node_modules
@@ -44,21 +44,27 @@ test: generate fmt vet
 HARDWARE ?= $(shell uname -m)
 RELEASE_TAG ?= $(shell git rev-parse --short HEAD)
 
-.PHONY: releases releases/$(BIN_PATH) releases/$(IMAGE_REPO)
-releases: releases/$(BIN_PATH)
-releases/$(BIN_PATH): $(BIN_PATH)/vvgo-$(RELEASE_TAG)-linux-$(HARDWARE)
-releases/$(BIN_PATH): $(BIN_PATH)/vvgo-$(RELEASE_TAG)-darwin-$(HARDWARE)
-releases/$(BIN_PATH): $(BIN_PATH)/vvgo-$(RELEASE_TAG)-windows-$(HARDWARE).exe
-releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-linux-$(HARDWARE)
-releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-darwin-$(HARDWARE)
-releases/$(BIN_PATH): $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-windows-$(HARDWARE).exe
+.PHONY: releases releases/$(IMAGE_REPO)
+releases: $(BIN_PATH)/vvgo-$(RELEASE_TAG)-linux-$(HARDWARE)
+releases: $(BIN_PATH)/vvgo-$(RELEASE_TAG)-darwin-$(HARDWARE)
+releases: $(BIN_PATH)/vvgo-$(RELEASE_TAG)-windows-$(HARDWARE).exe
+releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-linux-$(HARDWARE)
+releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-darwin-$(HARDWARE)
+releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-windows-$(HARDWARE).exe
+releases: $(BIN_PATH)/vvgo-uploader-$(RELEASE_TAG)-windows-$(HARDWARE).exe.zip
 
 $(BIN_PATH)/%-$(RELEASE_TAG)-darwin-$(HARDWARE): generate
-	GOOS=darwin go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/$*
+	GOOS=darwin go build -o $@ $(GO_PREFIX)/cmd/$*
 $(BIN_PATH)/%-$(RELEASE_TAG)-linux-$(HARDWARE): generate
-	GOOS=linux go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/$*
+	GOOS=linux go build -o $@ $(GO_PREFIX)/cmd/$*
 $(BIN_PATH)/%-$(RELEASE_TAG)-windows-$(HARDWARE).exe: generate
-	GOOS=windows go build -v -o $(BIN_PATH)/$@ $(GO_PREFIX)/cmd/$*
+	GOOS=windows go build -o $@ $(GO_PREFIX)/cmd/$*
+
+%.tar.gz: %
+	tar czf $@ $^
+
+%.zip: %
+	zip $@ $^
 
 # Build images
 

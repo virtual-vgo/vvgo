@@ -19,7 +19,7 @@ import (
 
 const UploadsTimeout = 5 * 60 * time.Second
 
-type UploadHandler struct{ *Storage }
+type UploadHandler struct{ *Database }
 
 type UploadType string
 
@@ -37,7 +37,6 @@ type Uploads []Upload
 type Upload struct {
 	UploadType  `json:"upload_type"`
 	PartNames   []string `json:"part_names"`
-	PartNumbers []uint8  `json:"part_numbers"`
 	Project     string   `json:"project"`
 	FileName    string   `json:"file_name"`
 	FileBytes   []byte   `json:"file_bytes"`
@@ -45,11 +44,10 @@ type Upload struct {
 }
 
 var (
-	ErrInvalidUploadType  = errors.New("invalid upload type")
-	ErrMissingProject     = errors.New("missing project")
-	ErrMissingPartNames   = errors.New("missing part names")
-	ErrMissingPartNumbers = errors.New("missing part numbers")
-	ErrEmptyFileBytes     = errors.New("empty file bytes")
+	ErrInvalidUploadType = errors.New("invalid upload type")
+	ErrMissingProject    = errors.New("missing project")
+	ErrMissingPartNames  = errors.New("missing part names")
+	ErrEmptyFileBytes    = errors.New("empty file bytes")
 )
 
 func (upload *Upload) Validate() error {
@@ -62,10 +60,6 @@ func (upload *Upload) Validate() error {
 		return ErrMissingPartNames
 	case parts.ValidNames(upload.PartNames...) == false:
 		return parts.ErrInvalidPartName
-	case len(upload.PartNumbers) == 0:
-		return ErrMissingPartNumbers
-	case parts.ValidNumbers(upload.PartNumbers...) == false:
-		return parts.ErrInvalidPartNumber
 	case len(upload.FileBytes) == 0:
 		return ErrEmptyFileBytes
 	}
@@ -90,17 +84,14 @@ func (upload *Upload) File() *storage.File {
 }
 
 func (upload *Upload) Parts() []parts.Part {
-	allParts := make([]parts.Part, 0, len(upload.PartNames)*len(upload.PartNumbers))
+	allParts := make([]parts.Part, 0, len(upload.PartNames))
 	for _, name := range upload.PartNames {
-		for _, number := range upload.PartNumbers {
-			allParts = append(allParts, parts.Part{
-				ID: parts.ID{
-					Project: strings.TrimSpace(strings.ToLower(upload.Project)),
-					Name:    strings.TrimSpace(strings.ToLower(name)),
-					Number:  number,
-				},
-			})
-		}
+		allParts = append(allParts, parts.Part{
+			ID: parts.ID{
+				Project: strings.TrimSpace(strings.ToLower(upload.Project)),
+				Name:    strings.TrimSpace(strings.ToLower(name)),
+			},
+		})
 	}
 	return allParts
 }
@@ -213,7 +204,7 @@ func (x UploadHandler) handleClix(ctx context.Context, upload *Upload) UploadSta
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if err := x.Clix.PutFile(ctx, file); err != nil {
+	if err := x.Distro.PutFile(ctx, file); err != nil {
 		logger.WithError(err).Error("x.Clix.PutFile() failed")
 		return uploadInternalServerError(upload)
 	}
@@ -227,7 +218,7 @@ func (x UploadHandler) handleSheets(ctx context.Context, upload *Upload) UploadS
 		return uploadBadRequest(upload, err.Error())
 	}
 
-	if err := x.Sheets.PutFile(ctx, file); err != nil {
+	if err := x.Distro.PutFile(ctx, file); err != nil {
 		logger.WithError(err).Error("x.Sheets.PutFile() failed")
 		return uploadInternalServerError(upload)
 	} else {

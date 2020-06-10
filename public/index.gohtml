@@ -2,35 +2,41 @@
 <html lang="en">
 
 <head>
-    {{ .Header }}
+    {{ template "header.gohtml" }}
     <title>Virtual Video Game Orchestra</title>
     <meta name="description" content="">
 
-    <link rel="stylesheet" type="text/css" href="npm/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="npm/@fortawesome/fontawesome-free/css/all.min.css">
-    <link rel="stylesheet" type="text/css" href="css/theme.css">
+    <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/theme.css">
+    <link rel="stylesheet" type="text/css" href="/css/index.css">
 
-    <script type="text/javascript" src="npm/jquery/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="npm/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
+    <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
 </head>
-<body>
-{{ .NavBar }}
-<div class="container jumbotron bg-transparent">
-    <div class="bg-terminal">
-        <div class="p-3 thick-border rounded crt-grid">
-            <img src="images/logo.svg" class="logo-main btn bg-transparent"><a href="/" class=""></a>
-            <table class="m-auto">
-                <tr>
-                    <td class="btn btn-outline-light bg-transparent text-light btn-link text-monospace">
-                        <a href="https://www.facebook.com/groups/1080154885682377/" class="">
-                            Please join our facebook group!
-                        </a>
-                    </td>
-                </tr>
-            </table>
+<body class="bg-solid-snake">
+{{ template "navbar.gohtml" .NavBar }}
+
+<div class="mt-2 container">
+    <div class="row justify-content-md-center text-center m-2">
+        <a href="https://www.youtube.com/watch?v=HVKRro_lizk" class="btn btn-link nav-link">
+            <img src="images/snake-eater-title-text.png" class="img-fluid mx-auto">
+        </a>
+        <div class="col-sm-8 text-center m-2">
+            <iframe height="350" width="100%" src="https://www.youtube.com/embed/HVKRro_lizk"
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+        </div>
+
+    </div>
+    <div class="row justify-content-md-center text-center m-2">
+        <div class="col text-center mt-2">
+            For more information about our orchestra and how you can make music with us, please join our
+            <a href="https://www.facebook.com/groups/1080154885682377/" class="text-info">Facebook group!</a>
         </div>
     </div>
 </div>
+{{ template "footer.gohtml" }}
 </body>
 </html>

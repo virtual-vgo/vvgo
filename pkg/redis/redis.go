@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -21,9 +20,7 @@ type Config struct {
 
 var client *Client
 
-func init() {
-	var config Config
-	envconfig.MustProcess("REDIS", &config)
+func Initialize(config Config) {
 	client = NewClientMust(config)
 }
 
@@ -58,6 +55,7 @@ type Action struct {
 func Cmd(rcv interface{}, cmd string, args ...string) Action {
 	return Action{
 		cmd:         cmd,
+		args:        args,
 		radixAction: radix.Cmd(rcv, cmd, args...),
 	}
 }

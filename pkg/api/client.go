@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -24,6 +28,53 @@ type ClientConfig struct {
 
 func NewClient(config ClientConfig) *Client {
 	return &Client{config}
+}
+
+// Backup sends a request to the server to make a backup
+func (x *Client) Backup() error {
+	form := make(url.Values)
+	form.Set("cmd", "backup")
+	req, err := x.newRequest(http.MethodPost, x.ServerAddress+"/backups?cmd=backup", strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return nil
+	default:
+		return fmt.Errorf("received non-200 status: %d", resp.StatusCode)
+	}
+}
+
+// GetProject queries the api server for the project data.
+func (x *Client) GetProject(name string) (*projects.Project, error) {
+	values := url.Values{"name": []string{name}}
+	req, err := x.newRequest(http.MethodGet, x.ServerAddress+"/projects?"+values.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var project projects.Project
+		if err := json.NewDecoder(resp.Body).Decode(&project); err != nil {
+			return nil, err
+		}
+		return &project, nil
+	case http.StatusNotFound:
+		return nil, projects.ErrNotFound
+	default:
+		return nil, fmt.Errorf("received non-200 status: %d", resp.StatusCode)
+	}
 }
 
 func (x *Client) Upload(uploads ...Upload) []UploadStatus {
@@ -72,20 +123,34 @@ func uploadStatusFatal(uploads []Upload, err string) []UploadStatus {
 	return statuses
 }
 
+// Authenticate queries the api server to check that the client has the uploader role.
+// An error returns if the query fails or if the client does not have the uploader role.
 func (x *Client) Authenticate() error {
-	req, err := x.newRequest(http.MethodGet, x.ServerAddress+"/auth", strings.NewReader(""))
+	// Query the server
+	req, err := x.newRequest(http.MethodGet, x.ServerAddress+"/roles", nil)
 	if err != nil {
-		return fmt.Errorf("http.NewRequest() failed: %v", err)
+		return fmt.Errorf("http.NewRequest() failed: %w", err)
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("httpClient.Do() failed: %v", err)
+		return fmt.Errorf("httpClient.Do() failed: %w", err)
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		buf, _ := ioutil.ReadAll(resp.Body)
 		return fmt.Errorf("non-200 status `%d: %s`", resp.StatusCode, bytes.TrimSpace(buf))
 	}
-	return nil
+	// Check that we have the uploader role.
+	var roles []login.Role
+	if err := json.NewDecoder(resp.Body).Decode(&roles); err != nil {
+		return fmt.Errorf("json.Decode() failed: %w", err)
+	}
+	for _, role := range roles {
+		if role == login.RoleVVGOUploader {
+			return nil
+		}
+	}
+	return fmt.Errorf("client does not have upload permissions")
 }
 
 func (x *Client) newRequestGZIP(method, url string, body io.Reader) (*http.Request, error) {

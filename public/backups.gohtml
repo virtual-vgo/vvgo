@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{ template "header.gohtml" }}
+    <title>Virtual Video Game Orchestra</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/theme.css">
+    <link rel="stylesheet" type="text/css" href="/css/parts.css">
+
+    <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
+    <script type="text/javascript" src="/js/backups.js"></script>
+</head>
+
+<body>
+{{ template "navbar.gohtml" .NavBar }}
+<main role="main">
+    <div class="container">
+        <div class="bg-terminal p-3 mt-4 border rounded-sm">
+            <h1 class="title text-monospace mb-3">~ Backups ~</h1>
+            <form><input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                         type="submit" name="cmd" value="backup" id="cmd" formmethod="post"></form>
+            <table id="backups" class="table text-light">
+                <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Size</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{- range .Rows}}
+                    <tr>
+                        <td>{{.Timestamp}}</td>
+                        <td>{{.SizeKB}} KB</td>
+                        <td>
+                            <a href="{{.DownloadLink}}"
+                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace float-left">
+                                download
+                            </a>
+                            <form class="float-left ml-1">
+                                <input type="hidden" name="object" value="{{.Object}}">
+                                <input type="hidden" name="cmd" value="restore">
+                                <input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                                       type="submit" value="restore" formmethod="post">
+                            </form>
+                        </td>
+                    </tr>
+                {{- end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+{{ template "footer.gohtml" }}
+</body>
+</html>

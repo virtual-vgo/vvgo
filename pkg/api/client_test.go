@@ -1,48 +1,85 @@
 package api
 
 import (
+	"context"
 	"encoding/gob"
+	"github.com/stretchr/testify/assert"
+	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
+	"strconv"
 	"testing"
 )
 
-func TestClient_Upload(t *testing.T) {
-	wantURI := "/upload"
-	wantMethod := http.MethodPost
-	wantContentType := MediaTypeUploadsGob
-	wantContentEncoding := "application/gzip"
-	wantAuthorized := true
-	wantStatuses := []UploadStatus{{
-		FileName: "Dio_Brando.pdf",
-		Code:     http.StatusOK,
-	}}
+func TestClient_Backup(t *testing.T) {
+	server := NewServer(context.Background(), ServerConfig{
+		MemberUser:        "vvgo-member",
+		MemberPass:        "vvgo-member",
+		UploaderToken:     "vvgo-uploader",
+		DeveloperToken:    "vvgo-developer",
+		DistroBucketName:  "vvgo-distro" + strconv.Itoa(lrand.Int()),
+		BackupsBucketName: "vvgo-backups" + strconv.Itoa(lrand.Int()),
+		RedisNamespace:    "vvgo-testing" + strconv.Itoa(lrand.Int()),
+		Login: login.Config{
+			CookieName: "vvgo-cookie",
+		},
+	})
+	ts := httptest.NewServer(http.HandlerFunc(server.Server.Handler.ServeHTTP))
+	defer ts.Close()
 
 	client := NewAsyncClient(AsyncClientConfig{
 		ClientConfig: ClientConfig{
-			Token: "Dio Brando",
+			ServerAddress: ts.URL,
+			Token:         "vvgo-uploader",
+		},
+	})
+	assert.NoError(t, client.Backup())
+}
+
+func TestClient_GetProject(t *testing.T) {
+	ts := httptest.NewServer(ProjectsHandler{})
+	defer ts.Close()
+	client := NewAsyncClient(AsyncClientConfig{
+		ClientConfig: ClientConfig{
+			Token:         "Dio Brando",
+			ServerAddress: ts.URL,
 		},
 		MaxParallel: 32,
 		QueueLength: 64,
 	})
+	got, err := client.GetProject("01-snake-eater")
+	assert.NoError(t, err)
+	assert.Equal(t, projects.GetName("01-snake-eater"), got)
+}
 
+func TestClient_Upload(t *testing.T) {
 	var gotRequest *http.Request
 	var gotAuthorized bool
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotRequest = r
-		auth := TokenAuth{"Dio Brando"}
-		auth.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotAuthorized = true
-			gob.NewEncoder(w).Encode([]UploadStatus{{
-				FileName: "Dio_Brando.pdf",
-				Code:     http.StatusOK,
-			}})
-		})).ServeHTTP(w, r)
-	}))
+	mux := RBACMux{
+		Bearer:   map[string][]login.Role{"Dio Brando": {login.RoleVVGOUploader}},
+		ServeMux: http.NewServeMux(),
+	}
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		gotRequest = r.Clone(context.Background())
+		gotAuthorized = true
+		gob.NewEncoder(w).Encode([]UploadStatus{{
+			FileName: "Dio_Brando.pdf",
+			Code:     http.StatusOK,
+		}})
+	}, login.RoleVVGOUploader)
+	ts := httptest.NewServer(&mux)
 	defer ts.Close()
-	client.Client.ServerAddress = ts.URL
+
+	client := NewAsyncClient(AsyncClientConfig{
+		ClientConfig: ClientConfig{
+			Token:         "Dio Brando",
+			ServerAddress: ts.URL,
+		},
+		MaxParallel: 32,
+		QueueLength: 64,
+	})
 
 	fileBytes, err := ioutil.ReadFile("testdata/sheet-music.pdf")
 	if err != nil {
@@ -51,8 +88,7 @@ func TestClient_Upload(t *testing.T) {
 
 	uploads := []Upload{{
 		UploadType:  UploadTypeSheets,
-		PartNames:   []string{"trumpet"},
-		PartNumbers: []uint8{2},
+		PartNames:   []string{"trumpet 2"},
 		Project:     "01-snake-eater",
 		FileName:    "Dio_Brando.pdf",
 		FileBytes:   fileBytes,
@@ -66,22 +102,13 @@ func TestClient_Upload(t *testing.T) {
 		gotStatuses = append(gotStatuses, status)
 	}
 
-	if want, got := wantURI, gotRequest.URL.RequestURI(); want != got {
-		t.Errorf("expected user `%s`, got `%s`", want, got)
-	}
-	if want, got := wantStatuses, gotStatuses; !reflect.DeepEqual(want, got) {
-		t.Errorf("expected statuses %#v, got %#v", want, got)
-	}
-	if want, got := wantAuthorized, gotAuthorized; want != got {
-		t.Errorf("expected authorized `%v`, got `%v`", want, got)
-	}
-	if want, got := wantContentType, gotRequest.Header.Get("Content-Type"); want != got {
-		t.Errorf("expected content-type `%s`, got `%s`", want, got)
-	}
-	if want, got := wantContentEncoding, gotRequest.Header.Get("Content-Encoding"); want != got {
-		t.Errorf("expected content-encoding `%s`, got `%s`", want, got)
-	}
-	if want, got := wantMethod, gotRequest.Method; want != got {
-		t.Errorf("expected method `%s`, got `%s`", want, got)
-	}
+	assert.Equal(t, "/upload", gotRequest.URL.RequestURI(), "request uri")
+	assert.Equal(t, []UploadStatus{{
+		FileName: "Dio_Brando.pdf",
+		Code:     http.StatusOK,
+	}}, gotStatuses, "upload status")
+	assert.True(t, gotAuthorized, "authorized")
+	assert.Equal(t, MediaTypeUploadsGob, gotRequest.Header.Get("Content-Type"), "content-type")
+	assert.Equal(t, "application/gzip", gotRequest.Header.Get("Content-Encoding"), "content-encoding")
+	assert.Equal(t, http.MethodPost, gotRequest.Method, "method")
 }

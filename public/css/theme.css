@@ -1,20 +1,6 @@
 body {
-    background-color: rgba(32, 25, 36, 1);
+    background-color: rgba(12, 2, 12, 0.95);
     color: #E9E9E9;
-}
-
-.logo-main {
-    display: block;
-    margin: 20px auto;
-    width: 90%;
-    height: 90%;
-}
-
-.logo-small {
-    display: block;
-    margin: 20px auto;
-    width: 20%;
-    height: 20%;
 }
 
 .title {
@@ -28,14 +14,6 @@ body {
     background-color: rgba(71, 54, 80, 0.57);
 }
 
-.nav-selected {
-    background-color: rgba(14, 57, 5, 0.62);
-}
-
-a:hover.nav-login {
-    background: #1e7e34;
-}
-
 .bg-green {
     background-color: rgba(14, 57, 5, 0.62);
 }
@@ -44,15 +22,23 @@ a:hover.nav-login {
     background-color: rgba(71, 54, 80, 0.57);
 }
 
+.bg-black {
+    background-color: #000000;
+}
+
+.bg-vvgo-purple {
+    background-color: #8C17D9;
+}
+
+.bg-solid-snake {
+    background-image: url('/images/snake-eater-banner-solid-snake.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
 .thick-border {
     border-style: solid;
     border-width: thick;
-}
-
-.crt-grid {
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-    z-index: 2;
-    background-size: 100% 5px, 5px 100%;
 }
 
 a:hover {

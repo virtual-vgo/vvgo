@@ -2,9 +2,11 @@ package parts
 
 import (
 	"context"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -13,6 +15,12 @@ import (
 )
 
 var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func init() {
+	var redisConfig redis.Config
+	envconfig.MustProcess("REDIS", &redisConfig)
+	redis.Initialize(redisConfig)
+}
 
 func newParts() RedisParts {
 	return RedisParts{namespace: "testing" + strconv.Itoa(lrand.Int())}
@@ -23,14 +31,14 @@ func TestParts_List(t *testing.T) {
 	parts := newParts()
 
 	wantList := []Part{{
-		ID: ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+		ID: ID{Project: "01-snake-eater", Name: "trumpet 1"},
 		Clix: []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)},
 			{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 		Sheets: []Link{},
 	}}
 
 	require.NoError(t, parts.Save(ctx, []Part{{
-		ID: ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+		ID: ID{Project: "01-snake-eater", Name: "trumpet 1"},
 		Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
 			{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 	}}))
@@ -40,17 +48,33 @@ func TestParts_List(t *testing.T) {
 	assertEqualParts(t, wantList, gotList)
 }
 
+func TestRedisParts_DeleteAll(t *testing.T) {
+	ctx := context.Background()
+	parts := newParts()
+
+	require.NoError(t, parts.Save(ctx, []Part{{
+		ID: ID{Project: "01-snake-eater", Name: "trumpet 1"},
+		Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
+			{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
+	}}))
+
+	parts.DeleteAll(ctx)
+	gotList, err := parts.List(context.Background())
+	assert.NoError(t, err, "parts.List()")
+	assert.Empty(t, gotList)
+}
+
 func TestParts_Save(t *testing.T) {
 	ctx := context.Background()
 	parts := newParts()
 
 	require.NoError(t, parts.Save(ctx, []Part{
 		{
-			ID:   ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+			ID:   ID{Project: "01-snake-eater", Name: "trumpet 1"},
 			Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 		},
 		{
-			ID:     ID{Project: "01-snake-eater", Name: "accordion", Number: 3},
+			ID:     ID{Project: "01-snake-eater", Name: "accordion 3"},
 			Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 			Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
 		},
@@ -60,12 +84,12 @@ func TestParts_Save(t *testing.T) {
 
 	require.NoError(t, parts.Save(ctx, []Part{
 		{
-			ID:     ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+			ID:     ID{Project: "01-snake-eater", Name: "trumpet 1"},
 			Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 			Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 		},
 		{
-			ID:     ID{Project: "01-snake-eater", Name: "triangle", Number: 2},
+			ID:     ID{Project: "01-snake-eater", Name: "triangle 2"},
 			Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 			Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 		},
@@ -73,7 +97,7 @@ func TestParts_Save(t *testing.T) {
 
 	wantParts := []Part{
 		{
-			ID: ID{Project: "01-snake-eater", Name: "trumpet", Number: 1},
+			ID: ID{Project: "01-snake-eater", Name: "trumpet 1"},
 			Clix: []Link{
 				{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)},
 				{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
@@ -83,12 +107,12 @@ func TestParts_Save(t *testing.T) {
 			},
 		},
 		{
-			ID:     ID{Project: "01-snake-eater", Name: "accordion", Number: 3},
+			ID:     ID{Project: "01-snake-eater", Name: "accordion 3"},
 			Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 			Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
 		},
 		{
-			ID:     ID{Project: "01-snake-eater", Name: "triangle", Number: 2},
+			ID:     ID{Project: "01-snake-eater", Name: "triangle 2"},
 			Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 			Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 		},
@@ -102,7 +126,7 @@ type SortParts []Part
 
 func (x SortParts) Sort()              { sort.Sort(x) }
 func (x SortParts) Len() int           { return len(x) }
-func (x SortParts) Less(i, j int) bool { return x[i].ID.String() < x[j].ID.String() }
+func (x SortParts) Less(i, j int) bool { return x[i].RedisKey() < x[j].RedisKey() }
 func (x SortParts) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 
 func assertEqualParts(t *testing.T, want []Part, got []Part) {
@@ -113,7 +137,7 @@ func assertEqualParts(t *testing.T, want []Part, got []Part) {
 		assert.Equal(t, want, got)
 	}
 	for i := range want {
-		assert.Equal(t, want[i].ID.String(), got[i].ID.String(), "part.ID")
+		assert.Equal(t, want[i].RedisKey(), got[i].RedisKey(), "part.ID")
 		assertEqualLinks(t, want[i].Sheets, got[i].Sheets, "part.Sheets")
 		assertEqualLinks(t, want[i].Clix, got[i].Clix, "part.Clix")
 
@@ -132,17 +156,17 @@ func assertEqualLinks(t *testing.T, want []Link, got []Link, pre string) {
 
 func TestPart_String(t *testing.T) {
 	part := Part{
-		ID:     ID{Project: "cheese", Name: "trumpet", Number: 1},
+		ID:     ID{Project: "cheese", Name: "trumpet 1"},
 		Clix:   []Link{{"click.mp3", time.Now()}},
 		Sheets: []Link{{"sheet.pdf", time.Now()}},
 	}
-	want := "Project: cheese Part: Trumpet #1"
+	want := "Project: cheese Part: Trumpet 1"
 	assert.Equal(t, want, part.String())
 }
 
 func TestPart_SheetLink(t *testing.T) {
 	part := Part{
-		ID:     ID{Project: "cheese", Name: "trumpet", Number: 1},
+		ID:     ID{Project: "cheese", Name: "trumpet 1"},
 		Clix:   []Link{{"click.mp3", time.Now()}},
 		Sheets: []Link{{"sheet.pdf", time.Now()}},
 	}
@@ -152,7 +176,7 @@ func TestPart_SheetLink(t *testing.T) {
 
 func TestPart_ClickLink(t *testing.T) {
 	part := Part{
-		ID:     ID{Project: "cheese", Name: "trumpet", Number: 1},
+		ID:     ID{Project: "cheese", Name: "trumpet 1"},
 		Clix:   []Link{{"click.mp3", time.Now()}},
 		Sheets: []Link{{"sheet.pdf", time.Now()}},
 	}
@@ -162,9 +186,8 @@ func TestPart_ClickLink(t *testing.T) {
 
 func TestPart_Validate(t *testing.T) {
 	type fields struct {
-		Project    string
-		PartName   string
-		PartNumber uint8
+		Project  string
+		PartName string
 	}
 	for _, tt := range []struct {
 		name   string
@@ -174,44 +197,24 @@ func TestPart_Validate(t *testing.T) {
 		{
 			name: "valid",
 			fields: fields{
-				Project:    "01-snake-eater",
-				PartName:   "trumpet",
-				PartNumber: 6,
+				Project:  "01-snake-eater",
+				PartName: "trumpet 6",
 			},
 			want: nil,
 		},
 		{
 			name: "missing project",
 			fields: fields{
-				PartName:   "trumpet",
-				PartNumber: 6,
+				PartName: "trumpet 6",
 			},
 			want: projects.ErrNotFound,
 		},
 		{
 			name: "missing part name",
 			fields: fields{
-				Project:    "01-snake-eater",
-				PartNumber: 6,
+				Project: "01-snake-eater",
 			},
 			want: ErrInvalidPartName,
-		},
-		{
-			name: "invalid part name",
-			fields: fields{
-				Project:    "01-snake-eater",
-				PartName:   "",
-				PartNumber: 6,
-			},
-			want: ErrInvalidPartName,
-		},
-		{
-			name: "missing part number",
-			fields: fields{
-				Project:  "01-snake-eater",
-				PartName: "trumpet",
-			},
-			want: ErrInvalidPartNumber,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -219,7 +222,6 @@ func TestPart_Validate(t *testing.T) {
 				ID: ID{
 					Project: tt.fields.Project,
 					Name:    tt.fields.PartName,
-					Number:  tt.fields.PartNumber,
 				},
 			}
 			if expected, got := tt.want, x.Validate(); expected != got {
@@ -231,7 +233,7 @@ func TestPart_Validate(t *testing.T) {
 
 func TestPart_ZScore(t *testing.T) {
 	part := Part{
-		ID:     ID{Project: "01-snake-eater", Name: "triangle", Number: 2},
+		ID:     ID{Project: "01-snake-eater", Name: "triangle 2"},
 		Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 		Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 	}
@@ -239,19 +241,14 @@ func TestPart_ZScore(t *testing.T) {
 }
 
 func TestPart_RedisKey(t *testing.T) {
-	part := Part{ID: ID{Project: "01-snake-eater", Name: "triangle", Number: 2}}
-	assert.Equal(t, "01-snake-eater:triangle:2", part.RedisKey())
+	part := Part{ID: ID{Project: "01-snake-eater", Name: "triangle 2"}}
+	assert.Equal(t, "01-snake-eater:triangle 2", part.RedisKey())
 }
 
 func TestPart_DecodeRedisKey(t *testing.T) {
 	var got Part
-	got.DecodeRedisKey("01-snake-eater:triangle:2")
-	assert.Equal(t, Part{ID: ID{Project: "01-snake-eater", Name: "triangle", Number: 2}}, got)
-}
-
-func TestID_String(t *testing.T) {
-	id := ID{Project: "01-snake-eater", Name: "triangle", Number: 2}
-	assert.Equal(t, "01-snake-eater-triangle-2", id.String())
+	got.DecodeRedisKey("01-snake-eater:triangle 2")
+	assert.Equal(t, Part{ID: ID{Project: "01-snake-eater", Name: "triangle 2"}}, got)
 }
 
 func TestLink_DecodeRedisString(t *testing.T) {
