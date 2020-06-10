@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -16,17 +17,17 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress         string       `split_words:"true" default:"0.0.0.0:8080"`
-	MemberUser            string       `split_words:"true" default:"admin"`
-	MemberPass            string       `split_words:"true" default:"admin"`
-	UploaderToken         string       `split_words:"true" default:"admin"`
-	DeveloperToken        string       `split_words:"true" default:"admin"`
-	DistroBucketName      string       `split_words:"true" default:"vvgo-distro"`
-	BackupsBucketName     string       `split_words:"true" default:"backups"`
-	RedisNamespace        string       `split_words:"true" default:"local"`
-	DiscordGuildID        string       `envconfig:"discord_guild_id"`
-	DiscordRoleVVGOMember string       `envconfig:"discord_role_vvgo_member"`
-	Login                 login.Config `envconfig:"login"`
+	ListenAddress         string          `split_words:"true" default:"0.0.0.0:8080"`
+	MemberUser            string          `split_words:"true" default:"admin"`
+	MemberPass            string          `split_words:"true" default:"admin"`
+	UploaderToken         string          `split_words:"true" default:"admin"`
+	DeveloperToken        string          `split_words:"true" default:"admin"`
+	DistroBucketName      string          `split_words:"true" default:"vvgo-distro"`
+	BackupsBucketName     string          `split_words:"true" default:"backups"`
+	RedisNamespace        string          `split_words:"true" default:"local"`
+	DiscordGuildID        discord.GuildID `envconfig:"discord_guild_id"`
+	DiscordRoleVVGOMember string          `envconfig:"discord_role_vvgo_member"`
+	Login                 login.Config    `envconfig:"login"`
 }
 
 type Server struct {
@@ -66,6 +67,12 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 			{"vvgo-uploader", config.UploaderToken}:   {login.RoleVVGOUploader, login.RoleVVGOMember},
 			{"vvgo-developer", config.DeveloperToken}: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
 		},
+	}, login.RoleAnonymous)
+
+	mux.Handle("/login/discord", DiscordLoginHandler{
+		GuildID:        config.DiscordGuildID,
+		RoleVVGOMember: config.DiscordRoleVVGOMember,
+		Sessions:       database.Sessions,
 	}, login.RoleAnonymous)
 
 	mux.Handle("/login", LoginView{
