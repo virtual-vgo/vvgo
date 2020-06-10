@@ -138,7 +138,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		discordTs := newServer(nil)
 		defer discordTs.Close()
 
-		loginHandler.Sessions = newSessions("")
+		loginHandler.Sessions = newSessions()
 		loginHandler.Discord = discord.NewClient(discord.Config{Endpoint: discordTs.URL})
 		postAndAssertSession(t, ts.URL, bytes.NewReader(discordOAuthTokenJSON), loginHandler.Sessions)
 	})
@@ -147,7 +147,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		discordTs := newServer(nil)
 		defer discordTs.Close()
 
-		loginHandler.Sessions = newSessions("")
+		loginHandler.Sessions = newSessions()
 		loginHandler.Discord = discord.NewClient(discord.Config{Endpoint: discordTs.URL})
 
 		postAndAssertUnauthorized(t, ts.URL, strings.NewReader(`{"access_token":  "6qrZcUqja78}`))
@@ -161,7 +161,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		})
 		defer discordTs.Close()
 
-		loginHandler.Sessions = newSessions("")
+		loginHandler.Sessions = newSessions()
 		loginHandler.Discord = discord.NewClient(discord.Config{Endpoint: discordTs.URL})
 		postAndAssertUnauthorized(t, ts.URL, bytes.NewReader(discordOAuthTokenJSON))
 	})
@@ -174,7 +174,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		})
 		defer discordTs.Close()
 
-		loginHandler.Sessions = newSessions("")
+		loginHandler.Sessions = newSessions()
 		loginHandler.Discord = discord.NewClient(discord.Config{Endpoint: discordTs.URL})
 		postAndAssertUnauthorized(t, ts.URL, bytes.NewReader(discordOAuthTokenJSON))
 	})
@@ -187,7 +187,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		})
 		defer discordTs.Close()
 
-		loginHandler.Sessions = newSessions("")
+		loginHandler.Sessions = newSessions()
 		loginHandler.Discord = discord.NewClient(discord.Config{Endpoint: discordTs.URL})
 		postAndAssertUnauthorized(t, ts.URL, bytes.NewReader(discordOAuthTokenJSON))
 	})

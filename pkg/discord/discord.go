@@ -14,6 +14,7 @@ import (
 )
 
 var logger = log.Logger()
+var ErrNon200Response = errors.New("non-200 response from discord")
 
 // Client that makes discord requests.
 type Client struct {
@@ -24,8 +25,6 @@ func NewClient(config Config) *Client {
 	return &Client{config: config}
 }
 
-var ErrNon200Response = errors.New("non-200 response from discord")
-
 // Config for discord requests.
 type Config struct {
 	// Api endpoint to query
@@ -34,6 +33,20 @@ type Config struct {
 	// BotAuthToken is used for making queries about our discord guild.
 	// This is found in the bot tab for the discord app.
 	BotAuthToken string `split_words:"true"`
+}
+
+var client *Client
+
+func Initialize(config Config) {
+	client = NewClient(config)
+}
+
+func QueryIdentity(ctx context.Context, oauthToken *OAuthToken) (*User, error) {
+	return client.QueryIdentity(ctx, oauthToken)
+}
+
+func QueryGuildMember(ctx context.Context, guildID GuildID, userID UserID) (*GuildMember, error) {
+	return client.QueryGuildMember(ctx, guildID, userID)
 }
 
 // This is the oauth token returned by discord after a successful oauth request.

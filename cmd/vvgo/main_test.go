@@ -39,17 +39,19 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_LOGIN_COOKIE_PATH":        "login-cookie-path",
 		"API_DISCORD_GUILD_ID":         "discord-guild-id",
 		"API_DISCORD_ROLE_VVGO_MEMBER": "discord-role-vvgo-member",
+		"DISCORD_BOT_AUTH_TOKEN":       "discord-bot-auth-token",
+		"DISCORD_ENDPOINT":             "discord-endpoint",
 	}
 	want := Config{
 		ApiConfig: api.ServerConfig{
-			ListenAddress:     "listen-address",
-			MemberUser:        "member-user",
-			MemberPass:        "member-pass",
-			DistroBucketName:  "distro-bucket-name",
-			BackupsBucketName: "backups-bucket-name",
-			RedisNamespace:    "redis-namespace",
-			DeveloperToken:    "developer-token",
-			UploaderToken:     "uploader-token",
+			ListenAddress:         "listen-address",
+			MemberUser:            "member-user",
+			MemberPass:            "member-pass",
+			DistroBucketName:      "distro-bucket-name",
+			BackupsBucketName:     "backups-bucket-name",
+			RedisNamespace:        "redis-namespace",
+			DeveloperToken:        "developer-token",
+			UploaderToken:         "uploader-token",
 			DiscordGuildID:        "discord-guild-id",
 			DiscordRoleVVGOMember: "discord-role-vvgo-member",
 			Login: login.Config{

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parts"
@@ -17,25 +16,23 @@ var logger = log.Logger()
 var PublicFiles = "public"
 
 type ServerConfig struct {
-	ListenAddress     string       `split_words:"true" default:"0.0.0.0:8080"`
-	MemberUser        string       `split_words:"true" default:"admin"`
-	MemberPass        string       `split_words:"true" default:"admin"`
-	UploaderToken     string       `split_words:"true" default:"admin"`
-	DeveloperToken    string       `split_words:"true" default:"admin"`
-	DistroBucketName  string       `split_words:"true" default:"vvgo-distro"`
-	BackupsBucketName string       `split_words:"true" default:"backups"`
-	RedisNamespace    string       `split_words:"true" default:"local"`
-	DiscordGuildID        string `envconfig:"discord_guild_id"`
-	DiscordRoleVVGOMember string `envconfig:"discord_role_vvgo_member"`
-	Login             login.Config `envconfig:"login"`
+	ListenAddress         string       `split_words:"true" default:"0.0.0.0:8080"`
+	MemberUser            string       `split_words:"true" default:"admin"`
+	MemberPass            string       `split_words:"true" default:"admin"`
+	UploaderToken         string       `split_words:"true" default:"admin"`
+	DeveloperToken        string       `split_words:"true" default:"admin"`
+	DistroBucketName      string       `split_words:"true" default:"vvgo-distro"`
+	BackupsBucketName     string       `split_words:"true" default:"backups"`
+	RedisNamespace        string       `split_words:"true" default:"local"`
+	DiscordGuildID        string       `envconfig:"discord_guild_id"`
+	DiscordRoleVVGOMember string       `envconfig:"discord_role_vvgo_member"`
+	Login                 login.Config `envconfig:"login"`
 }
 
-type Storage struct {
-	StorageConfig
-	Parts  *parts.RedisParts
-	Sheets *storage.Bucket
-	Clix   *storage.Bucket
-	Tracks *storage.Bucket
+type Server struct {
+	config   ServerConfig
+	database Database
+	*http.Server
 }
 
 func NewServer(ctx context.Context, config ServerConfig) *Server {
