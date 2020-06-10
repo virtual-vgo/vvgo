@@ -1,13 +1,17 @@
 package api
 
 import (
-	"encoding/json"
+	"crypto/rand"
+	"encoding/binary"
 	"errors"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -69,6 +73,52 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+type DiscordOAuthPre struct {
+	Namespace   string
+	RedirectURL string
+}
+
+func (x DiscordOAuthPre) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "discord_login")
+	defer span.Send()
+
+	// read a random state number
+	statusBytes := make([]byte, 32)
+	if _, err := rand.Read(statusBytes); err != nil {
+		logger.WithError(err).Error("rand.Read() failed")
+		internalServerError(w)
+		return
+	}
+	state := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[:16]), 16)
+	value := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[16:]), 16)
+
+	// store the number in redis
+	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", x.Namespace+":discord_oauth_pre:"+state, "300", "")); err != nil {
+		logger.WithError(err).Error("redis.Do() failed")
+		internalServerError(w)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "vvgo-discord-oauth-pre",
+		Value:    value,
+		Path:     "/login/discord",
+		Domain:   "",
+		Expires:  time.Now().Add(300 * time.Second),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	redirectURL, err := url.Parse(x.RedirectURL)
+	if err != nil {
+		logger.WithError(err).Error("url.Parse() failed")
+		internalServerError(w)
+		return
+	}
+	query := redirectURL.Query()
+	query.Set("state", state)
+	redirectURL.RawQuery = query.Encode()
+	http.Redirect(w, r, redirectURL.RequestURI(), http.StatusFound)
+}
+
 // DiscordLoginHandler accepts an oauth token in the request body and uses the token to query for discord identity.
 // If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
 // authentication is established and a login session cookie is sent in the response.
@@ -77,12 +127,13 @@ type DiscordLoginHandler struct {
 	GuildID        discord.GuildID
 	RoleVVGOMember string
 	Sessions       *login.Store
+	Namespace      string
 }
 
 var ErrNotAMember = errors.New("not a member")
 
 func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "discord_oauth_handler")
+	ctx, span := tracing.StartSpan(r.Context(), "discord_login_handler")
 	defer span.Send()
 
 	handleError := func(err error) bool {
@@ -95,14 +146,37 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	// read the oauth token from the request
-	var oauthToken discord.OAuthToken
-	if ok := handleError(json.NewDecoder(r.Body).Decode(&oauthToken)); !ok {
+	// read the state param
+	state := r.FormValue("state")
+	if state == "" {
+		handleError(errors.New("no state param"))
+		return
+	}
+
+	// check if it exists in redis
+	if ok := handleError(redis.Do(ctx, redis.Cmd(nil, "GET", x.Namespace+":discord_oauth_pre:"+state))); !ok {
+		return
+	}
+
+	// check against the cookie value
+	preCookie, err := r.Cookie("vvgo-discord-oauth-pre")
+	if ok := handleError(err); !ok {
+		return
+	}
+	if preCookie.Value != state {
+		handleError(errors.New("invalid state"))
+		return
+	}
+
+	// get an oauth token from discord
+	code := r.FormValue("code")
+	oauthToken, err := discord.QueryOAuth(ctx, code)
+	if ok := handleError(err); !ok {
 		return
 	}
 
 	// get the user id
-	discordUser, err := discord.QueryIdentity(ctx, &oauthToken)
+	discordUser, err := discord.QueryIdentity(ctx, oauthToken)
 	if ok := handleError(err); !ok {
 		return
 	}
