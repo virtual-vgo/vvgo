@@ -63,7 +63,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		"identity": identity.Kind,
 		"roles":    identity.Roles,
 	}).Info("authorization succeeded")
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/parts", http.StatusFound)
 }
 
 // LogoutHandler deletes the login session from the incoming request, if it exists.
