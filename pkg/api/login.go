@@ -30,7 +30,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	var identity login.Identity
 	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/parts", http.StatusFound)
 		return
 	}
 
