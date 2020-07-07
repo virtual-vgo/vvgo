@@ -85,7 +85,7 @@ var project = Projects{projects: []Project{
 		Name:           "04-between-heaven-and-earth",
 		Title:          "Between Heaven and Earth",
 		Released:       false,
-		Archived:       true,
+		Archived:       false,
 		Sources:        []string{"Fire Emblem: Three Houses"},
 		Composers:      []string{"Takeru Kazanaki (金﨑 猛)", "Rei Kondoh (近藤 嶺)", "Hiroki Morishita (森下弘生)"},
 		Arrangers:      []string{"Jonathan Shi", "Aidan Backus"},
