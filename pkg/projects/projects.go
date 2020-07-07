@@ -68,7 +68,7 @@ var project = Projects{projects: []Project{
 		Name:           "03-the-end-begins-to-rock",
 		Title:          "The End Begins To Rock",
 		Released:       true,
-		Archived:       false,
+		Archived:       true,
 		Sources:        []string{"God of War II"},
 		Composers:      []string{"Gerard K. Marino"},
 		Arrangers:      []string{"Shota Nakama", "Thomas Håkanson"},
@@ -80,6 +80,23 @@ var project = Projects{projects: []Project{
 		Lyricists:      []string{},
 		AddlContent:    []string{},
 		ReferenceTrack: "03_The-End-Begins-to-Rock_Reference-Track-NoCLIX.mp3",
+	},
+	{
+		Name:           "04-between-heaven-and-earth",
+		Title:          "Between Heaven and Earth",
+		Released:       false,
+		Archived:       false,
+		Sources:        []string{"Fire Emblem: Three Houses"},
+		Composers:      []string{"Takeru Kazanaki (金﨑 猛)", "Rei Kondoh (近藤 嶺)", "Hiroki Morishita (森下弘生)"},
+		Arrangers:      []string{"Jonathan Shi", "Aidan Backus"},
+		Editors:        []string{"Jonathan Shi", "Chris Suzuki", "Elliot McAuley", "Jerome Landingin"},
+		Transcribers:   []string{},
+		Preparers:      []string{"Thomas Håkanson"},
+		ClixBy:         []string{"Jacob Zeleny"},
+		Reviewers:      []string{"Brandon Harnish", "Elliot McAuley", "Jerome Landingin", "Thomas Håkanson"},
+		Lyricists:      []string{},
+		AddlContent:    []string{"Jonathan Shi", "John Mackay"}, // Jonathan choir pronunciation, John conductor video
+		ReferenceTrack: "",
 	},
 }}
 
