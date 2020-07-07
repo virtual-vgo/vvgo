@@ -85,6 +85,14 @@ func TestPartsView_ServeHTTP(t *testing.T) {
 			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
 			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
 		},
+		{
+			ID: parts.ID{
+				Project: "04-between-heaven-and-earth",
+				Name:    "trumpet 3",
+			},
+			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
+			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
+		},
 	}), "parts.Save()")
 
 	server := PartView{&handlerStorage}
