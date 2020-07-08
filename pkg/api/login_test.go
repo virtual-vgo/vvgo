@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"golang.org/x/net/publicsuffix"
-	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -105,9 +105,16 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 }
 
 func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
+	oauthNamespace := newNamespace()
+	oauthState := "test-oauth-state"
+	oauthValue := "test-oauth-value"
+	oauthCode := "test-oauth-code"
+	require.NoError(t, redis.Do(context.Background(), redis.Cmd(nil, "SETEX", oauthNamespace+":discord_oauth_pre:"+oauthState, "300", oauthValue)))
+
 	loginHandler := DiscordLoginHandler{
 		GuildID:        "test-guild-id",
 		RoleVVGOMember: "vvgo-member",
+		Namespace:      oauthNamespace,
 	}
 	ts := httptest.NewServer(&loginHandler)
 	defer ts.Close()
@@ -126,30 +133,62 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 				pre(w, r)
 			}
 			switch r.URL.Path {
+			case "/oauth2/token":
+				if r.FormValue("code") == "test-oauth-code" {
+					w.Write(discordOAuthTokenJSON)
+				} else {
+					http.Error(w, "access denied; invalid code: "+r.Form.Get("code"), http.StatusUnauthorized)
+				}
 			case "/users/@me":
-				w.Write([]byte(`{"id": "80351110224678912"}`))
+				if r.Header.Get("Authorization") == "Bearer 6qrZcUqja7812RVdnEKjpzOL4CvHBFG" {
+					w.Write([]byte(`{"id": "80351110224678912"}`))
+				} else {
+					http.Error(w, "access denied; invalid authorization: "+r.Header.Get("Authorization"), http.StatusUnauthorized)
+				}
 			case "/guilds/test-guild-id/members/80351110224678912":
-				w.Write([]byte(`{"roles": ["jelly", "donut", "vvgo-member"]}`))
+				if r.Header.Get("Authorization") == "Bot test-bot-auth-token" {
+					w.Write([]byte(`{"roles": ["jelly", "donut", "vvgo-member"]}`))
+				} else {
+					http.Error(w, "access denied; invalid authorization: "+r.Header.Get("Authorization"), http.StatusUnauthorized)				}
 			}
 		}))
-		discord.Initialize(discord.Config{Endpoint: ts.URL})
+		discord.Initialize(discord.Config{
+			Endpoint: ts.URL,
+			BotAuthToken: "test-bot-auth-token",
+		})
 		return ts
 	}
 
 	t.Run("success", func(t *testing.T) {
 		discordTs := newServer(nil)
 		defer discordTs.Close()
-
 		loginHandler.Sessions = newSessions()
-		postAndAssertSession(t, ts.URL, bytes.NewReader(discordOAuthTokenJSON), loginHandler.Sessions)
+		postAndAssertSession(t, ts.URL, oauthCode, oauthState, oauthValue, loginHandler.Sessions)
+	})
+
+	t.Run("no state", func(t *testing.T) {
+		discordTs := newServer(nil)
+		defer discordTs.Close()
+		loginHandler.Sessions = newSessions()
+		postAndAssertUnauthorized(t, ts.URL, oauthCode, "", oauthValue)
+	})
+
+	t.Run("invalid state", func(t *testing.T) {
+		discordTs := newServer(nil)
+		defer discordTs.Close()
+		loginHandler.Sessions = newSessions()
+		postAndAssertUnauthorized(t, ts.URL, oauthCode, oauthState, "cheese")
 	})
 
 	t.Run("bad token", func(t *testing.T) {
-		discordTs := newServer(nil)
+		discordTs := newServer(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/oauth2/token" {
+				w.Write([]byte(`{}`))
+			}
+		})
 		defer discordTs.Close()
-
 		loginHandler.Sessions = newSessions()
-		postAndAssertUnauthorized(t, ts.URL, strings.NewReader(`{"access_token":  "6qrZcUqja78}`))
+		postAndAssertUnauthorized(t, ts.URL, oauthCode, oauthState, oauthValue)
 	})
 
 	t.Run("discord identity fails", func(t *testing.T) {
@@ -159,9 +198,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			}
 		})
 		defer discordTs.Close()
-
 		loginHandler.Sessions = newSessions()
-		postAndAssertUnauthorized(t, ts.URL, bytes.NewReader(discordOAuthTokenJSON))
+		postAndAssertUnauthorized(t, ts.URL, oauthCode, oauthState, oauthValue)
 	})
 
 	t.Run("discord guild fails", func(t *testing.T) {
@@ -171,9 +209,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			}
 		})
 		defer discordTs.Close()
-
 		loginHandler.Sessions = newSessions()
-		postAndAssertUnauthorized(t, ts.URL, bytes.NewReader(discordOAuthTokenJSON))
+		postAndAssertUnauthorized(t, ts.URL, oauthCode, oauthState, oauthValue)
 	})
 
 	t.Run("not a member", func(t *testing.T) {
@@ -183,20 +220,31 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			}
 		})
 		defer discordTs.Close()
-
 		loginHandler.Sessions = newSessions()
-		postAndAssertUnauthorized(t, ts.URL, bytes.NewReader(discordOAuthTokenJSON))
+		postAndAssertUnauthorized(t, ts.URL, oauthCode, oauthState, oauthValue)
 	})
 }
 
-func postAndAssertSession(t *testing.T, tsURL string, body io.Reader, sessions *login.Store) {
+func postAndAssertSession(t *testing.T, tsURL string, code string, state string, value string, sessions *login.Store) {
 	ctx := context.Background()
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	require.NoError(t, err, "cookiejar.New")
 	client := noFollow(&http.Client{Jar: jar})
 
 	// do the request
-	resp, err := client.Post(tsURL, "application/json", body)
+	req, err := http.NewRequest(http.MethodPost, tsURL+"?state="+state+"&code="+code, nil)
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "vvgo-discord-oauth-pre",
+		Value:    value,
+		Path:     "/login/discord",
+		Domain:   "",
+		Expires:  time.Now().Add(300 * time.Second),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	resp, err := client.Do(req)
 	require.NoError(t, err, "client.Post")
 	assert.Equal(t, http.StatusFound, resp.StatusCode)
 
@@ -214,13 +262,25 @@ func postAndAssertSession(t *testing.T, tsURL string, body io.Reader, sessions *
 	assert.Equal(t, []login.Role{login.RoleVVGOMember}, dest.Roles, "identity.Roles")
 }
 
-func postAndAssertUnauthorized(t *testing.T, tsURL string, body io.Reader) {
+func postAndAssertUnauthorized(t *testing.T, tsURL string, code string, state string, value string) {
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	require.NoError(t, err, "cookiejar.New")
 	client := noFollow(&http.Client{Jar: jar})
 
 	// do the request
-	resp, err := client.Post(tsURL, "application/json", body)
+	req, err := http.NewRequest(http.MethodPost, tsURL+"?state="+state+"&code="+code, nil)
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "vvgo-discord-oauth-pre",
+		Value:    value,
+		Path:     "/login/discord",
+		Domain:   "",
+		Expires:  time.Now().Add(300 * time.Second),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	resp, err := client.Do(req)
 	require.NoError(t, err, "client.Post")
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 

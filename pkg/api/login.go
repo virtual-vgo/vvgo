@@ -73,6 +73,8 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+const DiscordOAuthPreCookie = "vvgo-discord-oauth-pre"
+
 type DiscordOAuthPre struct {
 	Namespace   string
 	RedirectURL string
@@ -93,13 +95,13 @@ func (x DiscordOAuthPre) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	value := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[16:]), 16)
 
 	// store the number in redis
-	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", x.Namespace+":discord_oauth_pre:"+state, "300", "")); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", x.Namespace+":discord_oauth_pre:"+state, "300", value)); err != nil {
 		logger.WithError(err).Error("redis.Do() failed")
 		internalServerError(w)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     "vvgo-discord-oauth-pre",
+		Name:     DiscordOAuthPreCookie,
 		Value:    value,
 		Path:     "/login/discord",
 		Domain:   "",
@@ -154,16 +156,17 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if it exists in redis
-	if ok := handleError(redis.Do(ctx, redis.Cmd(nil, "GET", x.Namespace+":discord_oauth_pre:"+state))); !ok {
+	var value string
+	if ok := handleError(redis.Do(ctx, redis.Cmd(&value, "GET", x.Namespace+":discord_oauth_pre:"+state))); !ok {
 		return
 	}
 
 	// check against the cookie value
-	preCookie, err := r.Cookie("vvgo-discord-oauth-pre")
+	preCookie, err := r.Cookie(DiscordOAuthPreCookie)
 	if ok := handleError(err); !ok {
 		return
 	}
-	if preCookie.Value != state {
+	if preCookie.Value != value {
 		handleError(errors.New("invalid state"))
 		return
 	}
