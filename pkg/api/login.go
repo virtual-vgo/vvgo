@@ -123,9 +123,9 @@ func (x DiscordLoginHandler) redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     DiscordOAuthPreCookie,
-		Value:    value,
-		Expires:  time.Now().Add(300 * time.Second),
+		Name:    DiscordOAuthPreCookie,
+		Value:   value,
+		Expires: time.Now().Add(300 * time.Second),
 	})
 	redirectURL, err := url.Parse(x.RedirectURL)
 	if err != nil {
