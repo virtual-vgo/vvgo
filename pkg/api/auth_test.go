@@ -26,9 +26,10 @@ func TestRBACMux_Handle(t *testing.T) {
 	t.Run("no auth", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
 		require.NoError(t, err, "http.NewRequest()")
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := noFollow(nil).Do(req)
 		require.NoError(t, err, "http.Do()")
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		assert.Equal(t, http.StatusFound, resp.StatusCode)
+		assert.Equal(t, "/login", resp.Header.Get("Location"))
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
@@ -46,25 +47,27 @@ func TestRBACMux_Handle(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			req := newAuthRequest(t, "uploader", "uploader")
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("incorrect user", func(t *testing.T) {
 			req := newAuthRequest(t, "", "uploader")
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/login", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect pass", func(t *testing.T) {
 			req := newAuthRequest(t, "uploader", "")
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/login", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect role", func(t *testing.T) {
 			req := newAuthRequest(t, "member", "member")
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -84,19 +87,20 @@ func TestRBACMux_Handle(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			req := newAuthRequest(t, "uploader")
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("incorrect token", func(t *testing.T) {
 			req := newAuthRequest(t, "asdfa")
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/login", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect role", func(t *testing.T) {
 			req := newAuthRequest(t, "member")
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -118,7 +122,7 @@ func TestRBACMux_Handle(t *testing.T) {
 			req := newAuthRequest(t, &login.Identity{
 				Roles: []login.Role{login.RoleVVGOUploader},
 			})
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
@@ -126,7 +130,7 @@ func TestRBACMux_Handle(t *testing.T) {
 			req := newAuthRequest(t, &login.Identity{
 				Roles: []login.Role{login.RoleVVGOMember},
 			})
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})

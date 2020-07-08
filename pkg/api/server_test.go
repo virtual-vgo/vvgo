@@ -58,7 +58,8 @@ func TestServer(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/parts")
 			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/login", resp.Header.Get("Location"))
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/parts", login.RoleVVGOMember)
@@ -71,7 +72,8 @@ func TestServer(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/download")
 			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/login", resp.Header.Get("Location"))
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/download", login.RoleVVGOMember)
@@ -84,7 +86,8 @@ func TestServer(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/projects")
 			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/login", resp.Header.Get("Location"))
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/projects", login.RoleVVGOMember)
@@ -102,7 +105,8 @@ func TestServer(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/backups")
 			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			assert.Equal(t, http.StatusFound, resp.StatusCode)
+			assert.Equal(t, "/login", resp.Header.Get("Location"))
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/backups", login.RoleVVGOMember)
@@ -154,6 +158,9 @@ func TestServer(t *testing.T) {
 }
 
 func noFollow(client *http.Client) *http.Client {
+	if client == nil {
+		client = new(http.Client)
+	}
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}

@@ -50,10 +50,10 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 			return
 		}
 
-		if role == login.RoleAnonymous {
+		if identity.IsAnonymous() {
 			http.Redirect(w, r, "/login", http.StatusFound)
+			return
 		}
-
 		unauthorized(w)
 	})
 }

@@ -40,18 +40,23 @@
     </nav>
 </div>
 
-<form class="form-signin" action="/login/password" method="post">
-    <img class="mb-4 mt-4" src="images/logo.svg" alt="" width="100%">
-    <div>
-        <label for="inputUser" class="sr-only">VVGO User</label>
-        <input name="user" type="text" id="inputUser" class="form-control" placeholder="user" required autofocus>
-    </div>
-    <div class="mt-1">
-        <label for="inputPassword" class="sr-only">Password</label>
-        <input name="pass" type="password" id="inputPassword" class="form-control" placeholder="password" required>
-    </div>
-    <button class="btn btn-lg btn-block bg-vvgo-purple text-light" type="submit">Sign in</button>
-</form>
+<div class="form-signin">
+    <form action="/login/password" method="post">
+        <img class="mb-4 mt-4" src="images/logo.svg" alt="" width="100%">
+        <div>
+            <label for="inputUser" class="sr-only">VVGO User</label>
+            <input name="user" type="text" id="inputUser" class="form-control" placeholder="user" required autofocus>
+        </div>
+
+        <div class="mt-1">
+            <label for="inputPassword" class="sr-only">Password</label>
+            <input name="pass" type="password" id="inputPassword" class="form-control" placeholder="password" required>
+        </div>
+
+        <button class="btn btn-lg btn-block bg-vvgo-purple text-light" type="submit">Sign in</button>
+    </form>
+    <a class="mt-1 btn btn-lg btn-block bg-discord-blue text-light" href="/login/discord">Sign in with Discord</a>
+</div>
 </body>
 <footer class="footer">
     <div class="container mt-3 text-center">
@@ -87,4 +92,5 @@
             "content": {"href": "https://vvgo.org/cookie-policy"}
         })
     });</script>
+
 </html>

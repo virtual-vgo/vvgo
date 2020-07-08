@@ -30,6 +30,10 @@ body {
     background-color: #8C17D9;
 }
 
+.bg-discord-blue {
+    background-color: #7289DA;
+}
+
 .bg-solid-snake {
     background-image: url('/images/snake-eater-banner-solid-snake.png');
     background-size: contain;
