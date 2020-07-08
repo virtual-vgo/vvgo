@@ -105,15 +105,45 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 }
 
 func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
+	ctx := context.Background()
+	handler := DiscordOAuthPre{
+		Namespace:   newNamespace(),
+		RedirectURL: "/auth?some=value&other=thing",
+	}
+	ts := httptest.NewServer(&handler)
+	defer ts.Close()
 
+	// make the request
+	resp, err := noFollow(&http.Client{}).Get(ts.URL)
+	require.NoError(t, err, "client.Get()")
+	require.Equal(t, http.StatusFound, resp.StatusCode, "status code")
+
+	// parse the location url
+	location, err := url.Parse(resp.Header.Get("Location"))
+	require.NoError(t, err, "url.Parse()")
+	query := location.Query()
+	assert.Equal(t, "/auth", location.Path)
+	assert.Equal(t, "value", query.Get("some"))
+	assert.Equal(t, "thing", query.Get("other"))
+
+	// parse the state and value
+	cookies := resp.Cookies()
+	require.NotEmpty(t, cookies, "cookies")
+	oauthState := query.Get("state")
+	oauthValue := cookies[0].Value
+	var wantValue string
+	err = redis.Do(ctx, redis.Cmd(&wantValue, "GET", handler.Namespace+":discord_oauth_pre:"+oauthState))
+	require.NoError(t, err, "redis.Do()")
+	assert.Equal(t, wantValue, oauthValue, "cookie value")
 }
 
 func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
+	ctx := context.Background()
 	oauthNamespace := newNamespace()
 	oauthState := "test-oauth-state"
 	oauthValue := "test-oauth-value"
 	oauthCode := "test-oauth-code"
-	require.NoError(t, redis.Do(context.Background(), redis.Cmd(nil, "SETEX", oauthNamespace+":discord_oauth_pre:"+oauthState, "300", oauthValue)))
+	require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "SETEX", oauthNamespace+":discord_oauth_pre:"+oauthState, "300", oauthValue)))
 
 	loginHandler := DiscordLoginHandler{
 		GuildID:        "test-guild-id",
@@ -122,8 +152,6 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	}
 	ts := httptest.NewServer(&loginHandler)
 	defer ts.Close()
-	parsed, err := url.Parse(ts.URL)
-	require.NoError(t, err)
 
 	discordOAuthTokenJSON := []byte(`{
 		"access_token":  "6qrZcUqja7812RVdnEKjpzOL4CvHBFG",
@@ -166,11 +194,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		return ts
 	}
 
-	doRequest := func(t *testing.T, tsURL string, code string, state string, value string) (*http.Response, http.CookieJar) {
-		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-		require.NoError(t, err, "cookiejar.New")
-		client := noFollow(&http.Client{Jar: jar})
-
+	doRequest := func(t *testing.T, tsURL string, code string, state string, value string) *http.Response {
 		req, err := http.NewRequest(http.MethodPost, tsURL+"?state="+state+"&code="+code, nil)
 		require.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
@@ -183,9 +207,9 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
 		})
-		resp, err := client.Do(req)
+		resp, err := noFollow(&http.Client{}).Do(req)
 		require.NoError(t, err, "client.Post")
-		return resp, client.Jar
+		return resp
 	}
 
 	t.Run("success", func(t *testing.T) {
@@ -193,13 +217,11 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
 
-		resp, jar := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
+		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		// check that we get a cookie
-		parsed, err := url.Parse(ts.URL)
-		require.NoError(t, err)
-		cookies := jar.Cookies(parsed)
+		cookies := resp.Cookies()
 		require.Equal(t, 1, len(cookies), "len(cookies)")
 		assert.Equal(t, "vvgo-test-cookie", cookies[0].Name, "cookie name")
 
@@ -210,31 +232,40 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		assert.Equal(t, []login.Role{login.RoleVVGOMember}, dest.Roles, "identity.Roles")
 	})
 
+	t.Run("invalid code", func(t *testing.T) {
+		discordTs := newDiscordServer(nil)
+		defer discordTs.Close()
+		loginHandler.Sessions = newSessions()
+		resp := doRequest(t, ts.URL, "fresh", oauthState, oauthValue)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		assert.Empty(t, len(resp.Cookies()), "cookies")
+	})
+
 	t.Run("no state", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
-		resp, jar := doRequest(t, ts.URL, oauthCode, "", oauthValue)
+		resp := doRequest(t, ts.URL, oauthCode, "", oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		assert.Equal(t, 0, len(jar.Cookies(parsed)), "len(cookies)")
+		assert.Empty(t, len(resp.Cookies()), "cookies")
 	})
 
 	t.Run("invalid state", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
-		resp, jar := doRequest(t, ts.URL, oauthCode, "cheese", oauthValue)
+		resp := doRequest(t, ts.URL, oauthCode, "cheese", oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		assert.Equal(t, 0, len(jar.Cookies(parsed)), "len(cookies)")
+		assert.Empty(t, len(resp.Cookies()), "cookies")
 	})
 
 	t.Run("invalid value", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
-		resp, jar := doRequest(t, ts.URL, oauthCode, oauthState, "danish")
+		resp := doRequest(t, ts.URL, oauthCode, oauthState, "danish")
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		assert.Equal(t, 0, len(jar.Cookies(parsed)), "len(cookies)")
+		assert.Empty(t, len(resp.Cookies()), "cookies")
 	})
 
 	t.Run("bad token", func(t *testing.T) {
@@ -245,9 +276,9 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		})
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
-		resp, jar := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
+		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		assert.Equal(t, 0, len(jar.Cookies(parsed)), "len(cookies)")
+		assert.Empty(t, len(resp.Cookies()), "cookies")
 	})
 
 	t.Run("discord identity fails", func(t *testing.T) {
@@ -258,9 +289,9 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		})
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
-		resp, jar := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
+		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		assert.Equal(t, 0, len(jar.Cookies(parsed)), "len(cookies)")
+		assert.Empty(t, len(resp.Cookies()), "cookies")
 	})
 
 	t.Run("discord guild fails", func(t *testing.T) {
@@ -271,9 +302,9 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		})
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
-		resp, jar := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
+		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		assert.Equal(t, 0, len(jar.Cookies(parsed)), "len(cookies)")
+		assert.Empty(t, len(resp.Cookies()), "cookies")
 	})
 
 	t.Run("not a member", func(t *testing.T) {
@@ -284,8 +315,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		})
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
-		resp, jar := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
+		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		assert.Equal(t, 0, len(jar.Cookies(parsed)), "len(cookies)")
+		assert.Empty(t, len(resp.Cookies()), "cookies")
 	})
 }
