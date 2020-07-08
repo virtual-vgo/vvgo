@@ -62,6 +62,7 @@ func main() {
 
 	storage.Initialize(config.MinioConfig)
 	redis.Initialize(config.RedisConfig)
+	discord.Initialize(config.DiscordConfig)
 
 	apiServer := api.NewServer(ctx, config.ApiConfig)
 	if err := apiServer.ListenAndServe(); err != nil {

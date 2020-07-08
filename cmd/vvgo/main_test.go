@@ -39,8 +39,12 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_LOGIN_COOKIE_PATH":        "login-cookie-path",
 		"API_DISCORD_GUILD_ID":         "discord-guild-id",
 		"API_DISCORD_ROLE_VVGO_MEMBER": "discord-role-vvgo-member",
+		"API_DISCORD_LOGIN_URL":        "discord-login-url",
 		"DISCORD_BOT_AUTH_TOKEN":       "discord-bot-auth-token",
 		"DISCORD_ENDPOINT":             "discord-endpoint",
+		"DISCORD_OAUTH_CLIENT_ID":      "discord-oauth-client-id",
+		"DISCORD_OAUTH_CLIENT_SECRET":  "discord-oauth-client-secret",
+		"DISCORD_OAUTH_REDIRECT_URI":   "discord-oauth-redirect-uri",
 	}
 	want := Config{
 		ApiConfig: api.ServerConfig{
@@ -54,6 +58,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 			UploaderToken:         "uploader-token",
 			DiscordGuildID:        "discord-guild-id",
 			DiscordRoleVVGOMember: "discord-role-vvgo-member",
+			DiscordLoginURL:       "discord-login-url",
 			Login: login.Config{
 				CookieName:   "login-cookie-name",
 				CookieDomain: "login-cookie-domain",
@@ -78,8 +83,11 @@ func TestConfig_ParseEnv(t *testing.T) {
 			UseSSL:    true,
 		},
 		DiscordConfig: discord.Config{
-			Endpoint:     "discord-endpoint",
-			BotAuthToken: "discord-bot-auth-token",
+			Endpoint:          "discord-endpoint",
+			BotAuthToken:      "discord-bot-auth-token",
+			OAuthClientID:     "discord-oauth-client-id",
+			OAuthClientSecret: "discord-oauth-client-secret",
+			OAuthRedirectURI:  "discord-oauth-redirect-uri",
 		},
 	}
 

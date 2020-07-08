@@ -80,8 +80,30 @@ type DiscordOAuthPre struct {
 	RedirectURL string
 }
 
-func (x DiscordOAuthPre) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "discord_login")
+// DiscordLoginHandler
+// If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
+// authentication is established and a login session cookie is sent in the response.
+// Otherwise, 401 unauthorized.
+type DiscordLoginHandler struct {
+	GuildID        discord.GuildID
+	RoleVVGOMember string
+	Sessions       *login.Store
+	Namespace      string
+	RedirectURL    string
+}
+
+var ErrNotAMember = errors.New("not a member")
+
+func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.FormValue("state") == "" {
+		x.redirect(w, r)
+	} else {
+		x.authorize(w, r)
+	}
+}
+
+func (x DiscordLoginHandler) redirect(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "discord_oauth_redirect")
 	defer span.Send()
 
 	// read a random state number
@@ -103,11 +125,7 @@ func (x DiscordOAuthPre) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     DiscordOAuthPreCookie,
 		Value:    value,
-		Path:     "/login/discord",
-		Domain:   "",
 		Expires:  time.Now().Add(300 * time.Second),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
 	})
 	redirectURL, err := url.Parse(x.RedirectURL)
 	if err != nil {
@@ -118,24 +136,11 @@ func (x DiscordOAuthPre) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := redirectURL.Query()
 	query.Set("state", state)
 	redirectURL.RawQuery = query.Encode()
-	http.Redirect(w, r, redirectURL.RequestURI(), http.StatusFound)
+	http.Redirect(w, r, redirectURL.String(), http.StatusFound)
 }
 
-// DiscordLoginHandler accepts an oauth token in the request body and uses the token to query for discord identity.
-// If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
-// authentication is established and a login session cookie is sent in the response.
-// Otherwise, 401 unauthorized.
-type DiscordLoginHandler struct {
-	GuildID        discord.GuildID
-	RoleVVGOMember string
-	Sessions       *login.Store
-	Namespace      string
-}
-
-var ErrNotAMember = errors.New("not a member")
-
-func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "discord_login_handler")
+func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "discord_oauth_redirect")
 	defer span.Send()
 
 	handleError := func(err error) bool {

@@ -106,7 +106,7 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 
 func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
-	handler := DiscordOAuthPre{
+	handler := DiscordLoginHandler{
 		Namespace:   newNamespace(),
 		RedirectURL: "/auth?some=value&other=thing",
 	}
@@ -232,20 +232,42 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		assert.Equal(t, []login.Role{login.RoleVVGOMember}, dest.Roles, "identity.Roles")
 	})
 
+	t.Run("no state", func(t *testing.T) {
+		discordTs := newDiscordServer(nil)
+		defer discordTs.Close()
+		loginHandler.Sessions = newSessions()
+		loginHandler.RedirectURL = "http://example.com/auth?some=value&other=thing"
+
+		// make the request
+		resp, err := noFollow(&http.Client{}).Get(ts.URL)
+		require.NoError(t, err, "client.Get()")
+		require.Equal(t, http.StatusFound, resp.StatusCode, "status code")
+
+		// parse the location url
+		location, err := url.Parse(resp.Header.Get("Location"))
+		require.NoError(t, err, "url.Parse()")
+		query := location.Query()
+
+		assert.Equal(t, "example.com", location.Host)
+		assert.Equal(t, "value", query.Get("some"))
+		assert.Equal(t, "thing", query.Get("other"))
+
+		// parse the state and value
+		cookies := resp.Cookies()
+		require.NotEmpty(t, cookies, "cookies")
+		oauthState := query.Get("state")
+		oauthValue := cookies[0].Value
+		var wantValue string
+		err = redis.Do(ctx, redis.Cmd(&wantValue, "GET", loginHandler.Namespace+":discord_oauth_pre:"+oauthState))
+		require.NoError(t, err, "redis.Do()")
+		assert.Equal(t, wantValue, oauthValue, "cookie value")
+	})
+
 	t.Run("invalid code", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
 		resp := doRequest(t, ts.URL, "fresh", oauthState, oauthValue)
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		assert.Empty(t, len(resp.Cookies()), "cookies")
-	})
-
-	t.Run("no state", func(t *testing.T) {
-		discordTs := newDiscordServer(nil)
-		defer discordTs.Close()
-		loginHandler.Sessions = newSessions()
-		resp := doRequest(t, ts.URL, oauthCode, "", oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Empty(t, len(resp.Cookies()), "cookies")
 	})
