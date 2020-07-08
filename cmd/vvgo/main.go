@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -23,6 +24,7 @@ type Config struct {
 	TracingConfig tracing.Config   `envconfig:"tracing"`
 	RedisConfig   redis.Config     `envconfig:"redis"`
 	MinioConfig   storage.Config   `envconfig:"minio"`
+	DiscordConfig discord.Config   `envconfig:"discord"`
 }
 
 func (x *Config) ParseEnv() {
@@ -60,6 +62,7 @@ func main() {
 
 	storage.Initialize(config.MinioConfig)
 	redis.Initialize(config.RedisConfig)
+	discord.Initialize(config.DiscordConfig)
 
 	apiServer := api.NewServer(ctx, config.ApiConfig)
 	if err := apiServer.ListenAndServe(); err != nil {

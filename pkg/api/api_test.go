@@ -28,19 +28,21 @@ func init() {
 
 var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+func newNamespace() string { return "testing" + strconv.Itoa(lrand.Int()) }
+
 func newSessions() *login.Store {
-	return login.NewStore("testing"+strconv.Itoa(lrand.Int()), login.Config{
+	return login.NewStore(newNamespace(), login.Config{
 		CookieName: "vvgo-test-cookie",
 		CookiePath: "/",
 	})
 }
 
 func newParts() *parts.RedisParts {
-	return parts.NewParts("testing" + strconv.Itoa(lrand.Int()))
+	return parts.NewParts(newNamespace())
 }
 
 func newBucket(t *testing.T) *storage.Bucket {
-	bucket, err := storage.NewBucket(context.Background(), "testing"+strconv.Itoa(lrand.Int()))
+	bucket, err := storage.NewBucket(context.Background(), newNamespace())
 	require.NoError(t, err, "storage.NewBucket()")
 	return bucket
 }
