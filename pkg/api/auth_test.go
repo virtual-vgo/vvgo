@@ -55,21 +55,18 @@ func TestRBACMux_Handle(t *testing.T) {
 			resp, err := http.DefaultClient.Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-			assert.Equal(t, `Basic charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 		})
 		t.Run("incorrect pass", func(t *testing.T) {
 			req := newAuthRequest(t, "uploader", "")
 			resp, err := http.DefaultClient.Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-			assert.Equal(t, `Basic charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 		})
 		t.Run("incorrect role", func(t *testing.T) {
 			req := newAuthRequest(t, "member", "member")
 			resp, err := http.DefaultClient.Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-			assert.Equal(t, `Basic charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 		})
 	})
 

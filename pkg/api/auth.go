@@ -33,8 +33,11 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 
 		switch {
 		case auth.readBasicAuth(r, &identity):
+			break
 		case auth.readBearer(r, &identity):
+			break
 		case auth.readSession(ctx, r, &identity):
+			break
 		default:
 			identity = login.Anonymous()
 		}
@@ -44,10 +47,14 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 				logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access granted")
 			}
 			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, CtxKeyVVGOIdentity, &identity)))
-		} else {
-			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
-			unauthorized(w)
+			return
 		}
+
+		if role == login.RoleAnonymous {
+			http.Redirect(w, r, "/login", http.StatusFound)
+		}
+
+		unauthorized(w)
 	})
 }
 

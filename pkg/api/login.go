@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
@@ -16,6 +17,22 @@ import (
 )
 
 const LoginCookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
+
+func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {
+	cookie, err := sessions.NewCookie(ctx, identity, LoginCookieDuration)
+	if err != nil {
+		logger.WithError(err).Error("store.NewCookie() failed")
+		internalServerError(w)
+		return
+	}
+
+	http.SetCookie(w, cookie)
+	logger.WithFields(logrus.Fields{
+		"identity": identity.Kind,
+		"roles":    identity.Roles,
+	}).Info("authorization succeeded")
+	http.Redirect(w, r, "/parts", http.StatusFound)
+}
 
 // PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.
 // If the user pass combo exists in the map, then a login cookie with the mapped roles is create and sent in the response.
@@ -53,24 +70,10 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	identity = login.Identity{
+	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
 		Kind:  login.KindPassword,
 		Roles: gotRoles,
-	}
-
-	cookie, err := x.Sessions.NewCookie(ctx, &identity, LoginCookieDuration)
-	if err != nil {
-		logger.WithError(err).Error("store.NewCookie() failed")
-		internalServerError(w)
-		return
-	}
-
-	http.SetCookie(w, cookie)
-	logger.WithFields(logrus.Fields{
-		"identity": identity.Kind,
-		"roles":    identity.Roles,
-	}).Info("authorization succeeded")
-	http.Redirect(w, r, "/parts", http.StatusFound)
+	})
 }
 
 const DiscordOAuthPreCookie = "vvgo-discord-oauth-pre"
@@ -208,20 +211,10 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a login session
-	cookie, err := x.Sessions.NewCookie(ctx, &login.Identity{
+	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
 		Kind:  login.KindDiscord,
 		Roles: []login.Role{login.RoleVVGOMember},
-	}, LoginCookieDuration)
-	if err != nil {
-		logger.WithError(err).Error("sessions.NewCookie() failed")
-		internalServerError(w)
-		return
-	}
-
-	// redirect to home
-	http.SetCookie(w, cookie)
-	http.Redirect(w, r, "/", http.StatusFound)
+	})
 }
 
 // LogoutHandler deletes the login session from the incoming request, if it exists.
