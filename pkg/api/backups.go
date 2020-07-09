@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"path/filepath"
 	"time"
@@ -73,7 +75,9 @@ func (x BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx co
 }
 
 func (x BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx context.Context) {
-	switch r.FormValue("cmd") {
+	dump, _ := httputil.DumpRequest(r, true)
+	fmt.Println(string(dump))
+	switch cmd := r.FormValue("cmd"); cmd {
 	case "backup":
 		if err := x.backupToBucket(ctx); err != nil {
 			logger.WithError(err).Error("backup failed")
@@ -93,8 +97,16 @@ func (x BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx cont
 			return
 		}
 
+	case "restore from file":
+		if err := x.restoreFromUpload(ctx, r); err != nil {
+			logger.WithError(err).Error("restore failed")
+			internalServerError(w)
+			return
+		}
+
 	default:
-		badRequest(w, "missing form field `cmd`")
+		logger.WithError(errors.New("invalid field cmd: " + cmd)).Error("restore failed")
+		badRequest(w, "invalid field `cmd`")
 		return
 	}
 
@@ -102,6 +114,31 @@ func (x BackupHandler) doAction(w http.ResponseWriter, r *http.Request, ctx cont
 		http.Redirect(w, r, r.URL.Path, http.StatusFound)
 	}
 	return
+}
+
+func (x BackupHandler) restoreFromUpload(ctx context.Context, r *http.Request) error {
+	// parse and validate file and post parameters
+	file, fileHeader, err := r.FormFile("backup_file")
+	if err != nil {
+		return fmt.Errorf("r.FomFile() failed: %w", err)
+	}
+	defer file.Close()
+
+	// check the content type
+	var document DatabaseBackup
+	switch contentType := fileHeader.Header.Get("Content-Type"); contentType {
+	case "application/json":
+		if err := json.NewDecoder(file).Decode(&document); err != nil {
+			return fmt.Errorf("json.Decode() failed: %w", err)
+		}
+	default:
+		return fmt.Errorf("invalid content type: %s", contentType)
+	}
+
+	if err := x.Database.Restore(ctx, document); err != nil {
+		return fmt.Errorf("database.Restore() failed: %w", err)
+	}
+	return nil
 }
 
 func (x BackupHandler) restoreFromBucket(ctx context.Context, objectName string) error {
