@@ -31,7 +31,8 @@ func TestParts_List(t *testing.T) {
 	parts := newParts()
 
 	wantList := []Part{{
-		ID: ID{Project: "01-snake-eater", Name: "trumpet 1"},
+		ID:   ID{Project: "01-snake-eater", Name: "trumpet 1"},
+		Meta: Meta{ScoreOrder: 1},
 		Clix: []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)},
 			{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 		Sheets: []Link{},
@@ -39,6 +40,7 @@ func TestParts_List(t *testing.T) {
 
 	require.NoError(t, parts.Save(ctx, []Part{{
 		ID: ID{Project: "01-snake-eater", Name: "trumpet 1"},
+		Meta: Meta{ScoreOrder: 1},
 		Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
 			{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 	}}))
@@ -54,6 +56,7 @@ func TestRedisParts_DeleteAll(t *testing.T) {
 
 	require.NoError(t, parts.Save(ctx, []Part{{
 		ID: ID{Project: "01-snake-eater", Name: "trumpet 1"},
+		Meta: Meta{ScoreOrder: 1},
 		Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
 			{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 	}}))
@@ -71,10 +74,12 @@ func TestParts_Save(t *testing.T) {
 	require.NoError(t, parts.Save(ctx, []Part{
 		{
 			ID:   ID{Project: "01-snake-eater", Name: "trumpet 1"},
+			Meta: Meta{ScoreOrder: 1},
 			Clix: []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 		},
 		{
 			ID:     ID{Project: "01-snake-eater", Name: "accordion 3"},
+			Meta: Meta{ScoreOrder: 2},
 			Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 			Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
 		},
@@ -85,11 +90,13 @@ func TestParts_Save(t *testing.T) {
 	require.NoError(t, parts.Save(ctx, []Part{
 		{
 			ID:     ID{Project: "01-snake-eater", Name: "trumpet 1"},
+			Meta: Meta{ScoreOrder: 1},
 			Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 			Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 		},
 		{
 			ID:     ID{Project: "01-snake-eater", Name: "triangle 2"},
+			Meta: Meta{ScoreOrder: 3},
 			Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 			Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 		},
@@ -98,6 +105,7 @@ func TestParts_Save(t *testing.T) {
 	wantParts := []Part{
 		{
 			ID: ID{Project: "01-snake-eater", Name: "trumpet 1"},
+			Meta: Meta{ScoreOrder: 1},
 			Clix: []Link{
 				{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)},
 				{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)},
@@ -108,11 +116,13 @@ func TestParts_Save(t *testing.T) {
 		},
 		{
 			ID:     ID{Project: "01-snake-eater", Name: "accordion 3"},
+			Meta: Meta{ScoreOrder: 2},
 			Clix:   []Link{{ObjectKey: "Old-click.mp3", CreatedAt: time.Unix(1, 0)}},
 			Sheets: []Link{{ObjectKey: "Old-sheet.pdf", CreatedAt: time.Unix(1, 0)}},
 		},
 		{
 			ID:     ID{Project: "01-snake-eater", Name: "triangle 2"},
+			Meta: Meta{ScoreOrder: 3},
 			Clix:   []Link{{ObjectKey: "New-click.mp3", CreatedAt: time.Unix(2, 0)}},
 			Sheets: []Link{{ObjectKey: "New-sheet.pdf", CreatedAt: time.Unix(2, 0)}},
 		},
@@ -138,6 +148,7 @@ func assertEqualParts(t *testing.T, want []Part, got []Part) {
 	}
 	for i := range want {
 		assert.Equal(t, want[i].RedisKey(), got[i].RedisKey(), "part.ID")
+		assert.Equal(t, want[i].Meta, got[i].Meta, "parts.Meta")
 		assertEqualLinks(t, want[i].Sheets, got[i].Sheets, "part.Sheets")
 		assertEqualLinks(t, want[i].Clix, got[i].Clix, "part.Clix")
 
