@@ -49,6 +49,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, CtxKeyVVGOIdentity, &identity)))
 			return
 		}
+		logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
 
 		if identity.IsAnonymous() {
 			http.Redirect(w, r, "/login", http.StatusFound)

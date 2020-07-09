@@ -31,7 +31,8 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, s
 		"identity": identity.Kind,
 		"roles":    identity.Roles,
 	}).Info("authorization succeeded")
-	http.Redirect(w, r, "/parts", http.StatusFound)
+
+	LoginSuccessView{}.ServeHTTP(w, r)
 }
 
 // PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.

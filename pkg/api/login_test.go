@@ -58,7 +58,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		// do the request
 		resp, err := client.PostForm(ts.URL, urlValues)
 		require.NoError(t, err, "client.Get")
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 		// check that we get a cookie
 		tsURL, err := url.Parse(ts.URL)
@@ -218,7 +218,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		loginHandler.Sessions = newSessions()
 
 		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 		// check that we get a cookie
 		cookies := resp.Cookies()

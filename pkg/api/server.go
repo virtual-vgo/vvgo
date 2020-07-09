@@ -77,6 +77,8 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		Sessions:       database.Sessions,
 	}, login.RoleAnonymous)
 
+	mux.Handle("/login/success", LoginSuccessView{}, login.RoleAnonymous)
+
 	mux.Handle("/login", LoginView{
 		Sessions: database.Sessions,
 	}, login.RoleAnonymous)
