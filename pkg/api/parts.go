@@ -37,7 +37,7 @@ func (x PartsUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// check the content type
 		var upload []parts.Part
 		switch contentType := fileHeader.Header.Get("Content-Type"); contentType {
-		case "application/json"
+		case "application/json":
 			json.NewDecoder(r.Body).Decode(&upload)
 		case "application/csv":
 			upload = partsFromCSV(r.Body)

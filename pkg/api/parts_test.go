@@ -21,9 +21,9 @@ func Test_partsToCSV(t *testing.T) {
 
 func Test_partsFromCSV(t *testing.T) {
 	assert.Equal(t, []parts.Part{{
-		ID:   parts.ID{Project: "01-snake-eater", Name: "trumpet 1"},
-		Meta: parts.Meta{ScoreOrder: 1},
-		Clix: []parts.Link{},
+		ID:     parts.ID{Project: "01-snake-eater", Name: "trumpet 1"},
+		Meta:   parts.Meta{ScoreOrder: 1},
+		Clix:   []parts.Link{},
 		Sheets: []parts.Link{},
 	}}, partsFromCSV(strings.NewReader(`01-snake-eater,trumpet 1,,,1
 `)))
