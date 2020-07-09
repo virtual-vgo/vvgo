@@ -62,9 +62,16 @@ func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 	// https://pkg.go.dev/github.com/mediocregopher/radix/v3?tab=doc#hdr-Implicit_pipelining
 	parts := make([]Part, len(partKeys))
 	var wg sync.WaitGroup
-	wg.Add(2 * len(partKeys))
+	wg.Add(3 * len(partKeys))
 	for i := range partKeys {
 		parts[i].DecodeRedisKey(partKeys[i])
+
+		go func(key string, dest *Part) {
+			metaKey := x.namespace + ":parts:" + key + ":meta"
+			dest.Meta = readMeta(ctx, metaKey)
+			wg.Done()
+		}(partKeys[i], &parts[i])
+
 		go func(key string, dest *Part) {
 			sheetsKey := x.namespace + ":parts:" + key + ":sheets"
 			dest.Sheets = readLinks(ctx, sheetsKey)
@@ -81,18 +88,31 @@ func (x *RedisParts) List(ctx context.Context) ([]Part, error) {
 	return parts, nil
 }
 
-func (x *RedisParts) readIndex(localCtx context.Context) ([]string, error) {
+func (x *RedisParts) readIndex(ctx context.Context) ([]string, error) {
 	var partKeys []string
-	if err := redis.Do(localCtx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(&partKeys, "ZRANGE", x.namespace+":parts:index", "0", "-1")); err != nil {
 		return nil, err
 	}
 	return partKeys, nil
 }
 
+func readMeta(ctx context.Context, key string) Meta {
+	var metaJSON string
+	if err := redis.Do(ctx, redis.Cmd(&metaJSON, "GET", key)); err != nil {
+		logger.WithError(err).Error("GET", key)
+	}
+
+	var meta Meta
+	if err := json.Unmarshal([]byte(metaJSON), &meta); err != nil {
+		logger.WithError(err).Error("json.Unmarshal() failed")
+	}
+	return meta
+}
+
 func readLinks(ctx context.Context, key string) []Link {
 	var raw []string
 	if err := redis.Do(ctx, redis.Cmd(&raw, "ZREVRANGE", key, "0", "-1")); err != nil {
-		logger.WithError(err).Error("ZREVRANGE")
+		logger.WithError(err).Error("ZREVRANGE", key)
 	}
 	links := make([]Link, len(raw))
 	for i := range links {
@@ -127,16 +147,22 @@ func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
 		wg.Done()
 	}()
 
-	// Update all the links.
-	wg.Add(2 * len(parts))
+	// Update remaining fields.
+	wg.Add(3 * len(parts))
 	for i := range parts {
-		go func(src *Part) {
+		go func(src *Part) { // Meta
+			metaKey := x.namespace + ":parts:" + src.RedisKey() + ":meta"
+			x.saveMeta(localCtx, metaKey, src.Meta)
+			wg.Done()
+		}(&parts[i])
+
+		go func(src *Part) { // Sheets
 			sheetsKey := x.namespace + ":parts:" + src.RedisKey() + ":sheets"
 			x.saveLinks(localCtx, sheetsKey, src.Sheets)
 			wg.Done()
 		}(&parts[i])
 
-		go func(src *Part) {
+		go func(src *Part) { // Clix
 			clixKey := x.namespace + ":parts:" + src.RedisKey() + ":clix"
 			x.saveLinks(localCtx, clixKey, src.Clix)
 			wg.Done()
@@ -144,6 +170,18 @@ func (x *RedisParts) Save(ctx context.Context, parts []Part) error {
 	}
 	wg.Wait()
 	return nil
+}
+
+func (x *RedisParts) saveMeta(ctx context.Context, key string, meta Meta) {
+	metaJSON, err := json.Marshal(&meta)
+	if err != nil {
+		logger.WithError(err).Error("json.Marshal() failed")
+		return
+	}
+	args := []string{key, string(metaJSON)}
+	if err := redis.Do(ctx, redis.Cmd(nil, "SET", args...)); err != nil {
+		logger.WithError(err).WithField("args", args).Error("ZADD")
+	}
 }
 
 func (x *RedisParts) saveIndex(parts []Part, ctx context.Context) {
@@ -178,8 +216,18 @@ func (x *RedisParts) saveLinks(ctx context.Context, key string, links []Link) {
 
 type Part struct {
 	ID
+	Meta
 	Clix   Links `json:"click,omitempty"`
 	Sheets Links `json:"sheet,omitempty"`
+}
+
+type ID struct {
+	Project string `json:"project"`
+	Name    string `json:"part_name"`
+}
+
+type Meta struct {
+	SortOrder int `json:"sort_order"`
 }
 
 func (x *Part) RedisKey() string {
@@ -226,7 +274,7 @@ func (x *Links) NewKey(key string) {
 }
 
 func (x Part) String() string {
-	return fmt.Sprintf("Project: %s Part: %s", x.Project, strings.Title(x.Name))
+	return fmt.Sprintf("Project: %s Part: %s", x.ID.Project, strings.Title(x.ID.Name))
 }
 
 func (x Part) SheetLink(bucket string) string {
@@ -247,9 +295,9 @@ func (x Part) ClickLink(bucket string) string {
 
 func (x Part) Validate() error {
 	switch true {
-	case projects.Exists(x.Project) == false:
+	case projects.Exists(x.ID.Project) == false:
 		return projects.ErrNotFound
-	case ValidNames(x.Name) == false:
+	case ValidNames(x.ID.Name) == false:
 		return ErrInvalidPartName
 	default:
 		return nil
@@ -263,9 +311,4 @@ func ValidNames(names ...string) bool {
 		}
 	}
 	return true
-}
-
-type ID struct { // this can be a redis hash
-	Project string `json:"project" redis:"project"`
-	Name    string `json:"part_name" redis:"part_name"`
 }
