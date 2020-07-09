@@ -28,37 +28,55 @@
     <div class="container">
         <div class="bg-terminal p-3 mt-4 border rounded-sm">
             <h1 class="title text-monospace mb-3">~ Backups ~</h1>
-            <form><input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
-                         type="submit" name="cmd" value="backup" id="cmd" formmethod="post"></form>
-            <table id="backups" class="table text-light">
-                <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Size</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {{- range .Rows}}
+            <div class="row-cols-1">
+                <form>
+                    <input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                           type="submit" name="cmd" value="make new backup" id="cmd" formmethod="post">
+                </form>
+            </div>
+            <div class="row">
+                <form enctype="multipart/form-data" method="post">
+                    <div class="col">
+                        <input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                               type="submit" name="cmd" value="restore from file" id="cmd" formmethod="post">
+                    </div>
+                    <div class="col">
+                        <input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                               type="file" name="backup_file">
+                    </div>
+                </form>
+            </div>
+            <div class="row-cols-1">
+                <table id="backups" class="table text-light">
+                    <thead>
                     <tr>
-                        <td>{{.Timestamp}}</td>
-                        <td>{{.SizeKB}} KB</td>
-                        <td>
-                            <a href="{{.DownloadLink}}"
-                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace float-left">
-                                download
-                            </a>
-                            <form class="float-left ml-1">
-                                <input type="hidden" name="object" value="{{.Object}}">
-                                <input type="hidden" name="cmd" value="restore">
-                                <input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
-                                       type="submit" value="restore" formmethod="post">
-                            </form>
-                        </td>
+                        <th>Timestamp</th>
+                        <th>Size</th>
+                        <th>Actions</th>
                     </tr>
-                {{- end }}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {{- range .Rows}}
+                        <tr>
+                            <td>{{.Timestamp}}</td>
+                            <td>{{.SizeKB}} KB</td>
+                            <td>
+                                <a href="{{.DownloadLink}}"
+                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace float-left">
+                                    download
+                                </a>
+                                <form class="float-left ml-1">
+                                    <input type="hidden" name="object" value="{{.Object}}">
+                                    <input type="hidden" name="cmd" value="restore">
+                                    <input class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace"
+                                           type="submit" value="restore" formmethod="post">
+                                </form>
+                            </td>
+                        </tr>
+                    {{- end }}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </main>
