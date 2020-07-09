@@ -1,13 +1,17 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/textproto"
 	"net/url"
 	"testing"
 )
@@ -87,5 +91,43 @@ func TestBackupHandler_ServeHTTP(t *testing.T) {
 
 		got := recorder.Result()
 		assert.Equal(t, http.StatusBadRequest, got.StatusCode)
+	})
+
+	t.Run("restore_from_file/success", func(t *testing.T) {
+		ctx := context.Background()
+		handler := BackupHandler{
+			Database: &Database{Parts: newParts()},
+			Backups:  newBucket(t),
+		}
+		backup, err := handler.Database.Backup(ctx)
+		require.NoError(t, err, "database.Backup")
+
+		backupJSON, err := json.Marshal(backup)
+		require.NoError(t, err, "json.Marshal")
+
+		// build the request body with a json file
+		var body bytes.Buffer
+		multipartWriter := multipart.NewWriter(&body)
+
+		fileHeader := make(textproto.MIMEHeader)
+		fileHeader.Set("Content-Disposition",
+			fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "backup_file", "backup.json"))
+		fileHeader.Set("Content-Type", "application/json")
+
+		fileWriter, err := multipartWriter.CreatePart(fileHeader)
+		require.NoError(t, err, "multipartWriter.CreateFormFile() failed")
+		_, err = fileWriter.Write(backupJSON)
+		require.NoError(t, err)
+		require.NoError(t, multipartWriter.WriteField("cmd", "restore from file"), "multipartWriter.WriteField() failed")
+		multipartWriter.Close()
+
+		// make the request
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodPost, "/", &body)
+		request.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+		handler.ServeHTTP(recorder, request)
+
+		got := recorder.Result()
+		assert.Equal(t, http.StatusOK, got.StatusCode)
 	})
 }
