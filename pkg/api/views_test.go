@@ -34,21 +34,22 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 
 	t.Run("logged in", func(t *testing.T) {
 		ctx := context.Background()
+		loginView := LoginView{Sessions: newSessions()}
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			loginView.ServeHTTP(w, r.Clone(context.WithValue(ctx, CtxKeyVVGOIdentity, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}})))
+		}))
+		defer ts.Close()
 
-		server := LoginView{Sessions: newSessions()}
-
-		cookie, err := server.Sessions.NewCookie(ctx, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}}, 600*time.Second)
+		cookie, err := loginView.Sessions.NewCookie(ctx, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}}, 600*time.Second)
 		require.NoError(t, err, "sessions.NewCookie()")
 
-		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodGet, "/", nil)
-		request.AddCookie(cookie)
-		server.ServeHTTP(recorder, request)
-		gotResp := recorder.Result()
-		if expected, got := http.StatusFound, gotResp.StatusCode; expected != got {
-			t.Errorf("expected code %v, got %v", expected, got)
-		}
-		assertEqualHTML(t, "<a href=/>Found</a>.", strings.TrimSpace(recorder.Body.String()))
+		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
+		require.NoError(t, err, "http.NewRequest()")
+		req.AddCookie(cookie)
+		resp, err := noFollow(nil).Do(req)
+		require.NoError(t, err, "http.Do()")
+		assert.Equal(t, http.StatusFound, resp.StatusCode)
+		assert.Equal(t, "/login/success", resp.Header.Get("Location"))
 	})
 }
 

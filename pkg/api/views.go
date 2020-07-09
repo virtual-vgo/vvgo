@@ -22,9 +22,9 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartSpan(r.Context(), "login_view")
 	defer span.Send()
 
-	var identity login.Identity
-	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil && !identity.IsAnonymous() {
-		http.Redirect(w, r, "/", http.StatusFound)
+	identity := identityFromContext(ctx)
+	if identity.IsAnonymous() == false {
+		http.Redirect(w, r, "/login/success", http.StatusFound)
 		return
 	}
 
@@ -42,6 +42,27 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	buf.WriteTo(w)
+}
+
+type LoginSuccessView struct{}
+
+func (LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartSpan(r.Context(), "login_success_view")
+	defer span.Send()
+
+	opts := NewNavBarOpts(ctx)
+	page := struct {
+		NavBar NavBarOpts
+	}{
+		NavBar: opts,
+	}
+
+	var buffer bytes.Buffer
+	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "login_success.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	buffer.WriteTo(w)
 }
 
 type PartView struct {
