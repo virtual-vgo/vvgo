@@ -47,7 +47,7 @@ func (x BackupHandler) renderView(w http.ResponseWriter, r *http.Request, ctx co
 		dlValues.Add("bucket", x.Backups.Name)
 		dlValues.Add("object", info[i].Key)
 		rows[i] = tableRow{
-			Timestamp:    info[i].LastModified.Local().Format(time.RFC822),
+			Timestamp:    info[i].LastModified.Local().Format(time.RFC3339),
 			SizeKB:       info[i].Size / 1000,
 			DownloadLink: "/download?" + dlValues.Encode(),
 			Object:       info[i].Key,
