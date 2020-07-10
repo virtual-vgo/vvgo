@@ -1,9 +1,9 @@
-FROM node:13.12.0 as node
+FROM node:13.12 as node
 COPY package.json .
 COPY yarn.lock .
 RUN yarn install
 
-FROM golang:1.14.1 as builder
+FROM golang:1.14 as builder
 
 ARG GITHUB_REF
 ARG GITHUB_SHA
