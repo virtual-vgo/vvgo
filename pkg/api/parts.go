@@ -104,7 +104,7 @@ func (x PartView) listParts(ctx context.Context) ([]Part, error) {
 
 	parts := make([]Part, len(resp.Values))
 	for i, row := range resp.Values {
-		if len(row) != 5 {
+		if len(row) < 5 {
 			logger.WithField("row", fmt.Sprintf("%#v", row)).Error("invalid columns")
 			continue
 		}
