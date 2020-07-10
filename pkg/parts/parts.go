@@ -266,7 +266,7 @@ func (x *Link) DecodeRedisString(src string) {
 type Links []Link
 
 func (x *Links) Key() string {
-	if len(*x) > 1 {
+	if len(*x) >= 1 {
 		return (*x)[0].ObjectKey
 	} else {
 		return ""

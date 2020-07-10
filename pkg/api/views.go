@@ -121,7 +121,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, part := range parts {
 		rows = append(rows, tableRow{
 			Project:        projects.GetName(part.Project).Title,
-			ScoreOrder:     part.SortOrder,
+			ScoreOrder:     part.ScoreOrder,
 			PartName:       strings.Title(part.Name),
 			SheetMusic:     part.SheetLink(x.Distro.Name),
 			ClickTrack:     part.ClickLink(x.Distro.Name),
