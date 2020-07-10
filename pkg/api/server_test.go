@@ -61,11 +61,6 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
 			assert.Equal(t, "/login", resp.Header.Get("Location"))
 		})
-		t.Run("vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/parts", login.RoleVVGOMember)
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-		})
 	})
 
 	t.Run("download", func(t *testing.T) {
@@ -98,25 +93,6 @@ func TestServer(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/projects", login.RoleVVGOUploader)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-		})
-	})
-
-	t.Run("backups", func(t *testing.T) {
-		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/backups")
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login", resp.Header.Get("Location"))
-		})
-		t.Run("vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/backups", login.RoleVVGOMember)
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		})
-		t.Run("vvgo-uploader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/backups", login.RoleVVGOUploader)
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 	})
 

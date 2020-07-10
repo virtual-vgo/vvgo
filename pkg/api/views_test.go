@@ -3,14 +3,11 @@ package api
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/parts"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -50,79 +47,6 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 		require.NoError(t, err, "http.Do()")
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, "/login/success", resp.Header.Get("Location"))
-	})
-}
-
-func TestPartsView_ServeHTTP(t *testing.T) {
-	ctx := context.Background()
-	handlerStorage := Database{
-		Parts:  newParts(),
-		Distro: &storage.Bucket{Name: "vvgo-distro"},
-	}
-
-	// load the cache with some dummy data
-	require.NoError(t, handlerStorage.Parts.Save(ctx, []parts.Part{
-		{
-			ID: parts.ID{
-				Project: "01-snake-eater",
-				Name:    "trumpet 3",
-			},
-			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-		},
-		{
-			ID: parts.ID{
-				Project: "02-proof-of-a-hero",
-				Name:    "trumpet 3",
-			},
-			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-		},
-		{
-			ID: parts.ID{
-				Project: "03-the-end-begins-to-rock",
-				Name:    "trumpet 3",
-			},
-			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-		},
-		{
-			ID: parts.ID{
-				Project: "04-between-heaven-and-earth",
-				Name:    "trumpet 3",
-			},
-			Sheets: []parts.Link{{ObjectKey: "sheet.pdf", CreatedAt: time.Now()}},
-			Clix:   []parts.Link{{ObjectKey: "click.mp3", CreatedAt: time.Now()}},
-		},
-	}), "parts.Save()")
-
-	server := PartView{&handlerStorage}
-
-	t.Run("accept:application/json", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodGet, "/sheets", nil)
-		request.Header.Set("Accept", "application/json")
-		server.ServeHTTP(recorder, request)
-
-		wantRaw, gotRaw := strings.TrimSpace(mustReadFile(t, "testdata/parts.json")), strings.TrimSpace(recorder.Body.String())
-		var wantMap []map[string]interface{}
-		require.NoError(t, json.Unmarshal([]byte(wantRaw), &wantMap), "json.Unmarshal")
-		var gotMap []map[string]interface{}
-		assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &gotMap), "json.Unmarshal")
-		if !assert.Equal(t, wantMap, gotMap, "body") {
-			t.Logf("Expected body:\n%s\n", wantRaw)
-			t.Logf("Got body:\n%s\n", gotRaw)
-		}
-	})
-
-	t.Run("accept:text/html", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodGet, "/sheets", nil)
-		request.Header.Set("Accept", "text/html")
-		server.ServeHTTP(recorder, request)
-		got := recorder.Result()
-		assert.Equal(t, http.StatusOK, got.StatusCode)
-		assertEqualHTML(t, mustReadFile(t, "testdata/parts.html"), recorder.Body.String())
 	})
 }
 

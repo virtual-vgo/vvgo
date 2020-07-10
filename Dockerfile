@@ -20,8 +20,8 @@ RUN BIN_PATH=/ make vvgo
 FROM builder as tester
 CMD ["make", "test"]
 
-FROM gcr.io/distroless/base-debian10 as vvgo
-COPY ./data/mime.types /etc/
+FROM alpine:3.4 as vvgo
+RUN apk add --no-cache ca-certificates apache2-utils
 COPY ./public /public
 COPY --from=builder vvgo /vvgo
 COPY --from=node node_modules /public/npm

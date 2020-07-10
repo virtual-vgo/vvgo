@@ -5,7 +5,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"math/rand"
@@ -35,10 +34,6 @@ func newSessions() *login.Store {
 		CookieName: "vvgo-test-cookie",
 		CookiePath: "/",
 	})
-}
-
-func newParts() *parts.RedisParts {
-	return parts.NewParts(newNamespace())
 }
 
 func newBucket(t *testing.T) *storage.Bucket {

@@ -5,7 +5,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/parts"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
@@ -25,6 +24,8 @@ type ServerConfig struct {
 	DistroBucketName      string          `split_words:"true" default:"vvgo-distro"`
 	BackupsBucketName     string          `split_words:"true" default:"backups"`
 	RedisNamespace        string          `split_words:"true" default:"local"`
+	PartsSpreadsheetID    string          `envconfig:"parts_spreadsheet_id"`
+	PartsReadRange        string          `envconfig:"parts_read_range"`
 	DiscordGuildID        discord.GuildID `envconfig:"discord_guild_id"`
 	DiscordRoleVVGOMember string          `envconfig:"discord_role_vvgo_member"`
 	DiscordLoginURL       string          `envconfig:"discord_login_url"`
@@ -48,7 +49,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 
 	database := Database{
 		Distro:   newBucket(ctx, config.DistroBucketName),
-		Parts:    parts.NewParts(config.RedisNamespace),
 		Sessions: login.NewStore(config.RedisNamespace, config.Login),
 	}
 
@@ -99,23 +99,15 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
 
-	mux.Handle("/parts", PartView{Database: &database}, login.RoleVVGOMember)
-
-	backups := newBucket(ctx, config.BackupsBucketName)
-	mux.Handle("/backups", BackupHandler{
-		Database: &database,
-		Backups:  backups,
-	}, login.RoleVVGOUploader)
-
-	mux.Handle("/download", DownloadHandler{
-		config.DistroBucketName:  database.Distro.DownloadURL,
-		config.BackupsBucketName: backups.DownloadURL,
+	mux.Handle("/parts", PartView{
+		SpreadSheetID: config.PartsSpreadsheetID,
+		ReadRange:     config.PartsReadRange,
+		Database:      &database,
 	}, login.RoleVVGOMember)
 
-	// Uploads
-	mux.Handle("/upload", UploadHandler{
-		Database: &database,
-	}, login.RoleVVGOUploader)
+	mux.Handle("/download", DownloadHandler{
+		config.DistroBucketName: database.Distro.DownloadURL,
+	}, login.RoleVVGOMember)
 
 	// Projects
 	mux.Handle("/projects", ProjectsHandler{}, login.RoleVVGOUploader)
