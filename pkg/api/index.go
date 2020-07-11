@@ -4,69 +4,16 @@ import (
 	"bytes"
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"html/template"
 	"io"
 	"net/http"
 	"path/filepath"
 )
 
-type LoginView struct {
-	Sessions *login.Store
-}
-
-func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "login_view")
-	defer span.Send()
-
-	identity := identityFromContext(ctx)
-	if identity.IsAnonymous() == false {
-		http.Redirect(w, r, "/login/success", http.StatusFound)
-		return
-	}
-
-	opts := NewNavBarOpts(ctx)
-	opts.LoginActive = true
-	page := struct {
-		NavBar NavBarOpts
-	}{
-		NavBar: opts,
-	}
-
-	var buf bytes.Buffer
-	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
-		internalServerError(w)
-		return
-	}
-	buf.WriteTo(w)
-}
-
-type LoginSuccessView struct{}
-
-func (LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "login_success_view")
-	defer span.Send()
-
-	opts := NewNavBarOpts(ctx)
-	page := struct {
-		NavBar NavBarOpts
-	}{
-		NavBar: opts,
-	}
-
-	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "login_success.gohtml")); !ok {
-		internalServerError(w)
-		return
-	}
-	buffer.WriteTo(w)
-}
-
 type IndexView struct{}
 
 func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "index_view")
-	defer span.Send()
+	ctx := r.Context()
 
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)

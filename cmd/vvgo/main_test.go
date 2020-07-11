@@ -8,16 +8,12 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"os"
 	"testing"
 )
 
 func TestConfig_ParseEnv(t *testing.T) {
 	envs := map[string]string{
-		"TRACING_HONEYCOMB_DATASET":    "tracing-honeycomb-dataset",
-		"TRACING_HONEYCOMB_WRITE_KEY":  "tracing-honeycomb-write-key",
-		"TRACING_SERVICE_NAME":         "tracing-service-name",
 		"API_LISTEN_ADDRESS":           "listen-address",
 		"API_DISTRO_BUCKET_NAME":       "distro-bucket-name",
 		"API_BACKUPS_BUCKET_NAME":      "backups-bucket-name",
@@ -68,11 +64,6 @@ func TestConfig_ParseEnv(t *testing.T) {
 				CookieDomain: "login-cookie-domain",
 				CookiePath:   "login-cookie-path",
 			},
-		},
-		TracingConfig: tracing.Config{
-			HoneycombWriteKey: "tracing-honeycomb-write-key",
-			HoneycombDataset:  "tracing-honeycomb-dataset",
-			ServiceName:       "tracing-service-name",
 		},
 		RedisConfig: redis.Config{
 			Network:  "redis-network",

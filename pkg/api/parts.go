@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/projects"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"google.golang.org/api/sheets/v4"
 	"net/http"
 	"path/filepath"
@@ -48,9 +47,7 @@ type PartView struct {
 }
 
 func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "parts_view")
-	defer span.Send()
-
+	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return

@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"github.com/minio/minio-go/v6"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 )
 
@@ -13,8 +12,7 @@ import (
 type DownloadHandler map[string]func(ctx context.Context, objectName string) (url string, err error)
 
 func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "download_handler")
-	defer span.Send()
+	ctx := r.Context()
 
 	if r.Method != http.MethodGet {
 		http.Error(w, "", http.StatusMethodNotAllowed)
