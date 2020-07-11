@@ -131,5 +131,3 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		},
 	}
 }
-
-

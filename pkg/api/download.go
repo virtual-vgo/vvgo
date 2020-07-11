@@ -14,7 +14,6 @@ type DownloadHandler map[string]func(ctx context.Context, objectName string) (ur
 func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-
 	if r.Method != http.MethodGet {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return

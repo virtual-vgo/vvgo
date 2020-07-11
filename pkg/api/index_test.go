@@ -12,8 +12,6 @@ import (
 	"testing"
 )
 
-
-
 func TestIndexView_ServeHTTP(t *testing.T) {
 	server := IndexView{}
 	recorder := httptest.NewRecorder()
