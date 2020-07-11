@@ -18,6 +18,10 @@ type Part struct {
 	ScoreOrder     int
 	SheetMusicFile string
 	ClickTrackFile string
+	ConductorVideo string
+	Released       bool
+	Archived       bool
+	ReferenceTrack string
 }
 
 func (x Part) SheetLink(bucket string) string {
@@ -75,8 +79,8 @@ func (x PartView) filterFromQuery(r *http.Request, parts []Part) []Part {
 	want := len(parts)
 	for i := 0; i < want; i++ {
 		if projects.Exists(parts[i].Project) &&
-			projects.GetName(parts[i].Project).Archived == archived &&
-			projects.GetName(parts[i].Project).Released == released {
+			parts[i].Archived == archived &&
+			parts[i].Released == released {
 			continue
 		}
 		parts[i], parts[want-1] = parts[want-1], parts[i]
@@ -93,25 +97,39 @@ func (x PartView) listParts(ctx context.Context) ([]Part, error) {
 		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
 	}
 
-	readRange := "Parts!A2:F"
+	readRange := "Parts"
 	resp, err := srv.Spreadsheets.Values.Get(x.SpreadSheetID, readRange).Do()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
 	}
 
-	parts := make([]Part, len(resp.Values))
-	for i, row := range resp.Values {
-		if len(row) < 5 {
-			logger.WithField("row", fmt.Sprintf("%#v", row)).Error("invalid columns")
+	if len(resp.Values) < 1 {
+		return nil, fmt.Errorf("no data")
+	}
+	parts := make([]Part, len(resp.Values)-1)
+
+	index := make(map[string]int, len(resp.Values[0])-1)
+	for i, col := range resp.Values[0] {
+		index[fmt.Sprintf("%s", col)] = i
+	}
+
+	for i, row := range resp.Values[1:] {
+		if len(row) < 1 {
 			continue
 		}
-		scoreOrder, _ := strconv.Atoi(fmt.Sprint(row[2]))
+		scoreOrder, _ := strconv.Atoi(fmt.Sprint(row[index["Score Order"]]))
+		released, _ := strconv.ParseBool(fmt.Sprint(row[index["Released"]]))
+		archived, _ := strconv.ParseBool(fmt.Sprint(row[index["Archived"]]))
 		parts[i] = Part{
-			Project:        fmt.Sprint(row[0]),
-			PartName:       fmt.Sprint(row[1]),
+			Project:        fmt.Sprint(row[index["Project"]]),
+			PartName:       fmt.Sprint(row[index["Part Name"]]),
 			ScoreOrder:     scoreOrder,
-			SheetMusicFile: fmt.Sprint(row[3]),
-			ClickTrackFile: fmt.Sprint(row[4]),
+			SheetMusicFile: fmt.Sprint(row[index["Sheet Music File"]]),
+			ClickTrackFile: fmt.Sprint(row[index["Click Track File"]]),
+			ConductorVideo: fmt.Sprint(row[index["Conductor Video"]]),
+			Released:       released,
+			Archived:       archived,
+			ReferenceTrack: fmt.Sprint(row[index["Reference Track"]]),
 		}
 	}
 	return parts, nil
@@ -125,17 +143,19 @@ func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts [
 		SheetMusic     string `json:"sheet_music"`
 		ClickTrack     string `json:"click_track"`
 		ReferenceTrack string `json:"reference_track"`
+		ConductorVideo string `json:"conductor_video"`
 	}
 
 	rows := make([]tableRow, 0, len(parts))
 	for _, part := range parts {
 		rows = append(rows, tableRow{
-			Project:        projects.GetName(part.Project).Title,
+			Project:        strings.Title(part.Project),
 			ScoreOrder:     part.ScoreOrder,
 			PartName:       strings.Title(part.PartName),
 			SheetMusic:     part.SheetLink(x.Distro.Name),
 			ClickTrack:     part.ClickLink(x.Distro.Name),
 			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.Distro.Name),
+			ConductorVideo: part.ConductorVideo,
 		})
 	}
 
