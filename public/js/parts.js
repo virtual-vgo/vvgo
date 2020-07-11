@@ -5,6 +5,10 @@ $(document).ready(function () {
         paging: false,
         order: [[1, 'asc'], [2, 'asc']],
         columnDefs: [
+            {
+                targets: [1],
+                visible: false,
+            },
             { // dont search or order the download links
                 targets: [3],
                 orderable: false,
