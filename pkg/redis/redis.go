@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 )
 
 type Client struct {
@@ -61,9 +60,5 @@ func Cmd(rcv interface{}, cmd string, args ...string) Action {
 }
 
 func (x *Client) Do(ctx context.Context, a Action) error {
-	_, span := tracing.StartSpan(ctx, "redis.Client.Do()")
-	span.AddField("command", a.cmd)
-	span.AddField("args", a.args)
-	defer span.Send()
 	return x.pool.Do(a.radixAction)
 }

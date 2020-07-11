@@ -12,7 +12,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
 )
@@ -21,7 +20,6 @@ var logger = log.Logger()
 
 type Config struct {
 	ApiConfig     api.ServerConfig `envconfig:"api"`
-	TracingConfig tracing.Config   `envconfig:"tracing"`
 	RedisConfig   redis.Config     `envconfig:"redis"`
 	MinioConfig   storage.Config   `envconfig:"minio"`
 	DiscordConfig discord.Config   `envconfig:"discord"`
@@ -56,9 +54,6 @@ func main() {
 	var config Config
 	config.ParseEnv()
 	config.ParseFlags()
-
-	tracing.Initialize(config.TracingConfig)
-	defer tracing.Close()
 
 	storage.Initialize(config.MinioConfig)
 	redis.Initialize(config.RedisConfig)

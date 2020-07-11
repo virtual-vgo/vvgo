@@ -3,10 +3,10 @@ package api
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"net/http/pprof"
 )
@@ -126,8 +126,10 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		database: database,
 		Server: &http.Server{
 			Addr:     config.ListenAddress,
-			Handler:  tracing.WrapHandler(&mux),
+			Handler:  http_wrappers.Handler(&mux),
 			ErrorLog: log.StdLogger(),
 		},
 	}
 }
+
+

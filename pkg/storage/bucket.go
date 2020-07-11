@@ -8,7 +8,6 @@ import (
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -64,27 +63,16 @@ func (x *Warehouse) NewBucket(ctx context.Context, name string) (*Bucket, error)
 		minioClient: x.minioClient,
 	}
 
-	_, span := x.newSpan(ctx, "warehouse_new_bucket")
-	defer span.Send()
 	exists, err := x.minioClient.BucketExists(name)
 	if err != nil {
-		span.AddField("error", err)
 		return nil, err
 	}
 	if exists == false {
 		if err := x.minioClient.MakeBucket(name, x.config.Region); err != nil {
-			span.AddField("error", err)
 			return nil, err
 		}
 	}
 	return &bucket, nil
-}
-
-func (x *Warehouse) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
-	ctx, span := tracing.StartSpan(ctx, name)
-	tracing.AddField(ctx, "minio_endpoint", x.config.Endpoint)
-	tracing.AddField(ctx, "minio_region", x.config.Region)
-	return ctx, span
 }
 
 // File is an object abstraction for any media files, pdfs, mp3s, etc. that might be uploaded to the website.
@@ -150,8 +138,6 @@ func (x *Bucket) StatFile(ctx context.Context, objectKey string, dest *File) err
 
 // PutFile uploads the file to object storage
 func (x *Bucket) PutFile(ctx context.Context, file *File) error {
-	ctx, span := x.newSpan(ctx, "bucket_put_file")
-	defer span.Send()
 	return x.PutObject(ctx, file.ObjectKey(), NewObject(file.MediaType, nil, file.Bytes))
 }
 
@@ -182,8 +168,6 @@ type ObjectInfo struct {
 func (x *Bucket) ListObjects(ctx context.Context, pre string) []ObjectInfo {
 	done := make(chan struct{})
 	defer close(done)
-	_, span := x.newSpan(ctx, "bucket_list_objects")
-	defer span.Send()
 	var info []ObjectInfo
 	for objectInfo := range x.minioClient.ListObjects(x.Name, pre, false, done) {
 		info = append(info, ObjectInfo{
@@ -198,12 +182,9 @@ func (x *Bucket) ListObjects(ctx context.Context, pre string) []ObjectInfo {
 
 // StatObject returns only the object content type and tags.
 func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object) error {
-	_, span := x.newSpan(ctx, "bucket_stat_object")
-	defer span.Send()
 	opts := minio.StatObjectOptions{}
 	objectInfo, err := x.minioClient.StatObject(x.Name, objectName, opts)
 	if err != nil {
-		span.AddField("error", err)
 		return err
 	}
 	*dest = Object{
@@ -215,24 +196,19 @@ func (x *Bucket) StatObject(ctx context.Context, objectName string, dest *Object
 
 // GetObject returns the full object meta and contents.
 func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error {
-	_, span := x.newSpan(ctx, "bucket_get_object")
-	defer span.Send()
 
 	minioObject, err := x.minioClient.GetObject(x.Name, name, minio.GetObjectOptions{})
 	if err != nil {
-		span.AddField("error", err)
 		return err
 	}
 
 	info, err := minioObject.Stat()
 	if err != nil {
-		span.AddField("error", err)
 		return err
 	}
 
 	var buffer bytes.Buffer
 	if _, err = buffer.ReadFrom(minioObject); err != nil {
-		span.AddField("error", err)
 		return err
 	}
 
@@ -246,15 +222,13 @@ func (x *Bucket) GetObject(ctx context.Context, name string, dest *Object) error
 
 // PutObject uploads the object with the given key.
 func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) error {
-	ctx, span := x.newSpan(ctx, "bucket_put_object")
-	defer span.Send()
+
 	opts := minio.PutObjectOptions{
 		ContentType:  object.ContentType,
 		UserMetadata: object.Tags,
 	}
 	n, err := x.minioClient.PutObject(x.Name, name, bytes.NewBuffer(object.Bytes), -1, opts)
 	if err != nil {
-		span.AddField("error", err)
 		return err
 	}
 	logger.WithFields(logrus.Fields{
@@ -269,19 +243,10 @@ func (x *Bucket) PutObject(ctx context.Context, name string, object *Object) err
 // If the object has a public download policy, then a direct link is returned.
 // Otherwise, this method will query object storage for a presigned url.
 func (x *Bucket) DownloadURL(ctx context.Context, name string) (string, error) {
-	ctx, span := x.newSpan(ctx, "Bucket.DownloadURL")
-	defer span.Send()
 	downloadUrl, err := x.minioClient.PresignedGetObject(x.Name, name, ProtectedLinkExpiry, nil)
 	if err != nil {
 		return "", err
 	} else {
 		return downloadUrl.String(), nil
 	}
-}
-
-func (x *Bucket) newSpan(ctx context.Context, name string) (context.Context, tracing.Span) {
-	ctx, span := tracing.StartSpan(ctx, name)
-	tracing.AddField(ctx, "bucket_name", x.Name)
-	tracing.AddField(ctx, "bucket_region", x.minioRegion)
-	return ctx, span
 }

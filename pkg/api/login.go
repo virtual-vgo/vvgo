@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/binary"
@@ -9,14 +10,63 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
 const LoginCookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
+
+type LoginView struct {
+	Sessions *login.Store
+}
+
+func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	identity := identityFromContext(ctx)
+	if identity.IsAnonymous() == false {
+		http.Redirect(w, r, "/login/success", http.StatusFound)
+		return
+	}
+
+	opts := NewNavBarOpts(ctx)
+	opts.LoginActive = true
+	page := struct {
+		NavBar NavBarOpts
+	}{
+		NavBar: opts,
+	}
+
+	var buf bytes.Buffer
+	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	buf.WriteTo(w)
+}
+
+type LoginSuccessView struct{}
+
+func (LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	opts := NewNavBarOpts(ctx)
+	page := struct {
+		NavBar NavBarOpts
+	}{
+		NavBar: opts,
+	}
+
+	var buffer bytes.Buffer
+	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "login_success.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	buffer.WriteTo(w)
+}
 
 func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {
 	cookie, err := sessions.NewCookie(ctx, identity, LoginCookieDuration)
@@ -45,8 +95,7 @@ type PasswordLoginHandler struct {
 }
 
 func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "password_login")
-	defer span.Send()
+	ctx := r.Context()
 
 	if r.Method != http.MethodPost {
 		methodNotAllowed(w)
@@ -107,8 +156,7 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (x DiscordLoginHandler) redirect(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "discord_oauth_redirect")
-	defer span.Send()
+	ctx := r.Context()
 
 	// read a random state number
 	statusBytes := make([]byte, 32)
@@ -144,12 +192,10 @@ func (x DiscordLoginHandler) redirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "discord_oauth_redirect")
-	defer span.Send()
+	ctx := r.Context()
 
 	handleError := func(err error) bool {
 		if err != nil {
-			tracing.AddError(ctx, err)
 			logger.WithError(err).Error("discord authentication failed")
 			unauthorized(w)
 			return false
@@ -224,8 +270,7 @@ type LogoutHandler struct {
 }
 
 func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracing.StartSpan(r.Context(), "logout_handler")
-	defer span.Send()
+	ctx := r.Context()
 
 	if err := x.Sessions.DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.WithError(err).Error("x.Sessions.DeleteSessionFromRequest failed")
@@ -234,3 +279,5 @@ func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 }
+
+

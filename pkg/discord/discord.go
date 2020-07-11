@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"io"
 	"net/http"
 	"net/url"
@@ -206,7 +206,7 @@ func (x Client) newRequest(ctx context.Context, method string, path string, body
 
 // performs the http request and logs results
 func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, error) {
-	resp, err := tracing.DoHttpRequest(req)
+	resp, err := http_wrappers.DoRequest(req)
 	switch {
 	case err != nil:
 		logger.WithError(err).Error("tracing.DoHttpRequest() failed")
