@@ -14,6 +14,7 @@ import (
 
 type Part struct {
 	Project        string
+	ProjectTitle   string
 	PartName       string
 	ScoreOrder     int
 	SheetMusicFile string
@@ -122,6 +123,7 @@ func (x PartView) listParts(ctx context.Context) ([]Part, error) {
 		archived, _ := strconv.ParseBool(fmt.Sprint(row[index["Archived"]]))
 		parts[i] = Part{
 			Project:        fmt.Sprint(row[index["Project"]]),
+			ProjectTitle:   fmt.Sprint(row[index["Project Title"]]),
 			PartName:       fmt.Sprint(row[index["Part Name"]]),
 			ScoreOrder:     scoreOrder,
 			SheetMusicFile: fmt.Sprint(row[index["Sheet Music File"]]),
@@ -149,7 +151,7 @@ func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts [
 	rows := make([]tableRow, 0, len(parts))
 	for _, part := range parts {
 		rows = append(rows, tableRow{
-			Project:        strings.Title(part.Project),
+			Project:        strings.Title(part.ProjectTitle),
 			ScoreOrder:     part.ScoreOrder,
 			PartName:       strings.Title(part.PartName),
 			SheetMusic:     part.SheetLink(x.Distro.Name),
