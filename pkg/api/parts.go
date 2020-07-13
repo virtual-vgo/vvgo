@@ -156,7 +156,7 @@ func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts [
 			PartName:       strings.Title(part.PartName),
 			SheetMusic:     part.SheetLink(x.Distro.Name),
 			ClickTrack:     part.ClickLink(x.Distro.Name),
-			ReferenceTrack: projects.GetName(part.Project).ReferenceTrackLink(x.Distro.Name),
+			ReferenceTrack: part.ReferenceTrack,
 			ConductorVideo: part.ConductorVideo,
 		})
 	}
