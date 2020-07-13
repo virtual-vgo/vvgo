@@ -25,22 +25,6 @@ type Part struct {
 	ReferenceTrack string
 }
 
-func (x Part) SheetLink(bucket string) string {
-	if bucket == "" || x.SheetMusicFile == "" {
-		return "#"
-	} else {
-		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.SheetMusicFile)
-	}
-}
-
-func (x Part) ClickLink(bucket string) string {
-	if bucket == "" || x.ClickTrackFile == "" {
-		return "#"
-	} else {
-		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, x.ClickTrackFile)
-	}
-}
-
 type PartView struct {
 	SpreadSheetID string
 	ReadRange     string
@@ -154,9 +138,9 @@ func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts [
 			Project:        strings.Title(part.ProjectTitle),
 			ScoreOrder:     part.ScoreOrder,
 			PartName:       strings.Title(part.PartName),
-			SheetMusic:     part.SheetLink(x.Distro.Name),
-			ClickTrack:     part.ClickLink(x.Distro.Name),
-			ReferenceTrack: part.ReferenceTrack,
+			SheetMusic:     downloadLink(x.Distro.Name, part.SheetMusicFile),
+			ClickTrack:     downloadLink(x.Distro.Name, part.ClickTrackFile),
+			ReferenceTrack: downloadLink(x.Distro.Name, part.ReferenceTrack),
 			ConductorVideo: part.ConductorVideo,
 		})
 	}
@@ -177,4 +161,12 @@ func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts [
 		return
 	}
 	buffer.WriteTo(w)
+}
+
+func downloadLink(bucket, object string) string {
+	if bucket == "" || object == "" {
+		return "#"
+	} else {
+		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, object)
+	}
 }
