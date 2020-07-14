@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/projects"
 	"google.golang.org/api/sheets/v4"
 	"net/http"
 	"path/filepath"
@@ -63,8 +62,7 @@ func (x PartView) filterFromQuery(r *http.Request, parts []Part) []Part {
 
 	want := len(parts)
 	for i := 0; i < want; i++ {
-		if projects.Exists(parts[i].Project) &&
-			parts[i].Archived == archived &&
+		if parts[i].Archived == archived &&
 			parts[i].Released == released {
 			continue
 		}

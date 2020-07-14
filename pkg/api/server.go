@@ -109,9 +109,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		config.DistroBucketName: database.Distro.DownloadURL,
 	}, login.RoleVVGOMember)
 
-	// Projects
-	mux.Handle("/projects", ProjectsHandler{}, login.RoleVVGOUploader)
-
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
