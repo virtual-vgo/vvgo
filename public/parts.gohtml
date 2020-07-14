@@ -67,22 +67,36 @@
                         <td class="text-light">{{.ScoreOrder}}</td>
                         <td class="title">{{.PartName}}</td>
                         <td>
-                            <a href="{{.SheetMusic}}"
-                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                sheet music <i class="far fa-file-pdf"></i>
-                            </a>
-                            <a href="{{.ClickTrack}}"
-                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                click track <i class="far fa-file-audio"></i>
-                            </a>
-                            <a href="{{.ReferenceTrack}}"
-                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                reference track <i class="far fa-file-audio"></i>
-                            </a>
-                            <a href="{{.ConductorVideo}}"
-                               class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                conductor video <i class="far fa-file-video"></i>
-                            </a>
+                            {{ if .SheetMusic }}
+                                <a href="{{.SheetMusic}}"
+                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                    <i class="far fa-file-pdf"></i> sheet music
+                                </a>
+                            {{ end }}
+                            {{ if .ClickTrack}}
+                                <a href="{{.ClickTrack}}"
+                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                    <i class="far fa-file-audio"></i> click track
+                                </a>
+                            {{ end }}
+                            {{ if .PronunciationGuide }}
+                                <a href="{{.PronunciationGuide}}"
+                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                    <i class="fas fa-language"></i> pronunciation guide
+                                </a>
+                            {{ end }}
+                            {{ if .ReferenceTrack }}
+                                <a href="{{.ReferenceTrack}}"
+                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                    <i class="far fa-file-audio"></i> reference track
+                                </a>
+                            {{ end }}
+                            {{ if .ConductorVideo }}
+                                <a href="{{.ConductorVideo}}"
+                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                    <i class="far fa-file-video"></i> conductor video
+                                </a>
+                            {{ end }}
                         </td>
                     </tr>
                 {{- end }}

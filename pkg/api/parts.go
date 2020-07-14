@@ -12,16 +12,17 @@ import (
 )
 
 type Part struct {
-	Project        string
-	ProjectTitle   string
-	PartName       string
-	ScoreOrder     int
-	SheetMusicFile string
-	ClickTrackFile string
-	ConductorVideo string
-	Released       bool
-	Archived       bool
-	ReferenceTrack string
+	Project            string
+	ProjectTitle       string
+	PartName           string
+	ScoreOrder         int
+	SheetMusicFile     string
+	ClickTrackFile     string
+	ConductorVideo     string
+	Released           bool
+	Archived           bool
+	ReferenceTrack     string
+	PronunciationGuide string
 }
 
 type PartView struct {
@@ -104,16 +105,17 @@ func (x PartView) listParts(ctx context.Context) ([]Part, error) {
 		released, _ := strconv.ParseBool(fmt.Sprint(row[index["Released"]]))
 		archived, _ := strconv.ParseBool(fmt.Sprint(row[index["Archived"]]))
 		parts[i] = Part{
-			Project:        fmt.Sprint(row[index["Project"]]),
-			ProjectTitle:   fmt.Sprint(row[index["Project Title"]]),
-			PartName:       fmt.Sprint(row[index["Part Name"]]),
-			ScoreOrder:     scoreOrder,
-			SheetMusicFile: fmt.Sprint(row[index["Sheet Music File"]]),
-			ClickTrackFile: fmt.Sprint(row[index["Click Track File"]]),
-			ConductorVideo: fmt.Sprint(row[index["Conductor Video"]]),
-			Released:       released,
-			Archived:       archived,
-			ReferenceTrack: fmt.Sprint(row[index["Reference Track"]]),
+			Project:            fmt.Sprint(row[index["Project"]]),
+			ProjectTitle:       fmt.Sprint(row[index["Project Title"]]),
+			PartName:           fmt.Sprint(row[index["Part Name"]]),
+			ScoreOrder:         scoreOrder,
+			SheetMusicFile:     fmt.Sprint(row[index["Sheet Music File"]]),
+			ClickTrackFile:     fmt.Sprint(row[index["Click Track File"]]),
+			ConductorVideo:     fmt.Sprint(row[index["Conductor Video"]]),
+			Released:           released,
+			Archived:           archived,
+			ReferenceTrack:     fmt.Sprint(row[index["Reference Track"]]),
+			PronunciationGuide: fmt.Sprint(row[index["Pronunciation Guide"]]),
 		}
 	}
 	return parts, nil
@@ -121,25 +123,27 @@ func (x PartView) listParts(ctx context.Context) ([]Part, error) {
 
 func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts []Part) {
 	type tableRow struct {
-		Project        string `json:"project"`
-		PartName       string `json:"part_name"`
-		ScoreOrder     int    `json:"score_order"`
-		SheetMusic     string `json:"sheet_music"`
-		ClickTrack     string `json:"click_track"`
-		ReferenceTrack string `json:"reference_track"`
-		ConductorVideo string `json:"conductor_video"`
+		Project            string `json:"project"`
+		PartName           string `json:"part_name"`
+		ScoreOrder         int    `json:"score_order"`
+		SheetMusic         string `json:"sheet_music,omitempty"`
+		ClickTrack         string `json:"click_track,omitempty"`
+		ReferenceTrack     string `json:"reference_track,omitempty"`
+		ConductorVideo     string `json:"conductor_video,omitempty"`
+		PronunciationGuide string `json:"pronunciation_guide,omitempty"`
 	}
 
 	rows := make([]tableRow, 0, len(parts))
 	for _, part := range parts {
 		rows = append(rows, tableRow{
-			Project:        strings.Title(part.ProjectTitle),
-			ScoreOrder:     part.ScoreOrder,
-			PartName:       strings.Title(part.PartName),
-			SheetMusic:     downloadLink(x.Distro.Name, part.SheetMusicFile),
-			ClickTrack:     downloadLink(x.Distro.Name, part.ClickTrackFile),
-			ReferenceTrack: downloadLink(x.Distro.Name, part.ReferenceTrack),
-			ConductorVideo: part.ConductorVideo,
+			Project:            strings.Title(part.ProjectTitle),
+			ScoreOrder:         part.ScoreOrder,
+			PartName:           strings.Title(part.PartName),
+			SheetMusic:         downloadLink(x.Distro.Name, part.SheetMusicFile),
+			ClickTrack:         downloadLink(x.Distro.Name, part.ClickTrackFile),
+			ReferenceTrack:     downloadLink(x.Distro.Name, part.ReferenceTrack),
+			ConductorVideo:     part.ConductorVideo,
+			PronunciationGuide: downloadLink(x.Distro.Name, part.PronunciationGuide),
 		})
 	}
 
@@ -163,7 +167,7 @@ func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts [
 
 func downloadLink(bucket, object string) string {
 	if bucket == "" || object == "" {
-		return "#"
+		return ""
 	} else {
 		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, object)
 	}
