@@ -58,11 +58,10 @@ docker-compose up -d
 
 ### 3. Download javascript dependencies
 ```sh
-yarn install
+yarn install --modules-folder public/npm
 ```
 
 ### 4. Build and run the app!
 ```sh
 go generate ./... && go build -v -o vvgo ./cmd/vvgo && ./vvgo
 ```
-

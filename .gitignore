@@ -13,3 +13,4 @@ __uploader.out
 data/statik
 info.go
 node_modules
+public/npm
