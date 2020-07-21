@@ -1,5 +1,5 @@
 body {
-    background-color: rgba(12, 2, 12, 0.95);
+    background-color: rgba(24, 3, 24, 0.95);
     color: #E9E9E9;
 }
 
@@ -38,6 +38,12 @@ body {
     background-image: url('/images/snake-eater-banner-solid-snake.png');
     background-size: contain;
     background-repeat: no-repeat;
+}
+
+.bg-rathalos {
+    background-image: url('/images/Site_Background-_Rathalos_Tile.png');
+    background-repeat: repeat-y;
+    background-position: right;
 }
 
 .thick-border {
