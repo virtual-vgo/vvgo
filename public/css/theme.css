@@ -40,6 +40,12 @@ body {
     background-repeat: no-repeat;
 }
 
+.bg-rathalos {
+    background-image: url('/images/Site_Background-_Rathalos_Tile.png');
+    background-repeat: repeat-y;
+    background-position: right;
+}
+
 .thick-border {
     border-style: solid;
     border-width: thick;
