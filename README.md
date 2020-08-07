@@ -4,7 +4,7 @@
 
 # Virtual Video Game Orchestra
 
-:wave: We are the Virtual Video Game Orchestra (VVGO for short), an orchestra organized by members from various IRL VGOs/GSOs, and comprised of local musicians hailing from across the globe!
+:wave: We are the Virtual Video Game Orchestra (VVGO for short). Our mission is to provide a fun and accessible virtual community of musicians from around the world through performing video game music.
 
 ## Changing HTML pages
 
