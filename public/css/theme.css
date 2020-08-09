@@ -34,6 +34,10 @@ body {
     background-color: #7289DA;
 }
 
+.bg-facebook-blue {
+    background-color: #1877F2;
+}
+
 .bg-solid-snake {
     background-image: url('/images/snake-eater-banner-solid-snake.png');
     background-size: contain;
