@@ -38,15 +38,6 @@ func Initialize(config Config) {
 	client = NewClient(config)
 }
 
-func (x Client) LoginURL(state string) string {
-	query := make(url.Values)
-	query.Set("client_id", x.config.OAuthClientID)
-	query.Set("redirect_uri", x.config.OAuthRedirectURI)
-	query.Set("state", state)
-	query.Set("scope", "groups_access_member_info")
-	return "https://www.facebook.com/v8.0/dialog/oauth?" + query.Encode()
-}
-
 func LoginURL(state string) string { return client.LoginURL(state) }
 
 func QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
@@ -55,6 +46,15 @@ func QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
 
 func UserHasGroup(ctx context.Context, accessToken string, userID string, wantGroupID string) (bool, error) {
 	return client.UserHasGroup(ctx, accessToken, userID, wantGroupID)
+}
+
+func (x Client) LoginURL(state string) string {
+	query := make(url.Values)
+	query.Set("client_id", x.config.OAuthClientID)
+	query.Set("redirect_uri", x.config.OAuthRedirectURI)
+	query.Set("state", state)
+	query.Set("scope", "groups_access_member_info")
+	return "https://www.facebook.com/v8.0/dialog/oauth?" + query.Encode()
 }
 
 type OAuthToken struct {
@@ -91,7 +91,7 @@ func (x Client) QueryOAuth(ctx context.Context, code string) (*OAuthToken, error
 // https://developers.facebook.com/docs/graph-api/reference/user/groups
 func (x Client) UserHasGroup(ctx context.Context, accessToken string, userID string, wantGroupID string) (bool, error) {
 	type Group struct {
-		ID string `json:"id"`
+		ID   string `json:"id"`
 		Name string
 	}
 

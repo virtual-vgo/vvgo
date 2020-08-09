@@ -74,7 +74,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/login/discord", DiscordLoginHandler{
 		GuildID:        config.DiscordGuildID,
 		RoleVVGOMember: config.DiscordRoleVVGOMember,
-		RedirectURL:    config.DiscordLoginURL,
 		Sessions:       database.Sessions,
 	}, login.RoleAnonymous)
 
