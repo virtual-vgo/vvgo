@@ -30,6 +30,7 @@ type ServerConfig struct {
 	DiscordRoleVVGOMember string          `envconfig:"discord_role_vvgo_member"`
 	DiscordLoginURL       string          `envconfig:"discord_login_url"`
 	Login                 login.Config    `envconfig:"login"`
+	FacebookGroupID       string          `envconfig:"facebook_group_id"`
 }
 
 type Server struct {
@@ -75,6 +76,11 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		RoleVVGOMember: config.DiscordRoleVVGOMember,
 		RedirectURL:    config.DiscordLoginURL,
 		Sessions:       database.Sessions,
+	}, login.RoleAnonymous)
+
+	mux.Handle("/login/facebook", FacebookLoginHandler{
+		VVGOGroupID: config.FacebookGroupID,
+		Sessions:    database.Sessions,
 	}, login.RoleAnonymous)
 
 	mux.Handle("/login/success", LoginSuccessView{}, login.RoleAnonymous)

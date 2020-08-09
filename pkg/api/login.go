@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/facebook"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
@@ -45,7 +46,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	buf.WriteTo(w)
+	_, _ = buf.WriteTo(w)
 }
 
 type LoginSuccessView struct{}
@@ -65,7 +66,7 @@ func (LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	buffer.WriteTo(w)
+	_, _ = buffer.WriteTo(w)
 }
 
 func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {
@@ -127,11 +128,6 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 }
 
 const DiscordOAuthPreCookie = "vvgo-discord-oauth-pre"
-
-type DiscordOAuthPre struct {
-	Namespace   string
-	RedirectURL string
-}
 
 // DiscordLoginHandler
 // If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
@@ -260,6 +256,109 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 
 	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
 		Kind:  login.KindDiscord,
+		Roles: []login.Role{login.RoleVVGOMember},
+	})
+}
+
+const FacebookOAuthPreCookie = "vvgo-facebook-oauth-pre"
+
+// https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow/
+
+type FacebookLoginHandler struct {
+	VVGOGroupID string
+	Namespace   string
+	RedirectURL string
+	Sessions    *login.Store
+}
+
+func (x FacebookLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.FormValue("state") == "" {
+		x.redirect(w, r)
+	} else {
+		x.authorize(w, r)
+	}
+}
+
+func (x FacebookLoginHandler) redirect(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// read a random state number
+	statusBytes := make([]byte, 32)
+	if _, err := rand.Read(statusBytes); err != nil {
+		logger.WithError(err).Error("rand.Read() failed")
+		internalServerError(w)
+		return
+	}
+	state := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[:16]), 16)
+	value := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[16:]), 16)
+
+	// store the number in redis
+	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", x.Namespace+":facebook_oauth_pre:"+state, "300", value)); err != nil {
+		logger.WithError(err).Error("redis.Do() failed")
+		internalServerError(w)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:    FacebookOAuthPreCookie,
+		Value:   value,
+		Expires: time.Now().Add(300 * time.Second),
+	})
+	http.Redirect(w, r, facebook.LoginURL(state), http.StatusFound)
+}
+
+func (x FacebookLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handleError := func(err error) bool {
+		if err != nil {
+			logger.WithError(err).Error("facebook authentication failed")
+			unauthorized(w)
+			return false
+		}
+		return true
+	}
+
+	// read the state param
+	state := r.FormValue("state")
+	if state == "" {
+		handleError(errors.New("no state param"))
+		return
+	}
+
+	// check if it exists in redis
+	var value string
+	if ok := handleError(redis.Do(ctx, redis.Cmd(&value, "GET", x.Namespace+":facebook_oauth_pre:"+state))); !ok {
+		return
+	}
+
+	// check against the cookie value
+	preCookie, err := r.Cookie(FacebookOAuthPreCookie)
+	if ok := handleError(err); !ok {
+		return
+	}
+	if preCookie.Value != value {
+		handleError(errors.New("invalid state"))
+		return
+	}
+
+	// get an oauth token from facebook
+	code := r.FormValue("code")
+	oauthToken, err := facebook.QueryOAuth(ctx, code)
+	if ok := handleError(err); !ok {
+		return
+	}
+
+	isMember, err := facebook.UserHasGroup(ctx, oauthToken.AccessToken, "me", x.VVGOGroupID)
+	if ok := handleError(err); !ok {
+		return
+	}
+	if !isMember {
+		handleError(ErrNotAMember)
+		return
+	}
+
+	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
+		Kind:  login.KindFacebook,
 		Roles: []login.Role{login.RoleVVGOMember},
 	})
 }

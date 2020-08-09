@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/facebook"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -34,6 +35,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"API_LOGIN_COOKIE_DOMAIN":      "login-cookie-domain",
 		"API_LOGIN_COOKIE_PATH":        "login-cookie-path",
 		"API_DISCORD_GUILD_ID":         "discord-guild-id",
+		"API_FACEBOOK_GROUP_ID":        "facebook-group-id",
 		"API_DISCORD_ROLE_VVGO_MEMBER": "discord-role-vvgo-member",
 		"API_DISCORD_LOGIN_URL":        "discord-login-url",
 		"API_PARTS_SPREADSHEET_ID":     "parts-spreadsheet-id",
@@ -43,6 +45,11 @@ func TestConfig_ParseEnv(t *testing.T) {
 		"DISCORD_OAUTH_CLIENT_ID":      "discord-oauth-client-id",
 		"DISCORD_OAUTH_CLIENT_SECRET":  "discord-oauth-client-secret",
 		"DISCORD_OAUTH_REDIRECT_URI":   "discord-oauth-redirect-uri",
+		"FACEBOOK_BOT_AUTH_TOKEN":      "facebook-bot-auth-token",
+		"FACEBOOK_ENDPOINT":            "facebook-endpoint",
+		"FACEBOOK_OAUTH_CLIENT_ID":     "facebook-oauth-client-id",
+		"FACEBOOK_OAUTH_CLIENT_SECRET": "facebook-oauth-client-secret",
+		"FACEBOOK_OAUTH_REDIRECT_URI":  "facebook-oauth-redirect-uri",
 	}
 	want := Config{
 		ApiConfig: api.ServerConfig{
@@ -59,6 +66,7 @@ func TestConfig_ParseEnv(t *testing.T) {
 			DiscordGuildID:        "discord-guild-id",
 			DiscordRoleVVGOMember: "discord-role-vvgo-member",
 			DiscordLoginURL:       "discord-login-url",
+			FacebookGroupID:       "facebook-group-id",
 			Login: login.Config{
 				CookieName:   "login-cookie-name",
 				CookieDomain: "login-cookie-domain",
@@ -83,6 +91,12 @@ func TestConfig_ParseEnv(t *testing.T) {
 			OAuthClientID:     "discord-oauth-client-id",
 			OAuthClientSecret: "discord-oauth-client-secret",
 			OAuthRedirectURI:  "discord-oauth-redirect-uri",
+		},
+		FacebookConfig: facebook.Config{
+			Endpoint:          "facebook-endpoint",
+			OAuthClientID:     "facebook-oauth-client-id",
+			OAuthClientSecret: "facebook-oauth-client-secret",
+			OAuthRedirectURI:  "facebook-oauth-redirect-uri",
 		},
 	}
 

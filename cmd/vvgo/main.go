@@ -9,6 +9,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/facebook"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/storage"
@@ -19,10 +20,11 @@ import (
 var logger = log.Logger()
 
 type Config struct {
-	ApiConfig     api.ServerConfig `envconfig:"api"`
-	RedisConfig   redis.Config     `envconfig:"redis"`
-	MinioConfig   storage.Config   `envconfig:"minio"`
-	DiscordConfig discord.Config   `envconfig:"discord"`
+	ApiConfig      api.ServerConfig `envconfig:"api"`
+	RedisConfig    redis.Config     `envconfig:"redis"`
+	MinioConfig    storage.Config   `envconfig:"minio"`
+	DiscordConfig  discord.Config   `envconfig:"discord"`
+	FacebookConfig facebook.Config  `envconfig:"facebook"`
 }
 
 func (x *Config) ParseEnv() {
@@ -58,6 +60,7 @@ func main() {
 	storage.Initialize(config.MinioConfig)
 	redis.Initialize(config.RedisConfig)
 	discord.Initialize(config.DiscordConfig)
+	facebook.Initialize(config.FacebookConfig)
 
 	apiServer := api.NewServer(ctx, config.ApiConfig)
 	if err := apiServer.ListenAndServe(); err != nil {
