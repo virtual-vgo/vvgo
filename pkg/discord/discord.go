@@ -21,7 +21,7 @@ var ErrInvalidOAuthCode = errors.New("invalid oauth code")
 
 // Client that makes discord requests.
 type Client struct {
-	config   Config
+	config Config
 }
 
 func NewClient(config Config) *Client {

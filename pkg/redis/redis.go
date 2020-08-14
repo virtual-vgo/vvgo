@@ -14,7 +14,7 @@ type Client struct {
 type Config struct {
 	Network  string // Defaults to tcp.
 	Address  string // Defaults to localhost:6379.
-	PoolSize int `split_words:"true" default:"10"`
+	PoolSize int    `split_words:"true" default:"10"`
 }
 
 var client *Client

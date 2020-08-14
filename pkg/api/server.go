@@ -57,7 +57,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/login/password", PasswordLoginHandler{
 		Sessions: database.Sessions,
 		Logins: map[[2]string][]login.Role{
-			{config.MemberUser, config.MemberPass}:    {login.RoleVVGOMember},
+			{config.MemberUser, config.MemberPass}: {login.RoleVVGOMember},
 		},
 	}, login.RoleAnonymous)
 
