@@ -12,8 +12,8 @@ type Client struct {
 }
 
 type Config struct {
-	Network  string `default:"tcp"`
-	Address  string `default:"localhost:6379"`
+	Network  string // Defaults to tcp.
+	Address  string // Defaults to localhost:6379.
 	PoolSize int    `split_words:"true" default:"10"`
 }
 
@@ -28,6 +28,12 @@ func Do(ctx context.Context, a Action) error {
 }
 
 func NewClient(config Config) (*Client, error) {
+	if config.Network == "" {
+		config.Network = "tcp"
+	}
+	if config.Address == "" {
+		config.Address = "localhost:6379"
+	}
 	radixPool, err := radix.NewPool(config.Network, config.Address, config.PoolSize)
 	if err != nil {
 		return nil, err
@@ -59,6 +65,6 @@ func Cmd(rcv interface{}, cmd string, args ...string) Action {
 	}
 }
 
-func (x *Client) Do(ctx context.Context, a Action) error {
+func (x *Client) Do(_ context.Context, a Action) error {
 	return x.pool.Do(a.radixAction)
 }

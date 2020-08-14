@@ -45,7 +45,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	buf.WriteTo(w)
+	_, _ = buf.WriteTo(w)
 }
 
 type LoginSuccessView struct{}
@@ -65,7 +65,7 @@ func (LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	buffer.WriteTo(w)
+	_, _ = buffer.WriteTo(w)
 }
 
 func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {

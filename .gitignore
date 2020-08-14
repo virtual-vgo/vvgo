@@ -14,3 +14,5 @@ data/statik
 info.go
 node_modules
 public/npm
+.vvgo-config.json
+.google_api_credentials.json

@@ -15,13 +15,10 @@ import (
 
 func TestServer(t *testing.T) {
 	server := NewServer(context.Background(), ServerConfig{
-		MemberUser:        "vvgo-member",
-		MemberPass:        "vvgo-member",
-		UploaderToken:     "vvgo-uploader",
-		DeveloperToken:    "vvgo-developer",
-		DistroBucketName:  "vvgo-distro" + strconv.Itoa(lrand.Int()),
-		BackupsBucketName: "vvgo-backups" + strconv.Itoa(lrand.Int()),
-		RedisNamespace:    "vvgo-testing" + strconv.Itoa(lrand.Int()),
+		MemberUser:       "vvgo-member",
+		MemberPass:       "vvgo-member",
+		DistroBucketName: "vvgo-distro" + strconv.Itoa(lrand.Int()),
+		RedisNamespace:   "vvgo-testing" + strconv.Itoa(lrand.Int()),
 		Login: login.Config{
 			CookieName: "vvgo-cookie",
 		},

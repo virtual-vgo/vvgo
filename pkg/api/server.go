@@ -19,10 +19,7 @@ type ServerConfig struct {
 	ListenAddress         string          `split_words:"true" default:"0.0.0.0:8080"`
 	MemberUser            string          `split_words:"true" default:"admin"`
 	MemberPass            string          `split_words:"true" default:"admin"`
-	UploaderToken         string          `split_words:"true" default:"admin"`
-	DeveloperToken        string          `split_words:"true" default:"admin"`
 	DistroBucketName      string          `split_words:"true" default:"vvgo-distro"`
-	BackupsBucketName     string          `split_words:"true" default:"backups"`
 	RedisNamespace        string          `split_words:"true" default:"local"`
 	PartsSpreadsheetID    string          `envconfig:"parts_spreadsheet_id"`
 	PartsReadRange        string          `envconfig:"parts_read_range"`
@@ -53,10 +50,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	}
 
 	mux := RBACMux{
-		Bearer: map[string][]login.Role{
-			config.UploaderToken:  {login.RoleVVGOUploader, login.RoleVVGOMember},
-			config.DeveloperToken: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
-		},
 		ServeMux: http.NewServeMux(),
 		Sessions: database.Sessions,
 	}
@@ -64,9 +57,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/login/password", PasswordLoginHandler{
 		Sessions: database.Sessions,
 		Logins: map[[2]string][]login.Role{
-			{config.MemberUser, config.MemberPass}:    {login.RoleVVGOMember},
-			{"vvgo-uploader", config.UploaderToken}:   {login.RoleVVGOUploader, login.RoleVVGOMember},
-			{"vvgo-developer", config.DeveloperToken}: {login.RoleVVGODeveloper, login.RoleVVGOUploader, login.RoleVVGOMember},
+			{config.MemberUser, config.MemberPass}: {login.RoleVVGOMember},
 		},
 	}, login.RoleAnonymous)
 
