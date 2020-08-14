@@ -8,7 +8,6 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/facebook"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
@@ -202,66 +201,6 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 
 	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
 		Kind:  login.KindDiscord,
-		Roles: []login.Role{login.RoleVVGOMember},
-	})
-}
-
-// https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow/
-
-type FacebookLoginHandler struct {
-	VVGOGroupID string
-	Namespace   string
-	RedirectURL string
-	Sessions    *login.Store
-}
-
-func (x FacebookLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.FormValue("state") == "" {
-		state, ok := oauthRedirect(w, r, x.Namespace)
-		if !ok {
-			internalServerError(w)
-			return
-		}
-		http.Redirect(w, r, facebook.LoginURL(state), http.StatusFound)
-	} else {
-		x.authorize(w, r)
-	}
-}
-
-func (x FacebookLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	handleError := func(err error) bool {
-		if err != nil {
-			logger.WithError(err).Error("facebook authentication failed")
-			unauthorized(w)
-			return false
-		}
-		return true
-	}
-
-	if ok := handleError(validateState(r, ctx, x.Namespace)); !ok {
-		return
-	}
-
-	// get an oauth token from facebook
-	code := r.FormValue("code")
-	oauthToken, err := facebook.QueryOAuth(ctx, code)
-	if ok := handleError(err); !ok {
-		return
-	}
-
-	isMember, err := facebook.UserHasGroup(ctx, oauthToken.AccessToken, "me", x.VVGOGroupID)
-	if ok := handleError(err); !ok {
-		return
-	}
-	if !isMember {
-		handleError(ErrNotAMember)
-		return
-	}
-
-	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
-		Kind:  login.KindFacebook,
 		Roles: []login.Role{login.RoleVVGOMember},
 	})
 }
