@@ -11,7 +11,6 @@ const (
 	KindBearer   Kind = "bearer"
 	KindBasic    Kind = "basic"
 	KindDiscord  Kind = "discord"
-	KindFacebook Kind = "facebook"
 )
 
 // A user role.
