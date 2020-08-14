@@ -33,7 +33,8 @@ func TestClient_QueryOAuth(t *testing.T) {
 		gotForm = buf.String()
 
 		// https://discordapp.com/developers/docs/topics/oauth2#authorization-code-grant-access-token-response
-		w.Write([]byte(`{
+		//goland:noinspection SpellCheckingInspection
+		_, _ = w.Write([]byte(`{
 			"access_token": "6qrZcUqja7812RVdnEKjpzOL4CvHBFG",
 			"token_type": "Bearer",
 			"expires_in": 604800,
@@ -58,6 +59,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	wantForm.Add("scope", "identify")
 	assert.Equal(t, wantForm.Encode(), gotForm)
 
+	//goland:noinspection SpellCheckingInspection
 	assert.Equal(t, &OAuthToken{
 		AccessToken:  "6qrZcUqja7812RVdnEKjpzOL4CvHBFG",
 		TokenType:    "Bearer",
@@ -74,6 +76,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 			BotAuthToken: "test-bot-auth-token",
 		},
 	}
+	//goland:noinspection SpellCheckingInspection
 	token := &OAuthToken{
 		AccessToken:  "6qrZcUqja7812RVdnEKjpzOL4CvHBFG",
 		TokenType:    "Bearer",
@@ -86,7 +89,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r
 		// https://discordapp.com/developers/docs/resources/user#user-object-example-user
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "80351110224678912",
 			"username": "Nelly",
 			"discriminator": "1337",
@@ -104,6 +107,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
 	assert.Equal(t, "/users/@me", gotRequest.URL.String())
+	//goland:noinspection SpellCheckingInspection
 	assert.Equal(t, []string{"Bearer 6qrZcUqja7812RVdnEKjpzOL4CvHBFG"}, gotRequest.Header["Authorization"])
 	assert.Equal(t, &User{ID: "80351110224678912"}, gotUser)
 }
@@ -120,7 +124,7 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r
 		// https://discordapp.com/developers/docs/resources/guild#guild-member-object-example-guild-member
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"user": {},
 			"nick": "NOT API SUPPORT",
 			"roles": ["jelly", "donut"],

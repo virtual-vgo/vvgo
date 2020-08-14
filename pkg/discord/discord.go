@@ -30,24 +30,24 @@ func NewClient(config Config) *Client {
 
 // Config for discord requests.
 type Config struct {
-	// Api endpoint to query
-	Endpoint string `default:"https://discordapp.com/api/v6"`
+	// Api endpoint to query. Defaults to https://discordapp.com/api/v6.
+	Endpoint string
 
 	// BotAuthToken is used for making queries about our discord guild.
 	// This is found in the bot tab for the discord app.
-	BotAuthToken string `split_words:"true"`
+	BotAuthToken string
 
 	// OAuthClientID is the client id used in oauth requests.
 	// This is found in the oauth2 tab for the discord app.
-	OAuthClientID string `envconfig:"oauth_client_id"`
+	OAuthClientID string
 
-	// OAuthClientSecret is the secret used in oauth requets.
+	// OAuthClientSecret is the secret used in oauth requests.
 	// This is found in the oauth2 tab for the discord app.
-	OAuthClientSecret string `envconfig:"oauth_client_secret"`
+	OAuthClientSecret string
 
 	// OAuthRedirectURI is the redirect uri we set in discord.
 	// This is found in the oauth2 tab for the discord app.
-	OAuthRedirectURI string `envconfig:"oauth_redirect_uri"`
+	OAuthRedirectURI string
 }
 
 var client *Client
@@ -213,7 +213,11 @@ func (x Client) newBotRequest(ctx context.Context, token string, path string) (*
 }
 
 func (x Client) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
-	return http.NewRequestWithContext(ctx, method, x.config.Endpoint+path, body)
+	endpoint := x.config.Endpoint
+	if endpoint == "" {
+		endpoint = "https://discordapp.com/api/v6"
+	}
+	return http.NewRequestWithContext(ctx, method, endpoint+path, body)
 }
 
 // performs the http request and logs results
@@ -226,7 +230,7 @@ func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, erro
 	case resp.StatusCode != http.StatusOK:
 		err = ErrNon200Response
 		var buf bytes.Buffer
-		buf.ReadFrom(resp.Body)
+		_, _ = buf.ReadFrom(resp.Body)
 
 		logger.WithFields(logrus.Fields{
 			"method": req.Method,
