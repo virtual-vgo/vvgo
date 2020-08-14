@@ -25,9 +25,7 @@ type ServerConfig struct {
 	PartsReadRange        string          `envconfig:"parts_read_range"`
 	DiscordGuildID        discord.GuildID `envconfig:"discord_guild_id"`
 	DiscordRoleVVGOMember string          `envconfig:"discord_role_vvgo_member"`
-	DiscordLoginURL       string          `envconfig:"discord_login_url"`
 	Login                 login.Config    `envconfig:"login"`
-	FacebookGroupID       string          `envconfig:"facebook_group_id"`
 }
 
 type Server struct {
