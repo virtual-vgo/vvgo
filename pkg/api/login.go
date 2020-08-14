@@ -11,7 +11,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -126,13 +125,6 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
-const DiscordOAuthPreCookie = "vvgo-discord-oauth-pre"
-
-type DiscordOAuthPre struct {
-	Namespace   string
-	RedirectURL string
-}
-
 // DiscordLoginHandler
 // If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
 // authentication is established and a login session cookie is sent in the response.
@@ -142,53 +134,21 @@ type DiscordLoginHandler struct {
 	RoleVVGOMember string
 	Sessions       *login.Store
 	Namespace      string
-	RedirectURL    string
 }
 
 var ErrNotAMember = errors.New("not a member")
 
 func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") == "" {
-		x.redirect(w, r)
+		state, ok := oauthRedirect(w, r, x.Namespace)
+		if !ok {
+			internalServerError(w)
+			return
+		}
+		http.Redirect(w, r, discord.LoginURL(state), http.StatusFound)
 	} else {
 		x.authorize(w, r)
 	}
-}
-
-func (x DiscordLoginHandler) redirect(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	// read a random state number
-	statusBytes := make([]byte, 32)
-	if _, err := rand.Read(statusBytes); err != nil {
-		logger.WithError(err).Error("rand.Read() failed")
-		internalServerError(w)
-		return
-	}
-	state := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[:16]), 16)
-	value := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[16:]), 16)
-
-	// store the number in redis
-	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", x.Namespace+":discord_oauth_pre:"+state, "300", value)); err != nil {
-		logger.WithError(err).Error("redis.Do() failed")
-		internalServerError(w)
-		return
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:    DiscordOAuthPreCookie,
-		Value:   value,
-		Expires: time.Now().Add(300 * time.Second),
-	})
-	redirectURL, err := url.Parse(x.RedirectURL)
-	if err != nil {
-		logger.WithError(err).Error("url.Parse() failed")
-		internalServerError(w)
-		return
-	}
-	query := redirectURL.Query()
-	query.Set("state", state)
-	redirectURL.RawQuery = query.Encode()
-	http.Redirect(w, r, redirectURL.String(), http.StatusFound)
 }
 
 func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
@@ -203,26 +163,7 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	// read the state param
-	state := r.FormValue("state")
-	if state == "" {
-		handleError(errors.New("no state param"))
-		return
-	}
-
-	// check if it exists in redis
-	var value string
-	if ok := handleError(redis.Do(ctx, redis.Cmd(&value, "GET", x.Namespace+":discord_oauth_pre:"+state))); !ok {
-		return
-	}
-
-	// check against the cookie value
-	preCookie, err := r.Cookie(DiscordOAuthPreCookie)
-	if ok := handleError(err); !ok {
-		return
-	}
-	if preCookie.Value != value {
-		handleError(errors.New("invalid state"))
+	if ok := handleError(validateState(r, ctx, x.Namespace)); !ok {
 		return
 	}
 
@@ -262,6 +203,56 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 		Kind:  login.KindDiscord,
 		Roles: []login.Role{login.RoleVVGOMember},
 	})
+}
+
+const CookieOAuthState = "vvgo-oauth-state"
+
+func oauthRedirect(w http.ResponseWriter, r *http.Request, redisNamespace string) (string, bool) {
+	ctx := r.Context()
+
+	// read a random state number
+	statusBytes := make([]byte, 32)
+	if _, err := rand.Read(statusBytes); err != nil {
+		logger.WithError(err).Error("rand.Read() failed")
+		return "", false
+	}
+	state := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[:16]), 16)
+	value := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[16:]), 16)
+
+	// store the number in redis
+	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", redisNamespace+":oauth_state:"+state, "300", value)); err != nil {
+		logger.WithError(err).Error("redis.Do() failed")
+		return "", false
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:    CookieOAuthState,
+		Value:   value,
+		Expires: time.Now().Add(300 * time.Second),
+	})
+	return state, true
+}
+
+func validateState(r *http.Request, ctx context.Context, redisNamespace string) error {
+	state := r.FormValue("state")
+	if state == "" {
+		return errors.New("no state param")
+	}
+
+	// check if it exists in redis
+	var value string
+	if err := redis.Do(ctx, redis.Cmd(&value, "GET", redisNamespace+":oauth_state:"+state)); err != nil {
+		return err
+	}
+
+	// check against the cookie value
+	cookie, err := r.Cookie(CookieOAuthState)
+	if err != nil {
+		return err
+	}
+	if cookie.Value != value {
+		return errors.New("invalid state")
+	}
+	return nil
 }
 
 // LogoutHandler deletes the login session from the incoming request, if it exists.

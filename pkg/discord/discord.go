@@ -56,6 +56,8 @@ func Initialize(config Config) {
 	client = NewClient(config)
 }
 
+func LoginURL(state string) string { return client.LoginURL(state) }
+
 func QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
 	return client.QueryOAuth(ctx, code)
 }
@@ -66,6 +68,16 @@ func QueryIdentity(ctx context.Context, oauthToken *OAuthToken) (*User, error) {
 
 func QueryGuildMember(ctx context.Context, guildID GuildID, userID UserID) (*GuildMember, error) {
 	return client.QueryGuildMember(ctx, guildID, userID)
+}
+
+func (x Client) LoginURL(state string) string {
+	query := make(url.Values)
+	query.Set("client_id", x.config.OAuthClientID)
+	query.Set("redirect_uri", x.config.OAuthRedirectURI)
+	query.Set("response_type", "code")
+	query.Set("state", state)
+	query.Set("scope", "identify")
+	return "https://discord.com/api/oauth2/authorize?" + query.Encode()
 }
 
 // This is the oauth token returned by discord after a successful oauth request.

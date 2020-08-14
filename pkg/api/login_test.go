@@ -139,10 +139,13 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 }
 
 func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
+	discord.Initialize(discord.Config{
+		OAuthClientID:    "test-client-id",
+		OAuthRedirectURI: "test-redirect-uri",
+	})
 	ctx := context.Background()
 	handler := DiscordLoginHandler{
-		Namespace:   newNamespace(),
-		RedirectURL: "/auth?some=value&other=thing",
+		Namespace: newNamespace(),
 	}
 	ts := httptest.NewServer(&handler)
 	defer ts.Close()
@@ -156,17 +159,16 @@ func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
 	location, err := url.Parse(resp.Header.Get("Location"))
 	require.NoError(t, err, "url.Parse()")
 	query := location.Query()
-	assert.Equal(t, "/auth", location.Path)
-	assert.Equal(t, "value", query.Get("some"))
-	assert.Equal(t, "thing", query.Get("other"))
+	assert.Equal(t, "/api/oauth2/authorize", location.Path)
 
 	// parse the state and value
 	cookies := resp.Cookies()
 	require.NotEmpty(t, cookies, "cookies")
 	oauthState := query.Get("state")
+	assert.NotEmpty(t, oauthState, "oauth state")
 	oauthValue := cookies[0].Value
 	var wantValue string
-	err = redis.Do(ctx, redis.Cmd(&wantValue, "GET", handler.Namespace+":discord_oauth_pre:"+oauthState))
+	err = redis.Do(ctx, redis.Cmd(&wantValue, "GET", handler.Namespace+":oauth_state:"+oauthState))
 	require.NoError(t, err, "redis.Do()")
 	assert.Equal(t, wantValue, oauthValue, "cookie value")
 }
@@ -177,7 +179,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	oauthState := "test-oauth-state"
 	oauthValue := "test-oauth-value"
 	oauthCode := "test-oauth-code"
-	require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "SETEX", oauthNamespace+":discord_oauth_pre:"+oauthState, "300", oauthValue)))
+	require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "SETEX", oauthNamespace+":oauth_state:"+oauthState, "300", oauthValue)))
 
 	loginHandler := DiscordLoginHandler{
 		GuildID:        "test-guild-id",
@@ -233,7 +235,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		require.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{
-			Name:     DiscordOAuthPreCookie,
+			Name:     CookieOAuthState,
 			Value:    value,
 			Path:     "/login/discord",
 			Domain:   "",
@@ -270,7 +272,6 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
 		loginHandler.Sessions = newSessions()
-		loginHandler.RedirectURL = "http://example.com/auth?some=value&other=thing"
 
 		// make the request
 		resp, err := noFollow(&http.Client{}).Get(ts.URL)
@@ -282,9 +283,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		require.NoError(t, err, "url.Parse()")
 		query := location.Query()
 
-		assert.Equal(t, "example.com", location.Host)
-		assert.Equal(t, "value", query.Get("some"))
-		assert.Equal(t, "thing", query.Get("other"))
+		assert.Equal(t, "discord.com", location.Host)
+		assert.NotEmpty(t, query.Get("state"), "state")
 
 		// parse the state and value
 		cookies := resp.Cookies()
@@ -292,7 +292,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		oauthState := query.Get("state")
 		oauthValue := cookies[0].Value
 		var wantValue string
-		err = redis.Do(ctx, redis.Cmd(&wantValue, "GET", loginHandler.Namespace+":discord_oauth_pre:"+oauthState))
+		err = redis.Do(ctx, redis.Cmd(&wantValue, "GET", loginHandler.Namespace+":oauth_state:"+oauthState))
 		require.NoError(t, err, "redis.Do()")
 		assert.Equal(t, wantValue, oauthValue, "cookie value")
 	})

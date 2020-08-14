@@ -24,7 +24,6 @@ func TestConfig_ParseFile(t *testing.T) {
 			PartsReadRange:        "parts-read-range",
 			DiscordGuildID:        "discord-guild-id",
 			DiscordRoleVVGOMember: "discord-role-vvgo-member",
-			DiscordLoginURL:       "discord-login-url",
 			Login: login.Config{
 				CookieName:   "login-cookie-name",
 				CookieDomain: "login-cookie-domain",

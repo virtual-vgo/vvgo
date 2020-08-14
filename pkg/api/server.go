@@ -25,7 +25,6 @@ type ServerConfig struct {
 	PartsReadRange        string          `envconfig:"parts_read_range"`
 	DiscordGuildID        discord.GuildID `envconfig:"discord_guild_id"`
 	DiscordRoleVVGOMember string          `envconfig:"discord_role_vvgo_member"`
-	DiscordLoginURL       string          `envconfig:"discord_login_url"`
 	Login                 login.Config    `envconfig:"login"`
 }
 
@@ -64,7 +63,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/login/discord", DiscordLoginHandler{
 		GuildID:        config.DiscordGuildID,
 		RoleVVGOMember: config.DiscordRoleVVGOMember,
-		RedirectURL:    config.DiscordLoginURL,
 		Sessions:       database.Sessions,
 	}, login.RoleAnonymous)
 
