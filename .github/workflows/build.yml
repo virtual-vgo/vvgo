@@ -14,4 +14,4 @@ jobs:
         shell: bash
         run: |
           RELEASE_TAG=${{ github.sha }} make push
-          RELEASE_TAG=${{ github.ref }} make push
+          RELEASE_TAG=${{ github.ref_head }} make push
