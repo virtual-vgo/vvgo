@@ -101,21 +101,39 @@ func (x PartView) listParts(ctx context.Context) ([]Part, error) {
 		if len(row) < 1 {
 			continue
 		}
-		scoreOrder, _ := strconv.Atoi(fmt.Sprint(row[index["Score Order"]]))
-		released, _ := strconv.ParseBool(fmt.Sprint(row[index["Released"]]))
-		archived, _ := strconv.ParseBool(fmt.Sprint(row[index["Archived"]]))
-		parts[i] = Part{
-			Project:            fmt.Sprint(row[index["Project"]]),
-			ProjectTitle:       fmt.Sprint(row[index["Project Title"]]),
-			PartName:           fmt.Sprint(row[index["Part Name"]]),
-			ScoreOrder:         scoreOrder,
-			SheetMusicFile:     fmt.Sprint(row[index["Sheet Music File"]]),
-			ClickTrackFile:     fmt.Sprint(row[index["Click Track File"]]),
-			ConductorVideo:     fmt.Sprint(row[index["Conductor Video"]]),
-			Released:           released,
-			Archived:           archived,
-			ReferenceTrack:     fmt.Sprint(row[index["Reference Track"]]),
-			PronunciationGuide: fmt.Sprint(row[index["Pronunciation Guide"]]),
+		if len(row) > index["Score Order"] {
+			parts[i].ScoreOrder, _ = strconv.Atoi(fmt.Sprint(row[index["Score Order"]]))
+		}
+		if len(row) > index["Released"] {
+			parts[i].Released, _ = strconv.ParseBool(fmt.Sprint(row[index["Released"]]))
+		}
+		if len(row) > index["Archived"] {
+			parts[i].Archived, _ = strconv.ParseBool(fmt.Sprint(row[index["Archived"]]))
+		}
+		if len(row) > index["Project"] {
+			parts[i].Project = fmt.Sprint(row[index["Project"]])
+		}
+		if len(row) > index["Project Title"] {
+			parts[i].ProjectTitle = fmt.Sprint(row[index["Project Title"]])
+		}
+		if len(row) > index["Part Name"] {
+			parts[i].PartName = fmt.Sprint(row[index["Part Name"]])
+		}
+		if len(row) > index["Sheet Music File"] {
+			parts[i].SheetMusicFile = fmt.Sprint(row[index["Sheet Music File"]])
+		}
+		if len(row) > index["Click Track File"] {
+			parts[i].ClickTrackFile = fmt.Sprint(row[index["Click Track File"]])
+		}
+		if len(row) > index["Conductor Video"] {
+			parts[i].ConductorVideo = fmt.Sprint(row[index["Conductor Video"]])
+		}
+		if len(row) > index["Reference Track"] {
+
+			parts[i].ReferenceTrack = fmt.Sprint(row[index["Reference Track"]])
+		}
+		if len(row) > index["Pronunciation Guide"] {
+			parts[i].PronunciationGuide = fmt.Sprint(row[index["Pronunciation Guide"]])
 		}
 	}
 	return parts, nil
@@ -162,7 +180,7 @@ func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts [
 		internalServerError(w)
 		return
 	}
-	buffer.WriteTo(w)
+	_, _ = buffer.WriteTo(w)
 }
 
 func downloadLink(bucket, object string) string {
