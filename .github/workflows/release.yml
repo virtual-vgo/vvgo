@@ -1,1 +1,14 @@
-
+name: deploy
+on: registry_package
+jobs:
+  deploy_vvgo_prod:
+    runs-on: ubuntu:latest
+    env:
+      VVGO_HOST_IP: ${{ secrets.vvgo_host_ip }}
+      SSH_ID: ${{secrets.github_runner_ssh_key}
+    steps:
+      - name: configure ssh
+        run: echo "$SSH_ID" > id_rsa && chmod 600 id_rsa
+      - name: deploy
+        run: ssh -o StrictHostKeyChecking=no -i id_rsa "github_runner@$VVGO_HOST_IP" sudo /home/github_runner/deploy.sh
+     
