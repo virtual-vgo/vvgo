@@ -4,8 +4,8 @@ jobs:
   deploy_vvgo_prod:
     runs-on: ubuntu:latest
     env:
-      VVGO_HOST_IP: ${{ secrets.vvgo_host_ip }}
-      SSH_ID: ${{secrets.github_runner_ssh_key}
+      VVGO_HOST_IP: ${{ secrets.VVGO_HOST_IP }}
+      SSH_ID: ${{secrets.RUNNER_SSH_KEY}
     steps:
       - name: configure ssh
         run: echo "$SSH_ID" > id_rsa && chmod 600 id_rsa
