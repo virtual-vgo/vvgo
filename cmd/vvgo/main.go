@@ -29,7 +29,8 @@ func (x *Config) ParseFile(name string) {
 	logger := logger.WithField("file_name", name)
 	file, err := os.Open(name)
 	if err != nil {
-		logger.WithError(err).Fatal("failed to open config")
+		logger.WithError(err).Error("failed to open config")
+		return
 	}
 	defer file.Close()
 	if err := json.NewDecoder(file).Decode(x); err != nil {
