@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VVGO_HOST_IP: ${{ secrets.VVGO_HOST_IP }}
-      SSH_ID: ${{secrets.RUNNER_SSH_KEY}
+      SSH_ID: ${{ secrets.RUNNER_SSH_KEY }}
 
     steps:
       - uses: actions/checkout@v2
