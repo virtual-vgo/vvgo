@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/minio/minio-go/v6"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/log"
@@ -22,6 +23,7 @@ var logger = log.Logger()
 var warehouse Warehouse
 
 func Initialize(config Config) {
+	envconfig.Process("MINIO", &config)
 	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
 	if err != nil {
 		logger.WithError(err).Fatal("minio.New() failed")

@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 )
@@ -14,12 +15,13 @@ type Client struct {
 type Config struct {
 	Network  string // Defaults to tcp.
 	Address  string // Defaults to localhost:6379.
-	PoolSize int    `split_words:"true" default:"10"`
+	PoolSize int
 }
 
 var client *Client
 
 func Initialize(config Config) {
+	envconfig.Process("REDIS", &config)
 	client = NewClientMust(config)
 }
 
