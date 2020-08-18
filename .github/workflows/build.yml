@@ -4,6 +4,10 @@ on: push
 jobs:
   vvgo:
     runs-on: ubuntu-latest
+    env:
+      VVGO_HOST_IP: ${{ secrets.VVGO_HOST_IP }}
+      SSH_ID: ${{secrets.RUNNER_SSH_KEY}
+
     steps:
       - uses: actions/checkout@v2
 
@@ -15,3 +19,8 @@ jobs:
         run: |
           RELEASE_TAG=${{ github.sha }} make push
           RELEASE_TAG=$(basename ${{ github.ref }}) make push
+
+      - name: configure ssh
+        run: echo "$SSH_ID" > id_rsa && chmod 600 id_rsa
+      - name: deploy
+        run: ssh -o StrictHostKeyChecking=no -i id_rsa "github_runner@$VVGO_HOST_IP" sudo /home/github_runner/deploy.sh
