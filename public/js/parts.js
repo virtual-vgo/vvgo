@@ -1,7 +1,5 @@
 $(document).ready(function () {
     $('#parts').DataTable({
-        scrollY: "40vh",
-        scrollCollapse: true,
         paging: false,
         order: [[0, 'asc'], [1, 'asc']],
         columnDefs: [
