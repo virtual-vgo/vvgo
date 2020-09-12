@@ -58,3 +58,7 @@ body {
 a:hover {
     text-decoration-color: #1e7e34;
 }
+
+.project-iframe {
+    padding-top: 56.25%;
+}

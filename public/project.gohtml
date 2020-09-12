@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{ template "header.gohtml" }}
+    <title>Parts</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/theme.css">
+
+    <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
+    <script type="text/javascript" src="/js/project.js"></script>
+</head>
+
+<body>
+{{ template "navbar.gohtml" .NavBar }}
+<main role="main">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1 class="title m-3">{{ .Project.Title }}</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="col m-2">
+                    <iframe class="project-iframe" src="https://www.youtube.com/embed/HVKRro_lizk"
+                            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <table id="parts" class="table table-responsive-lg text-light">
+                    <thead>
+                    <tr>
+                        <th>Score Order</th>
+                        <th>Part</th>
+                        <th>Downloads</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{- range .Rows}}
+                        <tr>
+                            <td class="text-light">{{.ScoreOrder}}</td>
+                            <td class="title">{{.PartName}}</td>
+                            <td>
+                                {{ if .SheetMusic }}
+                                    <a href="{{.SheetMusic}}"
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                        <i class="far fa-file-pdf"></i> sheet music
+                                    </a>
+                                {{ end }}
+                                {{ if .ClickTrack}}
+                                    <a href="{{.ClickTrack}}"
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                        <i class="far fa-file-audio"></i> click track
+                                    </a>
+                                {{ end }}
+                                {{ if .PronunciationGuide }}
+                                    <a href="{{.PronunciationGuide}}"
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                        <i class="fas fa-language"></i> pronunciation guide
+                                    </a>
+                                {{ end }}
+                                {{ if .ReferenceTrack }}
+                                    <a href="{{.ReferenceTrack}}"
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                        <i class="far fa-file-audio"></i> reference track
+                                    </a>
+                                {{ end }}
+                                {{ if .ConductorVideo }}
+                                    <a href="{{.ConductorVideo}}"
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                        <i class="far fa-file-video"></i> conductor video
+                                    </a>
+                                {{ end }}
+                            </td>
+                        </tr>
+                    {{- end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+{{ template "footer.gohtml" }}
+</body>
+</html>

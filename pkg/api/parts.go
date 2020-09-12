@@ -38,7 +38,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parts, err := x.listParts(ctx)
+	parts, err := listParts(ctx, x.SpreadSheetID)
 	if err != nil {
 		logger.WithError(err).Error("x.Parts.List() failed")
 		internalServerError(w)
@@ -46,7 +46,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	parts = x.filterFromQuery(r, parts)
-	x.renderView(w, ctx, parts)
+	renderPartsView(w, ctx, parts, x.Distro.Name)
 }
 
 func (x PartView) filterFromQuery(r *http.Request, parts []Part) []Part {
@@ -75,14 +75,14 @@ func (x PartView) filterFromQuery(r *http.Request, parts []Part) []Part {
 	return parts
 }
 
-func (x PartView) listParts(ctx context.Context) ([]Part, error) {
+func listParts(ctx context.Context, spreadSheetID string) ([]Part, error) {
 	srv, err := sheets.NewService(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
 	}
 
 	readRange := "Parts"
-	resp, err := srv.Spreadsheets.Values.Get(x.SpreadSheetID, readRange).Do()
+	resp, err := srv.Spreadsheets.Values.Get(spreadSheetID, readRange).Do()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
 	}
@@ -139,7 +139,7 @@ func (x PartView) listParts(ctx context.Context) ([]Part, error) {
 	return parts, nil
 }
 
-func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts []Part) {
+func renderPartsView(w http.ResponseWriter, ctx context.Context, parts []Part, distroBucket string) {
 	type tableRow struct {
 		Project            string `json:"project"`
 		PartName           string `json:"part_name"`
@@ -157,11 +157,11 @@ func (x PartView) renderView(w http.ResponseWriter, ctx context.Context, parts [
 			Project:            strings.Title(part.ProjectTitle),
 			ScoreOrder:         part.ScoreOrder,
 			PartName:           strings.Title(part.PartName),
-			SheetMusic:         downloadLink(x.Distro.Name, part.SheetMusicFile),
-			ClickTrack:         downloadLink(x.Distro.Name, part.ClickTrackFile),
-			ReferenceTrack:     downloadLink(x.Distro.Name, part.ReferenceTrack),
+			SheetMusic:         downloadLink(distroBucket, part.SheetMusicFile),
+			ClickTrack:         downloadLink(distroBucket, part.ClickTrackFile),
+			ReferenceTrack:     downloadLink(distroBucket, part.ReferenceTrack),
 			ConductorVideo:     part.ConductorVideo,
-			PronunciationGuide: downloadLink(x.Distro.Name, part.PronunciationGuide),
+			PronunciationGuide: downloadLink(distroBucket, part.PronunciationGuide),
 		})
 	}
 

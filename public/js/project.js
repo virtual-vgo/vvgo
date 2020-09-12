@@ -1,19 +1,16 @@
 $(document).ready(function () {
-    $('#projects').DataTable({
+    $('#parts').DataTable({
         paging: false,
-        order: [[1, 'asc'], [0, 'asc']],
+        order: [[0, 'asc']],
         columnDefs: [
             {
                 targets: [0],
                 visible: false,
             },
-            {
-                targets: [1],
-                visible: false,
-            },
-            {
-                targets: [2, 3],
+            { // dont search or order the download links
+                targets: [2],
                 orderable: false,
+                searchable: false,
             },
             {
                 className: "text-left",

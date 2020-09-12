@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 type Project struct {
@@ -40,13 +41,21 @@ type ProjectsView struct {
 }
 
 func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/projects/" {
+		x.serveIndex(w, r)
+	} else {
+		x.serveProject(w, r, r.URL.Path[len("/projects/"):])
+	}
+}
+
+func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
 	}
 
-	projects, err := x.listProjects(ctx)
+	projects, err := listProjects(ctx, x.SpreadSheetID)
 	if err != nil {
 		logger.WithError(err).Error("x.listProjects() failed")
 		internalServerError(w)
@@ -54,17 +63,17 @@ func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	projects = x.filterFromQuery(r, projects)
-	x.renderView(w, ctx, projects)
+	x.renderIndexView(w, ctx, projects)
 }
 
-func (x ProjectsView) listProjects(ctx context.Context) ([]Project, error) {
+func listProjects(ctx context.Context, spreadSheetID string) ([]Project, error) {
 	srv, err := sheets.NewService(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
 	}
 
 	readRange := "Projects"
-	resp, err := srv.Spreadsheets.Values.Get(x.SpreadSheetID, readRange).Do()
+	resp, err := srv.Spreadsheets.Values.Get(spreadSheetID, readRange).Do()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
 	}
@@ -170,7 +179,7 @@ func (x ProjectsView) filterFromQuery(r *http.Request, projects []Project) []Pro
 	return projects
 }
 
-func (x ProjectsView) renderView(w http.ResponseWriter, ctx context.Context, projects []Project) {
+func (x ProjectsView) renderIndexView(w http.ResponseWriter, ctx context.Context, projects []Project) {
 	opts := NewNavBarOpts(ctx)
 	opts.ProjectsActive = true
 	page := struct {
@@ -182,7 +191,96 @@ func (x ProjectsView) renderView(w http.ResponseWriter, ctx context.Context, pro
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "projects.gohtml")); !ok {
+	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "project_index.gohtml")); !ok {
+		internalServerError(w)
+		return
+	}
+	_, _ = buffer.WriteTo(w)
+}
+
+func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
+	ctx := r.Context()
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+
+	projects, err := listProjects(ctx, x.SpreadSheetID)
+	if err != nil {
+		logger.WithError(err).Error("x.listProjects() failed")
+		internalServerError(w)
+		return
+	}
+
+	var exists bool
+	var wantProject Project
+	for _, project := range projects {
+		if project.Name == name {
+			exists = true
+			wantProject = project
+			break
+		}
+	}
+	if !exists {
+		http.NotFound(w, r)
+		return
+	}
+
+	parts, err := listParts(ctx, x.SpreadSheetID)
+	if err != nil {
+		logger.WithError(err).Error("x.Parts.List() failed")
+		internalServerError(w)
+		return
+	}
+
+	var wantParts []Part
+	for _, part := range parts {
+		if part.Project == name {
+			wantParts = append(wantParts, part)
+		}
+	}
+
+	renderProjectView(w, ctx, wantProject, wantParts, x.Distro.Name)
+}
+
+func renderProjectView(w http.ResponseWriter, ctx context.Context, project Project, parts []Part, distroBucket string) {
+	type tableRow struct {
+		PartName           string `json:"part_name"`
+		ScoreOrder         int    `json:"score_order"`
+		SheetMusic         string `json:"sheet_music,omitempty"`
+		ClickTrack         string `json:"click_track,omitempty"`
+		ReferenceTrack     string `json:"reference_track,omitempty"`
+		ConductorVideo     string `json:"conductor_video,omitempty"`
+		PronunciationGuide string `json:"pronunciation_guide,omitempty"`
+	}
+
+	rows := make([]tableRow, 0, len(parts))
+	for _, part := range parts {
+		rows = append(rows, tableRow{
+			ScoreOrder:         part.ScoreOrder,
+			PartName:           strings.Title(part.PartName),
+			SheetMusic:         downloadLink(distroBucket, part.SheetMusicFile),
+			ClickTrack:         downloadLink(distroBucket, part.ClickTrackFile),
+			ReferenceTrack:     downloadLink(distroBucket, part.ReferenceTrack),
+			ConductorVideo:     part.ConductorVideo,
+			PronunciationGuide: downloadLink(distroBucket, part.PronunciationGuide),
+		})
+	}
+
+	opts := NewNavBarOpts(ctx)
+	opts.PartsActive = true
+	page := struct {
+		NavBar NavBarOpts
+		Project
+		Rows   []tableRow
+	}{
+		NavBar: opts,
+		Project: project,
+		Rows:   rows,
+	}
+
+	var buffer bytes.Buffer
+	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "project.gohtml")); !ok {
 		internalServerError(w)
 		return
 	}
