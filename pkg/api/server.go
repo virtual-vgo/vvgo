@@ -94,6 +94,11 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		Database:      &database,
 	}, login.RoleVVGOMember)
 
+	mux.Handle("/projects", ProjectsView{
+		SpreadSheetID: config.PartsSpreadsheetID,
+		Database:      &database,
+	}, login.RoleAnonymous)
+
 	mux.Handle("/download", DownloadHandler{
 		config.DistroBucketName: database.Distro.DownloadURL,
 	}, login.RoleVVGOMember)

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{ template "header.gohtml" }}
+    <title>Parts</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/theme.css">
+
+    <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
+    <script type="text/javascript" src="/js/projects.js"></script>
+</head>
+
+<body>
+{{ template "navbar.gohtml" .NavBar }}
+<main role="main">
+    <div class="container">
+        <table id="projects" class="table text-light">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Archived</th>
+                <th>Title</th>
+                <th>Submission Deadline</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{- range .Rows}}
+                <tr>
+                    <td>{{ .Name }}</td>
+                    <td>{{ .Archived }}</td>
+                    <td>{{ .Title }} <br/><small>{{ .Sources}}</small></td>
+                    <td>{{ .SubmissionDeadline }}</td>
+                </tr>
+            {{- end }}
+            </tbody>
+        </table>
+    </div>
+</main>
+{{ template "footer.gohtml" }}
+</body>
+</html>
