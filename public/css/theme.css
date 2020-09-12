@@ -1,11 +1,11 @@
 body {
+    font-family: 'Montserrat', sans-serif;
     background-color: rgba(24, 3, 24, 0.95);
     color: #E9E9E9;
 }
 
 .title {
     text-align: center;
-    font-family: sans-serif, serif;
     font-weight: bold;
 }
 

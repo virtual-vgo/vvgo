@@ -191,7 +191,7 @@ func (x ProjectsView) renderIndexView(w http.ResponseWriter, ctx context.Context
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "project_index.gohtml")); !ok {
+	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "projects/index.gohtml")); !ok {
 		internalServerError(w)
 		return
 	}
@@ -280,7 +280,7 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, project Proje
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "project.gohtml")); !ok {
+	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "projects/project.gohtml")); !ok {
 		internalServerError(w)
 		return
 	}

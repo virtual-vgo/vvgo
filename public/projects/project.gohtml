@@ -3,13 +3,14 @@
 
 <head>
     {{ template "header.gohtml" }}
-    <title>Parts</title>
+    <title>{{ .Project.Title }}</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/npm/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="/npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="/css/theme.css">
 
     <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
@@ -18,7 +19,7 @@
     <script type="text/javascript" src="/npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script type="text/javascript" src="/npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
     <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
-    <script type="text/javascript" src="/js/project.js"></script>
+    <script type="text/javascript" src="/js/projects/project.js"></script>
 </head>
 
 <body>
@@ -57,32 +58,32 @@
                             <td>
                                 {{ if .SheetMusic }}
                                     <a href="{{.SheetMusic}}"
-                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
                                         <i class="far fa-file-pdf"></i> sheet music
                                     </a>
                                 {{ end }}
                                 {{ if .ClickTrack}}
                                     <a href="{{.ClickTrack}}"
-                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
                                         <i class="far fa-file-audio"></i> click track
-                                    </a>
-                                {{ end }}
-                                {{ if .PronunciationGuide }}
-                                    <a href="{{.PronunciationGuide}}"
-                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                        <i class="fas fa-language"></i> pronunciation guide
                                     </a>
                                 {{ end }}
                                 {{ if .ReferenceTrack }}
                                     <a href="{{.ReferenceTrack}}"
-                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
                                         <i class="far fa-file-audio"></i> reference track
                                     </a>
                                 {{ end }}
                                 {{ if .ConductorVideo }}
                                     <a href="{{.ConductorVideo}}"
-                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
                                         <i class="far fa-file-video"></i> conductor video
+                                    </a>
+                                {{ end }}
+                                {{ if .PronunciationGuide }}
+                                    <a href="{{.PronunciationGuide}}"
+                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                        <i class="fas fa-language"></i> pronunciation guide
                                     </a>
                                 {{ end }}
                             </td>
