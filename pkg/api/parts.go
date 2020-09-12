@@ -13,16 +13,16 @@ import (
 
 type Part struct {
 	Project            string
-	ProjectTitle       string
-	PartName           string
-	ScoreOrder         int
-	SheetMusicFile     string
-	ClickTrackFile     string
-	ConductorVideo     string
+	ProjectTitle       string `col_name:"Project Title"`
+	PartName           string `col_name:"Part Name"`
+	ScoreOrder         int    `col_name:"Score Order"`
+	SheetMusicFile     string `col_name:"Sheet Music File"`
+	ClickTrackFile     string `col_name:"Click Track File"`
+	ConductorVideo     string `col_name:"Conductor Video"`
 	Released           bool
 	Archived           bool
-	ReferenceTrack     string
-	PronunciationGuide string
+	ReferenceTrack     string `col_name:"Reference Track"`
+	PronunciationGuide string `col_name:"Pronunciation Guide"`
 }
 
 type PartView struct {
@@ -98,43 +98,7 @@ func listParts(ctx context.Context, spreadSheetID string) ([]Part, error) {
 	}
 
 	for i, row := range resp.Values[1:] {
-		if len(row) < 1 {
-			continue
-		}
-		if len(row) > index["Score Order"] {
-			parts[i].ScoreOrder, _ = strconv.Atoi(fmt.Sprint(row[index["Score Order"]]))
-		}
-		if len(row) > index["Released"] {
-			parts[i].Released, _ = strconv.ParseBool(fmt.Sprint(row[index["Released"]]))
-		}
-		if len(row) > index["Archived"] {
-			parts[i].Archived, _ = strconv.ParseBool(fmt.Sprint(row[index["Archived"]]))
-		}
-		if len(row) > index["Project"] {
-			parts[i].Project = fmt.Sprint(row[index["Project"]])
-		}
-		if len(row) > index["Project Title"] {
-			parts[i].ProjectTitle = fmt.Sprint(row[index["Project Title"]])
-		}
-		if len(row) > index["Part Name"] {
-			parts[i].PartName = fmt.Sprint(row[index["Part Name"]])
-		}
-		if len(row) > index["Sheet Music File"] {
-			parts[i].SheetMusicFile = fmt.Sprint(row[index["Sheet Music File"]])
-		}
-		if len(row) > index["Click Track File"] {
-			parts[i].ClickTrackFile = fmt.Sprint(row[index["Click Track File"]])
-		}
-		if len(row) > index["Conductor Video"] {
-			parts[i].ConductorVideo = fmt.Sprint(row[index["Conductor Video"]])
-		}
-		if len(row) > index["Reference Track"] {
-
-			parts[i].ReferenceTrack = fmt.Sprint(row[index["Reference Track"]])
-		}
-		if len(row) > index["Pronunciation Guide"] {
-			parts[i].PronunciationGuide = fmt.Sprint(row[index["Pronunciation Guide"]])
-		}
+		processRow(row, &parts[i], index)
 	}
 	return parts, nil
 }
