@@ -3,7 +3,7 @@
 
 <head>
     {{ template "header.gohtml" }}
-    <title>Parts</title>
+    <title>Projects</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
@@ -25,9 +25,10 @@
 {{ template "navbar.gohtml" .NavBar }}
 <main role="main">
     <div class="container">
-        <div class="row">
-            <div class="col mt-2">
-                <table id="project_index" class="table table-responsive-lg text-light">
+        <div class="row justify-content-md-center">
+            <div class="col-md-auto mt-2 text-center">
+                <h1>Projects</h1>
+                <table id="project_index" class="table table-responsive text-light">
                     <thead>
                     <tr>
                         <th>Name</th>
@@ -41,7 +42,8 @@
                         <tr>
                             <td>{{ .Name }}</td>
                             <td>{{ .Archived }}</td>
-                            <td><a href="/projects/{{ .Name }}">{{ .Title }}<br/><small>{{ .Sources}}</small></a></td>
+                            <td><a href="/projects/{{ .Name }}" class="">
+                                    {{ .Title }}<br/><small>{{ .Sources}}</small></a></td>
                             {{ if .Archived }}
                                 <td> Closed</td>
                             {{ else }}

@@ -29,6 +29,7 @@ type Project struct {
 	ReferenceTrack          string
 	ChoirPronunciationGuide string
 	YoutubeLink             string
+	YoutubeEmbed            string
 	SubmissionDeadline      string
 	SubmissionLink          string
 	Season                  string
@@ -142,6 +143,9 @@ func listProjects(ctx context.Context, spreadSheetID string) ([]Project, error) 
 		}
 		if len(row) > index["Youtube Link"] {
 			projects[i].YoutubeLink = fmt.Sprint(row[index["Youtube Link"]])
+		}
+		if len(row) > index["Youtube Embed"] {
+			projects[i].YoutubeEmbed = fmt.Sprint(row[index["Youtube Embed"]])
 		}
 		if len(row) > index["Submission Link"] {
 			projects[i].SubmissionLink = fmt.Sprint(row[index["Submission Link"]])
@@ -268,15 +272,14 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, project Proje
 	}
 
 	opts := NewNavBarOpts(ctx)
-	opts.PartsActive = true
 	page := struct {
 		NavBar NavBarOpts
 		Project
-		Rows   []tableRow
+		Rows []tableRow
 	}{
-		NavBar: opts,
+		NavBar:  opts,
 		Project: project,
-		Rows:   rows,
+		Rows:    rows,
 	}
 
 	var buffer bytes.Buffer
