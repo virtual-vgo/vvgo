@@ -18,7 +18,7 @@
     <script type="text/javascript" src="/npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script type="text/javascript" src="/npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
     <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
-    <script type="text/javascript" src="/js/projects/project.js"></script>
+    <script type="text/javascript" src="/js/archive/project.js"></script>
 </head>
 
 <body>
@@ -78,7 +78,7 @@
                 </div>
             </div>
         {{ end }}
-        {{ if .NavBar.ShowMemberLinks }}
+        {{ if and .NavBar.ShowMemberLinks .Released }}{{ if not .Archived }}
             <div class="row justify-content-md-center">
                 <div class="col-md-auto mt-4">
                     <table id="parts" class="table table-responsive text-light">
@@ -132,13 +132,7 @@
                     </table>
                 </div>
             </div>
-        {{ else }}
-            <div class="row">
-                <div class="col m-4 text-center">
-                    <a href="/login">Login to access recording materials.</a>
-                </div>
-            </div>
-        {{ end }}
+        {{ end }}{{ end }}
         <div class="row">
             <div class="col mt-4">
                 <small>Composed by {{ .Project.Composers }}</small><br/>

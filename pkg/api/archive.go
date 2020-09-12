@@ -37,20 +37,20 @@ type Project struct {
 	BannerLink              string `col_name:"Banner Link"`
 }
 
-type ProjectsView struct {
+type ArchiveView struct {
 	SpreadSheetID string
 	*Database
 }
 
-func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/projects/" {
+func (x ArchiveView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/archive/" {
 		x.serveIndex(w, r)
 	} else {
-		x.serveProject(w, r, r.URL.Path[len("/projects/"):])
+		x.serveProject(w, r, r.URL.Path[len("/archive/"):])
 	}
 }
 
-func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
+func (x ArchiveView) serveIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
@@ -96,7 +96,7 @@ func listProjects(ctx context.Context, spreadSheetID string) ([]Project, error) 
 	return projects, nil
 }
 
-func (x ProjectsView) filterFromQuery(r *http.Request, projects []Project) []Project {
+func (x ArchiveView) filterFromQuery(r *http.Request, projects []Project) []Project {
 	showAll := false
 
 	if want := r.FormValue("showAll"); want != "" {
@@ -116,7 +116,7 @@ func (x ProjectsView) filterFromQuery(r *http.Request, projects []Project) []Pro
 	return projects
 }
 
-func (x ProjectsView) renderIndexView(w http.ResponseWriter, ctx context.Context, projects []Project) {
+func (x ArchiveView) renderIndexView(w http.ResponseWriter, ctx context.Context, projects []Project) {
 	opts := NewNavBarOpts(ctx)
 	opts.ProjectsActive = true
 	page := struct {
@@ -128,14 +128,14 @@ func (x ProjectsView) renderIndexView(w http.ResponseWriter, ctx context.Context
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "projects/index.gohtml")); !ok {
+	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "archive/index.gohtml")); !ok {
 		internalServerError(w)
 		return
 	}
 	_, _ = buffer.WriteTo(w)
 }
 
-func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
+func (x ArchiveView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
@@ -216,7 +216,7 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, project Proje
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "projects/project.gohtml")); !ok {
+	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "archive/project.gohtml")); !ok {
 		internalServerError(w)
 		return
 	}
