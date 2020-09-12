@@ -53,7 +53,7 @@ func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//projects = x.filterFromQuery(r, projects)
+	projects = x.filterFromQuery(r, projects)
 	x.renderView(w, ctx, projects)
 }
 
@@ -159,7 +159,7 @@ func (x ProjectsView) filterFromQuery(r *http.Request, projects []Project) []Pro
 
 	want := len(projects)
 	for i := 0; i < want; i++ {
-		if projects[i].Released == false && showAll != true {
+		if projects[i].Released == true || showAll {
 			continue
 		}
 		projects[i], projects[want-1] = projects[want-1], projects[i]

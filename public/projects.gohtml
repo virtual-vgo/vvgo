@@ -25,26 +25,30 @@
 {{ template "navbar.gohtml" .NavBar }}
 <main role="main">
     <div class="container">
-        <table id="projects" class="table text-light">
-            <thead>
-            <tr>
-                <th>Name</th>
-                <th>Archived</th>
-                <th>Title</th>
-                <th>Submission Deadline</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{- range .Rows}}
-                <tr>
-                    <td>{{ .Name }}</td>
-                    <td>{{ .Archived }}</td>
-                    <td>{{ .Title }} <br/><small>{{ .Sources}}</small></td>
-                    <td>{{ .SubmissionDeadline }}</td>
-                </tr>
-            {{- end }}
-            </tbody>
-        </table>
+        <div class="row">
+            <div class="col mt-2">
+                <table id="projects" class="table text-light">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Archived</th>
+                        <th>Title</th>
+                        <th>Submission Deadline</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{- range .Rows}}
+                        <tr>
+                            <td>{{ .Name }}</td>
+                            <td>{{ .Archived }}</td>
+                            <td><a href="/projects/{{ .Name }}">{{ .Title }}<br/><small>{{ .Sources}}</small></a></td>
+                            <td>{{ .SubmissionDeadline }}</td>
+                        </tr>
+                    {{- end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </main>
 {{ template "footer.gohtml" }}
