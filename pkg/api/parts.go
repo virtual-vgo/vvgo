@@ -7,7 +7,6 @@ import (
 	"google.golang.org/api/sheets/v4"
 	"net/http"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -38,6 +37,20 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	projects, err := listProjects(ctx, x.SpreadSheetID)
+	if err != nil {
+		logger.WithError(err).Error("x.Parts.List() failed")
+		internalServerError(w)
+		return
+	}
+
+	var wantProjects []Project
+	for _, project := range projects {
+		if project.Archived == false && project.Released == true {
+			wantProjects = append(wantProjects, project)
+		}
+	}
+
 	parts, err := listParts(ctx, x.SpreadSheetID)
 	if err != nil {
 		logger.WithError(err).Error("x.Parts.List() failed")
@@ -45,34 +58,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parts = x.filterFromQuery(r, parts)
-	renderPartsView(w, ctx, parts, x.Distro.Name)
-}
-
-func (x PartView) filterFromQuery(r *http.Request, parts []Part) []Part {
-	archived := false
-	released := true
-
-	if want := r.FormValue("archived"); want != "" {
-		archived, _ = strconv.ParseBool(want)
-	}
-
-	if want := r.FormValue("released"); want != "" {
-		released, _ = strconv.ParseBool(want)
-	}
-
-	want := len(parts)
-	for i := 0; i < want; i++ {
-		if parts[i].Archived == archived &&
-			parts[i].Released == released {
-			continue
-		}
-		parts[i], parts[want-1] = parts[want-1], parts[i]
-		i--
-		want--
-	}
-	parts = parts[:want]
-	return parts
+	renderPartsView(w, ctx, wantProjects, parts, x.Distro.Name)
 }
 
 func listParts(ctx context.Context, spreadSheetID string) ([]Part, error) {
@@ -103,7 +89,7 @@ func listParts(ctx context.Context, spreadSheetID string) ([]Part, error) {
 	return parts, nil
 }
 
-func renderPartsView(w http.ResponseWriter, ctx context.Context, parts []Part, distroBucket string) {
+func renderPartsView(w http.ResponseWriter, ctx context.Context, projects []Project, parts []Part, distroBucket string) {
 	type tableRow struct {
 		Project            string `json:"project"`
 		PartName           string `json:"part_name"`
@@ -118,7 +104,7 @@ func renderPartsView(w http.ResponseWriter, ctx context.Context, parts []Part, d
 	rows := make([]tableRow, 0, len(parts))
 	for _, part := range parts {
 		rows = append(rows, tableRow{
-			Project:            strings.Title(part.ProjectTitle),
+			Project:            part.ProjectTitle,
 			ScoreOrder:         part.ScoreOrder,
 			PartName:           strings.Title(part.PartName),
 			SheetMusic:         downloadLink(distroBucket, part.SheetMusicFile),
@@ -132,11 +118,13 @@ func renderPartsView(w http.ResponseWriter, ctx context.Context, parts []Part, d
 	opts := NewNavBarOpts(ctx)
 	opts.PartsActive = true
 	page := struct {
-		NavBar NavBarOpts
-		Rows   []tableRow
+		NavBar   NavBarOpts
+		Rows     []tableRow
+		Projects []Project
 	}{
-		NavBar: opts,
-		Rows:   rows,
+		NavBar:   opts,
+		Projects: projects,
+		Rows:     rows,
 	}
 
 	var buffer bytes.Buffer
