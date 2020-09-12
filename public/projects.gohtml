@@ -42,7 +42,11 @@
                             <td>{{ .Name }}</td>
                             <td>{{ .Archived }}</td>
                             <td><a href="/projects/{{ .Name }}">{{ .Title }}<br/><small>{{ .Sources}}</small></a></td>
-                            <td>{{ .SubmissionDeadline }}</td>
+                            {{ if .Archived }}
+                                <td> Closed</td>
+                            {{ else }}
+                                <td>{{ .SubmissionDeadline }}</td>
+                            {{ end }}
                         </tr>
                     {{- end }}
                     </tbody>
