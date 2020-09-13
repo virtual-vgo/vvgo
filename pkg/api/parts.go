@@ -45,7 +45,6 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	renderPartsView(w, ctx, wantProjects, parts, x.Distro.Name)
 }
 
-
 func renderPartsView(w http.ResponseWriter, ctx context.Context, projects []Project, parts []Part, distroBucket string) {
 	type tableRow struct {
 		Project            string `json:"project"`
@@ -91,4 +90,3 @@ func renderPartsView(w http.ResponseWriter, ctx context.Context, projects []Proj
 	}
 	_, _ = buffer.WriteTo(w)
 }
-

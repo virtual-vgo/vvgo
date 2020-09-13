@@ -89,7 +89,6 @@ func acceptsType(r *http.Request, mediaType string) bool {
 	return false
 }
 
-
 func downloadLink(bucket, object string) string {
 	if bucket == "" || object == "" {
 		return ""

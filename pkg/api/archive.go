@@ -166,4 +166,3 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, project Proje
 	}
 	_, _ = buffer.WriteTo(w)
 }
-
