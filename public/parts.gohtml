@@ -43,29 +43,23 @@
             {{- range .Projects }}
                 <div class="tab-pane fade {{ if $active }}active show{{ $active = false }}{{ end }}"
                      id="parts-{{ .Name }}" role="tabpanel" aria-labelledby="{{ .Name }}-tab">
-                    <div class="row">
-                        <div class="col m-3 text-center">
+                    <div class="row row-cols-1">
+                        <div class="col mt-3 text-center">
                             {{ if .BannerLink }}
                                 <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
                             {{ else }}
                                 <h2 class="title">{{ .Title }}</h2>
                                 <h3>{{ .Sources }}</h3>
-
                             {{ end }}
                         </div>
-                    </div>
-                    {{ if .YoutubeEmbed }}
-                        <div class="row">
-                            <div class="col m-2 project-iframe-wrapper">
-                                <iframe class="project-iframe" src="{{ .YoutubeEmbed }}"
-                                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                                        allowfullscreen></iframe>
-                            </div>
+                        <div class="col text-center">
+                            Composed by {{ .Composers }}<br/>
+                            <small>{{ .Arrangers }}</small>
                         </div>
-                    {{ end }}
+                    </div>
                     <div class="row">
                         <div class="col">
-                            <h4 class="text-center mb-3"><strong>Submission Deadline:</strong>
+                            <h4 class="text-center m-3"><strong>Submission Deadline:</strong>
                                 <em>{{ .SubmissionDeadline }} (Hawaii Time)</em></h4>
                         </div>
                     </div>
@@ -147,12 +141,7 @@
                             </table>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col mt-4">
-                            <small>Composed by {{ .Composers }}</small><br/>
-                            <small>{{ .Arrangers }}</small>
-                        </div>
-                    </div>
+
                 </div>
             {{- end }}
         </div>
