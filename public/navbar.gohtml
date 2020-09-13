@@ -11,30 +11,29 @@
             <ul class="navbar-nav">
                 <li class="nav-item">
                     {{ if .ShowLogin }}
-                        <a class="{{- if .LoginActive }}bg-info{{ end }} nav-link text-monospace" href="/login">Login</a>
+                        <a class="{{- if .LoginActive }}bg-info{{ end }} nav-link"
+                           href="/login">Login</a>
                     {{ else }}
-                        <a class="nav-link text-monospace" href="/logout">Logout</a>
+                        <a class="nav-link" href="/logout">Logout</a>
                     {{ end }}
                 </li>
             </ul>
             {{ if .ShowMemberLinks }}
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="{{- if .PartsActive }}bg-info{{ end }} nav-link text-monospace"
+                        <a class="{{- if .PartsActive }}bg-info{{ end }} nav-link"
                            href="/parts">Parts
                         </a>
                     </li>
                 </ul>
             {{ end }}
-            {{ if .ShowAdminLinks }}
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="{{- if .BackupsActive }}bg-info{{ end }} nav-link text-monospace"
-                           href="/backups">Backups
-                        </a>
-                    </li>
-                </ul>
-            {{ end }}
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="{{- if .ProjectsActive }}bg-info{{ end }} nav-link"
+                       href="/archive">Archive
+                    </a>
+                </li>
+            </ul>
         </div>
     </nav>
 </div>

@@ -1,8 +1,5 @@
 $(document).ready(function () {
-    $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
-        $.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
-    });
-    $('table.table').DataTable({
+    $('#parts').DataTable({
         dom: 'ft',
         paging: false,
         order: [[0, 'asc']],

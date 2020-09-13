@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{ template "header.gohtml" }}
+    <title>Projects</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/theme.css">
+
+    <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
+    <script type="text/javascript" src="/js/archive/index.js"></script>
+</head>
+
+<body>
+{{ template "navbar.gohtml" .NavBar }}
+<main role="main">
+    <div class="container">
+        <div class="row justify-content-md-center">
+            <div class="col-md-auto mt-2 text-center">
+                <h1>Projects</h1>
+                <table id="project_index" class="table table-responsive text-light">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Archived</th>
+                        <th>Title</th>
+                        <th>Submission Deadline</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{- range .Rows}}
+                        <tr>
+                            <td>{{ .Name }}</td>
+                            <td>{{ .Archived }}</td>
+                            <td><a href="/archive/{{ .Name }}" class="text-light">
+                                    {{ .Title }}<br/><small>{{ .Sources}}</small></a></td>
+                            {{ if .Archived }}
+                                <td> Closed</td>
+                            {{ else }}
+                                <td>{{ .SubmissionDeadline }}</td>
+                            {{ end }}
+                        </tr>
+                    {{- end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+{{ template "footer.gohtml" }}
+</body>
+</html>

@@ -1,11 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
+
 body {
+    font-family: 'Montserrat', sans-serif;
     background-color: rgba(24, 3, 24, 0.95);
     color: #E9E9E9;
 }
 
 .title {
     text-align: center;
-    font-family: sans-serif, serif;
     font-weight: bold;
 }
 
@@ -55,6 +57,19 @@ body {
     border-width: thick;
 }
 
-a:hover {
-    text-decoration-color: #1e7e34;
+.project-iframe-wrapper {
+    position: relative;
+    padding-top: 56.25%;
+}
+
+.project-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.active {
+    background-color: purple;
 }

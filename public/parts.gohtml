@@ -24,94 +24,126 @@
 <body>
 {{ template "navbar.gohtml" .NavBar }}
 <main role="main">
-    <div class="container parts-table">
-        <div class="bg-terminal p-3 border rounded-sm mt-4">
-            <h1 class="title text-monospace mb-3">~ Parts ~</h1>
-            <h4 class="text-center mb-3"><em><strong>Submission Deadline:</strong>
-                    September 27th, 2020 @ 11:59 PM (Hawaii Time)</em></h4>
-            <div class="row mb-3">
-                <div class="col-sm text-center">
-                    <a class="btn btn-lnk btn-outline-light text-info" href="https://discord.gg/9RVUJMQ">
-                        <i class="fab fa-discord"></i>
-                        Member Discord
-                    </a>
+    <div class="container">
+        <h3 class="mt-2">Current Projects</h3>
+        <ul class="nav nav-pills" id="project-tabs" role="tablist">
+            {{ $active := true }}
+            {{- range .Projects }}
+                <li class="nav-item">
+                    <a class="btn btn-outline-dark rounded-0 text-light {{ if $active }}active{{ end }}"
+                       id="{{ .Name }}-tab" data-toggle="pill" href="#parts-{{ .Name }}" role="tab"
+                       aria-controls="parts-{{ .Name }}" aria-selected="{{ $active }}">{{ .Title }}</a>
+                </li>{{- $active = false }}
+            {{ end }}
+        </ul>
+
+        {{- $rows := .Rows }}
+        <div class="tab-content">
+            {{ $active = true }}
+            {{- range .Projects }}
+                <div class="tab-pane fade {{ if $active }}active show{{ $active = false }}{{ end }}"
+                     id="parts-{{ .Name }}" role="tabpanel" aria-labelledby="{{ .Name }}-tab">
+                    <div class="row row-cols-1">
+                        <div class="col mt-3 text-center">
+                            {{ if .BannerLink }}
+                                <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
+                            {{ else }}
+                                <h2 class="title">{{ .Title }}</h2>
+                                <h3>{{ .Sources }}</h3>
+                            {{ end }}
+                        </div>
+                        <div class="col text-center">
+                            Composed by {{ .Composers }}<br/>
+                            <small>{{ .Arrangers }}</small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <h4 class="text-center m-3"><strong>Submission Deadline:</strong>
+                                <em>{{ .SubmissionDeadline }} (Hawaii Time)</em></h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm text-center">
+                            <a class="btn btn-lnk btn-outline-light text-info" href="https://discord.gg/9RVUJMQ">
+                                <i class="fab fa-discord"></i>
+                                Member Discord
+                            </a>
+                        </div>
+                        <div class="col-sm text-center">
+                            <a class="btn btn-lnk btn-outline-light text-info"
+                               href="https://www.youtube.com/watch?v=VgqtZ30bMgM">
+                                <i class="fab fa-youtube"></i>
+                                Recording Instructions
+                            </a>
+                        </div>
+                        <div class="col-sm text-center">
+                            <a class="btn btn-lnk btn-outline-light text-info"
+                               href="{{ .SubmissionLink }}">
+                                <i class="fab fa-dropbox"></i>
+                                Submit Recordings
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row justify-content-md-center">
+                        <div class="col-md-auto mt-4">
+                            <table id="table-{{ .Name }}" style="width: 100%" class="table table-responsive text-light">
+                                <thead>
+                                <tr>
+                                    <th>Score Order</th>
+                                    <th>Part</th>
+                                    <th>Downloads</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {{ $project := .Title }}
+                                {{- range $rows }}
+                                    {{- if eq $project .Project}}
+                                        <tr>
+                                            <td>{{.ScoreOrder}}</td>
+                                            <td class="title">{{.PartName}}</td>
+                                            <td>
+                                                {{ if .SheetMusic }}
+                                                    <a href="{{.SheetMusic}}"
+                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                        <i class="far fa-file-pdf"></i> sheet music
+                                                    </a>
+                                                {{ end }}
+                                                {{ if .ClickTrack}}
+                                                    <a href="{{.ClickTrack}}"
+                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                        <i class="far fa-file-audio"></i> click track
+                                                    </a>
+                                                {{ end }}
+                                                {{ if .ReferenceTrack }}
+                                                    <a href="{{.ReferenceTrack}}"
+                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                        <i class="far fa-file-audio"></i> reference track
+                                                    </a>
+                                                {{ end }}
+                                                {{ if .ConductorVideo }}
+                                                    <a href="{{.ConductorVideo}}"
+                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                        <i class="far fa-file-video"></i> conductor video
+                                                    </a>
+                                                {{ end }}
+                                                {{ if .PronunciationGuide }}
+                                                    <a href="{{.PronunciationGuide}}"
+                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                        <i class="fas fa-language"></i> pronunciation guide
+                                                    </a>
+                                                {{ end }}
+                                            </td>
+                                        </tr>
+                                    {{ end }}
+                                {{- end }}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
-                <div class="col-sm text-center">
-                    <a class="btn btn-lnk btn-outline-light text-info"
-                       href="https://www.youtube.com/watch?v=VgqtZ30bMgM">
-                        <i class="fab fa-youtube"></i>
-                        Recording Instructions
-                    </a>
-                </div>
-                <div class="col-sm text-center">
-                    <a class="btn btn-lnk btn-outline-light text-info"
-                       href="https://bit.ly/vvgo05submit">
-                        <i class="fab fa-dropbox"></i>
-                        Submit Recordings
-                    </a>
-                </div>
-            </div>
-			<h4 class="text-center mb-3"><em><strong>ENCORE: ENd Card Ocarina and Recorder Ensemble</strong></em></h4>
-			<div class="row mb-3">
-				<div class="col-sm text-center">
-                    <a class="btn btn-lnk btn-outline-light text-info"
-                       href="https://bit.ly/vvgo05endcard">
-                        <i class="fab fa-dropbox"></i>
-                        Submit ENCORE Recordings
-					</a>
-                </div>
-			</div>
-            <table id="parts" class="table text-light">
-                <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Score Order</th>
-                    <th>Part</th>
-                    <th>Downloads</th>
-                </tr>
-                </thead>
-                <tbody>
-                {{- range .Rows}}
-                    <tr>
-                        <td class="title">{{.Project}}</td>
-                        <td class="text-light">{{.ScoreOrder}}</td>
-                        <td class="title">{{.PartName}}</td>
-                        <td>
-                            {{ if .SheetMusic }}
-                                <a href="{{.SheetMusic}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    <i class="far fa-file-pdf"></i> sheet music
-                                </a>
-                            {{ end }}
-                            {{ if .ClickTrack}}
-                                <a href="{{.ClickTrack}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    <i class="far fa-file-audio"></i> click track
-                                </a>
-                            {{ end }}
-                            {{ if .PronunciationGuide }}
-                                <a href="{{.PronunciationGuide}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    <i class="fas fa-language"></i> pronunciation guide
-                                </a>
-                            {{ end }}
-                            {{ if .ReferenceTrack }}
-                                <a href="{{.ReferenceTrack}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    <i class="far fa-file-audio"></i> reference track
-                                </a>
-                            {{ end }}
-                            {{ if .ConductorVideo }}
-                                <a href="{{.ConductorVideo}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    <i class="far fa-file-video"></i> conductor video
-                                </a>
-                            {{ end }}
-                        </td>
-                    </tr>
-                {{- end }}
-                </tbody>
-            </table>
+            {{- end }}
         </div>
     </div>
 </main>

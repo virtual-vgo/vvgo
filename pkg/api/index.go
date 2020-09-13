@@ -41,7 +41,7 @@ type NavBarOpts struct {
 	ShowAdminLinks  bool
 	PartsActive     bool
 	LoginActive     bool
-	BackupsActive   bool
+	ProjectsActive  bool
 }
 
 func NewNavBarOpts(ctx context.Context) NavBarOpts {
