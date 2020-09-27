@@ -182,9 +182,9 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "SETEX", oauthNamespace+":oauth_state:"+oauthState, "300", oauthValue)))
 
 	loginHandler := DiscordLoginHandler{
-		GuildID:        "test-guild-id",
-		RoleVVGOMember: "vvgo-member",
-		Namespace:      oauthNamespace,
+		GuildID:          "test-guild-id",
+		RoleVVGOMemberID: "vvgo-member",
+		Namespace:        oauthNamespace,
 	}
 	ts := httptest.NewServer(&loginHandler)
 	defer ts.Close()

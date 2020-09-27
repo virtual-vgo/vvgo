@@ -84,12 +84,12 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, []login.Role{login.RoleAnonymous}, got)
 		})
 		t.Run("vvgo-uploader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/roles", login.RoleVVGOUploader, login.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/roles", login.RoleVVGOTeams, login.RoleVVGOMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 			var got []login.Role
 			assert.NoError(t, json.NewDecoder(resp.Body).Decode(&got))
-			assert.Equal(t, []login.Role{login.RoleVVGOUploader, login.RoleVVGOMember}, got)
+			assert.Equal(t, []login.Role{login.RoleVVGOTeams, login.RoleVVGOMember}, got)
 		})
 	})
 

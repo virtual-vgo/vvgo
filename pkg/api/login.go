@@ -130,10 +130,12 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 // authentication is established and a login session cookie is sent in the response.
 // Otherwise, 401 unauthorized.
 type DiscordLoginHandler struct {
-	GuildID        discord.GuildID
-	RoleVVGOMember string
-	Sessions       *login.Store
-	Namespace      string
+	GuildID          discord.GuildID
+	RoleVVGOMemberID string
+	RoleVVGOTeamsID  string
+	RoleVVGOLeaderID string
+	Sessions         *login.Store
+	Namespace        string
 }
 
 var ErrNotAMember = errors.New("not a member")
@@ -187,21 +189,27 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check that they have the member role
-	var ok bool
-	for _, role := range guildMember.Roles {
-		if role == x.RoleVVGOMember {
-			ok = true
-			break
+	var loginRoles []login.Role
+	for _, discordRole := range guildMember.Roles {
+		switch discordRole {
+		case "": // ignore empty strings
+			continue
+		case x.RoleVVGOLeaderID:
+			loginRoles = append(loginRoles, login.RoleVVGOLeader)
+		case x.RoleVVGOTeamsID:
+			loginRoles = append(loginRoles, login.RoleVVGOTeams)
+		case x.RoleVVGOMemberID:
+			loginRoles = append(loginRoles, login.RoleVVGOMember)
 		}
 	}
-	if !ok {
+	if len(loginRoles) == 0 {
 		handleError(ErrNotAMember)
 		return
 	}
 
 	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
 		Kind:  login.KindDiscord,
-		Roles: []login.Role{login.RoleVVGOMember},
+		Roles: loginRoles,
 	})
 }
 

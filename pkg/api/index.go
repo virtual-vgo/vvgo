@@ -38,7 +38,7 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type NavBarOpts struct {
 	ShowLogin       bool
 	ShowMemberLinks bool
-	ShowAdminLinks  bool
+	ShowTeamsLinks  bool
 	PartsActive     bool
 	LoginActive     bool
 	ProjectsActive  bool
@@ -48,7 +48,7 @@ func NewNavBarOpts(ctx context.Context) NavBarOpts {
 	identity := identityFromContext(ctx)
 	return NavBarOpts{
 		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
-		ShowAdminLinks:  identity.HasRole(login.RoleVVGOUploader),
+		ShowTeamsLinks:  identity.HasRole(login.RoleVVGOTeams),
 		ShowLogin:       identity.IsAnonymous(),
 	}
 }

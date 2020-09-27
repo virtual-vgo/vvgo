@@ -30,7 +30,7 @@
             {{ $active := true }}
             {{- range .Projects }}
                 <li class="nav-item">
-                    <a class="btn btn-outline-dark rounded-0 text-light {{ if $active }}active{{ end }}"
+                    <a class="btn btn-outline-dark {{ if .Released }}text-light{{ else }}text-warning{{ end }} rounded-0  {{ if $active }}active{{ end }}"
                        id="{{ .Name }}-tab" data-toggle="pill" href="#parts-{{ .Name }}" role="tab"
                        aria-controls="parts-{{ .Name }}" aria-selected="{{ $active }}">{{ .Title }}</a>
                 </li>{{- $active = false }}
@@ -45,6 +45,7 @@
                      id="parts-{{ .Name }}" role="tabpanel" aria-labelledby="{{ .Name }}-tab">
                     <div class="row row-cols-1">
                         <div class="col mt-3 text-center">
+                            {{ if not .Released }}<div class="alert alert-warning">This project is unreleased and invisible to members!</div>{{ end }}
                             {{ if .BannerLink }}
                                 <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
                             {{ else }}
