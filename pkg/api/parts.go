@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -28,10 +29,16 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	identity := identityFromContext(r.Context())
 	var wantProjects []Project
 	for _, project := range projects {
-		if project.Archived == false && project.Released == true {
+		switch {
+		case (identity.HasRole(login.RoleVVGOTeams) || identity.HasRole(login.RoleVVGOLeader)) && project.Archived == false:
 			wantProjects = append(wantProjects, project)
+		case project.Archived == false && project.Released == true:
+			wantProjects = append(wantProjects, project)
+		default:
+			continue
 		}
 	}
 

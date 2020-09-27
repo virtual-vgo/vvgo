@@ -25,7 +25,9 @@ type ServerConfig struct {
 	PartsReadRange        string          `envconfig:"parts_read_range"`
 	DiscordGuildID        discord.GuildID `envconfig:"discord_guild_id"`
 	DiscordRoleVVGOMember string          `envconfig:"discord_role_vvgo_member"`
-	Login                 login.Config    `envconfig:"login"`
+	DiscordRoleVVGOTeams  string
+	DiscordRoleVVGOLeader string
+	Login                 login.Config `envconfig:"login"`
 }
 
 type Server struct {
@@ -61,9 +63,11 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	}, login.RoleAnonymous)
 
 	mux.Handle("/login/discord", DiscordLoginHandler{
-		GuildID:        config.DiscordGuildID,
-		RoleVVGOMember: config.DiscordRoleVVGOMember,
-		Sessions:       database.Sessions,
+		GuildID:          config.DiscordGuildID,
+		RoleVVGOLeaderID: config.DiscordRoleVVGOLeader,
+		RoleVVGOTeamsID:  config.DiscordRoleVVGOTeams,
+		RoleVVGOMemberID: config.DiscordRoleVVGOMember,
+		Sessions:         database.Sessions,
 	}, login.RoleAnonymous)
 
 	mux.Handle("/login/success", LoginSuccessView{}, login.RoleAnonymous)
@@ -82,11 +86,11 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	}), login.RoleAnonymous)
 
 	// debug endpoints from net/http/pprof
-	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGODeveloper)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGODeveloper)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGODeveloper)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGODeveloper)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGODeveloper)
+	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGOTeams)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGOTeams)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGOTeams)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
 	mux.Handle("/parts", PartView{
 		SpreadSheetID: config.PartsSpreadsheetID,
