@@ -192,6 +192,8 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 	var loginRoles []login.Role
 	for _, discordRole := range guildMember.Roles {
 		switch discordRole {
+		case "": // ignore empty strings
+			continue
 		case x.RoleVVGOLeaderID:
 			loginRoles = append(loginRoles, login.RoleVVGOLeader)
 		case x.RoleVVGOTeamsID:
