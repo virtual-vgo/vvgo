@@ -52,6 +52,12 @@ body {
     background-position: right;
 }
 
+.bg-god-of-war {
+    background-image: url('/images/VVGO_03_TEBTR_Website_Tile.png');
+    background-repeat: no-repeat;
+    background-position: right;
+}
+
 .thick-border {
     border-style: solid;
     border-width: thick;
