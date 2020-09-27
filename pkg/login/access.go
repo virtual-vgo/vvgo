@@ -21,10 +21,10 @@ type Role string
 func (x Role) String() string { return string(x) }
 
 const (
-	RoleAnonymous     Role = "anonymous" // anonymous/unauthenticated access to the site
-	RoleVVGOMember    Role = "vvgo-member"
-	RoleVVGOUploader  Role = "vvgo-uploader"
-	RoleVVGODeveloper Role = "vvgo-developer"
+	RoleAnonymous  Role = "anonymous"   // anonymous/unauthenticated access to the site
+	RoleVVGOMember Role = "vvgo-member" // password login or has the vvgo-member discord role
+	RoleVVGOTeams  Role = "vvgo-teams"  // has the teams discord role
+	RoleVVGOLeader Role = "vvgo-leader" // has the leader discord role
 )
 
 var anonymous = Identity{
