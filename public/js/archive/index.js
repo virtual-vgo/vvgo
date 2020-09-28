@@ -2,7 +2,7 @@ $(document).ready(function () {
     $('#project_index').DataTable({
         dom: 't',
         paging: false,
-        order: [[1, 'asc'], [0, 'asc']],
+        order: [[0, 'desc']],
         columnDefs: [
             {
                 targets: [0],
