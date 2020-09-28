@@ -34,7 +34,7 @@
                         <th>Name</th>
                         <th>Archived</th>
                         <th>Title</th>
-                        <th>Submission Deadline</th>
+                        <th>Status</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -42,13 +42,10 @@
                         <tr>
                             <td>{{ .Name }}</td>
                             <td>{{ .Archived }}</td>
-                            <td><a href="/archive/{{ .Name }}" class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
+                            <td><a href="/archive/{{ .Name }}"
+                                   class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
                                     {{ .Title }}<br/><small>{{ .Sources}}</small></a></td>
-                            {{ if .Archived }}
-                                <td> Closed</td>
-                            {{ else }}
-                                <td>{{ .SubmissionDeadline }}</td>
-                            {{ end }}
+                            <td>{{ if .YoutubeLink }}Completed{{ else if .Archived}}Post Production{{ else if .Released }}Open for Submissions{{ else }}Unreleased{{ end }}</td>
                         </tr>
                     {{- end }}
                     </tbody>
