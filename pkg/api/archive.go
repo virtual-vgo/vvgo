@@ -3,9 +3,9 @@ package api
 import (
 	"bytes"
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -41,15 +41,10 @@ func (x ArchiveView) serveIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (x ArchiveView) filterFromQuery(r *http.Request, projects []Project) []Project {
-	showAll := false
-
-	if want := r.FormValue("showAll"); want != "" {
-		showAll, _ = strconv.ParseBool(want)
-	}
-
+	identity := identityFromContext(r.Context())
 	want := len(projects)
 	for i := 0; i < want; i++ {
-		if projects[i].Released == true || showAll {
+		if projects[i].Released == true || identity.HasRole(login.RoleVVGOTeams) || identity.HasRole(login.RoleVVGOLeader) {
 			continue
 		}
 		projects[i], projects[want-1] = projects[want-1], projects[i]

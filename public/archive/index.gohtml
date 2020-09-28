@@ -42,7 +42,7 @@
                         <tr>
                             <td>{{ .Name }}</td>
                             <td>{{ .Archived }}</td>
-                            <td><a href="/archive/{{ .Name }}" class="text-light">
+                            <td><a href="/archive/{{ .Name }}" class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
                                     {{ .Title }}<br/><small>{{ .Sources}}</small></a></td>
                             {{ if .Archived }}
                                 <td> Closed</td>
