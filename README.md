@@ -65,3 +65,4 @@ yarn install --modules-folder public/npm
 ```sh
 go generate ./... && go build -v -o vvgo ./cmd/vvgo && ./vvgo
 ```
+
