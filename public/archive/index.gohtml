@@ -38,13 +38,21 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {{- range .Rows}}
+                    {{- range .Rows }}
                         <tr>
                             <td>{{ .Name }}</td>
                             <td>{{ .Archived }}</td>
-                            <td><a href="/archive/{{ .Name }}"
-                                   class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
-                                    {{ .Title }}<br/><small>{{ .Sources}}</small></a></td>
+                            <td>
+                                {{ if .YoutubeLink }}
+                                    <a href="/archive/{{ .Name }}"
+                                       class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
+                                        {{ .Title }}<br/><small>{{ .Sources}}</small></a>
+                                {{ else }}
+                                    <div class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
+                                        {{ .Title }}<br/><small>{{ .Sources}}</small>
+                                    </div>
+                                {{ end }}
+                            </td>
                             <td>{{ if .YoutubeLink }}Completed{{ else if .Archived}}Post Production{{ else if .Released }}Open for Submissions{{ else }}Unreleased{{ end }}</td>
                         </tr>
                     {{- end }}
