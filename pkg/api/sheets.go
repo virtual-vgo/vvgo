@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"google.golang.org/api/sheets/v4"
 	"reflect"
+	"sort"
 	"strconv"
 )
 
@@ -33,34 +34,6 @@ type Project struct {
 	BannerLink              string `col_name:"Banner Link"`
 }
 
-func listProjects(ctx context.Context, spreadSheetID string) ([]Project, error) {
-	srv, err := sheets.NewService(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
-	}
-
-	readRange := "Projects"
-	resp, err := srv.Spreadsheets.Values.Get(spreadSheetID, readRange).Do()
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
-	}
-
-	if len(resp.Values) < 1 {
-		return nil, fmt.Errorf("no data")
-	}
-	projects := make([]Project, len(resp.Values)-1) // ignore the header row
-
-	index := make(map[string]int, len(resp.Values[0])-1)
-	for i, col := range resp.Values[0] {
-		index[fmt.Sprintf("%s", col)] = i
-	}
-
-	for i, row := range resp.Values[1:] {
-		processRow(row, &projects[i], index)
-	}
-	return projects, nil
-}
-
 type Part struct {
 	Project            string
 	ProjectTitle       string `col_name:"Project Title"`
@@ -75,32 +48,82 @@ type Part struct {
 	PronunciationGuide string `col_name:"Pronunciation Guide"`
 }
 
-func listParts(ctx context.Context, spreadSheetID string) ([]Part, error) {
-	srv, err := sheets.NewService(ctx)
+type Credit struct {
+	Project       string
+	Order         int
+	MajorCategory string `col_name:"Major Category"`
+	MinorCategory string `col_name:"Minor Category"`
+	Name          string
+	BottomText    string `col_name:"Bottom Text"`
+}
+
+type CreditsSort []Credit
+
+func (x CreditsSort) Len() int           { return len(x) }
+func (x CreditsSort) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x CreditsSort) Less(i, j int) bool { return x[i].Order < x[j].Order }
+func (x CreditsSort) Sort()              { sort.Sort(x) }
+
+func listProjects(ctx context.Context, spreadsheetID string) ([]Project, error) {
+	resp, index, err := readSheet(ctx, spreadsheetID, "Projects")
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
+		return nil, err
 	}
 
-	readRange := "Parts"
-	resp, err := srv.Spreadsheets.Values.Get(spreadSheetID, readRange).Do()
+	projects := make([]Project, len(resp.Values)-1) // ignore the header row
+	for i, row := range resp.Values[1:] {
+		processRow(row, &projects[i], index)
+	}
+	return projects, nil
+}
+
+func listParts(ctx context.Context, spreadsheetID string) ([]Part, error) {
+	resp, index, err := readSheet(ctx, spreadsheetID, "Parts")
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
+		return nil, err
+	}
+
+	parts := make([]Part, len(resp.Values)-1)
+	for i, row := range resp.Values[1:] {
+		processRow(row, &parts[i], index)
+	}
+	return parts, nil
+}
+
+func listCredits(ctx context.Context, spreadsheetID string) ([]Credit, error) {
+	resp, index, err := readSheet(ctx, spreadsheetID, "Credits")
+	if err != nil {
+		return nil, err
+	}
+
+	credits := make([]Credit, len(resp.Values)-1)
+	for i, row := range resp.Values[1:] {
+		processRow(row, &credits[i], index)
+	}
+	return credits, nil
+}
+
+func readSheet(ctx context.Context, spreadsheetID string, readRange string) (*sheets.ValueRange, map[string]int, error) {
+	srv, err := sheets.NewService(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
+	}
+
+	resp, err := srv.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
 	}
 
 	if len(resp.Values) < 1 {
-		return nil, fmt.Errorf("no data")
+		return nil, nil, fmt.Errorf("no data")
 	}
-	parts := make([]Part, len(resp.Values)-1)
 
 	index := make(map[string]int, len(resp.Values[0])-1)
 	for i, col := range resp.Values[0] {
 		index[fmt.Sprintf("%s", col)] = i
 	}
 
-	for i, row := range resp.Values[1:] {
-		processRow(row, &parts[i], index)
-	}
-	return parts, nil
+	return resp, index, nil
 }
 
 func processRow(row []interface{}, dest interface{}, index map[string]int) {

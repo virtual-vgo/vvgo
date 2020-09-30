@@ -6,11 +6,10 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"path/filepath"
-	"strings"
 )
 
 type ArchiveView struct {
-	SpreadSheetID string
+	SpreadsheetID string
 	*Database
 }
 
@@ -29,7 +28,7 @@ func (x ArchiveView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := listProjects(ctx, x.SpreadSheetID)
+	projects, err := listProjects(ctx, x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("x.listProjects() failed")
 		internalServerError(w)
@@ -81,9 +80,9 @@ func (x ArchiveView) serveProject(w http.ResponseWriter, r *http.Request, name s
 		return
 	}
 
-	projects, err := listProjects(ctx, x.SpreadSheetID)
+	projects, err := listProjects(ctx, x.SpreadsheetID)
 	if err != nil {
-		logger.WithError(err).Error("x.listProjects() failed")
+		logger.WithError(err).Error("listProjects() failed")
 		internalServerError(w)
 		return
 	}
@@ -101,57 +100,67 @@ func (x ArchiveView) serveProject(w http.ResponseWriter, r *http.Request, name s
 		http.NotFound(w, r)
 		return
 	}
+	renderProjectView(w, ctx, wantProject, x.SpreadsheetID)
+}
 
-	parts, err := listParts(ctx, x.SpreadSheetID)
+func renderProjectView(w http.ResponseWriter, ctx context.Context, project Project, spreadsheetID string) {
+	credits, err := listCredits(ctx, spreadsheetID)
 	if err != nil {
-		logger.WithError(err).Error("x.Parts.List() failed")
+		logger.WithError(err).Error("listCredits() failed")
 		internalServerError(w)
 		return
 	}
+	CreditsSort(credits).Sort()
 
-	var wantParts []Part
-	for _, part := range parts {
-		if part.Project == name {
-			wantParts = append(wantParts, part)
+	type minorTable struct {
+		Name string
+		Rows []*Credit
+	}
+
+	type majorTable struct {
+		Name   string
+		Rows   []*minorTable
+		rowMap map[string]*minorTable
+	}
+
+	var creditsTable struct {
+		Rows   []*majorTable
+		rowMap map[string]*majorTable
+	}
+	creditsTable.rowMap = make(map[string]*majorTable)
+
+	for i := range credits {
+		if credits[i].Project != project.Name {
+			continue
 		}
-	}
 
-	renderProjectView(w, ctx, wantProject, wantParts, x.Distro.Name)
-}
+		if creditsTable.rowMap[credits[i].MajorCategory] == nil {
+			creditsTable.rowMap[credits[i].MajorCategory] = new(majorTable)
+			creditsTable.rowMap[credits[i].MajorCategory].Name = credits[i].MajorCategory
+			creditsTable.rowMap[credits[i].MajorCategory].rowMap = make(map[string]*minorTable)
+			creditsTable.Rows = append(creditsTable.Rows, creditsTable.rowMap[credits[i].MajorCategory])
+		}
+		major := creditsTable.rowMap[credits[i].MajorCategory]
 
-func renderProjectView(w http.ResponseWriter, ctx context.Context, project Project, parts []Part, distroBucket string) {
-	type tableRow struct {
-		PartName           string `json:"part_name"`
-		ScoreOrder         int    `json:"score_order"`
-		SheetMusic         string `json:"sheet_music,omitempty"`
-		ClickTrack         string `json:"click_track,omitempty"`
-		ReferenceTrack     string `json:"reference_track,omitempty"`
-		ConductorVideo     string `json:"conductor_video,omitempty"`
-		PronunciationGuide string `json:"pronunciation_guide,omitempty"`
-	}
+		if major.rowMap[credits[i].MinorCategory] == nil {
+			major.rowMap[credits[i].MinorCategory] = new(minorTable)
+			major.rowMap[credits[i].MinorCategory].Name = credits[i].MinorCategory
+			major.Rows = append(major.Rows, major.rowMap[credits[i].MinorCategory])
+		}
+		minor := major.rowMap[credits[i].MinorCategory]
 
-	rows := make([]tableRow, 0, len(parts))
-	for _, part := range parts {
-		rows = append(rows, tableRow{
-			ScoreOrder:         part.ScoreOrder,
-			PartName:           strings.Title(part.PartName),
-			SheetMusic:         downloadLink(distroBucket, part.SheetMusicFile),
-			ClickTrack:         downloadLink(distroBucket, part.ClickTrackFile),
-			ReferenceTrack:     downloadLink(distroBucket, part.ReferenceTrack),
-			ConductorVideo:     part.ConductorVideo,
-			PronunciationGuide: downloadLink(distroBucket, part.PronunciationGuide),
-		})
+		minor.Rows = append(minor.Rows, &credits[i])
 	}
 
 	opts := NewNavBarOpts(ctx)
 	page := struct {
 		NavBar NavBarOpts
 		Project
-		Rows []tableRow
+		Credits []*majorTable
 	}{
 		NavBar:  opts,
 		Project: project,
-		Rows:    rows,
+		Credits: creditsTable.Rows,
 	}
 
 	var buffer bytes.Buffer

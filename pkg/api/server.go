@@ -100,7 +100,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 
 	mux.Handle("/archive", http.RedirectHandler("/archive/", http.StatusFound), login.RoleAnonymous)
 	mux.Handle("/archive/", ArchiveView{
-		SpreadSheetID: config.PartsSpreadsheetID,
+		SpreadsheetID: config.PartsSpreadsheetID,
 		Database:      &database,
 	}, login.RoleAnonymous)
 
