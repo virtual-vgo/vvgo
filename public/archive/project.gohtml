@@ -61,24 +61,24 @@
             </div>
         </div>
         {{ range .Credits }}
-            <div class="row">
-                <div class="col text-center">
-                    <h2>{{ .Name }}</h2>
-                </div>
+        <div class="row">
+            <div class="col text-center">
+                <h2><strong>-- {{ .Name }} --</strong></h2>
             </div>
-            <div class="row">
-                {{ range .Rows }}
-                    <div class="col-sm-4 text-center">
-                        <h5>{{ .Name }}</h5>
-                        <ul class="list-unstyled">
-                            {{ range .Rows }}
-                                <li>{{ .Name }} <small>{{ .BottomText }}</small></li>
-                            {{ end }}
-                        </ul>
-                    </div>
-                {{ end }}
+        </div>
+        <div class="card-columns">
+        {{ range .Rows }}
+            <div class="card bg-transparent text-center">
+                <h5>{{ .Name }}</h5>
+                <ul class="list-unstyled">
+                    {{ range .Rows }}
+                        <li>{{ .Name }} <small>{{ .BottomText }}</small></li>
+                    {{ end }}
+                </ul>
             </div>
         {{ end }}
+        </div>
+    {{ end }}
     </div>
 </main>
 {{ template "footer.gohtml" }}
