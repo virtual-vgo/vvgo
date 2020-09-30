@@ -55,11 +55,30 @@
             </div>
         {{ end }}
         <div class="row">
-            <div class="col mt-4">
-                <small>Composed by {{ .Project.Composers }}</small><br/>
-                <small>{{ .Project.Arrangers }}</small>
+            <div class="col m-4 text-center">
+                Composed by {{ .Project.Composers }}<br/>
+                {{ .Project.Arrangers }}
             </div>
         </div>
+        {{ range .Credits }}
+            <div class="row">
+                <div class="col text-center">
+                    <h2>{{ .Name }}</h2>
+                </div>
+            </div>
+            <div class="row">
+                {{ range .Rows }}
+                    <div class="col-sm-4 text-center">
+                        <h5>{{ .Name }}</h5>
+                        <ul class="list-unstyled">
+                            {{ range .Rows }}
+                                <li>{{ .Name }} <small>{{ .BottomText }}</small></li>
+                            {{ end }}
+                        </ul>
+                    </div>
+                {{ end }}
+            </div>
+        {{ end }}
     </div>
 </main>
 {{ template "footer.gohtml" }}
