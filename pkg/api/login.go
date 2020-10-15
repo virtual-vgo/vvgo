@@ -11,7 +11,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -40,7 +39,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var buf bytes.Buffer
-	if ok := parseAndExecute(&buf, &page, filepath.Join(PublicFiles, "login.gohtml")); !ok {
+	if ok := parseAndExecute(ctx, &buf, &page, PublicFiles+"/login.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
@@ -60,7 +59,7 @@ func (LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "login_success.gohtml")); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/login_success.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

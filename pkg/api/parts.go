@@ -5,7 +5,6 @@ import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
-	"path/filepath"
 	"strings"
 )
 
@@ -91,7 +90,7 @@ func renderPartsView(w http.ResponseWriter, ctx context.Context, projects []Proj
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "parts.gohtml")); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/parts.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

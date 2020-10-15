@@ -5,7 +5,6 @@ import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
-	"path/filepath"
 )
 
 type ArchiveView struct {
@@ -66,7 +65,7 @@ func (x ArchiveView) renderIndexView(w http.ResponseWriter, ctx context.Context,
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "archive/index.gohtml")); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/archive/index.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
@@ -164,7 +163,7 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, project Proje
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "archive/project.gohtml")); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/archive/project.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
