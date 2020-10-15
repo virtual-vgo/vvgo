@@ -20,15 +20,14 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	opts := NewNavBarOpts(ctx)
 	page := struct {
 		NavBar NavBarOpts
 	}{
-		NavBar: opts,
+		NavBar: NewNavBarOpts(ctx),
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(&buffer, &page, filepath.Join(PublicFiles, "index.gohtml")); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/index.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
@@ -63,18 +62,26 @@ func identityFromContext(ctx context.Context) *login.Identity {
 	return identity
 }
 
-func parseAndExecute(dest io.Writer, data interface{}, templateFiles ...string) bool {
-	templateFiles = append(templateFiles,
-		filepath.Join(PublicFiles, "header.gohtml"),
-		filepath.Join(PublicFiles, "navbar.gohtml"),
-		filepath.Join(PublicFiles, "footer.gohtml"),
+func parseAndExecute(ctx context.Context, dest io.Writer, data interface{}, templateFile string) bool {
+	identity := identityFromContext(ctx)
+
+	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
+		"link_to_template": func() string { return "https://github.com/virtual-vgo/vvgo/blob/master/" + templateFile },
+		"user_info":        identity.Info,
+		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
+		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
+	}).ParseFiles(
+		templateFile,
+		PublicFiles+"/header.gohtml",
+		PublicFiles+"/navbar.gohtml",
+		PublicFiles+"/footer.gohtml",
 	)
-	uploadTemplate, err := template.ParseFiles(templateFiles...)
 	if err != nil {
 		logger.WithError(err).Error("template.ParseFiles() failed")
 		return false
 	}
-	if err := uploadTemplate.Execute(dest, &data); err != nil {
+
+	if err := tmpl.Execute(dest, &data); err != nil {
 		logger.WithError(err).Error("template.Execute() failed")
 		return false
 	}

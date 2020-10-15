@@ -1,5 +1,10 @@
 package login
 
+import (
+	"fmt"
+	"strings"
+)
+
 // The kind of login
 // This can be used to access additional metadata fields we might add for a particular login.
 type Kind string
@@ -49,6 +54,14 @@ func (x Identity) Role() Role {
 	} else {
 		return x.Roles[0]
 	}
+}
+
+func (x Identity) Info() string {
+	roles := make([]string, len(x.Roles))
+	for i, role := range x.Roles {
+		roles[i] = string(role)
+	}
+	return fmt.Sprintf("kind: %s, roles: %s", x.Kind, strings.Join(roles, " "))
 }
 
 func (x Identity) HasRole(role Role) bool {
