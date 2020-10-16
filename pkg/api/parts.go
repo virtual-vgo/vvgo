@@ -10,7 +10,6 @@ import (
 
 type PartView struct {
 	SpreadSheetID string
-	ReadRange     string
 	*Database
 }
 

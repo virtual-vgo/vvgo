@@ -64,6 +64,15 @@ func (x CreditsSort) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 func (x CreditsSort) Less(i, j int) bool { return x[i].Order < x[j].Order }
 func (x CreditsSort) Sort()              { sort.Sort(x) }
 
+type Leader struct {
+	Name         string
+	Epithet      string
+	Affiliations string
+	Blurb        string
+	Icon         string
+	Email        string
+}
+
 func listProjects(ctx context.Context, spreadsheetID string) ([]Project, error) {
 	resp, index, err := readSheet(ctx, spreadsheetID, "Projects")
 	if err != nil {
@@ -101,6 +110,19 @@ func listCredits(ctx context.Context, spreadsheetID string) ([]Credit, error) {
 		processRow(row, &credits[i], index)
 	}
 	return credits, nil
+}
+
+func listLeaders(ctx context.Context, spreadsheetID string) ([]Leader, error) {
+	resp, index, err := readSheet(ctx, spreadsheetID, "Leaders")
+	if err != nil {
+		return nil, err
+	}
+
+	leaders := make([]Leader, len(resp.Values)-1)
+	for i, row := range resp.Values[1:] {
+		processRow(row, &leaders[i], index)
+	}
+	return leaders, nil
 }
 
 func readSheet(ctx context.Context, spreadsheetID string, readRange string) (*sheets.ValueRange, map[string]int, error) {
