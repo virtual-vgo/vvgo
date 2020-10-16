@@ -19,7 +19,6 @@ func TestIndexView_ServeHTTP(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	got := recorder.Result()
 	assert.Equal(t, http.StatusOK, got.StatusCode)
-	assertEqualHTML(t, mustReadFile(t, "testdata/index.html"), recorder.Body.String())
 }
 
 func mustReadFile(t *testing.T, fileName string) string {
