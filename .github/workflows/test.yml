@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Start containers
-        run: docker-compose up -d
+        run: docker-compose up -d redis minio
 
       - name: Cache go modules
         uses: actions/cache@v1
