@@ -54,7 +54,6 @@ func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = buffer.WriteTo(w)
 }
 
-
 func identityFromContext(ctx context.Context) *login.Identity {
 	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
 	identity, ok := ctxIdentity.(*login.Identity)
