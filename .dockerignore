@@ -1,6 +1,5 @@
 *.md
 .dockerignore
-CNAME
+.vvgo-config.json
 Dockerfile
 LICENSE
-fly.toml
