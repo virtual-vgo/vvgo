@@ -94,7 +94,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 
 	mux.Handle("/parts", PartView{
 		SpreadSheetID: config.PartsSpreadsheetID,
-		ReadRange:     config.PartsReadRange,
 		Database:      &database,
 	}, login.RoleVVGOMember)
 
@@ -107,6 +106,10 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/download", DownloadHandler{
 		config.DistroBucketName: database.Distro.DownloadURL,
 	}, login.RoleVVGOMember)
+
+	mux.Handle("/about", AboutView{
+		SpreadSheetID: config.PartsSpreadsheetID,
+	}, login.RoleAnonymous)
 
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

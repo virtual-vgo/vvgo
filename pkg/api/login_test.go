@@ -27,8 +27,6 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 		server.ServeHTTP(recorder, request)
 		gotResp := recorder.Result()
 		assert.Equal(t, http.StatusOK, gotResp.StatusCode)
-		wantRaw, gotRaw := strings.TrimSpace(mustReadFile(t, "testdata/login.html")), strings.TrimSpace(recorder.Body.String())
-		assertEqualHTML(t, wantRaw, gotRaw)
 	})
 
 	t.Run("logged in", func(t *testing.T) {

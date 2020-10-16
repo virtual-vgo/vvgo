@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{ template "header.gohtml" }}
+    <title>About</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" type="text/css" href="/npm/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/theme.css">
+
+    <script type="text/javascript" src="/npm/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
+    <script type="text/javascript" src="/js/archive/index.js"></script>
+</head>
+
+<body>
+{{ template "navbar.gohtml" }}
+<main role="main">
+    <div class="container">
+        <div class="row mt-4">
+            <div class="col">
+                <p class="blockquote">
+                    With shelter-in-place measures in full swing, musicians worldwide are banding together to make music
+                    in virtual ensembles. And so, Virtual Video Game Orchestra (VVGO for short) was organized by members
+                    from various IRL
+                    VGOs/GSOs, and comprised of local musicians hailing from across the globe!
+                </p>
+                <p class="blockquote">
+                    We are currently accepting new members. If you would like to join our orchestra or get more
+                    information about our current projects, please join us on
+                    <a href="https://discord.gg/9RVUJMQ" class="text-info">discord</a>!
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center"><h2>VVGO Leadership</h2></div>
+        </div>
+        <div class="row justify-content-md-center">
+            <div class="col col-md-auto mt-4 text-center">
+                <table class="table table-bordered table-responsive text-light">
+                    <tbody>
+                    {{- range . }}
+                        <tr>
+                            <td><img src="{{.Icon}}" alt="{{.Name}}" height="125"></td>
+                            <td>
+                                {{ if .Email }}
+                                    <a class="text-light" href="mailto: {{ .Email }}">
+                                        {{ .Name }}
+                                        <br/><small>{{.Epithet}}</small>
+                                    </a>
+                                {{ else }}
+                                    <p class="text-light">
+                                        {{ .Name }}
+                                        <br/><small>{{.Epithet}}</small>
+                                    </p>
+                                {{ end }}
+                            </td>
+                            <td>
+                                <p>{{ .Blurb }}</p>
+                                <p><i>{{ .Affiliations }}</i></p>
+                            </td>
+                        </tr>
+                    {{- end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+{{ template "footer.gohtml" }}
+</body>
+</html>

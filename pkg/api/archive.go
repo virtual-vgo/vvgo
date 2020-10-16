@@ -54,18 +54,8 @@ func (x ArchiveView) filterFromQuery(r *http.Request, projects []Project) []Proj
 }
 
 func (x ArchiveView) renderIndexView(w http.ResponseWriter, ctx context.Context, projects []Project) {
-	opts := NewNavBarOpts(ctx)
-	opts.ProjectsActive = true
-	page := struct {
-		NavBar NavBarOpts
-		Rows   []Project
-	}{
-		NavBar: opts,
-		Rows:   projects,
-	}
-
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/archive/index.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &projects, "archive/index.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
@@ -151,19 +141,16 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, project Proje
 		minor.Rows = append(minor.Rows, &credits[i])
 	}
 
-	opts := NewNavBarOpts(ctx)
 	page := struct {
-		NavBar NavBarOpts
 		Project
 		Credits []*majorTable
 	}{
-		NavBar:  opts,
 		Project: project,
 		Credits: creditsTable.Rows,
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/archive/project.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, "archive/project.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

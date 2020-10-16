@@ -30,16 +30,8 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	opts := NewNavBarOpts(ctx)
-	opts.LoginActive = true
-	page := struct {
-		NavBar NavBarOpts
-	}{
-		NavBar: opts,
-	}
-
 	var buf bytes.Buffer
-	if ok := parseAndExecute(ctx, &buf, &page, PublicFiles+"/login.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buf, &struct{}{}, "login.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
@@ -51,15 +43,8 @@ type LoginSuccessView struct{}
 func (LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	opts := NewNavBarOpts(ctx)
-	page := struct {
-		NavBar NavBarOpts
-	}{
-		NavBar: opts,
-	}
-
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/login_success.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &struct{}{}, "login_success.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

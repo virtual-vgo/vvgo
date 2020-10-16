@@ -28,7 +28,7 @@
                 </a>
             </div>
         </div>
-        <div class="row">
+        <div class="row mb-2">
             <div class="col">
                 <a class="text-light text-lowercase" href="https://vvgo.org/privacy">privacy policy</a>
                 <a class="text-light" href="https://vvgo.org/cookie-policy">cookie policy</a>
@@ -37,7 +37,6 @@
         {{ if or user_on_teams user_is_leader }}
             <div class="row">
                 <div class="col alert-warning text-muted">
-                    <strong>login {{ user_info }}</strong> |
                     <a href="{{ link_to_template }}">view template on github</a>
                 </div>
             </div>
