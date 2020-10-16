@@ -69,7 +69,7 @@ func parseAndExecute(ctx context.Context, dest io.Writer, data interface{}, temp
 	identity := identityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
-		"link_to_template": func() string { return "https://github.com/virtual-vgo/vvgo/blob/master/public" + templateFile },
+		"link_to_template": func() string { return "https://github.com/virtual-vgo/vvgo/blob/master/public/" + templateFile },
 		"user_info":        identity.Info,
 		"user_logged_in":   func() bool { return identity.IsAnonymous() },
 		"user_is_member":   func() bool { return identity.HasRole(login.RoleVVGOMember) },
