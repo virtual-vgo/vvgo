@@ -28,6 +28,33 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = buffer.WriteTo(w)
 }
 
+type AboutView struct {
+	SpreadSheetID string
+}
+
+func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+
+	leaders, err := listLeaders(ctx, x.SpreadSheetID)
+	if err != nil {
+		logger.WithError(err).Error("x.Parts.List() failed")
+		internalServerError(w)
+		return
+	}
+
+	var buffer bytes.Buffer
+	if ok := parseAndExecute(ctx, &buffer, leaders, "about.gohtml"); !ok {
+		internalServerError(w)
+		return
+	}
+	_, _ = buffer.WriteTo(w)
+}
+
+
 func identityFromContext(ctx context.Context) *login.Identity {
 	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
 	identity, ok := ctxIdentity.(*login.Identity)

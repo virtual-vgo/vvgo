@@ -107,7 +107,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		config.DistroBucketName: database.Distro.DownloadURL,
 	}, login.RoleVVGOMember)
 
-	mux.Handle("/leaders", LeadersView{
+	mux.Handle("/about", AboutView{
 		SpreadSheetID: config.PartsSpreadsheetID,
 	}, login.RoleAnonymous)
 
