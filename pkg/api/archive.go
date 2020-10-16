@@ -54,14 +54,8 @@ func (x ArchiveView) filterFromQuery(r *http.Request, projects []Project) []Proj
 }
 
 func (x ArchiveView) renderIndexView(w http.ResponseWriter, ctx context.Context, projects []Project) {
-	page := struct {
-		Rows   []Project
-	}{
-		Rows:   projects,
-	}
-
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, "archive/index.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &projects, "archive/index.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

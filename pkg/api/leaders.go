@@ -28,14 +28,8 @@ func (x LeadersView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderLeadersView(w http.ResponseWriter, ctx context.Context, leaders []Leader) {
-	page := struct {
-		Leaders []Leader
-	}{
-		Leaders: leaders,
-	}
-
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, "leaders.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, leaders, "leaders.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
