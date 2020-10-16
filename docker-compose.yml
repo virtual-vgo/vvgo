@@ -26,3 +26,25 @@ services:
         published: 6379
         protocol: tcp
         mode: host
+
+  vvgo:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - target: 8080
+        published: 8081
+        protocol: tcp
+        mode: host
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /etc/vvgo/google_api_credentials.json
+    volumes:
+      - type: bind
+        source: .vvgo-config.json
+        target: /etc/vvgo/config.json
+      - type: bind
+        source: .google_api_credentials.json
+        target: /etc/vvgo/google_api_credentials.json
+      - type: bind
+        source: ./public
+        target: /public
