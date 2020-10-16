@@ -28,17 +28,14 @@ func (x LeadersView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderLeadersView(w http.ResponseWriter, ctx context.Context, leaders []Leader) {
-	opts := NewNavBarOpts(ctx)
 	page := struct {
-		NavBar   NavBarOpts
 		Leaders []Leader
 	}{
-		NavBar:   opts,
 		Leaders: leaders,
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/leaders.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, "leaders.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

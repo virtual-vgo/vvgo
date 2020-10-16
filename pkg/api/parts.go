@@ -76,20 +76,16 @@ func renderPartsView(w http.ResponseWriter, ctx context.Context, projects []Proj
 		})
 	}
 
-	opts := NewNavBarOpts(ctx)
-	opts.PartsActive = true
 	page := struct {
-		NavBar   NavBarOpts
 		Rows     []tableRow
 		Projects []Project
 	}{
-		NavBar:   opts,
 		Projects: projects,
 		Rows:     rows,
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/parts.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, "parts.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

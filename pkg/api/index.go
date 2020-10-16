@@ -20,36 +20,12 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page := struct {
-		NavBar NavBarOpts
-	}{
-		NavBar: NewNavBarOpts(ctx),
-	}
-
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, PublicFiles+"/index.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &struct{}{}, "index.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
-	buffer.WriteTo(w)
-}
-
-type NavBarOpts struct {
-	ShowLogin       bool
-	ShowMemberLinks bool
-	ShowTeamsLinks  bool
-	PartsActive     bool
-	LoginActive     bool
-	ProjectsActive  bool
-}
-
-func NewNavBarOpts(ctx context.Context) NavBarOpts {
-	identity := identityFromContext(ctx)
-	return NavBarOpts{
-		ShowMemberLinks: identity.HasRole(login.RoleVVGOMember),
-		ShowTeamsLinks:  identity.HasRole(login.RoleVVGOTeams),
-		ShowLogin:       identity.IsAnonymous(),
-	}
+	_, _ = buffer.WriteTo(w)
 }
 
 func identityFromContext(ctx context.Context) *login.Identity {
@@ -66,12 +42,15 @@ func parseAndExecute(ctx context.Context, dest io.Writer, data interface{}, temp
 	identity := identityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
-		"link_to_template": func() string { return "https://github.com/virtual-vgo/vvgo/blob/master/" + templateFile },
+		"link_to_template": func() string { return "https://github.com/virtual-vgo/vvgo/blob/master/public" + templateFile },
 		"user_info":        identity.Info,
+		"user_logged_in":   func() bool { return identity.IsAnonymous() },
+		"user_is_member":   func() bool { return identity.HasRole(login.RoleVVGOMember) },
 		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
+		"template_file":    func() string { return templateFile },
 	}).ParseFiles(
-		templateFile,
+		PublicFiles+"/"+templateFile,
 		PublicFiles+"/header.gohtml",
 		PublicFiles+"/navbar.gohtml",
 		PublicFiles+"/footer.gohtml",
