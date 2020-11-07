@@ -9,6 +9,13 @@ import (
 	"strconv"
 )
 
+const (
+	ProjectsRange = "Projects"
+	PartsRange    = "Parts"
+	CreditsRange  = "Credits"
+	LeadersRange  = "Leaders"
+)
+
 type Project struct {
 	Name                    string
 	Title                   string
@@ -73,79 +80,79 @@ type Leader struct {
 	Email        string
 }
 
-func listProjects(ctx context.Context, spreadsheetID string) ([]Project, error) {
-	resp, index, err := readSheet(ctx, spreadsheetID, "Projects")
-	if err != nil {
-		return nil, err
+func ValuesToProjects(values [][]interface{}) []Project {
+	if len(values) < 1 {
+		return nil
 	}
-
-	projects := make([]Project, len(resp.Values)-1) // ignore the header row
-	for i, row := range resp.Values[1:] {
+	index := buildIndex(values[0])
+	projects := make([]Project, len(values)-1) // ignore the header row
+	for i, row := range values[1:] {
 		processRow(row, &projects[i], index)
 	}
-	return projects, nil
+	return projects
 }
 
-func listParts(ctx context.Context, spreadsheetID string) ([]Part, error) {
-	resp, index, err := readSheet(ctx, spreadsheetID, "Parts")
-	if err != nil {
-		return nil, err
+func ValuesToParts(values [][]interface{}) []Part {
+	if len(values) < 1 {
+		return nil
 	}
-
-	parts := make([]Part, len(resp.Values)-1)
-	for i, row := range resp.Values[1:] {
+	index := buildIndex(values[0])
+	parts := make([]Part, len(values)-1)
+	for i, row := range values[1:] {
 		processRow(row, &parts[i], index)
 	}
-	return parts, nil
+	return parts
 }
 
-func listCredits(ctx context.Context, spreadsheetID string) ([]Credit, error) {
-	resp, index, err := readSheet(ctx, spreadsheetID, "Credits")
-	if err != nil {
-		return nil, err
+func ValuesToCredits(values [][]interface{}) []Credit {
+	if len(values) < 1 {
+		return nil
 	}
-
-	credits := make([]Credit, len(resp.Values)-1)
-	for i, row := range resp.Values[1:] {
+	index := buildIndex(values[0])
+	credits := make([]Credit, len(values)-1)
+	for i, row := range values[1:] {
 		processRow(row, &credits[i], index)
 	}
-	return credits, nil
+	CreditsSort(credits).Sort()
+	return credits
 }
 
-func listLeaders(ctx context.Context, spreadsheetID string) ([]Leader, error) {
-	resp, index, err := readSheet(ctx, spreadsheetID, "Leaders")
-	if err != nil {
-		return nil, err
+func ValuesToLeaders(values [][]interface{}) []Leader {
+	if len(values) < 1 {
+		return nil
 	}
-
-	leaders := make([]Leader, len(resp.Values)-1)
-	for i, row := range resp.Values[1:] {
+	index := buildIndex(values[0])
+	leaders := make([]Leader, len(values)-1)
+	for i, row := range values[1:] {
 		processRow(row, &leaders[i], index)
 	}
-	return leaders, nil
+	return leaders
 }
 
-func readSheet(ctx context.Context, spreadsheetID string, readRange string) (*sheets.ValueRange, map[string]int, error) {
+func buildIndex(fieldNames []interface{}) map[string]int {
+	index := make(map[string]int, len(fieldNames))
+	for i, col := range fieldNames {
+		index[fmt.Sprintf("%s", col)] = i
+	}
+	return index
+}
+
+func readSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
 	srv, err := sheets.NewService(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
+		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
 	}
 
 	resp, err := srv.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
+		return nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
 	}
 
 	if len(resp.Values) < 1 {
-		return nil, nil, fmt.Errorf("no data")
+		return nil, fmt.Errorf("no data")
 	}
 
-	index := make(map[string]int, len(resp.Values[0])-1)
-	for i, col := range resp.Values[0] {
-		index[fmt.Sprintf("%s", col)] = i
-	}
-
-	return resp, index, nil
+	return resp.Values, nil
 }
 
 func processRow(row []interface{}, dest interface{}, index map[string]int) {

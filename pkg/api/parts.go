@@ -9,7 +9,7 @@ import (
 )
 
 type PartView struct {
-	SpreadSheetID string
+	SpreadsheetID string
 	*Database
 }
 
@@ -20,12 +20,13 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := listProjects(ctx, x.SpreadSheetID)
+	projectValues, err := readSheet(ctx, x.SpreadsheetID, ProjectsRange)
 	if err != nil {
-		logger.WithError(err).Error("x.Parts.List() failed")
+		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
 		return
 	}
+	projects := ValuesToProjects(projectValues)
 
 	identity := identityFromContext(r.Context())
 	var wantProjects []Project
@@ -40,13 +41,13 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	parts, err := listParts(ctx, x.SpreadSheetID)
+	partsValues, err := readSheet(ctx, x.SpreadsheetID, PartsRange)
 	if err != nil {
-		logger.WithError(err).Error("x.Parts.List() failed")
+		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
 		return
 	}
-
+	parts := ValuesToParts(partsValues)
 	renderPartsView(w, ctx, wantProjects, parts, x.Distro.Name)
 }
 

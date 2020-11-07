@@ -93,7 +93,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
 	mux.Handle("/parts", PartView{
-		SpreadSheetID: config.PartsSpreadsheetID,
+		SpreadsheetID: config.PartsSpreadsheetID,
 		Database:      &database,
 	}, login.RoleVVGOMember)
 
