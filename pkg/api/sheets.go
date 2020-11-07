@@ -11,9 +11,9 @@ import (
 
 const (
 	ProjectsRange = "Projects"
-	PartsRange = "Parts"
-	CreditsRange = "Credits"
-	LeadersRange = "Leaders"
+	PartsRange    = "Parts"
+	CreditsRange  = "Credits"
+	LeadersRange  = "Leaders"
 )
 
 type Project struct {
