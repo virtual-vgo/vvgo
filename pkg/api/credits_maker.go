@@ -11,6 +11,18 @@ type SubmissionRecord struct {
 	BottomText   string `col_name:"Bottom Text"`
 }
 
+func ValuesToSubmissionRecords(values [][]interface{}) []SubmissionRecord {
+	if len(values) < 1 {
+		return nil
+	}
+	index := buildIndex(values[0])
+	submissionRecords := make([]SubmissionRecord, len(values)-1) // ignore the header row
+	for i, row := range values[1:] {
+		processRow(row, &submissionRecords[i], index)
+	}
+	return submissionRecords
+}
+
 func SubmissionRecordsToCredits(project string, records []SubmissionRecord) []Credit {
 	creditsMap := make(map[string]*Credit)
 	for i, record := range records {
@@ -24,7 +36,7 @@ func SubmissionRecordsToCredits(project string, records []SubmissionRecord) []Cr
 				Name:          record.CreditedName,
 				BottomText:    "(" + record.BottomText,
 			}
-		} else {
+		} else if record.BottomText != "" {
 			credit.BottomText += ", " + record.BottomText
 		}
 		creditsMap[record.Instrument+record.CreditedName] = credit
@@ -32,6 +44,7 @@ func SubmissionRecordsToCredits(project string, records []SubmissionRecord) []Cr
 	credits := make([]Credit, 0, len(creditsMap))
 	for _, credit := range creditsMap {
 		credit.BottomText += ")"
+		credit.BottomText = strings.ToUpper(credit.BottomText)
 		if credit.BottomText == "()" {
 			credit.BottomText = ""
 		}
@@ -44,25 +57,25 @@ func SubmissionRecordsToCredits(project string, records []SubmissionRecord) []Cr
 func CreditsToWebsitePasta(credits []Credit) string {
 	var output string
 	for _, credit := range credits {
-		output += fmt.Sprintf("%s\t%d\t%s\t%s\t%s\t%s\n", credit.Project, credit.Order, credit.MajorCategory,
-			credit.MinorCategory, credit.Name, credit.BottomText)
+		output += strings.TrimSpace(fmt.Sprintf("%s\t\t%s\t%s\t%s\t%s", credit.Project, credit.MajorCategory,
+			credit.MinorCategory, credit.Name, credit.BottomText)) + "\n"
 	}
 	return output
 }
 
 func CreditsToVideoPasta(credits []Credit) string {
+	output := "— PERFORMERS —\t— PERFORMERS —"
 	if len(credits) == 0 {
-		return "\n"
+		return output
 	}
-
-	var output string
-	var lastMinor = credits[0].MinorCategory
+	var lastMinor string
 	for _, credit := range credits {
 		if credit.MinorCategory != lastMinor {
+			lastMinor = credit.MinorCategory
 			output += fmt.Sprintf("\n%s\t%s", credit.MinorCategory,
 				strings.ReplaceAll(credit.MinorCategory, "♭", "_"))
 		}
-		if  credit.BottomText == "" {
+		if credit.BottomText == "" {
 			output += fmt.Sprintf("\t%s", credit.Name)
 		} else {
 			output += fmt.Sprintf("\t%s %s", credit.Name, credit.BottomText)
@@ -72,20 +85,23 @@ func CreditsToVideoPasta(credits []Credit) string {
 }
 
 func CreditsToYoutubePasta(credits []Credit) string {
+	output := "— PERFORMERS —"
 	if len(credits) == 0 {
-		return "\n"
+		return output
 	}
-
-	var output string
-	var lastMinor = credits[0].MinorCategory
+	var lastMinor string
 	for _, credit := range credits {
 		if credit.MinorCategory != lastMinor {
-			output += fmt.Sprintf("\n%s", credit.MinorCategory)
-		}
-		if  credit.BottomText == "" {
-			output += fmt.Sprintf(", %s", credit.Name)
+			lastMinor = credit.MinorCategory
+			output += fmt.Sprintf("\n\n%s\n", credit.MinorCategory)
 		} else {
-			output += fmt.Sprintf(", %s %s", credit.Name, credit.BottomText)
-		}	}
+			output += ", "
+		}
+		if credit.BottomText == "" {
+			output += fmt.Sprintf("%s", credit.Name)
+		} else {
+			output += fmt.Sprintf("%s %s", credit.Name, credit.BottomText)
+		}
+	}
 	return output + "\n"
 }
