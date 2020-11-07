@@ -27,12 +27,13 @@ func (x ArchiveView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := listProjects(ctx, x.SpreadsheetID)
+	projectValues, err := readSheet(ctx, x.SpreadsheetID, ProjectsRange)
 	if err != nil {
-		logger.WithError(err).Error("x.listProjects() failed")
+		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
 		return
 	}
+	projects := listProjects(projectValues)
 
 	projects = x.filterFromQuery(r, projects)
 	x.renderIndexView(w, ctx, projects)
@@ -69,13 +70,13 @@ func (x ArchiveView) serveProject(w http.ResponseWriter, r *http.Request, name s
 		return
 	}
 
-	projects, err := listProjects(ctx, x.SpreadsheetID)
+	values, err := readSheet(ctx, x.SpreadsheetID, ProjectsRange)
 	if err != nil {
 		logger.WithError(err).Error("listProjects() failed")
 		internalServerError(w)
 		return
 	}
-
+	projects := listProjects(values)
 	var exists bool
 	var wantProject Project
 	for _, project := range projects {
@@ -93,13 +94,14 @@ func (x ArchiveView) serveProject(w http.ResponseWriter, r *http.Request, name s
 }
 
 func renderProjectView(w http.ResponseWriter, ctx context.Context, project Project, spreadsheetID string) {
-	credits, err := listCredits(ctx, spreadsheetID)
+	values, err := readSheet(ctx, spreadsheetID, CreditsRange)
 	if err != nil {
 		logger.WithError(err).Error("listCredits() failed")
 		internalServerError(w)
 		return
 	}
-	CreditsSort(credits).Sort()
+
+	credits := listCredits(values)
 
 	type minorTable struct {
 		Name string
