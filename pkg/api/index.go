@@ -45,9 +45,10 @@ func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
+	leaders := ValuesToLeaders(values)
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, listLeaders(values), "about.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, leaders, "about.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

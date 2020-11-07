@@ -26,7 +26,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	projects := listProjects(projectValues)
+	projects := ValuesToProjects(projectValues)
 
 	identity := identityFromContext(r.Context())
 	var wantProjects []Project
@@ -47,7 +47,7 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	parts := listParts(partsValues)
+	parts := ValuesToParts(partsValues)
 
 	renderPartsView(w, ctx, wantProjects, parts, x.Distro.Name)
 }

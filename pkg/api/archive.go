@@ -33,7 +33,7 @@ func (x ArchiveView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	projects := listProjects(projectValues)
+	projects := ValuesToProjects(projectValues)
 
 	projects = x.filterFromQuery(r, projects)
 	x.renderIndexView(w, ctx, projects)
@@ -72,11 +72,11 @@ func (x ArchiveView) serveProject(w http.ResponseWriter, r *http.Request, name s
 
 	values, err := readSheet(ctx, x.SpreadsheetID, ProjectsRange)
 	if err != nil {
-		logger.WithError(err).Error("listProjects() failed")
+		logger.WithError(err).Error("ValuesToProjects() failed")
 		internalServerError(w)
 		return
 	}
-	projects := listProjects(values)
+	projects := ValuesToProjects(values)
 	var exists bool
 	var wantProject Project
 	for _, project := range projects {
@@ -96,12 +96,12 @@ func (x ArchiveView) serveProject(w http.ResponseWriter, r *http.Request, name s
 func renderProjectView(w http.ResponseWriter, ctx context.Context, project Project, spreadsheetID string) {
 	values, err := readSheet(ctx, spreadsheetID, CreditsRange)
 	if err != nil {
-		logger.WithError(err).Error("listCredits() failed")
+		logger.WithError(err).Error("ValuesToCredits() failed")
 		internalServerError(w)
 		return
 	}
 
-	credits := listCredits(values)
+	credits := ValuesToCredits(values)
 
 	type minorTable struct {
 		Name string

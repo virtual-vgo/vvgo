@@ -80,11 +80,11 @@ type Leader struct {
 	Email        string
 }
 
-func listProjects(values [][]interface{}) []Project {
+func ValuesToProjects(values [][]interface{}) []Project {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values)
+	index := buildIndex(values[0])
 	projects := make([]Project, len(values)-1) // ignore the header row
 	for i, row := range values[1:] {
 		processRow(row, &projects[i], index)
@@ -92,11 +92,11 @@ func listProjects(values [][]interface{}) []Project {
 	return projects
 }
 
-func listParts(values [][]interface{}) []Part {
+func ValuesToParts(values [][]interface{}) []Part {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values)
+	index := buildIndex(values[0])
 	parts := make([]Part, len(values)-1)
 	for i, row := range values[1:] {
 		processRow(row, &parts[i], index)
@@ -104,11 +104,11 @@ func listParts(values [][]interface{}) []Part {
 	return parts
 }
 
-func listCredits(values [][]interface{}) []Credit {
+func ValuesToCredits(values [][]interface{}) []Credit {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values)
+	index := buildIndex(values[0])
 	credits := make([]Credit, len(values)-1)
 	for i, row := range values[1:] {
 		processRow(row, &credits[i], index)
@@ -117,11 +117,11 @@ func listCredits(values [][]interface{}) []Credit {
 	return credits
 }
 
-func listLeaders(values [][]interface{}) []Leader {
+func ValuesToLeaders(values [][]interface{}) []Leader {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values)
+	index := buildIndex(values[0])
 	leaders := make([]Leader, len(values)-1)
 	for i, row := range values[1:] {
 		processRow(row, &leaders[i], index)
@@ -129,12 +129,9 @@ func listLeaders(values [][]interface{}) []Leader {
 	return leaders
 }
 
-func buildIndex(values [][]interface{}) map[string]int {
-	if len(values) < 1 {
-		return nil
-	}
-	index := make(map[string]int, len(values[0]))
-	for i, col := range values {
+func buildIndex(fieldNames []interface{}) map[string]int {
+	index := make(map[string]int, len(fieldNames))
+	for i, col := range fieldNames {
 		index[fmt.Sprintf("%s", col)] = i
 	}
 	return index
