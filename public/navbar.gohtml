@@ -29,6 +29,13 @@
                        href="/archive">Archive
                     </a>
                 </li>
+                {{ if user_on_teams }}
+                    <li class="nav-item">
+                        <a class="{{- if eq template_file "credits-maker.gohtml" }}alert-warning text-dark{{ else }}text-warning{{ end }} nav-link"
+                           href="/credits-maker">Credits Maker
+                        </a>
+                    </li>
+                {{ end }}
             </ul>
             <ul class="navbar-nav mr-2">
                 <li class="nav-item">
