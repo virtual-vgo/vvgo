@@ -44,7 +44,7 @@
                             <td>{{ .Archived }}</td>
                             <td>
                                 {{ if .YoutubeLink }}
-                                    <a href="/archive/{{ .Name }}"
+                                    <a href="/projects/{{ .Name }}"
                                        class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
                                         {{ .Title }}<br/><small>{{ .Sources}}</small></a>
                                 {{ else }}

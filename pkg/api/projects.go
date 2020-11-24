@@ -7,20 +7,20 @@ import (
 	"net/http"
 )
 
-type ArchiveView struct {
+type ProjectsView struct {
 	SpreadsheetID string
 	*Database
 }
 
-func (x ArchiveView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/archive/" {
+func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/projects/" {
 		x.serveIndex(w, r)
 	} else {
-		x.serveProject(w, r, r.URL.Path[len("/archive/"):])
+		x.serveProject(w, r, r.URL.Path[len("/projects/"):])
 	}
 }
 
-func (x ArchiveView) serveIndex(w http.ResponseWriter, r *http.Request) {
+func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
@@ -39,7 +39,7 @@ func (x ArchiveView) serveIndex(w http.ResponseWriter, r *http.Request) {
 	x.renderIndexView(w, ctx, projects)
 }
 
-func (x ArchiveView) filterFromQuery(r *http.Request, projects []Project) []Project {
+func (x ProjectsView) filterFromQuery(r *http.Request, projects []Project) []Project {
 	identity := identityFromContext(r.Context())
 	want := len(projects)
 	for i := 0; i < want; i++ {
@@ -54,16 +54,16 @@ func (x ArchiveView) filterFromQuery(r *http.Request, projects []Project) []Proj
 	return projects
 }
 
-func (x ArchiveView) renderIndexView(w http.ResponseWriter, ctx context.Context, projects []Project) {
+func (x ProjectsView) renderIndexView(w http.ResponseWriter, ctx context.Context, projects []Project) {
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &projects, "archive/index.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &projects, "projects/index.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}
 	_, _ = buffer.WriteTo(w)
 }
 
-func (x ArchiveView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
+func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
@@ -152,7 +152,7 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, project Proje
 	}
 
 	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, "archive/project.gohtml"); !ok {
+	if ok := parseAndExecute(ctx, &buffer, &page, "projects/project.gohtml"); !ok {
 		internalServerError(w)
 		return
 	}

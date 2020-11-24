@@ -9,14 +9,6 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    {{ if user_logged_in }}
-                        <a class="{{- if eq template_file "login.gohtml" }}bg-info{{ end }} nav-link"
-                           href="/login">Login</a>
-                    {{ else }}
-                        <a class="nav-link" href="/logout">Logout</a>
-                    {{ end }}
-                </li>
                 {{ if user_is_member }}
                     <li class="nav-item">
                         <a class="{{- if eq template_file "parts.gohtml" }}bg-info{{ end }} nav-link"
@@ -25,14 +17,22 @@
                     </li>
                 {{ end }}
                 <li class="nav-item">
-                    <a class="{{- if eq template_file "archive/index.gohtml" }}bg-info{{ end }} nav-link"
-                       href="/archive">Archive
+                    <a class="{{- if eq template_file "projects/index.gohtml" }}bg-info{{ end }} nav-link"
+                       href="/projects">Projects
                     </a>
+                </li>
+                <li class="nav-item">
+                    <a class="{{- if eq template_file "about.gohtml" }}bg-info{{ end }} nav-link" href="/about">About</a>
                 </li>
             </ul>
             <ul class="navbar-nav mr-2">
                 <li class="nav-item">
-                    <a class="{{- if eq template_file "about.gohtml" }}bg-info{{ end }} nav-link" href="/about">About</a>
+                    {{ if user_logged_in }}
+                        <a class="{{- if eq template_file "login.gohtml" }}bg-info{{ end }} nav-link"
+                           href="/login">Login</a>
+                    {{ else }}
+                        <a class="nav-link" href="/logout">Logout</a>
+                    {{ end }}
                 </li>
             </ul>
         </div>
