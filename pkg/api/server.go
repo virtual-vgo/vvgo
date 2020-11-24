@@ -108,6 +108,8 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		config.DistroBucketName: database.Distro.DownloadURL,
 	}, login.RoleVVGOMember)
 
+	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
+
 	mux.Handle("/about", AboutView{
 		SpreadSheetID: config.PartsSpreadsheetID,
 	}, login.RoleAnonymous)
