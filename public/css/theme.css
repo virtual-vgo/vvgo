@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Montserrat', sans-serif;
-    background-color: rgba(24, 3, 24, 0.95);
+    background-color: rgb(15, 10, 24);
     color: #E9E9E9;
 }
 
@@ -56,6 +56,12 @@ body {
     background-image: url('/images/VVGO_03_TEBTR_Website_Tile.png');
     background-repeat: no-repeat;
     background-position: right;
+}
+
+.bg-fire-emblem {
+    background-image: url('/images/crest_of_flames.png');
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .thick-border {

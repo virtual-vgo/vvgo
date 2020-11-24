@@ -97,8 +97,9 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		Database:      &database,
 	}, login.RoleVVGOMember)
 
-	mux.Handle("/archive", http.RedirectHandler("/archive/", http.StatusFound), login.RoleAnonymous)
-	mux.Handle("/archive/", ArchiveView{
+	mux.Handle("/archive", http.RedirectHandler("/projects/", http.StatusFound), login.RoleAnonymous)
+	mux.Handle("/projects", http.RedirectHandler("/projects/", http.StatusFound), login.RoleAnonymous)
+	mux.Handle("/projects/", ProjectsView{
 		SpreadsheetID: config.PartsSpreadsheetID,
 		Database:      &database,
 	}, login.RoleAnonymous)
