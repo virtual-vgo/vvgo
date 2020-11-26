@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"strings"
 )
 
 type IndexView struct{}
@@ -76,6 +77,11 @@ func parseAndExecute(ctx context.Context, dest io.Writer, data interface{}, temp
 		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
 		"template_file":    func() string { return templateFile },
+		"projects":         func() ([]Project, error) { return listProjects(ctx) },
+		"current_projects": func() ([]Project, error) { return listCurrentProjects(ctx) },
+		"parts":            func() ([]Part, error) { return listParts(ctx) },
+		"download_link":    func(obj string) string { return downloadLink("vvgo-distro", obj) },
+		"title":            strings.Title,
 	}).ParseFiles(
 		PublicFiles+"/"+templateFile,
 		PublicFiles+"/header.gohtml",
@@ -92,4 +98,43 @@ func parseAndExecute(ctx context.Context, dest io.Writer, data interface{}, temp
 		return false
 	}
 	return true
+}
+
+const spreadsheetID = "1JAJx3fwJ7uS2eR_nBuqXnJHSkicDSRfSpE9Ly48YAgk"
+
+func listProjects(ctx context.Context) ([]Project, error) {
+	values, err := readSheet(ctx, spreadsheetID, ProjectsRange)
+	if err != nil {
+		return nil, err
+	}
+	return ValuesToProjects(values), nil
+}
+
+func listCurrentProjects(ctx context.Context) ([]Project, error) {
+	projects, err := listProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	identity := identityFromContext(ctx)
+	var current []Project
+	for _, project := range projects {
+		switch {
+		case project.Archived:
+			continue
+		case project.Released == true:
+			current = append(current, project)
+		case identity.HasRole(login.RoleVVGOTeams) || identity.HasRole(login.RoleVVGOLeader):
+			current = append(current, project)
+		}
+	}
+	return current, nil
+}
+
+func listParts(ctx context.Context) ([]Part, error) {
+	values, err := readSheet(ctx, spreadsheetID, PartsRange)
+	if err != nil {
+		return nil, err
+	}
+	return ValuesToParts(values), nil
 }

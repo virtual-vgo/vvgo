@@ -1,8 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"google.golang.org/api/sheets/v4"
 	"reflect"
 	"sort"
@@ -137,7 +140,36 @@ func buildIndex(fieldNames []interface{}) map[string]int {
 	return index
 }
 
+func readValuesFromRedis(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
+	var buf bytes.Buffer
+	key := "sheets:" + spreadsheetID + ":" + readRange
+	if err := redis.Do(ctx, redis.Cmd(&buf, "GET", key)); err != nil {
+		return nil, err
+	}
+	var values [][]interface{}
+	if err := json.NewDecoder(&buf).Decode(&values); err != nil {
+		return nil, err
+	}
+	return values, nil
+}
+
+func writeValuesToRedis(ctx context.Context, spreadsheetID string, readRange string, values [][]interface{}) error {
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(&values)
+	key := "sheets:" + spreadsheetID + ":" + readRange
+	return redis.Do(ctx, redis.Cmd(nil, "SETEX", key, "1", buf.String()))
+}
+
 func readSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
+
+	// first try to read from redis
+	values, err := readValuesFromRedis(ctx, spreadsheetID, readRange)
+	if err != nil {
+		logger.WithError(err).Infof("failed to read spreadsheet values from redis")
+	} else if len(values) != 0 {
+		return values, nil
+	}
+
 	srv, err := sheets.NewService(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
@@ -150,6 +182,10 @@ func readSheet(ctx context.Context, spreadsheetID string, readRange string) ([][
 
 	if len(resp.Values) < 1 {
 		return nil, fmt.Errorf("no data")
+	}
+
+	if err := writeValuesToRedis(ctx, spreadsheetID, readRange, resp.Values); err != nil {
+		logger.WithError(err).Errorf("failed to write spreadsheet values to redis")
 	}
 
 	return resp.Values, nil

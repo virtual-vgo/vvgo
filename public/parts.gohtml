@@ -28,7 +28,7 @@
         <h3 class="mt-2">Current Projects</h3>
         <ul class="nav nav-pills" id="project-tabs" role="tablist">
             {{ $active := true }}
-            {{- range .Projects }}
+            {{- range current_projects }}
                 <li class="nav-item">
                     <a class="btn btn-outline-dark {{ if .Released }}text-light{{ else }}text-warning{{ end }} rounded-0  {{ if $active }}active{{ end }}"
                        id="{{ .Name }}-tab" data-toggle="pill" href="#parts-{{ .Name }}" role="tab"
@@ -37,10 +37,9 @@
             {{ end }}
         </ul>
 
-        {{- $rows := .Rows }}
         <div class="tab-content">
             {{ $active = true }}
-            {{- range .Projects }}
+            {{- range current_projects }}
                 <div class="tab-pane fade {{ if $active }}active show{{ $active = false }}{{ end }}"
                      id="parts-{{ .Name }}" role="tabpanel" aria-labelledby="{{ .Name }}-tab">
                     <div class="row row-cols-1">
@@ -49,7 +48,10 @@
                             {{ if .BannerLink }}
                                 <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
                             {{ else }}
-                                <h2 class="title">{{ .Title }}</h2>
+                                <h2 class="title">
+                                    {{ .Title }}
+                                    <small><a href="/parts?project={{ .Name }}"><i class="fas fa-link"></i></a></small>
+                                </h2>
                                 <h3>{{ .Sources }}</h3>
                             {{ end }}
                         </div>
@@ -97,27 +99,27 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {{ $project := .Title }}
-                                {{- range $rows }}
-                                    {{- if eq $project .Project}}
+                                {{ $project := .Name }}
+                                {{- range parts }}
+                                    {{- if eq $project .Project }}
                                         <tr>
                                             <td>{{.ScoreOrder}}</td>
-                                            <td class="title">{{.PartName}}</td>
+                                            <td class="title">{{ title .PartName}}</td>
                                             <td>
-                                                {{ if .SheetMusic }}
-                                                    <a href="{{.SheetMusic}}"
+                                                {{ if .SheetMusicFile }}
+                                                    <a href="{{ download_link .SheetMusicFile }}"
                                                        class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
                                                         <i class="far fa-file-pdf"></i> sheet music
                                                     </a>
                                                 {{ end }}
-                                                {{ if .ClickTrack}}
-                                                    <a href="{{.ClickTrack}}"
+                                                {{ if .ClickTrackFile }}
+                                                    <a href="{{ download_link .ClickTrackFile }}"
                                                        class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
                                                         <i class="far fa-file-audio"></i> click track
                                                     </a>
                                                 {{ end }}
                                                 {{ if .ReferenceTrack }}
-                                                    <a href="{{.ReferenceTrack}}"
+                                                    <a href="{{ download_link .ReferenceTrack}}"
                                                        class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
                                                         <i class="far fa-file-audio"></i> reference track
                                                     </a>
@@ -129,7 +131,7 @@
                                                     </a>
                                                 {{ end }}
                                                 {{ if .PronunciationGuide }}
-                                                    <a href="{{.PronunciationGuide}}"
+                                                    <a href="{{ download_link .PronunciationGuide}}"
                                                        class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
                                                         <i class="fas fa-language"></i> pronunciation guide
                                                     </a>
