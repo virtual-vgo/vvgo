@@ -2,7 +2,7 @@ package api
 
 import (
 	"bytes"
-	"github.com/virtual-vgo/vvgo/pkg/models/submission"
+	"github.com/virtual-vgo/vvgo/pkg/sheets/submission"
 	"net/http"
 )
 

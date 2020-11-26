@@ -3,21 +3,11 @@ package submission
 import (
 	"context"
 	"fmt"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/models/credit"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
-	"os"
+	"github.com/virtual-vgo/vvgo/pkg/sheets/credit"
 	"testing"
 )
-
-func init() {
-	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "../../../.google_api_credentials.json")
-	var redisConfig redis.Config
-	envconfig.MustProcess("REDIS", &redisConfig)
-	redis.Initialize(redisConfig)
-}
 
 func TestList(t *testing.T) {
 	ctx := context.Background()

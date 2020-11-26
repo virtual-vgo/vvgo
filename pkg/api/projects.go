@@ -1,15 +1,12 @@
 package api
 
 import (
-	"bytes"
-	"context"
-	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/models/credit"
-	"github.com/virtual-vgo/vvgo/pkg/models/project"
+	"github.com/virtual-vgo/vvgo/pkg/sheets/credit"
+	"github.com/virtual-vgo/vvgo/pkg/sheets/project"
 	"net/http"
 )
 
-type ProjectsView struct{}
+type ProjectsView struct{ Template }
 
 func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/projects/" {
@@ -26,19 +23,13 @@ func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := models.ListProjects(ctx, IdentityFromContext(ctx))
+	projects, err := project.List(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
 		return
 	}
-
-	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &projects, "projects/index.gohtml"); !ok {
-		internalServerError(w)
-		return
-	}
-	_, _ = buffer.WriteTo(w)
+	x.Template.ParseAndExecute(ctx, w, r, &projects, "projects/index.gohtml")
 }
 
 func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
@@ -48,7 +39,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	projects, err := models.ListProjects(ctx, IdentityFromContext(ctx))
+	projects, err := project.List(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("valuesToProjects() failed")
 		internalServerError(w)
@@ -60,11 +51,8 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		http.NotFound(w, r)
 		return
 	}
-	renderProjectView(w, ctx, wantProject)
-}
 
-func renderProjectView(w http.ResponseWriter, ctx context.Context, wantProject project.Project) {
-	credits, err := models.ListCredits(ctx)
+	credits, err := credit.List(ctx, x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("valuesToCredits() failed")
 		internalServerError(w)
@@ -115,10 +103,5 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, wantProject p
 		Credits: creditsTable.Rows,
 	}
 
-	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, "projects/project.gohtml"); !ok {
-		internalServerError(w)
-		return
-	}
-	_, _ = buffer.WriteTo(w)
+	x.Template.ParseAndExecute(ctx, w, r, &page, "projects/project.gohtml")
 }

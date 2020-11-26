@@ -3,8 +3,8 @@ package submission
 import (
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/models/credit"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/sheets/credit"
 	"strings"
 )
 

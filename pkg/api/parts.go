@@ -1,11 +1,10 @@
 package api
 
 import (
-	"bytes"
 	"net/http"
 )
 
-type PartView struct {}
+type PartView struct{ Template }
 
 func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -13,11 +12,5 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w)
 		return
 	}
-
-	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, nil, "parts.gohtml"); !ok {
-		internalServerError(w)
-		return
-	}
-	_, _ = buffer.WriteTo(w)
+	x.Template.ParseAndExecute(ctx, w, r, nil, "parts.gohtml")
 }
