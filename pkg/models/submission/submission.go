@@ -1,0 +1,69 @@
+package submission
+
+import (
+	"context"
+	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/models/credit"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"strings"
+)
+
+type Submission struct {
+	CreditedName string `col_name:"Credited Name"`
+	Instrument   string
+	BottomText   string `col_name:"Bottom Text"`
+}
+
+type Submissions []Submission
+
+func List(ctx context.Context, spreadsheetID string, readRange string) (Submissions, error) {
+	values, err := sheets.ReadSheet(ctx, spreadsheetID, readRange)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("%#v\n", values)
+	return valuesToSubmissionRecords(values), nil
+}
+
+func valuesToSubmissionRecords(values [][]interface{}) Submissions {
+	if len(values) < 1 {
+		return nil
+	}
+	index := sheets.BuildIndex(values[0])
+	submissionRecords := make([]Submission, len(values)-1) // ignore the header row
+	for i, row := range values[1:] {
+		sheets.ProcessRow(row, &submissionRecords[i], index)
+	}
+	return submissionRecords
+}
+
+func (x Submissions) ToCredits(project string) credit.Credits {
+	creditsMap := make(map[string]*credit.Credit)
+	for i, record := range x {
+		submissionCredit := creditsMap[record.Instrument+record.CreditedName]
+		if submissionCredit == nil {
+			submissionCredit = &credit.Credit{
+				Project:       project,
+				Order:         i,
+				MajorCategory: "PERFORMERS",
+				MinorCategory: strings.ToUpper(record.Instrument),
+				Name:          record.CreditedName,
+				BottomText:    "(" + record.BottomText,
+			}
+		} else if record.BottomText != "" {
+			submissionCredit.BottomText += ", " + record.BottomText
+		}
+		creditsMap[record.Instrument+record.CreditedName] = submissionCredit
+	}
+	credits := make(credit.Credits, 0, len(creditsMap))
+	for _, submissionCredit := range creditsMap {
+		submissionCredit.BottomText += ")"
+		submissionCredit.BottomText = strings.ToUpper(submissionCredit.BottomText)
+		if submissionCredit.BottomText == "()" {
+			submissionCredit.BottomText = ""
+		}
+		credits = append(credits, *submissionCredit)
+	}
+	credits.Sort()
+	return credits
+}

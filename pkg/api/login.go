@@ -24,7 +24,7 @@ type LoginView struct {
 func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	identity := identityFromContext(ctx)
+	identity := IdentityFromContext(ctx)
 	if identity.IsAnonymous() == false {
 		http.Redirect(w, r, "/login/success", http.StatusFound)
 		return

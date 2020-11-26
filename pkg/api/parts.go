@@ -5,10 +5,7 @@ import (
 	"net/http"
 )
 
-type PartView struct {
-	SpreadsheetID string
-	*Database
-}
+type PartView struct {}
 
 func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
