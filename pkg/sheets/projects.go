@@ -31,6 +31,9 @@ type Project struct {
 	BannerLink              string `col_name:"Banner Link"`
 }
 
+func (x Project) ProjectPage() string { return "/projects/" + x.Name }
+func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
+
 type Projects []Project
 
 func ListProjects(ctx context.Context, identity *login.Identity, spreadsheetID string) (Projects, error) {
@@ -67,10 +70,11 @@ func (x Projects) Has(name string) bool {
 	return ok
 }
 
-func (x Projects) Len() int           { return len(x) }
-func (x Projects) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
-func (x Projects) Less(i, j int) bool { return x[i].Name < x[j].Name }
-func (x Projects) Sort() Projects     { sort.Sort(x); return x }
+func (x Projects) Len() int              { return len(x) }
+func (x Projects) Swap(i, j int)         { x[i], x[j] = x[j], x[i] }
+func (x Projects) Less(i, j int) bool    { return x[i].Name < x[j].Name }
+func (x Projects) Sort() Projects        { sort.Sort(x); return x }
+func (x Projects) ReverseSort() Projects { sort.Sort(sort.Reverse(x)); return x }
 
 func (x Projects) ForIdentity(identity *login.Identity) Projects {
 	var want Projects
@@ -110,4 +114,43 @@ func (x Projects) Select(names ...string) Projects {
 
 func (x Projects) Append(projects Projects) Projects {
 	return append(x, projects...)
+}
+
+func (x Projects) ReleasedYoutube() Projects {
+	var want Projects
+	for _, project := range x {
+		if project.YoutubeLink != "" {
+			want = append(want, project)
+		}
+	}
+	return want
+}
+
+func (x Projects) Released() Projects {
+	var want Projects
+	for _, project := range x {
+		if project.Released {
+			want = append(want, project)
+		}
+	}
+	return want
+}
+func (x Projects) Archived() Projects {
+	var want Projects
+	for _, project := range x {
+		if project.Archived {
+			want = append(want, project)
+		}
+	}
+	return want
+}
+
+func (x Projects) NotReleasedYoutube() Projects {
+	var want Projects
+	for _, project := range x {
+		if project.YoutubeLink == "" {
+			want = append(want, project)
+		}
+	}
+	return want
 }
