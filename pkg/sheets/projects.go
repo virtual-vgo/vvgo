@@ -99,10 +99,10 @@ func (x Projects) Current() Projects {
 
 func (x Projects) Select(names ...string) Projects {
 	var want Projects
-    for _, name := range names {
-    	project, ok := x.Get(name)
-    	if ok {
-    		want = append(want, project)
+	for _, name := range names {
+		project, ok := x.Get(name)
+		if ok {
+			want = append(want, project)
 		}
 	}
 	return want
