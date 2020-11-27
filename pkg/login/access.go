@@ -33,7 +33,7 @@ const (
 )
 
 var anonymous = Identity{
-	Kind:  "",
+	Kind:  "anonymous",
 	Roles: []Role{RoleAnonymous},
 }
 
@@ -45,15 +45,6 @@ func Anonymous() Identity { return anonymous }
 type Identity struct {
 	Kind  Kind   `json:"kind"`
 	Roles []Role `json:"roles"`
-}
-
-// Role returns the first role or RoleAnonymous if the identity has no roles.
-func (x Identity) Role() Role {
-	if len(x.Roles) == 0 {
-		return RoleAnonymous
-	} else {
-		return x.Roles[0]
-	}
 }
 
 func (x Identity) Info() string {
@@ -77,5 +68,16 @@ func (x Identity) HasRole(role Role) bool {
 }
 
 func (x Identity) IsAnonymous() bool {
-	return x.Role() == RoleAnonymous
+	return len(x.Roles) == 0 || (len(x.Roles) == 1 && x.Roles[0] == RoleAnonymous)
+}
+
+func (x Identity) AssumeRoles(roles ...Role) Identity {
+	var new []Role
+	for _, role := range roles {
+		if x.HasRole(role) {
+			new = append(new, role)
+		}
+	}
+	x.Roles = new
+	return x
 }

@@ -24,6 +24,7 @@ func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r 
 		"template_file":    func() string { return templateFile },
 		"link_to_template": func() string { return "https://github.com/virtual-vgo/vvgo/blob/master/public/" + templateFile },
 		"user_info":        identity.Info,
+		"user_roles":       func() []login.Role { return identity.Roles },
 		"title":            strings.Title,
 		"form_value":       func(key string) string { return r.FormValue(key) },
 		"user_logged_in":   func() bool { return identity.IsAnonymous() == false },
