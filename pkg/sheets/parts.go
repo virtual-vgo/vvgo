@@ -75,3 +75,7 @@ func (x Parts) Current() Parts {
 	}
 	return current
 }
+
+func (x Parts) Append(parts Parts) Parts {
+	return append(x, parts...)
+}

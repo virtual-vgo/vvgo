@@ -24,29 +24,68 @@
 <body>
 {{ template "navbar.gohtml" }}
 
+{{ $all_projects := projects }}
+{{ $all_parts := parts }}
+{{ $projects := projects }}
+{{ $parts := parts }}
+{{ $show_all := form_value "all" }}
+{{ if not user_is_leader }}{{ $show_all = "" }}{{ end }}
+{{ if ne $show_all "true" }}
+    {{ $show_all = "" }}
+    {{ $projects = projects.Current }}
+    {{ $parts = parts.Current }}
+{{ end }}
+
 {{ $active := "" }}
 {{ $want := form_value "project" }}
-{{ $projects := projects.Current }}
-{{ $parts := parts.Current }}
-{{ if $projects.Exists $want }}
+{{ if $projects.Has $want }}
     {{ $active = $want }}
-{{ else if gt $projects.Len 0 }}
-    {{ $active = index $projects 0 }}
-    {{ $active = $active.Name }}
+{{ else if user_is_leader }}
+    {{ if $all_projects.Has $want }}
+        {{ $wantProject := $all_projects.Select $want }}
+        {{ $projects = $wantProject.Append $projects }}
+        {{ $wantParts := $all_parts.ForProject $want }}
+        {{ $parts = $wantParts.Append $parts }}
+        {{ $active = $want }}
+    {{ end }}
+{{ end }}
+{{ if eq $active "" }}
+    {{ if gt $projects.Len 0 }}
+        {{ $wantProject := index $projects 0 }}
+        {{ $active = $wantProject.Name }}
+    {{ end }}
 {{ end }}
 
 <main role="main">
     <div class="container">
-        <h3 class="mt-2">Current Projects</h3>
-        <ul class="nav nav-pills" id="project-tabs" role="tablist">
-            {{- range $projects }}
-                <li class="nav-item">
-                    <a class="btn btn-outline-dark {{ if .Released }}text-light{{ else }}text-warning{{ end }} rounded-0 {{ if eq .Name $active }}active{{ end }}"
-                       id="{{ .Name }}-tab" data-toggle="pill" href="#parts-{{ .Name }}" role="tab"
-                       aria-controls="parts-{{ .Name }}" aria-selected="{{ $active }}">{{ .Title }}</a>
-                </li>
-            {{ end }}
-        </ul>
+        <div class="row row-cols-1">
+            <div class="col">
+                {{ if $show_all }}
+                    <h3 class="mt-2">
+                        All Projects</i>
+                        <small><a href="/parts" class="text-light">current projects</a></small>
+                    </h3>
+                {{ else }}
+                    <h3 class="mt-2">
+                        Current Projects
+                        {{ if user_is_leader }}
+                            <small><a href="/parts?all=true" class="text-warning">all projects
+                                    <i class="fas fa-lock"></i></a></small>
+                        {{end}}
+                    </h3>
+                {{ end }}
+                <ul class="nav nav-pills" id="project-tabs" role="tablist">
+                    {{- range $projects }}
+                        <li class="nav-item">
+                            <a class="btn btn-outline-dark {{ if .Archived }}text-secondary{{ else if .Released }}text-light{{ else }}text-warning{{ end }} rounded-0 {{ if eq .Name $active }}active{{ end }}"
+                               id="{{ .Name }}-tab" data-toggle="pill" href="#parts-{{ .Name }}" role="tab"
+                               aria-controls="parts-{{ .Name }}" aria-selected="{{ $active }}">
+                                {{ .Title }}{{ if .Archived }} <i class="fas fa-lock"></i>{{end}}</a>
+                        </li>
+                    {{ end }}
+                </ul>
+            </div>
+        </div>
 
         <div class="tab-content">
             {{- range $projects }}
@@ -54,18 +93,19 @@
                      id="parts-{{ .Name }}" role="tabpanel" aria-labelledby="{{ .Name }}-tab">
                     <div class="row row-cols-1">
                         <div class="col mt-3 text-center">
+                            {{ if .Archived }}
+                                <div class="alert alert-warning">
+                                    This project has been archived. Parts are only visible to leaders.
+                                </div>{{ end }}
                             {{ if not .Released }}
                                 <div class="alert alert-warning">This project is unreleased and invisible to members!
                                 </div>{{ end }}
                             {{ if .BannerLink }}
-                                <a href="/parts?project={{ .Name }}">
+                                <a href="{{ .YoutubeLink }}">
                                     <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
                                 </a>
                             {{ else }}
-                                <h2 class="title">
-                                    {{ .Title }}
-                                    <small><a href="/parts?project={{ .Name }}" class="text-muted"><i class="fas fa-link"></i></a></small>
-                                </h2>
+                                <h2 class="title">{{ .Title }}</h2>
                                 <h3>{{ .Sources }}</h3>
                             {{ end }}
                         </div>
@@ -73,10 +113,12 @@
                             Composed by {{ .Composers }}<br/>
                             <small>{{ .Arrangers }}</small>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <h4 class="text-center m-3"><strong>Submission Deadline:</strong>
+                        <div class="col text-center">
+                            {{ $link := printf "/parts?project=%s" .Name }}
+                            <a href="{{ $link }}" class="text-light">link to parts <i class="fas fa-link"></i></a>
+                        </div>
+                        <div class="col text-center m-2">
+                            <h4><strong>Submission Deadline:</strong>
                                 <em>{{ .SubmissionDeadline }} (Hawaii Time)</em></h4>
                         </div>
                     </div>
@@ -102,7 +144,7 @@
                             </a>
                         </div>
                     </div>
-                    <div class="row justify-content-md-center">
+                    <div class="row row-cols-1 justify-content-md-center">
                         <div class="col-md-auto mt-4">
                             <table id="table-{{ .Name }}" style="width: 100%" class="table table-responsive text-light">
                                 <thead>

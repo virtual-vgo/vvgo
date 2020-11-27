@@ -45,7 +45,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	wantProject, ok := projects.WithName(name)
+	wantProject, ok := projects.Get(name)
 	if !ok {
 		http.NotFound(w, r)
 		return
