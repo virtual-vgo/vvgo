@@ -1,9 +1,10 @@
-package leader
+package sheets
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
 )
+
+type Leaders []Leader
 
 type Leader struct {
 	Name         string
@@ -14,10 +15,8 @@ type Leader struct {
 	Email        string
 }
 
-type Leaders []Leader
-
-func List(ctx context.Context, spreadsheetID string) (Leaders, error) {
-	values, err := sheets.ReadSheet(ctx, spreadsheetID, "Leaders")
+func ListLeaders(ctx context.Context, spreadsheetID string) (Leaders, error) {
+	values, err := ReadSheet(ctx, spreadsheetID, "Leaders")
 	if err != nil {
 		return nil, err
 	}
@@ -28,10 +27,10 @@ func valuesToLeaders(values [][]interface{}) Leaders {
 	if len(values) < 1 {
 		return nil
 	}
-	index := sheets.BuildIndex(values[0])
+	index := buildIndex(values[0])
 	leaders := make([]Leader, len(values)-1)
 	for i, row := range values[1:] {
-		sheets.ProcessRow(row, &leaders[i], index)
+		processRow(row, &leaders[i], index)
 	}
 	return leaders
 }

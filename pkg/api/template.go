@@ -5,8 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/sheets/part"
-	"github.com/virtual-vgo/vvgo/pkg/sheets/project"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -32,10 +31,10 @@ func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r 
 		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
 		"download_link":    func(obj string) string { return downloadLink(x.DistroBucket, obj) },
-		"projects":         func() ([]project.Project, error) { return project.List(ctx, identity, x.SpreadsheetID) },
-		"current_projects": func() ([]project.Project, error) { return currentProjects(ctx, identity, x.SpreadsheetID) },
-		"parts":            func() ([]part.Part, error) { return part.List(ctx, identity, x.SpreadsheetID) },
-		"current_parts":    func() ([]part.Part, error) { return currentParts(ctx, identity, x.SpreadsheetID) },
+		"projects":         func() ([]sheets.Project, error) { return sheets.ListProjects(ctx, identity, x.SpreadsheetID) },
+		"current_projects": func() ([]sheets.Project, error) { return currentProjects(ctx, identity, x.SpreadsheetID) },
+		"parts":            func() ([]sheets.Part, error) { return sheets.ListParts(ctx, identity, x.SpreadsheetID) },
+		"current_parts":    func() ([]sheets.Part, error) { return currentParts(ctx, identity, x.SpreadsheetID) },
 	}).ParseFiles(
 		PublicFiles+"/"+templateFile,
 		PublicFiles+"/header.gohtml",
@@ -66,16 +65,16 @@ func downloadLink(bucket, object string) string {
 	}
 }
 
-func currentProjects(ctx context.Context, identity *login.Identity, spreadsheetID string) (project.Projects, error) {
-	projects, err := project.List(ctx, identity, spreadsheetID)
+func currentProjects(ctx context.Context, identity *login.Identity, spreadsheetID string) (sheets.Projects, error) {
+	projects, err := sheets.ListProjects(ctx, identity, spreadsheetID)
 	if err != nil {
 		return nil, err
 	}
 	return projects.Current(), nil
 }
 
-func currentParts(ctx context.Context, identity *login.Identity, spreadsheetID string) (part.Parts, error) {
-	parts, err := part.List(ctx, identity, spreadsheetID)
+func currentParts(ctx context.Context, identity *login.Identity, spreadsheetID string) (sheets.Parts, error) {
+	parts, err := sheets.ListParts(ctx, identity, spreadsheetID)
 	if err != nil {
 		return nil, err
 	}

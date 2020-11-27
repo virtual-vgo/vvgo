@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/sheets/leader"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
 
@@ -26,7 +26,7 @@ func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	leaders, err := leader.List(ctx, x.SpreadsheetID)
+	leaders, err := sheets.ListLeaders(ctx, x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)

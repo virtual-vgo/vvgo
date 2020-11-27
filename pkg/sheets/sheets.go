@@ -65,14 +65,18 @@ func readValuesFromSheets(ctx context.Context, spreadsheetID string, readRange s
 
 func writeValuesToRedis(ctx context.Context, spreadsheetID string, readRange string, values [][]interface{}) {
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&values)
+	if err := json.NewEncoder(&buf).Encode(&values); err != nil {
+		logger.WithError(err).Error("json.Encode() failed")
+		return
+	}
+
 	key := "sheets:" + spreadsheetID + ":" + readRange
 	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, "1", buf.String())); err != nil {
 		logger.WithError(err).Errorf("failed to write spreadsheet values to redis")
 	}
 }
 
-func BuildIndex(fieldNames []interface{}) map[string]int {
+func buildIndex(fieldNames []interface{}) map[string]int {
 	index := make(map[string]int, len(fieldNames))
 	for i, col := range fieldNames {
 		index[fmt.Sprintf("%s", col)] = i
@@ -80,7 +84,7 @@ func BuildIndex(fieldNames []interface{}) map[string]int {
 	return index
 }
 
-func ProcessRow(row []interface{}, dest interface{}, index map[string]int) {
+func processRow(row []interface{}, dest interface{}, index map[string]int) {
 	tagName := "col_name"
 	if len(row) < 1 {
 		return

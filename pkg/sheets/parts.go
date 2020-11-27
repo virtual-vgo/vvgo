@@ -1,9 +1,8 @@
-package part
+package sheets
 
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
 )
 
 type Part struct {
@@ -22,8 +21,8 @@ type Part struct {
 
 type Parts []Part
 
-func List(ctx context.Context, identity *login.Identity, spreadsheetID string) (Parts, error) {
-	values, err := sheets.ReadSheet(ctx, spreadsheetID, "Parts")
+func ListParts(ctx context.Context, identity *login.Identity, spreadsheetID string) (Parts, error) {
+	values, err := ReadSheet(ctx, spreadsheetID, "Parts")
 	if err != nil {
 		return nil, err
 	}
@@ -34,10 +33,10 @@ func valuesToParts(values [][]interface{}) Parts {
 	if len(values) < 1 {
 		return nil
 	}
-	index := sheets.BuildIndex(values[0])
+	index := buildIndex(values[0])
 	parts := make([]Part, len(values)-1)
 	for i, row := range values[1:] {
-		sheets.ProcessRow(row, &parts[i], index)
+		processRow(row, &parts[i], index)
 	}
 	return parts
 }

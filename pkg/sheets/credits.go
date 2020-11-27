@@ -1,9 +1,8 @@
-package credit
+package sheets
 
 import (
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"sort"
 	"strings"
 )
@@ -19,8 +18,8 @@ type Credit struct {
 
 type Credits []Credit
 
-func List(ctx context.Context, spreadsheetID string) (Credits, error) {
-	values, err := sheets.ReadSheet(ctx, spreadsheetID, "Credits")
+func ListCredits(ctx context.Context, spreadsheetID string) (Credits, error) {
+	values, err := ReadSheet(ctx, spreadsheetID, "Credits")
 	if err != nil {
 		return nil, err
 	}
@@ -31,10 +30,10 @@ func valuesToCredits(values [][]interface{}) []Credit {
 	if len(values) < 1 {
 		return nil
 	}
-	index := sheets.BuildIndex(values[0])
+	index := buildIndex(values[0])
 	credits := make([]Credit, len(values)-1)
 	for i, row := range values[1:] {
-		sheets.ProcessRow(row, &credits[i], index)
+		processRow(row, &credits[i], index)
 	}
 	Credits(credits).Sort()
 	return credits

@@ -1,4 +1,4 @@
-package credit
+package sheets
 
 import (
 	"github.com/stretchr/testify/assert"

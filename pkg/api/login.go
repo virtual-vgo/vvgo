@@ -35,7 +35,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type LoginSuccessView struct{ Template }
 
 func (x LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	x.Template.ParseAndExecute(r.Context(), w, r,nil, "login_success.gohtml")
+	x.Template.ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
 }
 
 func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {

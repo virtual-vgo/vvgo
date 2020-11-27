@@ -1,8 +1,7 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/sheets/credit"
-	"github.com/virtual-vgo/vvgo/pkg/sheets/project"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
 
@@ -23,7 +22,7 @@ func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := project.List(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
@@ -39,7 +38,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	projects, err := project.List(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("valuesToProjects() failed")
 		internalServerError(w)
@@ -52,7 +51,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	credits, err := credit.List(ctx, x.SpreadsheetID)
+	credits, err := sheets.ListCredits(ctx, x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("valuesToCredits() failed")
 		internalServerError(w)
@@ -61,7 +60,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 
 	type minorTable struct {
 		Name string
-		Rows []credit.Credit
+		Rows []sheets.Credit
 	}
 
 	type majorTable struct {
@@ -96,7 +95,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 	}
 
 	page := struct {
-		project.Project
+		sheets.Project
 		Credits []*majorTable
 	}{
 		Project: wantProject,

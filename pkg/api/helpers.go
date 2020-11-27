@@ -88,8 +88,6 @@ func acceptsType(r *http.Request, mediaType string) bool {
 	return false
 }
 
-
-
 func badRequest(w http.ResponseWriter, reason string) {
 	http.Error(w, reason, http.StatusBadRequest)
 }

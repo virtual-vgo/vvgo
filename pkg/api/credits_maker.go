@@ -1,12 +1,11 @@
 package api
 
 import (
-	"bytes"
-	"github.com/virtual-vgo/vvgo/pkg/sheets/submission"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
 
-type CreditsMaker struct{}
+type CreditsMaker struct{ Template }
 
 func (x CreditsMaker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -26,7 +25,7 @@ func (x CreditsMaker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if data.SpreadsheetID != "" && data.ReadRange != "" {
-		submissions, err := submission.List(ctx, data.SpreadsheetID, data.ReadRange)
+		submissions, err := sheets.ListSubmissions(ctx, data.SpreadsheetID, data.ReadRange)
 		if err != nil {
 			logger.WithError(err).Error("readSheet() failed")
 			data.ErrorMessage = err.Error()
@@ -48,10 +47,5 @@ func (x CreditsMaker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if data.Project == "" {
 		data.Project = "06-aurene-dragon-full-of-light"
 	}
-	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &data, "credits-maker.gohtml"); !ok {
-		internalServerError(w)
-		return
-	}
-	_, _ = buffer.WriteTo(w)
+	x.Template.ParseAndExecute(ctx, w, r, &data, "credits-maker.gohtml")
 }

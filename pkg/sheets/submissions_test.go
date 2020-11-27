@@ -1,21 +1,9 @@
-package submission
+package sheets
 
 import (
-	"context"
-	"fmt"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/sheets/credit"
 	"testing"
 )
-
-func TestList(t *testing.T) {
-	ctx := context.Background()
-	submissions, err := List(ctx, "1BP3fGC2C6mKe3ZuVhby4eCxidlHL768bDdHsJ5mQleo", "06 Aurene!A3:I39")
-	require.NoError(t, err)
-	fmt.Printf("%#v\n", submissions)
-	fmt.Printf("%#v\n", submissions.ToCredits("06-aurene-dragon-full-of-light"))
-}
 
 func Test_valuesToSubmissionRecords(t *testing.T) {
 	got := valuesToSubmissionRecords([][]interface{}{
@@ -74,7 +62,7 @@ func TestSubmissions_ToCredits(t *testing.T) {
 		{CreditedName: "Calem Destiny", Instrument: "Tenor", BottomText: "1"},
 	}.ToCredits("06-aurene-dragon-full-of-light")
 
-	want := credit.Credits{
+	want := Credits{
 		{Project: "06-aurene-dragon-full-of-light", Order: 0, MajorCategory: "PERFORMERS", MinorCategory: "SOPRANO", Name: "Calem Destiny", BottomText: "(1)"},
 		{Project: "06-aurene-dragon-full-of-light", Order: 1, MajorCategory: "PERFORMERS", MinorCategory: "SOPRANO", Name: "Cheryl Carr", BottomText: "(1, 2)"},
 		{Project: "06-aurene-dragon-full-of-light", Order: 2, MajorCategory: "PERFORMERS", MinorCategory: "SOPRANO", Name: "Chris Erickson", BottomText: "(1, 2)"},
