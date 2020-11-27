@@ -23,28 +23,40 @@
 
 <body>
 {{ template "navbar.gohtml" }}
+
+{{ $active := "" }}
+{{ $want := form_value "project" }}
+{{ $projects := projects.Current }}
+{{ $parts := parts.Current }}
+{{ if $projects.Exists $want }}
+    {{ $active = $want }}
+{{ else if gt $projects.Len 0 }}
+    {{ $active = index $projects 0 }}
+    {{ $active = $active.Name }}
+{{ end }}
+
 <main role="main">
     <div class="container">
         <h3 class="mt-2">Current Projects</h3>
         <ul class="nav nav-pills" id="project-tabs" role="tablist">
-            {{ $active := true }}
-            {{- range current_projects }}
+            {{- range $projects }}
                 <li class="nav-item">
-                    <a class="btn btn-outline-dark {{ if .Released }}text-light{{ else }}text-warning{{ end }} rounded-0  {{ if $active }}active{{ end }}"
+                    <a class="btn btn-outline-dark {{ if .Released }}text-light{{ else }}text-warning{{ end }} rounded-0 {{ if eq .Name $active }}active{{ end }}"
                        id="{{ .Name }}-tab" data-toggle="pill" href="#parts-{{ .Name }}" role="tab"
                        aria-controls="parts-{{ .Name }}" aria-selected="{{ $active }}">{{ .Title }}</a>
-                </li>{{- $active = false }}
+                </li>
             {{ end }}
         </ul>
 
         <div class="tab-content">
-            {{ $active = true }}
-            {{- range current_projects }}
-                <div class="tab-pane fade {{ if $active }}active show{{ $active = false }}{{ end }}"
+            {{- range $projects }}
+                <div class="tab-pane fade {{ if eq .Name $active }}active show{{ end }}"
                      id="parts-{{ .Name }}" role="tabpanel" aria-labelledby="{{ .Name }}-tab">
                     <div class="row row-cols-1">
                         <div class="col mt-3 text-center">
-                            {{ if not .Released }}<div class="alert alert-warning">This project is unreleased and invisible to members!</div>{{ end }}
+                            {{ if not .Released }}
+                                <div class="alert alert-warning">This project is unreleased and invisible to members!
+                                </div>{{ end }}
                             {{ if .BannerLink }}
                                 <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
                             {{ else }}
@@ -99,46 +111,43 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {{ $project := .Name }}
-                                {{- range parts }}
-                                    {{- if eq $project .Project }}
-                                        <tr>
-                                            <td>{{.ScoreOrder}}</td>
-                                            <td class="title">{{ title .PartName}}</td>
-                                            <td>
-                                                {{ if .SheetMusicFile }}
-                                                    <a href="{{ download_link .SheetMusicFile }}"
-                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
-                                                        <i class="far fa-file-pdf"></i> sheet music
-                                                    </a>
-                                                {{ end }}
-                                                {{ if .ClickTrackFile }}
-                                                    <a href="{{ download_link .ClickTrackFile }}"
-                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
-                                                        <i class="far fa-file-audio"></i> click track
-                                                    </a>
-                                                {{ end }}
-                                                {{ if .ReferenceTrack }}
-                                                    <a href="{{ download_link .ReferenceTrack}}"
-                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
-                                                        <i class="far fa-file-audio"></i> reference track
-                                                    </a>
-                                                {{ end }}
-                                                {{ if .ConductorVideo }}
-                                                    <a href="{{.ConductorVideo}}"
-                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
-                                                        <i class="far fa-file-video"></i> conductor video
-                                                    </a>
-                                                {{ end }}
-                                                {{ if .PronunciationGuide }}
-                                                    <a href="{{ download_link .PronunciationGuide}}"
-                                                       class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
-                                                        <i class="fas fa-language"></i> pronunciation guide
-                                                    </a>
-                                                {{ end }}
-                                            </td>
-                                        </tr>
-                                    {{ end }}
+                                {{- range $parts.ForProject .Name }}
+                                    <tr>
+                                        <td>{{.ScoreOrder}}</td>
+                                        <td class="title">{{ title .PartName}}</td>
+                                        <td>
+                                            {{ if .SheetMusicFile }}
+                                                <a href="{{ download_link .SheetMusicFile }}"
+                                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                    <i class="far fa-file-pdf"></i> sheet music
+                                                </a>
+                                            {{ end }}
+                                            {{ if .ClickTrackFile }}
+                                                <a href="{{ download_link .ClickTrackFile }}"
+                                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                    <i class="far fa-file-audio"></i> click track
+                                                </a>
+                                            {{ end }}
+                                            {{ if .ReferenceTrack }}
+                                                <a href="{{ download_link .ReferenceTrack}}"
+                                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                    <i class="far fa-file-audio"></i> reference track
+                                                </a>
+                                            {{ end }}
+                                            {{ if .ConductorVideo }}
+                                                <a href="{{.ConductorVideo}}"
+                                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                    <i class="far fa-file-video"></i> conductor video
+                                                </a>
+                                            {{ end }}
+                                            {{ if .PronunciationGuide }}
+                                                <a href="{{ download_link .PronunciationGuide}}"
+                                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light">
+                                                    <i class="fas fa-language"></i> pronunciation guide
+                                                </a>
+                                            {{ end }}
+                                        </td>
+                                    </tr>
                                 {{- end }}
                                 </tbody>
                             </table>

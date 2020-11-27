@@ -31,10 +31,8 @@ func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r 
 		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
 		"download_link":    func(obj string) string { return downloadLink(x.DistroBucket, obj) },
-		"projects":         func() ([]sheets.Project, error) { return sheets.ListProjects(ctx, identity, x.SpreadsheetID) },
-		"current_projects": func() ([]sheets.Project, error) { return currentProjects(ctx, identity, x.SpreadsheetID) },
-		"parts":            func() ([]sheets.Part, error) { return sheets.ListParts(ctx, identity, x.SpreadsheetID) },
-		"current_parts":    func() ([]sheets.Part, error) { return currentParts(ctx, identity, x.SpreadsheetID) },
+		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity, x.SpreadsheetID) },
+		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx, identity, x.SpreadsheetID) },
 	}).ParseFiles(
 		PublicFiles+"/"+templateFile,
 		PublicFiles+"/header.gohtml",

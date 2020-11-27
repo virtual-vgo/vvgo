@@ -12,6 +12,8 @@ import (
 	"strconv"
 )
 
+const CacheTTL = "5"
+
 var logger = log.Logger()
 
 func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
@@ -71,7 +73,7 @@ func writeValuesToRedis(ctx context.Context, spreadsheetID string, readRange str
 	}
 
 	key := "sheets:" + spreadsheetID + ":" + readRange
-	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, "1", buf.String())); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, CacheTTL, buf.String())); err != nil {
 		logger.WithError(err).Errorf("failed to write spreadsheet values to redis")
 	}
 }

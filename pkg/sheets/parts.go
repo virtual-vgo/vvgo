@@ -56,6 +56,16 @@ func (x Parts) ForIdentity(identity *login.Identity) Parts {
 	return want
 }
 
+func (x Parts) ForProject(project string) Parts {
+	var want Parts
+	for _, part := range x {
+		if part.Project == project {
+			want = append(want, part)
+		}
+	}
+	return want
+}
+
 func (x Parts) Current() Parts {
 	var current []Part
 	for _, part := range x {

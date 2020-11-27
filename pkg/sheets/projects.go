@@ -3,6 +3,7 @@ package sheets
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"sort"
 )
 
 type Project struct {
@@ -60,6 +61,16 @@ func (x Projects) WithName(name string) (Project, bool) {
 	}
 	return Project{}, false
 }
+
+func (x Projects) Exists(name string) bool {
+	_, ok := x.WithName(name)
+	return ok
+}
+
+func (x Projects) Len() int           { return len(x) }
+func (x Projects) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x Projects) Less(i, j int) bool { return x[i].Name < x[j].Name }
+func (x Projects) Sort()              { sort.Sort(x) }
 
 func (x Projects) ForIdentity(identity *login.Identity) Projects {
 	var want Projects

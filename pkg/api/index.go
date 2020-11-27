@@ -14,7 +14,7 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w)
 		return
 	}
-	x.Template.ParseAndExecute(ctx, w, r, &struct{}{}, "index.gohtml")
+	x.Template.ParseAndExecute(ctx, w, r, nil, "index.gohtml")
 }
 
 type AboutView struct{ Template }
