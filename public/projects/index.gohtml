@@ -27,36 +27,93 @@
     <div class="container">
         <div class="row justify-content-md-center">
             <div class="col-md-auto mt-2 text-center">
-                <h1>Projects</h1>
+                <h1>Releases</h1>
                 <table id="project_index" class="table table-responsive text-light">
                     <thead>
                     <tr>
                         <th>Name</th>
                         <th>Archived</th>
                         <th>Title</th>
-                        <th>Status</th>
                     </tr>
                     </thead>
                     <tbody>
                     {{- range projects }}
+                        {{ if .YoutubeLink }}
                         <tr>
                             <td>{{ .Name }}</td>
                             <td>{{ .Archived }}</td>
                             <td>
-                                {{ if .YoutubeLink }}
-                                    <a href="/projects/{{ .Name }}"
-                                       class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
+                                <a href="/projects/{{ .Name }}"class="text-light">
                                         {{ .Title }}<br/><small>{{ .Sources}}</small></a>
-                                {{ else }}
-                                    <div class="{{ if .Released }}text-light{{ else }}text-warning{{ end }}">
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                    {{- end }}
+                </table>
+            </div>
+                
+            <div class="col-md-auto mt-2 text-center">    
+                <h1>Open for Submissions</h1>
+                <p>
+                    If you would like to join our orchestra or get more information about our current projects,
+                    please join us on <a href="https://discord.gg/9RVUJMQ">Discord!</a>
+                </p>
+                <table id="project_index" class="table table-responsive text-light">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Archived</th>
+                        <th>Title</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{- range projects }}
+                        {{ if .Released }}
+                        {{ if not .Archived }}
+                        <tr>
+                            <td>{{ .Name }}</td>
+                            <td>{{ .Archived }}</td>
+                            <td>
+                                <div class="text-light">
                                         {{ .Title }}<br/><small>{{ .Sources}}</small>
                                     </div>
-                                {{ end }}
                             </td>
-                            <td>{{ if .YoutubeLink }}Completed{{ else if .Archived}}Post Production{{ else if .Released }}Open for Submissions{{ else }}Unreleased{{ end }}</td>
                         </tr>
-                    {{- end }}
+                        {{ end }}
+                        {{ end }}
                     </tbody>
+                    {{- end }}
+                </table>
+            </div>
+            
+            <div class="col-md-auto mt-2 text-center">
+                <h1>Post-Production</h1>
+                <table id="project_index" class="table table-responsive text-light">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Archived</th>
+                        <th>Title</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{- range projects }}
+                        {{ if .Archived }}
+                        {{ if not .YoutubeLink }}
+                        <tr>
+                            <td>{{ .Name }}</td>
+                            <td>{{ .Archived }}</td>
+                            <td>
+                                <div class="text-light">
+                                        {{ .Title }}<br/><small>{{ .Sources}}</small>
+                                    </div>
+                            </td>
+                        </tr>
+                        {{ end }}
+                        {{ end }}
+                    </tbody>
+                    {{- end }}
                 </table>
             </div>
         </div>
