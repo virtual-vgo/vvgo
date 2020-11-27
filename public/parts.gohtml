@@ -58,11 +58,13 @@
                                 <div class="alert alert-warning">This project is unreleased and invisible to members!
                                 </div>{{ end }}
                             {{ if .BannerLink }}
-                                <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
+                                <a href="/parts?project={{ .Name }}">
+                                    <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
+                                </a>
                             {{ else }}
                                 <h2 class="title">
                                     {{ .Title }}
-                                    <small><a href="/parts?project={{ .Name }}"><i class="fas fa-link"></i></a></small>
+                                    <small><a href="/parts?project={{ .Name }}" class="text-muted"><i class="fas fa-link"></i></a></small>
                                 </h2>
                                 <h3>{{ .Sources }}</h3>
                             {{ end }}
