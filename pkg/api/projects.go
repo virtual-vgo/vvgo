@@ -1,16 +1,11 @@
 package api
 
 import (
-	"bytes"
-	"context"
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
 
-type ProjectsView struct {
-	SpreadsheetID string
-	*Database
-}
+type ProjectsView struct{ Template }
 
 func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/projects/" {
@@ -27,40 +22,13 @@ func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectValues, err := readSheet(ctx, x.SpreadsheetID, ProjectsRange)
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
 		return
 	}
-	projects := ValuesToProjects(projectValues)
-
-	projects = x.filterFromQuery(r, projects)
-	x.renderIndexView(w, ctx, projects)
-}
-
-func (x ProjectsView) filterFromQuery(r *http.Request, projects []Project) []Project {
-	identity := identityFromContext(r.Context())
-	want := len(projects)
-	for i := 0; i < want; i++ {
-		if projects[i].Released == true || identity.HasRole(login.RoleVVGOTeams) || identity.HasRole(login.RoleVVGOLeader) {
-			continue
-		}
-		projects[i], projects[want-1] = projects[want-1], projects[i]
-		i--
-		want--
-	}
-	projects = projects[:want]
-	return projects
-}
-
-func (x ProjectsView) renderIndexView(w http.ResponseWriter, ctx context.Context, projects []Project) {
-	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &projects, "projects/index.gohtml"); !ok {
-		internalServerError(w)
-		return
-	}
-	_, _ = buffer.WriteTo(w)
+	x.Template.ParseAndExecute(ctx, w, r, &projects, "projects/index.gohtml")
 }
 
 func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
@@ -70,42 +38,29 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	values, err := readSheet(ctx, x.SpreadsheetID, ProjectsRange)
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
 	if err != nil {
-		logger.WithError(err).Error("ValuesToProjects() failed")
+		logger.WithError(err).Error("valuesToProjects() failed")
 		internalServerError(w)
 		return
 	}
-	projects := ValuesToProjects(values)
-	var exists bool
-	var wantProject Project
-	for _, project := range projects {
-		if project.Name == name {
-			exists = true
-			wantProject = project
-			break
-		}
-	}
-	if !exists {
+
+	wantProject, ok := projects.WithName(name)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	renderProjectView(w, ctx, wantProject, x.SpreadsheetID)
-}
 
-func renderProjectView(w http.ResponseWriter, ctx context.Context, project Project, spreadsheetID string) {
-	values, err := readSheet(ctx, spreadsheetID, CreditsRange)
+	credits, err := sheets.ListCredits(ctx, x.SpreadsheetID)
 	if err != nil {
-		logger.WithError(err).Error("ValuesToCredits() failed")
+		logger.WithError(err).Error("valuesToCredits() failed")
 		internalServerError(w)
 		return
 	}
 
-	credits := ValuesToCredits(values)
-
 	type minorTable struct {
 		Name string
-		Rows []*Credit
+		Rows []sheets.Credit
 	}
 
 	type majorTable struct {
@@ -120,41 +75,32 @@ func renderProjectView(w http.ResponseWriter, ctx context.Context, project Proje
 	}
 	creditsTable.rowMap = make(map[string]*majorTable)
 
-	for i := range credits {
-		if credits[i].Project != project.Name {
-			continue
+	for _, projectCredit := range credits.ForProject(wantProject.Name) {
+		if creditsTable.rowMap[projectCredit.MajorCategory] == nil {
+			creditsTable.rowMap[projectCredit.MajorCategory] = new(majorTable)
+			creditsTable.rowMap[projectCredit.MajorCategory].Name = projectCredit.MajorCategory
+			creditsTable.rowMap[projectCredit.MajorCategory].rowMap = make(map[string]*minorTable)
+			creditsTable.Rows = append(creditsTable.Rows, creditsTable.rowMap[projectCredit.MajorCategory])
 		}
+		major := creditsTable.rowMap[projectCredit.MajorCategory]
 
-		if creditsTable.rowMap[credits[i].MajorCategory] == nil {
-			creditsTable.rowMap[credits[i].MajorCategory] = new(majorTable)
-			creditsTable.rowMap[credits[i].MajorCategory].Name = credits[i].MajorCategory
-			creditsTable.rowMap[credits[i].MajorCategory].rowMap = make(map[string]*minorTable)
-			creditsTable.Rows = append(creditsTable.Rows, creditsTable.rowMap[credits[i].MajorCategory])
+		if major.rowMap[projectCredit.MinorCategory] == nil {
+			major.rowMap[projectCredit.MinorCategory] = new(minorTable)
+			major.rowMap[projectCredit.MinorCategory].Name = projectCredit.MinorCategory
+			major.Rows = append(major.Rows, major.rowMap[projectCredit.MinorCategory])
 		}
-		major := creditsTable.rowMap[credits[i].MajorCategory]
+		minor := major.rowMap[projectCredit.MinorCategory]
 
-		if major.rowMap[credits[i].MinorCategory] == nil {
-			major.rowMap[credits[i].MinorCategory] = new(minorTable)
-			major.rowMap[credits[i].MinorCategory].Name = credits[i].MinorCategory
-			major.Rows = append(major.Rows, major.rowMap[credits[i].MinorCategory])
-		}
-		minor := major.rowMap[credits[i].MinorCategory]
-
-		minor.Rows = append(minor.Rows, &credits[i])
+		minor.Rows = append(minor.Rows, projectCredit)
 	}
 
 	page := struct {
-		Project
+		sheets.Project
 		Credits []*majorTable
 	}{
-		Project: project,
+		Project: wantProject,
 		Credits: creditsTable.Rows,
 	}
 
-	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &page, "projects/project.gohtml"); !ok {
-		internalServerError(w)
-		return
-	}
-	_, _ = buffer.WriteTo(w)
+	x.Template.ParseAndExecute(ctx, w, r, &page, "projects/project.gohtml")
 }

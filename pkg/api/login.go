@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/binary"
@@ -19,36 +18,24 @@ const LoginCookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
 
 type LoginView struct {
 	Sessions *login.Store
+	Template
 }
 
 func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	identity := identityFromContext(ctx)
+	identity := IdentityFromContext(ctx)
 	if identity.IsAnonymous() == false {
 		http.Redirect(w, r, "/login/success", http.StatusFound)
 		return
 	}
-
-	var buf bytes.Buffer
-	if ok := parseAndExecute(ctx, &buf, &struct{}{}, "login.gohtml"); !ok {
-		internalServerError(w)
-		return
-	}
-	_, _ = buf.WriteTo(w)
+	x.Template.ParseAndExecute(ctx, w, r, nil, "login.gohtml")
 }
 
-type LoginSuccessView struct{}
+type LoginSuccessView struct{ Template }
 
-func (LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var buffer bytes.Buffer
-	if ok := parseAndExecute(ctx, &buffer, &struct{}{}, "login_success.gohtml"); !ok {
-		internalServerError(w)
-		return
-	}
-	_, _ = buffer.WriteTo(w)
+func (x LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	x.Template.ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
 }
 
 func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {

@@ -50,6 +50,11 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		Sessions: login.NewStore(config.RedisNamespace, config.Login),
 	}
 
+	template := Template{
+		SpreadsheetID: config.PartsSpreadsheetID,
+		DistroBucket:  config.DistroBucketName,
+	}
+
 	mux := RBACMux{
 		ServeMux: http.NewServeMux(),
 		Sessions: database.Sessions,
@@ -70,9 +75,10 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 		Sessions:         database.Sessions,
 	}, login.RoleAnonymous)
 
-	mux.Handle("/login/success", LoginSuccessView{}, login.RoleAnonymous)
+	mux.Handle("/login/success", LoginSuccessView{template}, login.RoleAnonymous)
 
 	mux.Handle("/login", LoginView{
+		Template: template,
 		Sessions: database.Sessions,
 	}, login.RoleAnonymous)
 
@@ -81,7 +87,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	}, login.RoleAnonymous)
 
 	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		identity := identityFromContext(r.Context())
+		identity := IdentityFromContext(r.Context())
 		jsonEncode(w, &identity.Roles)
 	}), login.RoleAnonymous)
 
@@ -92,32 +98,24 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
-	mux.Handle("/parts", PartView{
-		SpreadsheetID: config.PartsSpreadsheetID,
-		Database:      &database,
-	}, login.RoleVVGOMember)
+	mux.Handle("/parts", PartView{template}, login.RoleVVGOMember)
 
 	mux.Handle("/archive", http.RedirectHandler("/projects/", http.StatusFound), login.RoleAnonymous)
 	mux.Handle("/projects", http.RedirectHandler("/projects/", http.StatusFound), login.RoleAnonymous)
-	mux.Handle("/projects/", ProjectsView{
-		SpreadsheetID: config.PartsSpreadsheetID,
-		Database:      &database,
-	}, login.RoleAnonymous)
+	mux.Handle("/projects/", ProjectsView{template}, login.RoleAnonymous)
 
 	mux.Handle("/download", DownloadHandler{
 		config.DistroBucketName: database.Distro.DownloadURL,
 	}, login.RoleVVGOMember)
 
-	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
+	mux.Handle("/credits-maker", CreditsMaker{template}, login.RoleVVGOTeams)
 
-	mux.Handle("/about", AboutView{
-		SpreadSheetID: config.PartsSpreadsheetID,
-	}, login.RoleAnonymous)
+	mux.Handle("/about", AboutView{template}, login.RoleAnonymous)
 
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexView{}.ServeHTTP(w, r)
+			IndexView{template}.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}

@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -87,14 +86,6 @@ func acceptsType(r *http.Request, mediaType string) bool {
 		}
 	}
 	return false
-}
-
-func downloadLink(bucket, object string) string {
-	if bucket == "" || object == "" {
-		return ""
-	} else {
-		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, object)
-	}
 }
 
 func badRequest(w http.ResponseWriter, reason string) {

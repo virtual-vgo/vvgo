@@ -7,6 +7,7 @@ import (
 
 // Database acts as the wrapper/driver for any stateful data.
 type Database struct {
-	Distro   *storage.Bucket
-	Sessions *login.Store
+	SpreadsheetID string
+	Distro        *storage.Bucket
+	Sessions      *login.Store
 }

@@ -22,7 +22,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="{{- if eq template_file "about.gohtml" }}bg-info{{ end }} nav-link" href="/about">About</a>
+                    <a class="{{- if eq template_file "about.gohtml" }}bg-info{{ end }} nav-link"
+                       href="/about">About</a>
                 </li>
                 {{ if user_on_teams }}
                     <li class="nav-item">
@@ -35,10 +36,10 @@
             <ul class="navbar-nav mr-2">
                 <li class="nav-item">
                     {{ if user_logged_in }}
+                        <a class="nav-link" href="/logout">Logout</a>
+                    {{ else }}
                         <a class="{{- if eq template_file "login.gohtml" }}bg-info{{ end }} nav-link"
                            href="/login">Login</a>
-                    {{ else }}
-                        <a class="nav-link" href="/logout">Logout</a>
                     {{ end }}
                 </li>
             </ul>
