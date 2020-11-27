@@ -48,6 +48,14 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 			identity = login.Anonymous()
 		}
 
+		if values := r.URL.Query(); len(values["roles"]) != 0 {
+			wantRoles := make([]login.Role, len(values["roles"]))
+			for i := range values["roles"] {
+				wantRoles[i] = login.Role(values["roles"][i])
+			}
+			identity = identity.AssumeRoles(wantRoles...)
+		}
+
 		if identity.HasRole(role) {
 			if role != login.RoleAnonymous {
 				logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access granted")
