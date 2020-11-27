@@ -18,102 +18,64 @@
     <script type="text/javascript" src="/npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script type="text/javascript" src="/npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
     <script type="text/javascript" src="/npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
-    <script type="text/javascript" src="/js/archive/index.js"></script>
+    <script type="text/javascript" src="/js/projects/index.js"></script>
 </head>
 
 <body>
 {{ template "navbar.gohtml" }}
 <main role="main">
     <div class="container">
-        <div class="row justify-content-md-center">
-            <div class="col-md-auto mt-2 text-center">
-                <h1>Releases</h1>
-                <table id="project_index" class="table table-responsive text-light">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Archived</th>
-                        <th>Title</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {{- range projects }}
-                        {{ if .YoutubeLink }}
-                        <tr>
-                            <td>{{ .Name }}</td>
-                            <td>{{ .Archived }}</td>
-                            <td>
-                                <a href="/projects/{{ .Name }}"class="text-light">
-                                        {{ .Title }}<br/><small>{{ .Sources}}</small></a>
-                            </td>
-                        </tr>
-                        {{ end }}
-                    </tbody>
-                    {{- end }}
-                </table>
+        <div class="row row-cols-1 mt-2">
+            <div class="col">
+                <h1 class="title">Projects</h1>
             </div>
-                
-            <div class="col-md-auto mt-2 text-center">    
-                <h1>Open for Submissions</h1>
+            <div class="col text-center">
                 <p>
                     If you would like to join our orchestra or get more information about our current projects,
                     please join us on <a href="https://discord.gg/9RVUJMQ">Discord!</a>
                 </p>
-                <table id="project_index" class="table table-responsive text-light">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Archived</th>
-                        <th>Title</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {{- range projects }}
-                        {{ if .Released }}
-                        {{ if not .Archived }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col mt-2 text-center">
+                <h3>Open for Submissions</h3>
+                <table class="table text-light clickable">
+                    {{- range projects.Current.Released }}
                         <tr>
-                            <td>{{ .Name }}</td>
-                            <td>{{ .Archived }}</td>
                             <td>
-                                <div class="text-light">
-                                        {{ .Title }}<br/><small>{{ .Sources}}</small>
-                                    </div>
+                                <a href="{{ .PartsPage }}" class="text-light">
+                                    {{ .Title }}<br/><small>{{ .Sources}}</small></a>
                             </td>
                         </tr>
-                        {{ end }}
-                        {{ end }}
-                    </tbody>
                     {{- end }}
                 </table>
             </div>
-            
-            <div class="col-md-auto mt-2 text-center">
-                <h1>Post-Production</h1>
-                <table id="project_index" class="table table-responsive text-light">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Archived</th>
-                        <th>Title</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {{- range projects }}
-                        {{ if .Archived }}
-                        {{ if not .YoutubeLink }}
+
+            <div class="col mt-2 text-center">
+                <h3>Post-Production</h3>
+                <table class="table text-light">
+                    {{- range projects.Archived.NotReleasedYoutube }}
                         <tr>
-                            <td>{{ .Name }}</td>
-                            <td>{{ .Archived }}</td>
                             <td>
-                                <div class="text-light">
-                                        {{ .Title }}<br/><small>{{ .Sources}}</small>
-                                    </div>
+                                <i class="text-light">{{ .Title }}<br/><small>{{ .Sources}}</small></i>
                             </td>
                         </tr>
-                        {{ end }}
-                        {{ end }}
+                    {{ end }}
+                </table>
+            </div>
+            <div class="col mt-2 text-center">
+                <h3>Released</h3>
+                <table class="table text-light clickable">
+                    <tbody>
+                    {{- range projects.ReleasedYoutube.ReverseSort }}
+                        <tr>
+                            <td>
+                                <a href="{{ .ProjectPage }}" class="text-light">
+                                    {{ .Title }}<br/><small>{{ .Sources}}</small></a>
+                            </td>
+                        </tr>
+                    {{ end }}
                     </tbody>
-                    {{- end }}
                 </table>
             </div>
         </div>
