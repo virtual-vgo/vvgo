@@ -37,33 +37,33 @@
             </div>
         </div>
         <div class="row">
-            <div class="col mt-2 text-center">
+            <div class="col-sm mt-2 text-center">
                 <h3>Open for Submissions</h3>
                 <table class="table text-light clickable">
                     {{- range projects.Current.Released }}
                         <tr>
                             <td>
                                 <a href="{{ .PartsPage }}" class="text-light">
-                                    {{ .Title }}<br/><small>{{ .Sources}}</small></a>
+                                    {{ .Title }}<br/><small>{{ .Sources }}</small>
+                                </a>
                             </td>
                         </tr>
                     {{- end }}
                 </table>
             </div>
-
-            <div class="col mt-2 text-center">
+            <div class="col-sm mt-2 text-center">
                 <h3>Post-Production</h3>
                 <table class="table text-light">
                     {{- range projects.Archived.NotReleasedYoutube }}
                         <tr>
                             <td>
-                                <i class="text-light">{{ .Title }}<br/><small>{{ .Sources}}</small></i>
+                                <i class="text-light">{{ .Title }}<br/><small>{{ .Sources }}</small></i>
                             </td>
                         </tr>
                     {{ end }}
                 </table>
             </div>
-            <div class="col mt-2 text-center">
+            <div class="col-sm mt-2 text-center">
                 <h3>Released</h3>
                 <table class="table text-light clickable">
                     <tbody>
@@ -71,7 +71,8 @@
                         <tr>
                             <td>
                                 <a href="{{ .ProjectPage }}" class="text-light">
-                                    {{ .Title }}<br/><small>{{ .Sources}}</small></a>
+                                    {{ .Title }}<br/><small>{{ .Sources }}</small>
+                                </a>
                             </td>
                         </tr>
                     {{ end }}
