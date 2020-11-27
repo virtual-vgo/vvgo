@@ -53,7 +53,7 @@ func valuesToProjects(values [][]interface{}) Projects {
 	return projects
 }
 
-func (x Projects) WithName(name string) (Project, bool) {
+func (x Projects) Get(name string) (Project, bool) {
 	for _, project := range x {
 		if project.Name == name {
 			return project, true
@@ -62,15 +62,15 @@ func (x Projects) WithName(name string) (Project, bool) {
 	return Project{}, false
 }
 
-func (x Projects) Exists(name string) bool {
-	_, ok := x.WithName(name)
+func (x Projects) Has(name string) bool {
+	_, ok := x.Get(name)
 	return ok
 }
 
 func (x Projects) Len() int           { return len(x) }
 func (x Projects) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 func (x Projects) Less(i, j int) bool { return x[i].Name < x[j].Name }
-func (x Projects) Sort()              { sort.Sort(x) }
+func (x Projects) Sort() Projects     { sort.Sort(x); return x }
 
 func (x Projects) ForIdentity(identity *login.Identity) Projects {
 	var want Projects
@@ -95,4 +95,19 @@ func (x Projects) Current() Projects {
 		}
 	}
 	return current
+}
+
+func (x Projects) Select(names ...string) Projects {
+	var want Projects
+	for _, name := range names {
+		project, ok := x.Get(name)
+		if ok {
+			want = append(want, project)
+		}
+	}
+	return want
+}
+
+func (x Projects) Append(projects Projects) Projects {
+	return append(x, projects...)
 }
