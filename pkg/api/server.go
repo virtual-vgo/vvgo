@@ -76,6 +76,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	}, login.RoleAnonymous)
 
 	mux.Handle("/login/success", LoginSuccessView{template}, login.RoleAnonymous)
+	mux.Handle("/login/redirect", LoginRedirect{}, login.RoleAnonymous)
 
 	mux.Handle("/login", LoginView{
 		Template: template,

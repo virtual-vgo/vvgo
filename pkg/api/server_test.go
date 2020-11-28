@@ -56,7 +56,7 @@ func TestServer(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/parts")
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login", resp.Header.Get("Location"))
+			assert.Equal(t, "/login?target=%2Fparts", resp.Header.Get("Location"))
 		})
 	})
 
@@ -65,7 +65,7 @@ func TestServer(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/download")
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login", resp.Header.Get("Location"))
+			assert.Equal(t, "/login?target=%2Fdownload", resp.Header.Get("Location"))
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/download", login.RoleVVGOMember)

@@ -29,7 +29,7 @@ func TestRBACMux_Handle(t *testing.T) {
 		resp, err := noFollow(nil).Do(req)
 		require.NoError(t, err, "http.Do()")
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, "/login", resp.Header.Get("Location"))
+		assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
@@ -56,14 +56,14 @@ func TestRBACMux_Handle(t *testing.T) {
 			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login", resp.Header.Get("Location"))
+			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect pass", func(t *testing.T) {
 			req := newAuthRequest(t, "uploader", "")
 			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login", resp.Header.Get("Location"))
+			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect role", func(t *testing.T) {
 			req := newAuthRequest(t, "member", "member")
@@ -96,7 +96,7 @@ func TestRBACMux_Handle(t *testing.T) {
 			resp, err := noFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login", resp.Header.Get("Location"))
+			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect role", func(t *testing.T) {
 			req := newAuthRequest(t, "member")

@@ -21,8 +21,26 @@ type LoginView struct {
 	Template
 }
 
+const CookieLoginRedirect = "vvgo-login-redirect"
+
 func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	if target := r.FormValue("target"); target != "" {
+		value := login.NewCookieValue()
+		if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", CookieLoginRedirect+":"+value, "3600", target)); err != nil {
+			logger.WithError(err).Error("redis.Do() failed")
+		} else {
+			http.SetCookie(w, &http.Cookie{
+				Name:     CookieLoginRedirect,
+				Value:    value,
+				Expires:  time.Now().Add(3600 * time.Second),
+				Domain:   x.Sessions.Config().CookieDomain,
+				SameSite: http.SameSiteStrictMode,
+				HttpOnly: true,
+			})
+		}
+	}
 
 	identity := IdentityFromContext(ctx)
 	if identity.IsAnonymous() == false {
@@ -36,6 +54,24 @@ type LoginSuccessView struct{ Template }
 
 func (x LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	x.Template.ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
+}
+
+type LoginRedirect struct{}
+
+func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	redirect := "/parts"
+	if cookie, err := r.Cookie(CookieLoginRedirect); err != nil {
+		logger.WithError(err).Error("r.Cookie() failed")
+	} else {
+		var want string
+		if err := redis.Do(ctx, redis.Cmd(&want, "GET", CookieLoginRedirect+":"+cookie.Value)); err != nil {
+			logger.WithError(err).Error("redis.Do() failed")
+		} else {
+			redirect = want
+		}
+	}
+	http.Redirect(w, r, redirect, http.StatusFound)
 }
 
 func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {
