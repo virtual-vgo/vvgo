@@ -45,6 +45,8 @@ func NewStore(namespace string, config Config) *Store {
 	}
 }
 
+func (x *Store) Config() Config { return x.config }
+
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
 func (x *Store) ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
 	cookie, err := r.Cookie(x.config.CookieName)
@@ -79,22 +81,26 @@ func (x *Store) NewCookie(ctx context.Context, src *Identity, expires time.Durat
 	}, nil
 }
 
-// NewSession returns a new session with a crypto-rand session id.
-func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Duration) (string, error) {
+func NewCookieValue() string {
 	buf := make([]byte, 8)
 	result := "V-i-r-t-u-a-l--V-G-O--"
 	for i := 0; i < 4; i++ {
 		rand.Reader.Read(buf)
 		result += fmt.Sprintf("%013s", strconv.FormatUint(binary.BigEndian.Uint64(buf), 36))
 	}
+	return result
+}
 
-	key := x.namespace + ":sessions:" + result
+// NewSession returns a new session with a crypto-rand session id.
+func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Duration) (string, error) {
+	value := NewCookieValue()
+	key := x.namespace + ":sessions:" + value
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
 	srcBytes, _ := json.Marshal(src)
 	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, stringExpires, string(srcBytes))); err != nil {
 		return "", err
 	}
-	return result, nil
+	return value, nil
 }
 
 // GetSession reads the login identity for the given session ID.

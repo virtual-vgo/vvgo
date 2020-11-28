@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -66,7 +67,9 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 		logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
 
 		if identity.IsAnonymous() {
-			http.Redirect(w, r, "/login", http.StatusFound)
+			values := make(url.Values)
+			values.Set("target", r.RequestURI)
+			http.Redirect(w, r, "/login?"+values.Encode(), http.StatusFound)
 			return
 		}
 		unauthorized(w)
