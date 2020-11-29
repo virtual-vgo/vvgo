@@ -114,7 +114,6 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/about", AboutView{template}, login.RoleAnonymous)
 
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
-	mux.Handle("/npm", http.FileServer(http.Dir("/node_modules")), login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			IndexView{template}.ServeHTTP(w, r)
