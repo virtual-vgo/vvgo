@@ -1,7 +1,7 @@
 FROM node:13.12 as node
 COPY package.json .
-COPY yarn.lock .
-RUN yarn install
+COPY package-lock.json .
+RUN npm install
 
 FROM golang:1.14 as builder
 
