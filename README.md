@@ -53,12 +53,12 @@ Redis and Minio are runtime dependencies for the webapp.
 If the webapp cannot connect to Redis and Minio at startup, it will complain and exit.
 These service can be started using the `docker-compose` command:
 ```sh
-docker-compose up -d
+docker-compose up -d minio redis
 ```
 
 ### 3. Download javascript dependencies
 ```sh
-yarn install --modules-folder public/npm
+cd public && npm install
 ```
 
 ### 4. Build and run the app!
