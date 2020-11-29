@@ -34,7 +34,7 @@ The pipeline for arrangements is roughly: (rev. 2020-09-19)
 9. **Project Launched:** The project goes live, and public recording submissions open. Tada! This is usually aligned with the closure of public recording submissions for the previous project.
 
 
-# VVGO Standard Full Instrumentation (rev 2020-09-19)
+# VVGO Standard Full Instrumentation (rev 2020-11-28)
 It's a bold title, but this is the "ideal" scenario for instrumentation. Finding VGM pieces that fit this bill isn't easy.
 These are instruments that, at the moment, we can rely on being covered. These are also mostly common orchestral, jazz, and band instruments. Part indices that are given are also "idealized" based on our participation and on common industry practices.
 
@@ -136,7 +136,7 @@ This is standard 5444 big band instrumentation (in bold), but with several optio
 
 ### Rhythm Section (and the Rest)
 * Harp
-* Mallet Percussion (one staff per instrument)
+* Mallet Percussion
 * **(Electric) Guitar**
 * **Piano**
 * **Bass (Electric or Upright)**
@@ -164,8 +164,7 @@ This is based on common instrumentations for concert band/wind ensemble.
 * Bb Clarinet 1, 2, (3)
 * Eb Alto Clarinet
 * Bb Bass Clarinet
-* Eb Great Bass (Contra-alto) Clarinet
-* Bb Contrabass Clarinet
+* Eb Great Bass (Contra-alto) Clarinet or Bb Contrabass Clarinet
 #### Saxophones
 * Bb Soprano Saxophone
 * Eb Alto Saxophone 1, 2
@@ -201,8 +200,6 @@ This is based on common instrumentations for concert band/wind ensemble.
 * Chimes (Tubular Bells)
 
 
-
-
 # "Everything We Have" Instrumentation
 
 This is exactly what it sounds like: this is the full scope of instruments that recently active VVGO members have access to, as far as we know.
@@ -219,6 +216,7 @@ If there are instruments missing here, please let Brandon know.
 * C Soprano Ocarina
 * G Soprano Ocarina
 * C Alto (or Tenor) Ocarina
+* G Alto Ocarina
 * C Bass Ocarina
 * C Contrabass Ocarina
 * Sopranino Recorder (in F5, CP)
@@ -229,6 +227,7 @@ If there are instruments missing here, please let Brandon know.
 * Soprano Tin Whistle (in any key from Bb4-Eb5, F5, G5) (D5 CP is standard)
 * Low Whistle (in D4)
 #### Double Reeds, minus Bassoons
+* Tenor Crumhorn
 * Oboe 1, 2
 * English Horn
 * Duduk
@@ -311,6 +310,7 @@ If there are instruments missing here, please let Brandon know.
 * Thundertube (112.122)
 * Shaker (112.13)
 #### Pitched Percussion
+* Tongue Drum (D major, C major)
 * Glockenspiel
 * Xylophone
 * Vibraphone
