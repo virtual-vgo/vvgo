@@ -5,35 +5,24 @@
     <title>Votabulatron 5000</title>
     <meta name="description" content="">
     {{ template "header.gohtml" }}
-    <script type="text/javascript" src="js/voting.js"></script>
+    <script type="text/javascript" src="/node_modules/jquery-ui-dist/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="/js/voting.js"></script>
 </head>
 
 <body class="">
 {{ template "navbar.gohtml" }}
 
 <div class="mt-2 container">
-    <div class="row justify-content-center">
+    <div class="row row-cols-1 justify-content-center">
         <div class="col col-md-auto text-light text-center">
             <h1>Ballot</h1>
             <h4>Choices</h4>
-            <ul>
-                <li>
-                    <div id="choice-mario" draggable="true" class="btn-sm btn-secondary draggable dropzone">
-                        Mario
-                    </div>
-                </li>
-                <li>
-                    <div id="choice-zelda" draggable="true" class="btn-sm btn-secondary draggable dropzone">
-                        Zelda
-                    </div>
-                </li>
-                <li>
-                    <div id="choice-animal-crossing" draggable="true" class="btn-sm btn-secondary draggable dropzone">
-                        Animal Crossing
-                    </div>
-                </li>
+            <ul id="sortable" class="list-group">
+                <li class="vote list-group-item list-group-item-primary">Mario</li>
+                <li class="vote list-group-item list-group-item-primary">Zelda</li>
+                <li class="vote list-group-item list-group-item-primary">Animal Crossing</li>
             </ul>
-            <button class="btn btn-primary">Submit</button>
+            <button type="submit" class="btn btn-primary" onclick="submitVote()">Submit</button>
         </div>
     </div>
 </div>
