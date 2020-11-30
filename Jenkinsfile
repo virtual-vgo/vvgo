@@ -14,17 +14,22 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                git 'https://github.com/virtual-vgo/vvgo'
                 sh 'docker build . -t vvgo:latest'
             }
         }
         stage('Deploy') {
+            when {
+                branch 'master'
+            }
             steps {
                 sh 'docker rm -f vvgo-prod || true'
                 sh 'docker run -d --name vvgo-prod --env GOOGLE_APPLICATION_CREDENTIALS=/etc/vvgo/google_api_credentials.json --volume /etc/vvgo:/etc/vvgo --publish 8080:8080 --network prod-network vvgo:latest'
             }
         }
         stage('Purge Cache') {
+            when {
+                branch 'master'
+            }
             steps {
                 withCredentials([string(credentialsId: 'cloudflare_purge_key', variable: 'API_KEY')]) {
                     httpRequest httpMode: 'POST', customHeaders: [[name: 'Authorization', value: "Bearer ${API_KEY}"], [name: 'Content-Type', value: 'application/json']], requestBody: '{"purge_everything":true}', url: 'https://api.cloudflare.com/client/v4/zones/e3cfa4eadcdea773633d52a52cb6203f/purge_cache'
