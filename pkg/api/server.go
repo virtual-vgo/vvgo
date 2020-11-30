@@ -106,7 +106,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/projects/", ProjectsView{template}, login.RoleAnonymous)
 
 	mux.Handle("/voting", VotingView{template}, login.RoleVVGOLeader)
-	mux.Handle("/voting/submit", VotingCollector{}, login.RoleAnonymous)
+	mux.Handle("/voting/submit", VotingCollector{config.DiscordGuildID}, login.RoleAnonymous)
 
 	mux.Handle("/download", DownloadHandler{
 		config.DistroBucketName: database.Distro.DownloadURL,

@@ -112,9 +112,9 @@ type User struct {
 }
 
 // A discord guild member object.
-// We only care about the roles.
 // https://discordapp.com/developers/docs/resources/guild#guild-member-object
 type GuildMember struct {
+	Nick  string   `json:"nick"`
 	Roles []string `json:"roles"`
 }
 

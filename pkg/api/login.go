@@ -209,14 +209,16 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 			loginRoles = append(loginRoles, login.RoleVVGOMember)
 		}
 	}
+
 	if len(loginRoles) == 0 {
 		handleError(ErrNotAMember)
 		return
 	}
 
 	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
-		Kind:  login.KindDiscord,
-		Roles: loginRoles,
+		Kind:      login.KindDiscord,
+		Roles:     loginRoles,
+		DiscordID: discordUser.ID,
 	})
 }
 

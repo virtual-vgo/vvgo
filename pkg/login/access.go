@@ -2,6 +2,7 @@ package login
 
 import (
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"strings"
 )
 
@@ -43,8 +44,9 @@ func Anonymous() Identity { return anonymous }
 // This _absolutely_ should not contain any personally identifiable information.
 // Numeric user id's are fine, but no emails, user names, addresses, etc.
 type Identity struct {
-	Kind  Kind   `json:"kind"`
-	Roles []Role `json:"roles"`
+	Kind      Kind           `json:"kind"`
+	Roles     []Role         `json:"roles"`
+	DiscordID discord.UserID `json:"discord_id"`
 }
 
 func (x Identity) Info() string {
