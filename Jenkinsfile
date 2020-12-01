@@ -7,10 +7,6 @@ pipeline {
             }
         }
         stage('Deploy') {
-            when {
-                branch 'master'
-            }
-
             stages {
                 stage('Deploy container') {
                     steps {
@@ -21,7 +17,7 @@ pipeline {
                             --volume /etc/vvgo:/etc/vvgo \
                             --publish 8080:8080 \
                             --network prod-network \
-                            vvgo:master
+                            vvgo:latest
                     '''
                     }
                 }
