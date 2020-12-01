@@ -6,9 +6,14 @@ pipeline {
                 sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
             }
         }
+
         stage('Deploy') {
+            when {
+                branch 'master'
+            }
+
             stages {
-                stage('Deploy container') {
+                stage('Launch container') {
                     steps {
                         sh 'docker rm -f vvgo-prod || true'
                         sh '''
@@ -17,8 +22,8 @@ pipeline {
                             --volume /etc/vvgo:/etc/vvgo \
                             --publish 8080:8080 \
                             --network prod-network \
-                            vvgo:latest
-                    '''
+                            vvgo:master
+                        '''
                     }
                 }
 
@@ -31,7 +36,6 @@ pipeline {
                                     requestBody: '{"purge_everything":true}',
                                     url: 'https://api.cloudflare.com/client/v4/zones/e3cfa4eadcdea773633d52a52cb6203f/purge_cache')
                         }
-
                     }
                 }
             }
@@ -45,6 +49,7 @@ pipeline {
                                 webhookURL: "${WEBHOOK_URL}")
                     }
                 }
+
                 failure {
                     withCredentials(bindings: [string(credentialsId: 'web_and_coding_team_webhook', variable: 'WEBHOOK_URL')]) {
                         discordSend(link: env.BUILD_URL,
