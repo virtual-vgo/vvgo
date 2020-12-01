@@ -25,8 +25,8 @@ pipeline {
                 stage('Purge cloudflare cache') {
                     steps {
                         withCredentials(bindings: [string(credentialsId: 'cloudflare_purge_key', variable: 'API_KEY')]) {
-                            httpRequest(httpMode: POST,
-                                    contentType: APPLICATION_JSON,
+                            httpRequest(httpMode: 'POST',
+                                    contentType: 'APPLICATION_JSON',
                                     customHeaders: [[name: 'Authorization', value: "Bearer ${API_KEY}"]],
                                     requestBody: '{"purge_everything":true}',
                                     url: 'https://api.cloudflare.com/client/v4/zones/e3cfa4eadcdea773633d52a52cb6203f/purge_cache')
