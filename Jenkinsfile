@@ -46,7 +46,7 @@ pipeline {
                     }
                 }
                 failure {
-                    withCredentials(bindings: [string(credentialsId: 'discord_web_and_coding_team_webhook', variable: 'WEBHOOK_URL')]) {
+                    withCredentials(bindings: [string(credentialsId: 'web_and_coding_team_webhook', variable: 'WEBHOOK_URL')]) {
                         discordSend(link: env.BUILD_URL,
                                 result: currentBuild.currentResult,
                                 title: "vvgo build ${BUILD_NUMBER} has failures",
