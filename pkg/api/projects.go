@@ -22,7 +22,7 @@ func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
@@ -38,7 +38,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("valuesToProjects() failed")
 		internalServerError(w)
@@ -51,7 +51,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	credits, err := sheets.ListCredits(ctx, x.SpreadsheetID)
+	credits, err := sheets.ListCredits(ctx)
 	if err != nil {
 		logger.WithError(err).Error("valuesToCredits() failed")
 		internalServerError(w)

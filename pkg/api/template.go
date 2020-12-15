@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"html/template"
 	"net/http"
@@ -13,27 +13,10 @@ import (
 	"strings"
 )
 
-type Template struct {
-	SpreadsheetID string
-	DistroBucket  string
-}
-
-func getSpreadsheetID(ctx context.Context) string {
-	var spreadsheetID string
-	redis.Do(ctx, redis.Cmd(&spreadsheetID, "GET", "config:website_data_spreadsheet_id"))
-	return spreadsheetID
-}
-
-func getDistroBucket(ctx context.Context) string {
-	var distroBucket string
-	redis.Do(ctx, redis.Cmd(&distroBucket, "GET", "config:distro_bucket"))
-	return distroBucket
-}
+type Template struct{}
 
 func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
-	x.SpreadsheetID = getSpreadsheetID(ctx)
-	x.DistroBucket = getDistroBucket(ctx)
-
+	distroBucket := config.DistroBucket(ctx)
 	identity := IdentityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
@@ -47,9 +30,9 @@ func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r 
 		"user_is_member":   func() bool { return identity.HasRole(login.RoleVVGOMember) },
 		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
-		"download_link":    func(obj string) string { return downloadLink(x.DistroBucket, obj) },
-		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity, x.SpreadsheetID) },
-		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx, identity, x.SpreadsheetID) },
+		"download_link":    func(obj string) string { return downloadLink(distroBucket, obj) },
+		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity) },
+		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx, identity) },
 	}).ParseFiles(
 		PublicFiles+"/"+templateFile,
 		PublicFiles+"/header.gohtml",
@@ -78,20 +61,4 @@ func downloadLink(bucket, object string) string {
 	} else {
 		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, object)
 	}
-}
-
-func currentProjects(ctx context.Context, identity *login.Identity, spreadsheetID string) (sheets.Projects, error) {
-	projects, err := sheets.ListProjects(ctx, identity, spreadsheetID)
-	if err != nil {
-		return nil, err
-	}
-	return projects.Current(), nil
-}
-
-func currentParts(ctx context.Context, identity *login.Identity, spreadsheetID string) (sheets.Parts, error) {
-	parts, err := sheets.ListParts(ctx, identity, spreadsheetID)
-	if err != nil {
-		return nil, err
-	}
-	return parts.Current(), nil
 }
