@@ -1,0 +1,12 @@
+{
+  "p3xrs": {
+    "http": {
+      "port": 7843
+    },
+    "static": "~p3x-redis-ui-material/dist",
+    "license-key": "future-use",
+    "treeDividers": [
+      ":"
+    ]
+  }
+}
