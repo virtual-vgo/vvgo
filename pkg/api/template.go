@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"html/template"
 	"net/http"
@@ -17,7 +18,22 @@ type Template struct {
 	DistroBucket  string
 }
 
+func getSpreadsheetID(ctx context.Context) string {
+	var spreadsheetID string
+	redis.Do(ctx, redis.Cmd(&spreadsheetID, "GET", "config:website_data_spreadsheet_id"))
+	return spreadsheetID
+}
+
+func getDistroBucket(ctx context.Context) string {
+	var distroBucket string
+	redis.Do(ctx, redis.Cmd(&distroBucket, "GET", "config:distro_bucket"))
+	return distroBucket
+}
+
 func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
+	x.SpreadsheetID = getSpreadsheetID(ctx)
+	x.DistroBucket = getDistroBucket(ctx)
+
 	identity := IdentityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
