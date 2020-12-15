@@ -26,7 +26,7 @@ func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	leaders, err := sheets.ListLeaders(ctx, x.SpreadsheetID)
+	leaders, err := sheets.ListLeaders(ctx)
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)

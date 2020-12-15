@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
@@ -19,10 +20,7 @@ type ServerConfig struct {
 	ListenAddress         string          `split_words:"true" default:"0.0.0.0:8080"`
 	MemberUser            string          `split_words:"true" default:"admin"`
 	MemberPass            string          `split_words:"true" default:"admin"`
-	DistroBucketName      string          `split_words:"true" default:"vvgo-distro"`
 	RedisNamespace        string          `split_words:"true" default:"local"`
-	PartsSpreadsheetID    string          `envconfig:"parts_spreadsheet_id"`
-	PartsReadRange        string          `envconfig:"parts_read_range"`
 	DiscordGuildID        discord.GuildID `envconfig:"discord_guild_id"`
 	DiscordRoleVVGOMember string          `envconfig:"discord_role_vvgo_member"`
 	DiscordRoleVVGOTeams  string
@@ -36,7 +34,7 @@ type Server struct {
 	*http.Server
 }
 
-func NewServer(ctx context.Context, config ServerConfig) *Server {
+func NewServer(ctx context.Context, serverConfig ServerConfig) *Server {
 	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
 		bucket, err := storage.NewBucket(ctx, bucketName)
 		if err != nil {
@@ -46,14 +44,11 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	}
 
 	database := Database{
-		Distro:   newBucket(ctx, config.DistroBucketName),
-		Sessions: login.NewStore(config.RedisNamespace, config.Login),
+		Distro:   newBucket(ctx, config.DistroBucket()),
+		Sessions: login.NewStore(serverConfig.RedisNamespace, serverConfig.Login),
 	}
 
-	template := Template{
-		SpreadsheetID: config.PartsSpreadsheetID,
-		DistroBucket:  config.DistroBucketName,
-	}
+	template := Template{}
 
 	mux := RBACMux{
 		ServeMux: http.NewServeMux(),
@@ -63,15 +58,15 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/login/password", PasswordLoginHandler{
 		Sessions: database.Sessions,
 		Logins: map[[2]string][]login.Role{
-			{config.MemberUser, config.MemberPass}: {login.RoleVVGOMember},
+			{serverConfig.MemberUser, serverConfig.MemberPass}: {login.RoleVVGOMember},
 		},
 	}, login.RoleAnonymous)
 
 	mux.Handle("/login/discord", DiscordLoginHandler{
-		GuildID:          config.DiscordGuildID,
-		RoleVVGOLeaderID: config.DiscordRoleVVGOLeader,
-		RoleVVGOTeamsID:  config.DiscordRoleVVGOTeams,
-		RoleVVGOMemberID: config.DiscordRoleVVGOMember,
+		GuildID:          serverConfig.DiscordGuildID,
+		RoleVVGOLeaderID: serverConfig.DiscordRoleVVGOLeader,
+		RoleVVGOTeamsID:  serverConfig.DiscordRoleVVGOTeams,
+		RoleVVGOMemberID: serverConfig.DiscordRoleVVGOMember,
 		Sessions:         database.Sessions,
 	}, login.RoleAnonymous)
 
@@ -106,7 +101,7 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	mux.Handle("/projects/", ProjectsView{template}, login.RoleAnonymous)
 
 	mux.Handle("/download", DownloadHandler{
-		config.DistroBucketName: database.Distro.DownloadURL,
+		serverConfig.DistroBucketName: database.Distro.DownloadURL,
 	}, login.RoleVVGOMember)
 
 	mux.Handle("/credits-maker", CreditsMaker{template}, login.RoleVVGOTeams)
@@ -123,10 +118,10 @@ func NewServer(ctx context.Context, config ServerConfig) *Server {
 	}, login.RoleAnonymous)
 
 	return &Server{
-		config:   config,
+		config:   serverConfig,
 		database: database,
 		Server: &http.Server{
-			Addr:     config.ListenAddress,
+			Addr:     serverConfig.ListenAddress,
 			Handler:  http_wrappers.Handler(&mux),
 			ErrorLog: log.StdLogger(),
 		},

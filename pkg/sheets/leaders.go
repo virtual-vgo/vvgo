@@ -2,6 +2,7 @@ package sheets
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 )
 
 type Leaders []Leader
@@ -15,8 +16,8 @@ type Leader struct {
 	Email        string
 }
 
-func ListLeaders(ctx context.Context, spreadsheetID string) (Leaders, error) {
-	values, err := ReadSheet(ctx, spreadsheetID, "Leaders")
+func ListLeaders(ctx context.Context) (Leaders, error) {
+	values, err := ReadSheet(ctx, config.WebsiteDataSpreadsheetID(ctx), "Leaders")
 	if err != nil {
 		return nil, err
 	}

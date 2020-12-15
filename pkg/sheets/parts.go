@@ -2,6 +2,7 @@ package sheets
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 )
 
@@ -21,8 +22,8 @@ type Part struct {
 
 type Parts []Part
 
-func ListParts(ctx context.Context, identity *login.Identity, spreadsheetID string) (Parts, error) {
-	values, err := ReadSheet(ctx, spreadsheetID, "Parts")
+func ListParts(ctx context.Context, identity *login.Identity) (Parts, error) {
+	values, err := ReadSheet(ctx, config.WebsiteDataSpreadsheetID(ctx), "Parts")
 	if err != nil {
 		return nil, err
 	}
