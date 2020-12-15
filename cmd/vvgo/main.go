@@ -11,7 +11,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/minio"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
 )
@@ -21,7 +21,7 @@ var logger = log.Logger()
 type Config struct {
 	Api     api.ServerConfig
 	Redis   redis.Config
-	Minio   storage.Config
+	Minio   minio.Config
 	Discord discord.Config
 }
 
@@ -67,7 +67,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	storage.Initialize(config.Minio)
 	redis.Initialize(config.Redis)
 	discord.Initialize(config.Discord)
 	apiServer := api.NewServer(ctx, config.Api)

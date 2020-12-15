@@ -8,7 +8,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/minio"
 	"testing"
 )
 
@@ -35,7 +35,7 @@ func TestConfig_ParseFile(t *testing.T) {
 			Address:  "redis-address",
 			PoolSize: 17,
 		},
-		Minio: storage.Config{
+		Minio: minio.Config{
 			Endpoint:  "minio-endpoint",
 			Region:    "minio-region",
 			AccessKey: "minio-access-key",

@@ -2,12 +2,10 @@ package api
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
 	"net/http"
 	"net/http/pprof"
 )
@@ -35,16 +33,7 @@ type Server struct {
 }
 
 func NewServer(ctx context.Context, serverConfig ServerConfig) *Server {
-	var newBucket = func(ctx context.Context, bucketName string) *storage.Bucket {
-		bucket, err := storage.NewBucket(ctx, bucketName)
-		if err != nil {
-			logger.WithError(err).WithField("bucket_name", bucketName).Fatal("storage.NewBucket() failed")
-		}
-		return bucket
-	}
-
 	database := Database{
-		Distro:   newBucket(ctx, config.DistroBucket()),
 		Sessions: login.NewStore(serverConfig.RedisNamespace, serverConfig.Login),
 	}
 
@@ -100,9 +89,7 @@ func NewServer(ctx context.Context, serverConfig ServerConfig) *Server {
 	mux.Handle("/projects", http.RedirectHandler("/projects/", http.StatusFound), login.RoleAnonymous)
 	mux.Handle("/projects/", ProjectsView{template}, login.RoleAnonymous)
 
-	mux.Handle("/download", DownloadHandler{
-		serverConfig.DistroBucketName: database.Distro.DownloadURL,
-	}, login.RoleVVGOMember)
+	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
 
 	mux.Handle("/credits-maker", CreditsMaker{template}, login.RoleVVGOTeams)
 
