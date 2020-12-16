@@ -37,7 +37,9 @@ func SetDefaults(dest interface{}) {
 		if defaultString == "" {
 			continue
 		}
-		setField(dest, field.Type.Kind(), i, defaultString)
+		if reflect.ValueOf(dest).Elem().Field(i).IsZero() {
+			setField(dest, field.Type.Kind(), i, defaultString)
+		}
 	}
 }
 
