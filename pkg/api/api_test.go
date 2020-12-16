@@ -12,9 +12,7 @@ import (
 func init() {
 	PublicFiles = "../../public"
 
-	var redisConfig redis.Config
-	envconfig.MustProcess("REDIS", &redisConfig)
-	redis.Initialize(redisConfig)
+	redis.InitializeFromEnv()
 }
 
 var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))

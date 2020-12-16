@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type ProjectsView struct{ Template }
+type ProjectsView struct{}
 
 func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/projects/" {
@@ -28,7 +28,7 @@ func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	x.Template.ParseAndExecute(ctx, w, r, &projects, "projects/index.gohtml")
+	ParseAndExecute(ctx, w, r, &projects, "projects/index.gohtml")
 }
 
 func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
@@ -102,5 +102,5 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		Credits: creditsTable.Rows,
 	}
 
-	x.Template.ParseAndExecute(ctx, w, r, &page, "projects/project.gohtml")
+	ParseAndExecute(ctx, w, r, &page, "projects/project.gohtml")
 }

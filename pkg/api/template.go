@@ -13,9 +13,7 @@ import (
 	"strings"
 )
 
-type Template struct{}
-
-func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
+func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
 	distroBucket := parse_config.DistroBucket(ctx)
 	identity := IdentityFromContext(ctx)
 

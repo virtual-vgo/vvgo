@@ -7,12 +7,6 @@ import (
 	"testing"
 )
 
-func init() {
-	var redisConfig redis.Config
-	envconfig.MustProcess("REDIS", &redisConfig)
-	redis.Initialize(redisConfig)
-}
-
 func TestKind_String(t *testing.T) {
 	assert.Equal(t, "Cheese", Kind("Cheese").String())
 }
