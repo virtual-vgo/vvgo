@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"html/template"
@@ -14,7 +13,6 @@ import (
 )
 
 func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
-	distroBucket := parse_config.DistroBucket(ctx)
 	identity := IdentityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
@@ -28,7 +26,7 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"user_is_member":   func() bool { return identity.HasRole(login.RoleVVGOMember) },
 		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
-		"download_link":    func(obj string) string { return downloadLink(distroBucket, obj) },
+		"download_link":    func(obj string) string { return downloadLink(obj) },
 		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity) },
 		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx, identity) },
 	}).ParseFiles(
@@ -53,10 +51,10 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 	_, _ = buffer.WriteTo(w)
 }
 
-func downloadLink(bucket, object string) string {
-	if bucket == "" || object == "" {
-		return ""
+func downloadLink(object string) string {
+	if object == "" {
+		return "#"
 	} else {
-		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, object)
+		return fmt.Sprintf("/download?object=%s", object)
 	}
 }

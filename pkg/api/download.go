@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/minio"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
 	"time"
 )
@@ -11,21 +11,30 @@ const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
 type DownloadHandler struct{}
 
+type DownloadConfig struct {
+	DistroBucket string `redis:"distro_bucket"`
+}
+
 func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
 	}
 
-	values := r.URL.Query()
-	object := values.Get("object")
+	object := r.URL.Query().Get("object")
 	if object == "" {
 		badRequest(w, "object required")
 		return
 	}
 
 	ctx := r.Context()
-	bucket := parse_config.DistroBucket(ctx)
+	var config DownloadConfig
+	if err := parse_config.ReadFromRedisHash(ctx, &config, "config:download"); err != nil {
+		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
+		internalServerError(w)
+		return
+	}
+
 	minioClient, err := minio.NewClient(ctx)
 	if err != nil {
 		logger.WithError(err).Error("minio.New() failed")
@@ -33,7 +42,7 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	downloadUrl, err := minioClient.PresignedGetObject(bucket, object, ProtectedLinkExpiry, nil)
+	downloadUrl, err := minioClient.PresignedGetObject(config.DistroBucket, object, ProtectedLinkExpiry, nil)
 	if err != nil {
 		logger.WithError(err).Error("minio.StatObject() failed")
 		internalServerError(w)
