@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -23,7 +22,7 @@ func init() {
 }
 
 func newStore() *Store {
-	return NewStore("testing"+strconv.Itoa(lrand.Int()), Config{})
+	return NewStore(Config{})
 }
 
 func TestStore_GetIdentity(t *testing.T) {

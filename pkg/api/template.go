@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"html/template"
@@ -16,7 +16,7 @@ import (
 type Template struct{}
 
 func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
-	distroBucket := config.DistroBucket(ctx)
+	distroBucket := parse_config.DistroBucket(ctx)
 	identity := IdentityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{

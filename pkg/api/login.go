@@ -16,10 +16,7 @@ import (
 
 const LoginCookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
 
-type LoginView struct {
-	Sessions *login.Store
-	Template
-}
+type LoginView struct{ Template }
 
 const CookieLoginRedirect = "vvgo-login-redirect"
 
@@ -35,7 +32,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Name:     CookieLoginRedirect,
 				Value:    value,
 				Expires:  time.Now().Add(3600 * time.Second),
-				Domain:   x.Sessions.Config().CookieDomain,
+				Domain:   login.NewStore(ctx).Config().CookieDomain,
 				SameSite: http.SameSiteStrictMode,
 				HttpOnly: true,
 			})
@@ -74,8 +71,8 @@ func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirect, http.StatusFound)
 }
 
-func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {
-	cookie, err := sessions.NewCookie(ctx, identity, LoginCookieDuration)
+func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, identity *login.Identity) {
+	cookie, err := login.NewStore(ctx).NewCookie(ctx, identity, LoginCookieDuration)
 	if err != nil {
 		logger.WithError(err).Error("store.NewCookie() failed")
 		internalServerError(w)
@@ -126,7 +123,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
+	loginSuccess(w, r, ctx, &login.Identity{
 		Kind:  login.KindPassword,
 		Roles: gotRoles,
 	})
@@ -141,20 +138,20 @@ type DiscordLoginHandler struct {
 	RoleVVGOMemberID string
 	RoleVVGOTeamsID  string
 	RoleVVGOLeaderID string
-	Sessions         *login.Store
 	Namespace        string
 }
 
 var ErrNotAMember = errors.New("not a member")
 
 func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	if r.FormValue("state") == "" {
 		state, ok := oauthRedirect(w, r, x.Namespace)
 		if !ok {
 			internalServerError(w)
 			return
 		}
-		http.Redirect(w, r, discord.LoginURL(state), http.StatusFound)
+		http.Redirect(w, r, discord.NewClient(ctx).LoginURL(state), http.StatusFound)
 	} else {
 		x.authorize(w, r)
 	}
@@ -162,6 +159,7 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	discordClient := discord.NewClient(ctx)
 
 	handleError := func(err error) bool {
 		if err != nil {
@@ -178,19 +176,19 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 
 	// get an oauth token from discord
 	code := r.FormValue("code")
-	oauthToken, err := discord.QueryOAuth(ctx, code)
+	oauthToken, err := discordClient.QueryOAuth(ctx, code)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// get the user id
-	discordUser, err := discord.QueryIdentity(ctx, oauthToken)
+	discordUser, err := discordClient.QueryIdentity(ctx, oauthToken)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// check if this user is in our guild
-	guildMember, err := discord.QueryGuildMember(ctx, x.GuildID, discordUser.ID)
+	guildMember, err := discordClient.QueryGuildMember(ctx, x.GuildID, discordUser.ID)
 	if ok := handleError(err); !ok {
 		return
 	}
@@ -214,7 +212,7 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
+	loginSuccess(w, r, ctx, &login.Identity{
 		Kind:  login.KindDiscord,
 		Roles: loginRoles,
 	})
@@ -271,14 +269,12 @@ func validateState(r *http.Request, ctx context.Context, redisNamespace string) 
 }
 
 // LogoutHandler deletes the login session from the incoming request, if it exists.
-type LogoutHandler struct {
-	Sessions *login.Store
-}
+type LogoutHandler struct{}
 
 func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if err := x.Sessions.DeleteSessionFromRequest(ctx, r); err != nil {
+	if err := login.NewStore(ctx).DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.WithError(err).Error("x.Sessions.DeleteSessionFromRequest failed")
 		internalServerError(w)
 	} else {
