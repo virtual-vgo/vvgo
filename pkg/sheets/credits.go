@@ -3,7 +3,6 @@ package sheets
 import (
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/config"
 	"sort"
 	"strings"
 )
@@ -20,7 +19,7 @@ type Credit struct {
 type Credits []Credit
 
 func ListCredits(ctx context.Context) (Credits, error) {
-	values, err := ReadSheet(ctx, config.WebsiteDataSpreadsheetID(ctx), "Credits")
+	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Credits")
 	if err != nil {
 		return nil, err
 	}

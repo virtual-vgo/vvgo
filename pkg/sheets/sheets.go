@@ -16,6 +16,12 @@ const CacheTTL = "5"
 
 var logger = log.Logger()
 
+func WebsiteDataSpreadsheetID(ctx context.Context) string {
+	var spreadsheetID string
+	redis.Do(ctx, redis.Cmd(&spreadsheetID, "HGET", "config:sheets", "website_data_spreadsheet_id"))
+	return spreadsheetID
+}
+
 func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
 	values := readValuesFromRedis(ctx, spreadsheetID, readRange)
 	if len(values) != 0 {

@@ -33,19 +33,11 @@ type Server struct {
 }
 
 func NewServer(ctx context.Context, serverConfig ServerConfig) *Server {
-	database := Database{
-		Sessions: login.NewStore(serverConfig.RedisNamespace, serverConfig.Login),
-	}
-
 	template := Template{}
 
-	mux := RBACMux{
-		ServeMux: http.NewServeMux(),
-		Sessions: database.Sessions,
-	}
+	mux := RBACMux{ServeMux: http.NewServeMux()}
 
 	mux.Handle("/login/password", PasswordLoginHandler{
-		Sessions: database.Sessions,
 		Logins: map[[2]string][]login.Role{
 			{serverConfig.MemberUser, serverConfig.MemberPass}: {login.RoleVVGOMember},
 		},
@@ -56,20 +48,14 @@ func NewServer(ctx context.Context, serverConfig ServerConfig) *Server {
 		RoleVVGOLeaderID: serverConfig.DiscordRoleVVGOLeader,
 		RoleVVGOTeamsID:  serverConfig.DiscordRoleVVGOTeams,
 		RoleVVGOMemberID: serverConfig.DiscordRoleVVGOMember,
-		Sessions:         database.Sessions,
 	}, login.RoleAnonymous)
 
 	mux.Handle("/login/success", LoginSuccessView{template}, login.RoleAnonymous)
 	mux.Handle("/login/redirect", LoginRedirect{}, login.RoleAnonymous)
 
-	mux.Handle("/login", LoginView{
-		Template: template,
-		Sessions: database.Sessions,
-	}, login.RoleAnonymous)
+	mux.Handle("/login", LoginView{Template: template}, login.RoleAnonymous)
 
-	mux.Handle("/logout", LogoutHandler{
-		Sessions: database.Sessions,
-	}, login.RoleAnonymous)
+	mux.Handle("/logout", LogoutHandler{}, login.RoleAnonymous)
 
 	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		identity := IdentityFromContext(r.Context())
@@ -106,7 +92,6 @@ func NewServer(ctx context.Context, serverConfig ServerConfig) *Server {
 
 	return &Server{
 		config:   serverConfig,
-		database: database,
 		Server: &http.Server{
 			Addr:     serverConfig.ListenAddress,
 			Handler:  http_wrappers.Handler(&mux),

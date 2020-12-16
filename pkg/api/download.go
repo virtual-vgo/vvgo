@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/minio"
 	"net/http"
 	"time"
@@ -25,7 +25,7 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	bucket := config.DistroBucket(ctx)
+	bucket := parse_config.DistroBucket(ctx)
 	minioClient, err := minio.NewClient(ctx)
 	if err != nil {
 		logger.WithError(err).Error("minio.New() failed")

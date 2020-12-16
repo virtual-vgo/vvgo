@@ -68,7 +68,6 @@ func main() {
 	}
 
 	redis.Initialize(config.Redis)
-	discord.Initialize(config.Discord)
 	apiServer := api.NewServer(ctx, config.Api)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
