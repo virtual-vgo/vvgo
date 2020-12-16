@@ -107,8 +107,6 @@ func TestRBACMux_Handle(t *testing.T) {
 	})
 
 	t.Run("login session", func(t *testing.T) {
-		mux.Sessions = newSessions()
-
 		newAuthRequest := func(t *testing.T, identity *login.Identity) *http.Request {
 			cookie, err := mux.Sessions.NewCookie(context.Background(), identity, 3600*time.Second)
 			require.NoError(t, err, "Sessions.NewCookie()")
