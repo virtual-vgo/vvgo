@@ -37,11 +37,7 @@ func NewServer(ctx context.Context, serverConfig ServerConfig) *Server {
 
 	mux := RBACMux{ServeMux: http.NewServeMux()}
 
-	mux.Handle("/login/password", PasswordLoginHandler{
-		Logins: map[[2]string][]login.Role{
-			{serverConfig.MemberUser, serverConfig.MemberPass}: {login.RoleVVGOMember},
-		},
-	}, login.RoleAnonymous)
+	mux.Handle("/login/password", PasswordLoginHandler{}, login.RoleAnonymous)
 
 	mux.Handle("/login/discord", DiscordLoginHandler{
 		GuildID:          serverConfig.DiscordGuildID,
