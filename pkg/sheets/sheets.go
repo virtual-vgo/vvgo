@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"google.golang.org/api/sheets/v4"
 	"reflect"
@@ -18,7 +19,7 @@ var logger = log.Logger()
 
 func WebsiteDataSpreadsheetID(ctx context.Context) string {
 	var spreadsheetID string
-	redis.Do(ctx, redis.Cmd(&spreadsheetID, "HGET", "config:sheets", "website_data_spreadsheet_id"))
+	_ = parse_config.ReadRedisHashValue(ctx, "sheets", "website_data_spreadsheet_id", &spreadsheetID)
 	return spreadsheetID
 }
 

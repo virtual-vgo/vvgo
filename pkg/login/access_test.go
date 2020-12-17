@@ -1,9 +1,7 @@
 package login
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"testing"
 )
 
