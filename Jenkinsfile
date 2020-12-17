@@ -19,10 +19,11 @@ pipeline {
                         sh '''
                         docker run -d --name vvgo-prod \
                             --env GOOGLE_APPLICATION_CREDENTIALS=/etc/vvgo/google_api_credentials.json \
+                            --env REDIS_ADDRESS=redis-prod:6379
                             --volume /etc/vvgo:/etc/vvgo \
                             --publish 8080:8080 \
                             --network prod-network \
-                            vvgo:master
+                            vvgo:master --listen 0.0.0.0:8080
                         '''
                     }
                 }

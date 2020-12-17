@@ -9,12 +9,12 @@ import (
 	"time"
 )
 
-var Namespace = "config_none"
+var Namespace = "config"
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func UseTestNamespace() {
-	Namespace = "config_test:" + strconv.Itoa(seededRand.Int())
+	Namespace = "test:config:" + strconv.Itoa(seededRand.Int())
 }
 
 func WriteRedisHashValue(ctx context.Context, redisKey, hashKey, val string) error {

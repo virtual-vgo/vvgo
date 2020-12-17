@@ -26,7 +26,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if target := r.FormValue("target"); target != "" {
 		value := login.NewCookieValue()
-		if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", CookieLoginRedirect+":"+value, "3600", target)); err != nil {
+		if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", "vvgo_login_redirect"+":"+value, "3600", target)); err != nil {
 			logger.WithError(err).Error("redis.Do() failed")
 		} else {
 			http.SetCookie(w, &http.Cookie{
@@ -63,7 +63,7 @@ func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger.WithError(err).Error("r.Cookie() failed")
 	} else {
 		var want string
-		if err := redis.Do(ctx, redis.Cmd(&want, "GET", CookieLoginRedirect+":"+cookie.Value)); err != nil {
+		if err := redis.Do(ctx, redis.Cmd(&want, "GET", "vvgo_login_redirect"+":"+cookie.Value)); err != nil {
 			logger.WithError(err).Error("redis.Do() failed")
 		} else {
 			redirect = want
