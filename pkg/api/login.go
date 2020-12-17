@@ -90,12 +90,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, i
 
 // PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.
 // If the user pass combo exists in the map, then a login cookie with the mapped roles is create and sent in the response.
-type PasswordLoginHandler struct {
-	Sessions *login.Store
-
-	// Logins is a map of login user and pass to a slice of roles for that login.
-	Logins map[[2]string][]login.Role
-}
+type PasswordLoginHandler struct{}
 
 func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -105,8 +100,15 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	passwords := make(map[string]string)
+	if err := redis.Do(ctx, redis.Cmd(&passwords, "HGETALL", "config:password_login")); err != nil {
+		logger.WithError(err).Error("redis.Do() failed: %v", err)
+		internalServerError(w)
+		return
+	}
+
 	var identity login.Identity
-	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil {
+	if err := login.NewStore(ctx).ReadSessionFromRequest(ctx, r, &identity); err == nil {
 		http.Redirect(w, r, "/parts", http.StatusFound)
 		return
 	}
@@ -114,8 +116,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	user := r.FormValue("user")
 	pass := r.FormValue("pass")
 
-	gotRoles, ok := x.Logins[[2]string{user, pass}]
-	if !ok {
+	if user == "" || pass == "" || passwords[user] != pass {
 		logger.WithFields(logrus.Fields{
 			"user": user,
 		}).Error("password authentication failed")
@@ -125,7 +126,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	loginSuccess(w, r, ctx, &login.Identity{
 		Kind:  login.KindPassword,
-		Roles: gotRoles,
+		Roles: []login.Role{login.RoleVVGOMember},
 	})
 }
 
