@@ -29,7 +29,7 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	var config DownloadConfig
-	if err := parse_config.ReadFromRedisHash(ctx, &config, "config:download"); err != nil {
+	if err := parse_config.ReadFromRedisHash(ctx, "download", &config); err != nil {
 		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
 		internalServerError(w)
 		return

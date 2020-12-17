@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
@@ -36,6 +37,7 @@ func main() {
 	}
 
 	redis.InitializeFromEnv()
+	parse_config.Namespace = "config_main"
 	apiServer := api.NewServer(flags.ListenAddress)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")

@@ -45,7 +45,7 @@ func (x CreditsMaker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var config CreditsMakerConfig
-	_ = parse_config.ReadFromRedisHash(ctx, &config, "config:credits_maker")
+	_ = parse_config.ReadFromRedisHash(ctx, "credits_maker", &config)
 
 	// set defaults
 	if data.SpreadsheetID == "" {

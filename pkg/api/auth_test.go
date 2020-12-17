@@ -13,6 +13,7 @@ import (
 )
 
 func TestRBACMux_Handle(t *testing.T) {
+	ctx := context.Background()
 	mux := RBACMux{
 		ServeMux: http.NewServeMux(),
 	}
@@ -108,7 +109,7 @@ func TestRBACMux_Handle(t *testing.T) {
 
 	t.Run("login session", func(t *testing.T) {
 		newAuthRequest := func(t *testing.T, identity *login.Identity) *http.Request {
-			cookie, err := mux.Sessions.NewCookie(context.Background(), identity, 3600*time.Second)
+			cookie, err := login.NewStore(ctx).NewCookie(ctx, identity, 3600*time.Second)
 			require.NoError(t, err, "Sessions.NewCookie()")
 			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
 			require.NoError(t, err, "http.NewRequest")

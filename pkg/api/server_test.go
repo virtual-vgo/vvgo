@@ -8,21 +8,13 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 )
 
 func TestServer(t *testing.T) {
-	server := NewServer(context.Background(), ServerConfig{
-		MemberUser:       "vvgo-member",
-		MemberPass:       "vvgo-member",
-		DistroBucketName: "vvgo-distro" + strconv.Itoa(lrand.Int()),
-		RedisNamespace:   "vvgo-testing" + strconv.Itoa(lrand.Int()),
-		Login: login.Config{
-			CookieName: "vvgo-cookie",
-		},
-	})
+	ctx := context.Background()
+	server := NewServer("0.0.0.0:8080")
 	ts := httptest.NewServer(http.HandlerFunc(server.Server.Handler.ServeHTTP))
 	defer ts.Close()
 
@@ -30,7 +22,7 @@ func TestServer(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err, "http.NewRequest")
 		if len(roles) != 0 {
-			cookie, err := server.database.Sessions.NewCookie(context.Background(), &login.Identity{
+			cookie, err := login.NewStore(ctx).NewCookie(context.Background(), &login.Identity{
 				Roles: roles,
 			}, 3600*time.Second)
 			require.NoError(t, err, "sessions.NewCookie")

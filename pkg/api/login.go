@@ -102,8 +102,8 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	passwords := make(map[string]string)
-	if err := redis.Do(ctx, redis.Cmd(&passwords, "HGETALL", "config:password_login")); err != nil {
-		logger.WithError(err).Error("redis.Do() failed: %v", err)
+	if err := parse_config.ReadFromRedisHash(ctx, "password_login", &passwords); err != nil {
+		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
 		internalServerError(w)
 		return
 	}
@@ -158,8 +158,8 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, discord.NewClient(ctx).LoginURL(state), http.StatusFound)
 	} else {
 		var config DiscordLoginConfig
-		if err := parse_config.ReadFromRedisHash(ctx, &config, "config:discord_login"); err != nil {
-			logger.WithError(err).Error("redis.Do() failed: %v", err)
+		if err := parse_config.ReadFromRedisHash(ctx, "discord_login", &config); err != nil {
+			logger.WithError(err).Errorf("redis.Do() failed: %v", err)
 			internalServerError(w)
 		}
 		x.authorize(w, r, config)

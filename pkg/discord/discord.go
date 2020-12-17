@@ -54,7 +54,7 @@ type Config struct {
 func newConfig(ctx context.Context) Config {
 	var dest Config
 	parse_config.SetDefaults(&dest)
-	if err := parse_config.ReadFromRedisHash(ctx, &dest, "config:discord"); err != nil {
+	if err := parse_config.ReadFromRedisHash(ctx, "discord", &dest); err != nil {
 		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
 	}
 	return dest
