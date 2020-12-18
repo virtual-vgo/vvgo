@@ -9,7 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"io"
 	"net/http"
 	"net/url"
@@ -25,39 +24,50 @@ type Client struct {
 	config Config
 }
 
-func NewClient(ctx context.Context) *Client {
-	return &Client{config: newConfig(ctx)}
+func NewClient(config Config) *Client {
+	return &Client{config: config}
 }
 
 // Config for discord requests.
 type Config struct {
 	// Api endpoint to query. Defaults to https://discordapp.com/api/v6.
-	Endpoint string `redis:"endpoint" default:"https://discordapp.com/api/v6"`
+	Endpoint string
 
 	// BotAuthToken is used for making queries about our discord guild.
 	// This is found in the bot tab for the discord app.
-	BotAuthToken string `redis:"bot_authentication_token"`
+	BotAuthToken string
 
 	// OAuthClientID is the client id used in oauth requests.
 	// This is found in the oauth2 tab for the discord app.
-	OAuthClientID string `redis:"oauth_client_id"`
+	OAuthClientID string
 
 	// OAuthClientSecret is the secret used in oauth requests.
 	// This is found in the oauth2 tab for the discord app.
-	OAuthClientSecret string `redis:"oauth_client_secret"`
+	OAuthClientSecret string
 
 	// OAuthRedirectURI is the redirect uri we set in discord.
 	// This is found in the oauth2 tab for the discord app.
-	OAuthRedirectURI string `redis:"oauth_redirect_uri"`
+	OAuthRedirectURI string
 }
 
-func newConfig(ctx context.Context) Config {
-	var dest Config
-	parse_config.SetDefaults(&dest)
-	if err := parse_config.ReadFromRedisHash(ctx, "discord", &dest); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-	}
-	return dest
+var client *Client
+
+func Initialize(config Config) {
+	client = NewClient(config)
+}
+
+func LoginURL(state string) string { return client.LoginURL(state) }
+
+func QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
+	return client.QueryOAuth(ctx, code)
+}
+
+func QueryIdentity(ctx context.Context, oauthToken *OAuthToken) (*User, error) {
+	return client.QueryIdentity(ctx, oauthToken)
+}
+
+func QueryGuildMember(ctx context.Context, guildID GuildID, userID UserID) (*GuildMember, error) {
+	return client.QueryGuildMember(ctx, guildID, userID)
 }
 
 func (x Client) LoginURL(state string) string {

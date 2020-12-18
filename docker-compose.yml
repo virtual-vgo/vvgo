@@ -15,7 +15,7 @@ services:
         mode: host
 
   redis:
-    image: redis:5
+    image: redis:5.0.8
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -26,21 +26,6 @@ services:
         published: 6379
         protocol: tcp
         mode: host
-
-  p3x-redis-ui:
-    image: patrikx3/p3x-redis-ui:latest
-    ports:
-      - target: 7843
-        published: 7843
-        protocol: tcp
-        mode: host
-    volumes:
-      - type: bind
-        source: .p3xrs.json
-        target: /settings/p3xrs.json
-      - type: bind
-        source: .p3xrs-conns.json
-        target: /settings/.p3xrs-conns.json
 
   vvgo:
     build:

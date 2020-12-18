@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
 	"strconv"
@@ -18,37 +16,34 @@ import (
 
 var ErrSessionNotFound = errors.New("session not found")
 
-var logger = log.Logger()
-
 // Store provides access to the map of session id's to access roles.
 // It can read and validate session cookies from incoming requests,
 type Store struct {
-	config Config
+	namespace string
+	config    Config
 }
 
 type Config struct {
 	// CookieName is the name of the cookies created by the store.
-	CookieName string `redis:"cookie_name" default:"vvgo-sessions"`
+	CookieName string `split_words:"true" default:"vvgo-sessions"`
 
 	// CookieDomain is the domain where the cookies can be used.
 	// This should be the domain that users visit in their browser.
-	CookieDomain string `redis:"cookie_domain" default:"localhost"`
+	CookieDomain string `split_words:"true" default:"localhost"`
 
 	// CookiePath is the url path where the cookies can be used.
-	CookiePath string `redis:"cookie_path" default:"/"`
+	CookiePath string `split_words:"true" default:"/"`
 }
 
-func newConfig(ctx context.Context) Config {
-	var dest Config
-	parse_config.SetDefaults(&dest)
-	if err := parse_config.ReadFromRedisHash(ctx, "login", &dest); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-	}
-	return dest
-}
+const DataFile = "users.json"
 
 // NewStore returns a new sessions client.
-func NewStore(ctx context.Context) *Store { return &Store{config: newConfig(ctx)} }
+func NewStore(namespace string, config Config) *Store {
+	return &Store{
+		namespace: namespace,
+		config:    config,
+	}
+}
 
 func (x *Store) Config() Config { return x.config }
 
@@ -99,7 +94,7 @@ func NewCookieValue() string {
 // NewSession returns a new session with a crypto-rand session id.
 func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Duration) (string, error) {
 	value := NewCookieValue()
-	key := "sessions:" + value
+	key := x.namespace + ":sessions:" + value
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
 	srcBytes, _ := json.Marshal(src)
 	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, stringExpires, string(srcBytes))); err != nil {
@@ -111,7 +106,7 @@ func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Dura
 // GetSession reads the login identity for the given session ID.
 func (x *Store) GetSession(ctx context.Context, id string, dest *Identity) error {
 	var gotBytes []byte
-	err := redis.Do(ctx, redis.Cmd(&gotBytes, "GET", "sessions:"+id))
+	err := redis.Do(ctx, redis.Cmd(&gotBytes, "GET", x.namespace+":sessions:"+id))
 	switch {
 	case err != nil:
 		return err
@@ -124,5 +119,5 @@ func (x *Store) GetSession(ctx context.Context, id string, dest *Identity) error
 
 // DeleteSession deletes the sessionID key from redis.
 func (x *Store) DeleteSession(ctx context.Context, id string) error {
-	return redis.Do(ctx, redis.Cmd(nil, "DEL", "sessions:"+id))
+	return redis.Do(ctx, redis.Cmd(nil, "DEL", x.namespace+":sessions:"+id))
 }

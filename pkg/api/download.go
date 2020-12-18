@@ -1,52 +1,53 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/minio"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"context"
+	"github.com/minio/minio-go/v6"
 	"net/http"
-	"time"
 )
 
-const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
-
-type DownloadHandler struct{}
-
-type DownloadConfig struct {
-	DistroBucket string `redis:"distro_bucket"`
-}
+// Accepts query params `object` and `bucket`.
+// The map key is the bucket param.
+// The map value function should return the url of the object and any error encountered.
+type DownloadHandler map[string]func(ctx context.Context, objectName string) (url string, err error)
 
 func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
-		return
-	}
-
-	object := r.URL.Query().Get("object")
-	if object == "" {
-		badRequest(w, "object required")
-		return
-	}
-
 	ctx := r.Context()
-	var config DownloadConfig
-	if err := parse_config.ReadFromRedisHash(ctx, "download", &config); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-		internalServerError(w)
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}
 
-	minioClient, err := minio.NewClient(ctx)
-	if err != nil {
-		logger.WithError(err).Error("minio.New() failed")
-		internalServerError(w)
+	values := r.URL.Query()
+	objectName := values.Get("object")
+	bucketName := values.Get("bucket")
+
+	if bucketName == "" {
+		badRequest(w, "bucket required")
+	}
+	if objectName == "" {
+		badRequest(w, "object required")
+	}
+
+	urlFunc, ok := x[bucketName]
+	if !ok {
+		unauthorized(w)
 		return
 	}
 
-	downloadUrl, err := minioClient.PresignedGetObject(config.DistroBucket, object, ProtectedLinkExpiry, nil)
-	if err != nil {
+	downloadURL, err := urlFunc(ctx, objectName)
+	switch e := err.(type) {
+	case nil:
+		http.Redirect(w, r, downloadURL, http.StatusFound)
+	case minio.ErrorResponse:
+		if e.StatusCode == http.StatusNotFound {
+			notFound(w)
+		} else {
+			internalServerError(w)
+		}
+	default:
 		logger.WithError(err).Error("minio.StatObject() failed")
-		internalServerError(w)
-		return
+		http.Error(w, "", http.StatusInternalServerError)
 	}
-	http.Redirect(w, r, downloadUrl.String(), http.StatusFound)
 }

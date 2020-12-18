@@ -21,8 +21,8 @@ type Part struct {
 
 type Parts []Part
 
-func ListParts(ctx context.Context, identity *login.Identity) (Parts, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Parts")
+func ListParts(ctx context.Context, identity *login.Identity, spreadsheetID string) (Parts, error) {
+	values, err := ReadSheet(ctx, spreadsheetID, "Parts")
 	if err != nil {
 		return nil, err
 	}
