@@ -22,7 +22,7 @@ pipeline {
                             --env REDIS_ADDRESS=redis-prod:6379
                             --publish 8080:8080 \
                             --network prod-network \
-                            vvgo:master --listen 0.0.0.0:8080
+                            vvgo:master
                         '''
                     }
                 }

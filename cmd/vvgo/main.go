@@ -21,7 +21,7 @@ type Flags struct {
 
 func (x *Flags) Parse() {
 	flag.BoolVar(&x.ShowVersion, "version", false, "show version and quit")
-	flag.StringVar(&x.ListenAddress, "listen", "localhost:8080", "http listen address")
+	flag.StringVar(&x.ListenAddress, "listen", "0.0.0.0:8080", "http listen address")
 	flag.Parse()
 }
 
