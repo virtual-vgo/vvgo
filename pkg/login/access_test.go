@@ -1,17 +1,9 @@
 package login
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"testing"
 )
-
-func init() {
-	var redisConfig redis.Config
-	envconfig.MustProcess("REDIS", &redisConfig)
-	redis.Initialize(redisConfig)
-}
 
 func TestKind_String(t *testing.T) {
 	assert.Equal(t, "Cheese", Kind("Cheese").String())

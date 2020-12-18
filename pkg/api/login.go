@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
 	"strconv"
@@ -16,10 +17,7 @@ import (
 
 const LoginCookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
 
-type LoginView struct {
-	Sessions *login.Store
-	Template
-}
+type LoginView struct{}
 
 const CookieLoginRedirect = "vvgo-login-redirect"
 
@@ -28,14 +26,14 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if target := r.FormValue("target"); target != "" {
 		value := login.NewCookieValue()
-		if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", CookieLoginRedirect+":"+value, "3600", target)); err != nil {
+		if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", "vvgo_login_redirect"+":"+value, "3600", target)); err != nil {
 			logger.WithError(err).Error("redis.Do() failed")
 		} else {
 			http.SetCookie(w, &http.Cookie{
 				Name:     CookieLoginRedirect,
 				Value:    value,
 				Expires:  time.Now().Add(3600 * time.Second),
-				Domain:   x.Sessions.Config().CookieDomain,
+				Domain:   login.NewStore(ctx).Config().CookieDomain,
 				SameSite: http.SameSiteStrictMode,
 				HttpOnly: true,
 			})
@@ -47,13 +45,13 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login/success", http.StatusFound)
 		return
 	}
-	x.Template.ParseAndExecute(ctx, w, r, nil, "login.gohtml")
+	ParseAndExecute(ctx, w, r, nil, "login.gohtml")
 }
 
-type LoginSuccessView struct{ Template }
+type LoginSuccessView struct{}
 
 func (x LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	x.Template.ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
+	ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
 }
 
 type LoginRedirect struct{}
@@ -65,7 +63,7 @@ func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger.WithError(err).Error("r.Cookie() failed")
 	} else {
 		var want string
-		if err := redis.Do(ctx, redis.Cmd(&want, "GET", CookieLoginRedirect+":"+cookie.Value)); err != nil {
+		if err := redis.Do(ctx, redis.Cmd(&want, "GET", "vvgo_login_redirect"+":"+cookie.Value)); err != nil {
 			logger.WithError(err).Error("redis.Do() failed")
 		} else {
 			redirect = want
@@ -74,8 +72,8 @@ func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirect, http.StatusFound)
 }
 
-func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, sessions *login.Store, identity *login.Identity) {
-	cookie, err := sessions.NewCookie(ctx, identity, LoginCookieDuration)
+func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, identity *login.Identity) {
+	cookie, err := login.NewStore(ctx).NewCookie(ctx, identity, LoginCookieDuration)
 	if err != nil {
 		logger.WithError(err).Error("store.NewCookie() failed")
 		internalServerError(w)
@@ -93,12 +91,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, s
 
 // PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.
 // If the user pass combo exists in the map, then a login cookie with the mapped roles is create and sent in the response.
-type PasswordLoginHandler struct {
-	Sessions *login.Store
-
-	// Logins is a map of login user and pass to a slice of roles for that login.
-	Logins map[[2]string][]login.Role
-}
+type PasswordLoginHandler struct{}
 
 func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -108,8 +101,15 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	passwords := make(map[string]string)
+	if err := parse_config.ReadFromRedisHash(ctx, "password_login", &passwords); err != nil {
+		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
+		internalServerError(w)
+		return
+	}
+
 	var identity login.Identity
-	if err := x.Sessions.ReadSessionFromRequest(ctx, r, &identity); err == nil {
+	if err := login.NewStore(ctx).ReadSessionFromRequest(ctx, r, &identity); err == nil {
 		http.Redirect(w, r, "/parts", http.StatusFound)
 		return
 	}
@@ -117,8 +117,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	user := r.FormValue("user")
 	pass := r.FormValue("pass")
 
-	gotRoles, ok := x.Logins[[2]string{user, pass}]
-	if !ok {
+	if user == "" || pass == "" || passwords[user] != pass {
 		logger.WithFields(logrus.Fields{
 			"user": user,
 		}).Error("password authentication failed")
@@ -126,9 +125,9 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
+	loginSuccess(w, r, ctx, &login.Identity{
 		Kind:  login.KindPassword,
-		Roles: gotRoles,
+		Roles: []login.Role{login.RoleVVGOMember},
 	})
 }
 
@@ -136,32 +135,40 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 // If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
 // authentication is established and a login session cookie is sent in the response.
 // Otherwise, 401 unauthorized.
-type DiscordLoginHandler struct {
-	GuildID          discord.GuildID
-	RoleVVGOMemberID string
-	RoleVVGOTeamsID  string
-	RoleVVGOLeaderID string
-	Sessions         *login.Store
-	Namespace        string
+type DiscordLoginHandler struct{}
+
+type DiscordLoginConfig struct {
+	GuildID          string `redis:"guild_id"`
+	RoleVVGOMemberID string `redis:"role_vvgo_member"`
+	RoleVVGOTeamsID  string `redis:"role_vvgo_teams"`
+	RoleVVGOLeaderID string `redis:"role_vvgo_leader"`
 }
 
 var ErrNotAMember = errors.New("not a member")
 
 func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	if r.FormValue("state") == "" {
-		state, ok := oauthRedirect(w, r, x.Namespace)
+		state, ok := oauthRedirect(w, r)
 		if !ok {
 			internalServerError(w)
 			return
 		}
-		http.Redirect(w, r, discord.LoginURL(state), http.StatusFound)
+		http.Redirect(w, r, discord.NewClient(ctx).LoginURL(state), http.StatusFound)
 	} else {
-		x.authorize(w, r)
+		var config DiscordLoginConfig
+		if err := parse_config.ReadFromRedisHash(ctx, "discord_login", &config); err != nil {
+			logger.WithError(err).Errorf("redis.Do() failed: %v", err)
+			internalServerError(w)
+		}
+		x.authorize(w, r, config)
 	}
 }
 
-func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
+func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request, config DiscordLoginConfig) {
 	ctx := r.Context()
+	discordClient := discord.NewClient(ctx)
 
 	handleError := func(err error) bool {
 		if err != nil {
@@ -172,25 +179,25 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	if ok := handleError(validateState(r, ctx, x.Namespace)); !ok {
+	if ok := handleError(validateState(r, ctx)); !ok {
 		return
 	}
 
 	// get an oauth token from discord
 	code := r.FormValue("code")
-	oauthToken, err := discord.QueryOAuth(ctx, code)
+	oauthToken, err := discordClient.QueryOAuth(ctx, code)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// get the user id
-	discordUser, err := discord.QueryIdentity(ctx, oauthToken)
+	discordUser, err := discordClient.QueryIdentity(ctx, oauthToken)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// check if this user is in our guild
-	guildMember, err := discord.QueryGuildMember(ctx, x.GuildID, discordUser.ID)
+	guildMember, err := discordClient.QueryGuildMember(ctx, discord.GuildID(config.GuildID), discordUser.ID)
 	if ok := handleError(err); !ok {
 		return
 	}
@@ -201,11 +208,11 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 		switch discordRole {
 		case "": // ignore empty strings
 			continue
-		case x.RoleVVGOLeaderID:
+		case config.RoleVVGOLeaderID:
 			loginRoles = append(loginRoles, login.RoleVVGOLeader)
-		case x.RoleVVGOTeamsID:
+		case config.RoleVVGOTeamsID:
 			loginRoles = append(loginRoles, login.RoleVVGOTeams)
-		case x.RoleVVGOMemberID:
+		case config.RoleVVGOMemberID:
 			loginRoles = append(loginRoles, login.RoleVVGOMember)
 		}
 	}
@@ -214,7 +221,7 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginSuccess(w, r, ctx, x.Sessions, &login.Identity{
+	loginSuccess(w, r, ctx, &login.Identity{
 		Kind:  login.KindDiscord,
 		Roles: loginRoles,
 	})
@@ -222,7 +229,7 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request) {
 
 const CookieOAuthState = "vvgo-oauth-state"
 
-func oauthRedirect(w http.ResponseWriter, r *http.Request, redisNamespace string) (string, bool) {
+func oauthRedirect(w http.ResponseWriter, r *http.Request) (string, bool) {
 	ctx := r.Context()
 
 	// read a random state number
@@ -235,7 +242,7 @@ func oauthRedirect(w http.ResponseWriter, r *http.Request, redisNamespace string
 	value := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[16:]), 16)
 
 	// store the number in redis
-	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", redisNamespace+":oauth_state:"+state, "300", value)); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", "oauth_state:"+state, "300", value)); err != nil {
 		logger.WithError(err).Error("redis.Do() failed")
 		return "", false
 	}
@@ -247,7 +254,7 @@ func oauthRedirect(w http.ResponseWriter, r *http.Request, redisNamespace string
 	return state, true
 }
 
-func validateState(r *http.Request, ctx context.Context, redisNamespace string) error {
+func validateState(r *http.Request, ctx context.Context) error {
 	state := r.FormValue("state")
 	if state == "" {
 		return errors.New("no state param")
@@ -255,7 +262,7 @@ func validateState(r *http.Request, ctx context.Context, redisNamespace string) 
 
 	// check if it exists in redis
 	var value string
-	if err := redis.Do(ctx, redis.Cmd(&value, "GET", redisNamespace+":oauth_state:"+state)); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(&value, "GET", "oauth_state:"+state)); err != nil {
 		return err
 	}
 
@@ -271,14 +278,12 @@ func validateState(r *http.Request, ctx context.Context, redisNamespace string) 
 }
 
 // LogoutHandler deletes the login session from the incoming request, if it exists.
-type LogoutHandler struct {
-	Sessions *login.Store
-}
+type LogoutHandler struct{}
 
 func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if err := x.Sessions.DeleteSessionFromRequest(ctx, r); err != nil {
+	if err := login.NewStore(ctx).DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.WithError(err).Error("x.Sessions.DeleteSessionFromRequest failed")
 		internalServerError(w)
 	} else {

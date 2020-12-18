@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 )
@@ -12,15 +13,21 @@ type Client struct {
 }
 
 type Config struct {
-	Network  string // Defaults to tcp.
-	Address  string // Defaults to localhost:6379.
-	PoolSize int    `split_words:"true" default:"10"`
+	Network  string `default:"tcp"`
+	Address  string `default:"localhost:6379"`
+	PoolSize int    `default:"10"`
 }
 
 var client *Client
 
 func Initialize(config Config) {
 	client = NewClientMust(config)
+}
+
+func InitializeFromEnv() {
+	var config Config
+	envconfig.MustProcess("REDIS", &config)
+	Initialize(config)
 }
 
 func Do(ctx context.Context, a Action) error {
@@ -33,6 +40,9 @@ func NewClient(config Config) (*Client, error) {
 	}
 	if config.Address == "" {
 		config.Address = "localhost:6379"
+	}
+	if config.PoolSize == 0 {
+		config.PoolSize = 10
 	}
 	radixPool, err := radix.NewPool(config.Network, config.Address, config.PoolSize)
 	if err != nil {

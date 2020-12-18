@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-type PartView struct{ Template }
+type PartView struct{}
 
 func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -12,5 +12,5 @@ func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w)
 		return
 	}
-	x.Template.ParseAndExecute(ctx, w, r, nil, "parts.gohtml")
+	ParseAndExecute(ctx, w, r, nil, "parts.gohtml")
 }

@@ -17,3 +17,4 @@ public/npm
 .vvgo-config.json
 .google_api_credentials.json
 .run
+hello.lua
