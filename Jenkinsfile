@@ -23,7 +23,7 @@ pipeline {
                                 --volume /etc/vvgo:/etc/vvgo \
                                 --publish 8080:8080 \
                                 --network prod-network \
-                                vvgo:config-in-redis-redux
+                                vvgo:master
                         '''
                     }
                 }
