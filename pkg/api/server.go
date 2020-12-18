@@ -26,6 +26,13 @@ func NewServer(listenAddress string) *Server {
 	mux.Handle("/login", LoginView{}, login.RoleAnonymous)
 	mux.Handle("/logout", LogoutHandler{}, login.RoleAnonymous)
 
+	mux.Handle("/vvgo-auth/vvgo-leader", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		identity := IdentityFromContext(r.Context())
+		if !identity.HasRole(login.RoleVVGOLeader) {
+			unauthorized(w)
+		}
+	}), login.RoleAnonymous)
+
 	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		identity := IdentityFromContext(r.Context())
 		jsonEncode(w, &identity.Roles)
