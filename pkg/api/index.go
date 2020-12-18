@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type IndexView struct{ Template }
+type IndexView struct{}
 
 func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -14,10 +14,10 @@ func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w)
 		return
 	}
-	x.Template.ParseAndExecute(ctx, w, r, nil, "index.gohtml")
+	ParseAndExecute(ctx, w, r, nil, "index.gohtml")
 }
 
-type AboutView struct{ Template }
+type AboutView struct{}
 
 func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -26,11 +26,11 @@ func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	leaders, err := sheets.ListLeaders(ctx, x.SpreadsheetID)
+	leaders, err := sheets.ListLeaders(ctx)
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
 		return
 	}
-	x.Template.ParseAndExecute(ctx, w, r, leaders, "about.gohtml")
+	ParseAndExecute(ctx, w, r, leaders, "about.gohtml")
 }

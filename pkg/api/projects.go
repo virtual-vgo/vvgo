@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type ProjectsView struct{ Template }
+type ProjectsView struct{}
 
 func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/projects/" {
@@ -22,13 +22,13 @@ func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")
 		internalServerError(w)
 		return
 	}
-	x.Template.ParseAndExecute(ctx, w, r, &projects, "projects/index.gohtml")
+	ParseAndExecute(ctx, w, r, &projects, "projects/index.gohtml")
 }
 
 func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
@@ -38,7 +38,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx), x.SpreadsheetID)
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("valuesToProjects() failed")
 		internalServerError(w)
@@ -51,7 +51,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	credits, err := sheets.ListCredits(ctx, x.SpreadsheetID)
+	credits, err := sheets.ListCredits(ctx)
 	if err != nil {
 		logger.WithError(err).Error("valuesToCredits() failed")
 		internalServerError(w)
@@ -102,5 +102,5 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		Credits: creditsTable.Rows,
 	}
 
-	x.Template.ParseAndExecute(ctx, w, r, &page, "projects/project.gohtml")
+	ParseAndExecute(ctx, w, r, &page, "projects/project.gohtml")
 }

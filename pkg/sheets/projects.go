@@ -36,8 +36,8 @@ func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 
 type Projects []Project
 
-func ListProjects(ctx context.Context, identity *login.Identity, spreadsheetID string) (Projects, error) {
-	values, err := ReadSheet(ctx, spreadsheetID, "Projects")
+func ListProjects(ctx context.Context, identity *login.Identity) (Projects, error) {
+	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Projects")
 	if err != nil {
 		return nil, err
 	}

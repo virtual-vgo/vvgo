@@ -10,9 +10,9 @@ import (
 
 func TestConfig_ParseEnv(t *testing.T) {
 	envs := map[string]string{
-		"REDIS_ADDRESS":   "redis-address",
-		"REDIS_NETWORK":   "redis-network",
-		"REDIS_POOL_SIZE": "17",
+		"REDIS_ADDRESS":  "redis-address",
+		"REDIS_NETWORK":  "redis-network",
+		"REDIS_POOLSIZE": "17",
 	}
 	want := Config{
 		Network:  "redis-network",
