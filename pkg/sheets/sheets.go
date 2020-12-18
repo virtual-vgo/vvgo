@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"google.golang.org/api/sheets/v4"
 	"reflect"
@@ -16,12 +15,6 @@ import (
 const CacheTTL = "5"
 
 var logger = log.Logger()
-
-func WebsiteDataSpreadsheetID(ctx context.Context) string {
-	var spreadsheetID string
-	_ = parse_config.ReadRedisHashValue(ctx, "sheets", "website_data_spreadsheet_id", &spreadsheetID)
-	return spreadsheetID
-}
 
 func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
 	values := readValuesFromRedis(ctx, spreadsheetID, readRange)

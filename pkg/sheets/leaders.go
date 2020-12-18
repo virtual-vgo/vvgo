@@ -15,8 +15,8 @@ type Leader struct {
 	Email        string
 }
 
-func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Leaders")
+func ListLeaders(ctx context.Context, spreadsheetID string) (Leaders, error) {
+	values, err := ReadSheet(ctx, spreadsheetID, "Leaders")
 	if err != nil {
 		return nil, err
 	}

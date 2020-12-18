@@ -12,7 +12,12 @@ import (
 	"strings"
 )
 
-func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
+type Template struct {
+	SpreadsheetID string
+	DistroBucket  string
+}
+
+func (x Template) ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
 	identity := IdentityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
@@ -26,9 +31,9 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"user_is_member":   func() bool { return identity.HasRole(login.RoleVVGOMember) },
 		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
-		"download_link":    func(obj string) string { return downloadLink(obj) },
-		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity) },
-		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx, identity) },
+		"download_link":    func(obj string) string { return downloadLink(x.DistroBucket, obj) },
+		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity, x.SpreadsheetID) },
+		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx, identity, x.SpreadsheetID) },
 	}).ParseFiles(
 		PublicFiles+"/"+templateFile,
 		PublicFiles+"/header.gohtml",
@@ -51,10 +56,26 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 	_, _ = buffer.WriteTo(w)
 }
 
-func downloadLink(object string) string {
-	if object == "" {
-		return "#"
+func downloadLink(bucket, object string) string {
+	if bucket == "" || object == "" {
+		return ""
 	} else {
-		return fmt.Sprintf("/download?object=%s", object)
+		return fmt.Sprintf("/download?bucket=%s&object=%s", bucket, object)
 	}
+}
+
+func currentProjects(ctx context.Context, identity *login.Identity, spreadsheetID string) (sheets.Projects, error) {
+	projects, err := sheets.ListProjects(ctx, identity, spreadsheetID)
+	if err != nil {
+		return nil, err
+	}
+	return projects.Current(), nil
+}
+
+func currentParts(ctx context.Context, identity *login.Identity, spreadsheetID string) (sheets.Parts, error) {
+	parts, err := sheets.ListParts(ctx, identity, spreadsheetID)
+	if err != nil {
+		return nil, err
+	}
+	return parts.Current(), nil
 }

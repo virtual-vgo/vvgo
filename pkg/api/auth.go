@@ -23,8 +23,9 @@ func IdentityFromContext(ctx context.Context) *login.Identity {
 // Authenticate http requests using the sessions api
 // If the request has a valid session or token with the required role, it is allowed access.
 type RBACMux struct {
-	Basic  map[[2]string][]login.Role
-	Bearer map[string][]login.Role
+	Basic    map[[2]string][]login.Role
+	Bearer   map[string][]login.Role
+	Sessions *login.Store
 	*http.ServeMux
 }
 
@@ -117,5 +118,8 @@ func (auth *RBACMux) readBearer(r *http.Request, dest *login.Identity) bool {
 }
 
 func (auth *RBACMux) readSession(ctx context.Context, r *http.Request, dest *login.Identity) bool {
-	return login.NewStore(ctx).ReadSessionFromRequest(ctx, r, dest) == nil
+	if auth.Sessions == nil {
+		return false
+	}
+	return auth.Sessions.ReadSessionFromRequest(ctx, r, dest) == nil
 }
