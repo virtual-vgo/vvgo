@@ -1,9 +1,32 @@
 pipeline {
     agent any
     stages {
-        stage('Build') {
-            steps {
-                sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
+        stage('Build & Test') {
+            parallel {
+                stage('Build Image') {
+                    steps {
+                        sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
+                    }
+                }
+
+                stage('Run Unit Tests') {
+                    agent {
+                        docker {
+                            image 'golang:1.14'
+                            args  "-v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
+                        }
+                    }
+                    environment {
+                        REDIS_ADDRESS  = 'redis-testing:6379'
+                        MINIO_ENDPOINT = 'minio-testing:9000'
+                    }
+                    steps {
+                        sh 'go generate ./...'
+                        sh 'go get -u github.com/jstemmer/go-junit-report'
+                        sh 'go test -v -race ./... 2>&1 | go-junit-report > report.xml'
+                        junit 'report.xml'
+                    }
+                }
             }
         }
 
@@ -13,7 +36,7 @@ pipeline {
             }
 
             stages {
-                stage('Launch container') {
+                stage('Launch Container') {
                     steps {
                         sh 'docker rm -f vvgo-prod || true'
                         sh '''
@@ -28,7 +51,7 @@ pipeline {
                     }
                 }
 
-                stage('Purge cloudflare cache') {
+                stage('Purge Cloudflare Cache') {
                     steps {
                         withCredentials(bindings: [string(credentialsId: 'cloudflare_purge_key', variable: 'API_KEY')]) {
                             httpRequest(httpMode: 'POST',
