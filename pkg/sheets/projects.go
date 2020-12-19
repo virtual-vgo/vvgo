@@ -135,6 +135,23 @@ func (x Projects) Released() Projects {
 	}
 	return want
 }
+
+func (x Projects) First() Project {
+	if x.Len() == 0 {
+		return Project{}
+	} else {
+		return x[0]
+	}
+}
+
+func (x Projects) Last() Project {
+	if x.Len() == 0 {
+		return Project{}
+	} else {
+		return x[x.Len()-1]
+	}
+}
+
 func (x Projects) Archived() Projects {
 	var want Projects
 	for _, project := range x {
