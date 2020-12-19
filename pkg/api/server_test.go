@@ -37,12 +37,6 @@ func TestServer(t *testing.T) {
 		return resp
 	}
 
-	t.Run("index", func(t *testing.T) {
-		req := newRequest(t, http.MethodGet, ts.URL)
-		resp := doRequest(t, req)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-	})
-
 	t.Run("parts", func(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/parts")

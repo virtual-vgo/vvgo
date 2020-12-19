@@ -11,7 +11,6 @@ require (
 	github.com/minio/minio-go/v6 v6.0.50
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.5.1
-	github.com/tdewolff/minify/v2 v2.7.3
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1 // indirect
 	google.golang.org/api v0.29.0
