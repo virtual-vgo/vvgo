@@ -13,20 +13,20 @@ pipeline {
                     agent {
                         docker {
                             image 'golang:1.14'
-                            args  '-u root -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network'
+                            args  "-u root -v ${WORKSPACE}/artifacts:/artifacts -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
                         }
                     }
                     steps {
                         sh 'go generate ./...'
                         sh 'go get -u github.com/jstemmer/go-junit-report'
-                        sh 'go test -v -race ./... 2>&1 | go-junit-report > report.xml'
+                        sh 'go test -v -race ./... 2>&1 | go-junit-report > /artifacts/report.xml'
                     }
                 }
             }
 
             post {
                 always {
-                    junit 'report.xml'
+                    junit '/artifacts/report.xml'
                 }
             }
         }
