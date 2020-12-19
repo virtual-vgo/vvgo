@@ -8,28 +8,30 @@ pipeline {
                 }
             }
 
-            parallel {
-                stage('Build Image') {
-                    steps {
-                        sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
-                    }
-                }
-
-                stage('Run Unit Tests') {
-                    agent {
-                        docker {
-                            image 'golang:1.14'
-                            args  "-v ${WORKSPACE}/artifacts:/artifacts -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
+            stage('Run Parallel Jobs') {
+                parallel {
+                    stage('Build Image') {
+                        steps {
+                            sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
                         }
                     }
-                    environment {
-                        REDIS_ADDRESS  = 'redis-testing:6379'
-                        MINIO_ENDPOINT = 'minio-testing:9000'
-                    }
-                    steps {
-                        sh 'go generate ./...'
-                        sh 'go get -u github.com/jstemmer/go-junit-report'
-                        sh 'go test -v -race ./... 2>&1 | go-junit-report > /artifacts/report.xml'
+
+                    stage('Run Unit Tests') {
+                        agent {
+                            docker {
+                                image 'golang:1.14'
+                                args  "-v ${WORKSPACE}/artifacts:/artifacts -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
+                            }
+                        }
+                        environment {
+                            REDIS_ADDRESS  = 'redis-testing:6379'
+                            MINIO_ENDPOINT = 'minio-testing:9000'
+                        }
+                        steps {
+                            sh 'go generate ./...'
+                            sh 'go get -u github.com/jstemmer/go-junit-report'
+                            sh 'go test -v -race ./... 2>&1 | go-junit-report > /artifacts/report.xml'
+                        }
                     }
                 }
             }
