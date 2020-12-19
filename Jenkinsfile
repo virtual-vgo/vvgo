@@ -2,8 +2,10 @@ pipeline {
     agent any
     stages {
         stage('Build & Test') {
-            steps {
-                sh 'mkdir artifacts'
+            stage('Setup') {
+                steps {
+                    sh 'mkdir artifacts'
+                }
             }
 
             parallel {
