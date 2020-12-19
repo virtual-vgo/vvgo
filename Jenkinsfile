@@ -26,7 +26,6 @@ pipeline {
 
             post {
                 always {
-                    sh 'docker '
                     junit '/var/lib/docker/volumes/artifacts/_data/*.xml'
                 }
             }
