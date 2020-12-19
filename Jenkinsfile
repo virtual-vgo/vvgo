@@ -7,6 +7,12 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                sh 'docker run --rm vvgo:${BRANCH_NAME} go test ./...'
+            }
+        }
+
         stage('Deploy') {
             when {
                 branch 'master'
