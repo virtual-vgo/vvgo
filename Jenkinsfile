@@ -30,11 +30,11 @@ pipeline {
                         sh 'go test -v -race ./... 2>&1 | go-junit-report > /artifacts/report.xml'
                     }
                 }
+            }
 
-                post {
-                    always {
-                        junit 'artifacts/*.xml'
-                    }
+            post {
+                always {
+                    junit 'artifacts/*.xml'
                 }
             }
         }
