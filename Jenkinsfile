@@ -19,7 +19,7 @@ pipeline {
                     steps {
                         sh 'go generate ./...'
                         sh 'go get -u github.com/jstemmer/go-junit-report'
-                        sh 'go test -v -race ./... 2>&1 | ~/go/bin/go-junit-report > report.xml'
+                        sh 'go test -v -race ./... 2>&1 | go-junit-report > report.xml'
                     }
                 }
             }
