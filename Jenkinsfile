@@ -15,7 +15,7 @@ pipeline {
                     --env REDIS_ADDRESS=redis-testing:6379 \
                     --env MINIO_ENDPOINT=minio-testing:9000 \
                     --workdir /usr/src/myapp \
-                    --network test-network
+                    --network test-network \
                     golang:1.14 go test ./...
                 '''
             }
