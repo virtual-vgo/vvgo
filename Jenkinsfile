@@ -16,6 +16,10 @@ pipeline {
                             args  "-v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
                         }
                     }
+                    environment {
+                        REDIS_ADDRESS  = 'redis-testing:6379'
+                        MINIO_ENDPOINT = 'minio-testing:9000'
+                    }
                     steps {
                         sh 'go generate ./...'
                         sh 'go get -u github.com/jstemmer/go-junit-report'
