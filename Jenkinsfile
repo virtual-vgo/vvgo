@@ -11,6 +11,7 @@ pipeline {
 
                 stage('Run Unit Tests') {
                     steps {
+                        sh 'go get -u github.com/jstemmer/go-junit-report'
                         sh '''
                             docker run --rm \
                             --volume "$PWD":/usr/src/myapp \
