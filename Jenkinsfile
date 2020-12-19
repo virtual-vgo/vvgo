@@ -10,13 +10,13 @@ pipeline {
                 }
 
                 stage('Run Unit Tests') {
-                    steps {
-                        agent {
-                            docker {
-                                image 'golang:1.14'
-                                args  '-v "$PWD":/usr/src/myapp -v go-pkg-cache:/go/pkg -w /usr/src/myapp --network test-network'
-                            }
+                    agent {
+                        docker {
+                            image 'golang:1.14'
+                            args  '-v "$PWD":/usr/src/myapp -v go-pkg-cache:/go/pkg -w /usr/src/myapp --network test-network'
                         }
+                    }
+                    steps {
                         sh 'go get -u github.com/jstemmer/go-junit-report'
                         sh '''
                             go generate ./...
