@@ -26,8 +26,6 @@ pipeline {
                         '''
                     }
                 }
-
-                stage('')
             }
 
             post {
