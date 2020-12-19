@@ -13,11 +13,10 @@ pipeline {
                     agent {
                         docker {
                             image 'golang:1.14'
-                            args  '-v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network'
+                            args  '-u root -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network'
                         }
                     }
                     steps {
-                        sh 'whoami'
                         sh 'go generate ./...'
                         sh 'go get -u github.com/jstemmer/go-junit-report'
                         sh 'go test -v -race ./... 2>&1 | ~/go/bin/go-junit-report > report.xml'
