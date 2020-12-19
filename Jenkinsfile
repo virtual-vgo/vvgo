@@ -13,7 +13,7 @@ pipeline {
                     agent {
                         docker {
                             image 'golang:1.14'
-                            args  '-v go-pkg-cache:/go/pkg --network test-network'
+                            args  '-v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network'
                         }
                     }
                     steps {
