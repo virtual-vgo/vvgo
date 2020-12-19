@@ -13,7 +13,7 @@ pipeline {
                     agent {
                         docker {
                             image 'golang:1.14'
-                            args  "-v ${WORKSPACE}/artifacts:/artifacts -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
+                            args  "-v artifacts:/artifacts -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
                         }
                     }
                     steps {
@@ -26,7 +26,8 @@ pipeline {
 
             post {
                 always {
-                    junit 'artifacts/report.xml'
+                    sh 'docker '
+                    junit '/var/lib/docker/volumes/artifacts/_data/*.xml'
                 }
             }
         }
