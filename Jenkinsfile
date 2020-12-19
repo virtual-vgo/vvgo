@@ -5,7 +5,7 @@ pipeline {
             stages {
                 stage('Setup') {
                     steps {
-                        sh 'mkdir -p ${WORKSPACE_TMP}/artifacts'
+                        sh 'mkdir -p ${WORKSPACE}/artifacts'
                     }
                 }
 
@@ -21,7 +21,7 @@ pipeline {
                             agent {
                                 docker {
                                     image 'golang:1.14'
-                                    args  "-v ${WORKSPACE_TMP}/artifacts:/artifacts -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
+                                    args  "-v ${WORKSPACE}/artifacts:/artifacts -v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
                                 }
                             }
                             environment {
@@ -40,7 +40,7 @@ pipeline {
 
             post {
                 always {
-                    junit '${WORKSPACE_TMP}/artifacts/*.xml'
+                    junit '${WORKSPACE}/artifacts/*.xml'
                 }
             }
         }
