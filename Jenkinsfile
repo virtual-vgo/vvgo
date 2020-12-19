@@ -1,7 +1,7 @@
 pipeline {
     agent any
     stages {
-        stage('Build And Test') {
+        stage('Build & Test') {
             parallel {
                 stage('Build Image') {
                     steps {
@@ -14,16 +14,25 @@ pipeline {
                         sh 'go get -u github.com/jstemmer/go-junit-report'
                         sh '''
                             docker run --rm \
-                            --volume "$PWD":/usr/src/myapp \
-                            --volume go-pkg-cache:/go/pkg \
-                            --env REDIS_ADDRESS=redis-testing:6379 \
-                            --env MINIO_ENDPOINT=minio-testing:9000 \
-                            --workdir /usr/src/myapp \
-                            --network test-network \
-                            golang:1.14 go test -v ./... 2>&1 | ~/go/bin/go-junit-report > report.xml
+                                --volume "$PWD":/usr/src/myapp \
+                                --volume go-pkg-cache:/go/pkg \
+                                --workdir /usr/src/myapp \
+                                golang:1.14 go generate ./...
+                        '''
+                        sh '''
+                            docker run --rm \
+                                --volume "$PWD":/usr/src/myapp \
+                                --volume go-pkg-cache:/go/pkg \
+                                --env REDIS_ADDRESS=redis-testing:6379 \
+                                --env MINIO_ENDPOINT=minio-testing:9000 \
+                                --workdir /usr/src/myapp \
+                                --network test-network \
+                                golang:1.14 go test -v -race ./... 2>&1 | ~/go/bin/go-junit-report > report.xml
                         '''
                     }
                 }
+
+                stage('')
             }
 
             post {
@@ -39,7 +48,7 @@ pipeline {
             }
 
             stages {
-                stage('Launch container') {
+                stage('Launch Container') {
                     steps {
                         sh 'docker rm -f vvgo-prod || true'
                         sh '''
@@ -54,7 +63,7 @@ pipeline {
                     }
                 }
 
-                stage('Purge cloudflare cache') {
+                stage('Purge Cloudflare Cache') {
                     steps {
                         withCredentials(bindings: [string(credentialsId: 'cloudflare_purge_key', variable: 'API_KEY')]) {
                             httpRequest(httpMode: 'POST',

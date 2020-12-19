@@ -54,24 +54,3 @@ jobs:
 
       - name: Run `go vet ./...`
         run: go generate ./... && go vet ./...
-
-  go-unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-go@v1
-        with:
-          go-version: 1.14.1
-      - uses: actions/checkout@v2
-
-      - name: Start containers
-        run: docker-compose up -d redis minio
-
-      - name: Cache go modules
-        uses: actions/cache@v1
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
-
-      - name: Run `go test -v -race ./...`
-        run: go generate ./... && go test -v -race ./...
