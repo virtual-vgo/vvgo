@@ -20,7 +20,7 @@ pipeline {
                             --env MINIO_ENDPOINT=minio-testing:9000 \
                             --workdir /usr/src/myapp \
                             --network test-network \
-                            golang:1.14 go test -v ./... 2>&1 | go-junit-report > report.xml
+                            golang:1.14 go test -v ./... 2>&1 | ~/go/bin/go-junit-report > report.xml
                         '''
                     }
                 }
