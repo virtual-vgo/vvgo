@@ -1,23 +1,28 @@
 pipeline {
     agent any
     stages {
-        stage('Build') {
-            steps {
-                sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
-            }
-        }
+        stage('Build And Test') {
+            parallel {
+                stage('Build Image') {
+                    steps {
+                        sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
+                    }
+                }
 
-        stage('Test') {
-            steps {
-                sh '''
-                    docker run --rm \
-                    --volume "$PWD":/usr/src/myapp \
-                    --env REDIS_ADDRESS=redis-testing:6379 \
-                    --env MINIO_ENDPOINT=minio-testing:9000 \
-                    --workdir /usr/src/myapp \
-                    --network test-network \
-                    golang:1.14 go test ./...
-                '''
+                stage('Run Unit Tests') {
+                    steps {
+                        sh '''
+                            docker run --rm \
+                            --volume "$PWD":/usr/src/myapp \
+                            --volume go-src:/go/src \
+                            --env REDIS_ADDRESS=redis-testing:6379 \
+                            --env MINIO_ENDPOINT=minio-testing:9000 \
+                            --workdir /usr/src/myapp \
+                            --network test-network \
+                            golang:1.14 go test ./...
+                        '''
+                    }
+                }
             }
         }
 
