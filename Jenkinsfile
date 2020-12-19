@@ -9,7 +9,15 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'docker run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.14 go test ./...'
+                sh '''
+                    docker run --rm \
+                    --volume "$PWD":/usr/src/myapp \
+                    --env REDIS_ADDRESS=redis-testing:6379 \
+                    --env MINIO_ENDPOINT=minio-testing:9000 \
+                    --workdir /usr/src/myapp \
+                    --network test-network
+                    golang:1.14 go test ./...
+                '''
             }
         }
 
