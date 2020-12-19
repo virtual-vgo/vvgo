@@ -40,7 +40,7 @@ pipeline {
 
             post {
                 always {
-                    junit 'artifacts/*.xml'
+                    junit '${WORKSPACE_TMP}/artifacts/*.xml'
                 }
             }
         }
