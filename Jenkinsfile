@@ -14,14 +14,20 @@ pipeline {
                         sh '''
                             docker run --rm \
                             --volume "$PWD":/usr/src/myapp \
-                            --volume go-src:/go/src \
+                            --volume go-pkg-cache:/go/pkg \
                             --env REDIS_ADDRESS=redis-testing:6379 \
                             --env MINIO_ENDPOINT=minio-testing:9000 \
                             --workdir /usr/src/myapp \
                             --network test-network \
-                            golang:1.14 go test ./...
+                            golang:1.14 go test -v ./... 2>&1 | go-junit-report > report.xml
                         '''
                     }
+                }
+            }
+
+            post {
+                always {
+                    junit 'report.xml'
                 }
             }
         }
