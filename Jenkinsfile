@@ -11,23 +11,18 @@ pipeline {
 
                 stage('Run Unit Tests') {
                     steps {
+                        agent {
+                            docker {
+                                image 'golang:1.14'
+                                args  '-v "$PWD":/usr/src/myapp -v go-pkg-cache:/go/pkg -w /usr/src/myapp --network test-network'
+                            }
+                        }
                         sh 'go get -u github.com/jstemmer/go-junit-report'
                         sh '''
-                            docker run --rm \
-                                --volume "$PWD":/usr/src/myapp \
-                                --volume go-pkg-cache:/go/pkg \
-                                --workdir /usr/src/myapp \
-                                golang:1.14 go generate ./...
+                            go generate ./...
                         '''
                         sh '''
-                            docker run --rm \
-                                --volume "$PWD":/usr/src/myapp \
-                                --volume go-pkg-cache:/go/pkg \
-                                --env REDIS_ADDRESS=redis-testing:6379 \
-                                --env MINIO_ENDPOINT=minio-testing:9000 \
-                                --workdir /usr/src/myapp \
-                                --network test-network \
-                                golang:1.14 go test -v -race ./... 2>&1 | ~/go/bin/go-junit-report > report.xml
+                            go test -v -race ./... 2>&1 | ~/go/bin/go-junit-report > report.xml
                         '''
                     }
                 }
