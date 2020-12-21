@@ -1,3 +1,5 @@
+def dockerRegistry = docker.withRegistry('https://docker.pkg.github.com', 'github_packages')
+
 pipeline {
     agent any
     stages {
@@ -6,7 +8,7 @@ pipeline {
                 stage('Build Image') {
                     steps {
                         script {
-                            docker.withRegistry('https://docker.pkg.github.com') {
+                            dockerRegistry {
                                 def vvgoImage = docker.build("virtual-vgo/vvgo/vvgo")
                                 vvgoImage.push('latest')
                                 vvgoImage.push(GIT_COMMIT)
