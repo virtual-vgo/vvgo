@@ -1,5 +1,3 @@
-def dockerRegistry = docker.withRegistry('https://docker.pkg.github.com', 'github_packages')
-
 pipeline {
     agent any
     stages {
