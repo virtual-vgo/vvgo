@@ -37,22 +37,12 @@ pipeline {
             }
         }
 
-                        stage('Deploy Container') {
-                            steps {
-                                sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_prod'
-                            }
-                        }
-
         stage('Deploy') {
-            when {
-                branch 'master'
-            }
+            when { branch 'master' }
 
             stages {
                 stage('Deploy Container') {
-                    steps {
-                        sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_prod'
-                    }
+                    steps { sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_prod' }
                 }
 
                 stage('Purge Cloudflare Cache') {
