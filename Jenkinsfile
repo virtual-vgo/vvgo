@@ -6,7 +6,7 @@ pipeline {
                 stage('Build Image') {
                     steps {
                         script {
-                            def vvgoImage = docker.build("docker.pkg.github.com/virtual-vgo/vvgo/vvgo")
+                            def vvgoImage = docker.build("ghcr.io/jacksonargo/vvgo")
                             vvgoImage.push('latest')
                             vvgoImage.push(GIT_COMMIT)
                             vvgoImage.push(BRANCH_NAME)
