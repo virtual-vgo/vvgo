@@ -6,7 +6,7 @@ pipeline {
                 stage('Build Image') {
                     steps {
                         script {
-                            docker.withRegistry('https://docker.pkg.github.com', 'github_pxxxackages') {
+                            docker.withRegistry('https://docker.pkg.github.com', 'github_packages') {
                                 def vvgoImage = docker.build("virtual-vgo/vvgo/vvgo")
                                 vvgoImage.push('latest')
                                 vvgoImage.push(GIT_COMMIT)
