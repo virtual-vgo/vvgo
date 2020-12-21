@@ -5,7 +5,13 @@ pipeline {
             parallel {
                 stage('Build Image') {
                     steps {
-                        sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
+                        script {
+                            docker.withRegistry('https://docker.pkg.github.com', 'github_packages') {
+                                def vvgoImage = docker.build("vvgo:${BRANCH_NAME}")
+                                vvgoImage.push('latest')
+                                vvgoImage.push(GIT_COMMIT)
+                            }
+                        }
                     }
                 }
 
@@ -36,18 +42,9 @@ pipeline {
             }
 
             stages {
-                stage('Launch Container') {
+                stage('Deploy Container') {
                     steps {
-                        sh 'docker rm -f vvgo-prod || true'
-                        sh '''
-                            docker run -d --name vvgo-prod \
-                                --env GOOGLE_APPLICATION_CREDENTIALS=/etc/vvgo/google_api_credentials.json \
-                                --env REDIS_ADDRESS=redis-prod:6379 \
-                                --volume /etc/vvgo:/etc/vvgo \
-                                --publish 8080:8080 \
-                                --network prod-network \
-                                vvgo:master
-                        '''
+                        sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_prod'
                     }
                 }
 
