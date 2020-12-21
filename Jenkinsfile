@@ -10,7 +10,7 @@ pipeline {
                                 def vvgoImage = docker.build("virtual-vgo/vvgo")
                                 vvgoImage.push('latest')
                                 vvgoImage.push(GIT_COMMIT)
-                                vvgoImage.push(GITHUB_AUTHOR)
+                                vvgoImage.push(CHANGE_AUTHOR)
                                 vvgoImage.push(BRANCH_NAME)
                             }
                         }
