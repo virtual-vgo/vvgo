@@ -10,6 +10,7 @@ pipeline {
                                 def vvgoImage = docker.build("virtual-vgo/vvgo")
                                 vvgoImage.push('latest')
                                 vvgoImage.push(GIT_COMMIT)
+                                vvgoImage.push(GITHUB_AUTHOR)
                                 vvgoImage.push(BRANCH_NAME)
                             }
                         }
@@ -37,7 +38,11 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy Staging') {
+            steps { sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_staging' }
+        }
+
+        stage('Deploy Production') {
             when { branch 'master' }
 
             stages {
