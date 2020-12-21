@@ -6,7 +6,7 @@ pipeline {
                 stage('Build Image') {
                     steps {
                         script {
-                            docker.withRegistry('ghcr.io', 'github_packages') {
+                            docker.withRegistry('https://ghcr.io', 'github_packages') {
                                 def vvgoImage = docker.build("virtual-vgo/vvgo")
                                 vvgoImage.push('latest')
                                 vvgoImage.push(GIT_COMMIT)
