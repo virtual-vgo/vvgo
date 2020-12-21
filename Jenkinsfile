@@ -5,11 +5,13 @@ pipeline {
             parallel {
                 stage('Build Image') {
                     steps {
-                        script {
-                            def vvgoImage = docker.build("ghcr.io/jacksonargo/vvgo")
-                            vvgoImage.push('latest')
-                            vvgoImage.push(GIT_COMMIT)
-                            vvgoImage.push(BRANCH_NAME)
+                        docker.withRegistry('ghcr.io', 'github_packages') {
+                            script {
+                                def vvgoImage = docker.build("virtual-vgo/vvgo")
+                                vvgoImage.push('latest')
+                                vvgoImage.push(GIT_COMMIT)
+                                vvgoImage.push(BRANCH_NAME)
+                            }
                         }
                     }
                 }
