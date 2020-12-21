@@ -8,12 +8,10 @@ pipeline {
                 stage('Build Image') {
                     steps {
                         script {
-                            dockerRegistry {
-                                def vvgoImage = docker.build("virtual-vgo/vvgo/vvgo")
-                                vvgoImage.push('latest')
-                                vvgoImage.push(GIT_COMMIT)
-                                vvgoImage.push(BRANCH_NAME)
-                            }
+                            def vvgoImage = docker.build("docker.pkg.github.com/virtual-vgo/vvgo/vvgo")
+                            vvgoImage.push('latest')
+                            vvgoImage.push(GIT_COMMIT)
+                            vvgoImage.push(BRANCH_NAME)
                         }
                     }
                 }
