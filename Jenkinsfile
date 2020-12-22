@@ -5,7 +5,20 @@ pipeline {
             parallel {
                 stage('Build Image') {
                     steps {
-                        sh 'docker build . -t vvgo:latest -t vvgo:${BRANCH_NAME}'
+                        script {
+                            def author = sh(
+                                script: '''
+                                    curl -s  -H "Accept: application/vnd.github.v3+json"  \
+                                    https://api.github.com/repos/virtual-vgo/vvgo/commits/${GIT_COMMIT}|jq -r .author.login
+                                ''', returnStdout: true)
+                            docker.withRegistry('https://ghcr.io', 'github_packages') {
+                                def vvgoImage = docker.build("virtual-vgo/vvgo")
+                                vvgoImage.push('latest')
+                                vvgoImage.push(GIT_COMMIT)
+                                vvgoImage.push(BRANCH_NAME)
+                                if (author != "") { vvgoImage.push(author) }
+                            }
+                        }
                     }
                 }
 
@@ -30,25 +43,16 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            when {
-                branch 'master'
-            }
+        stage('Deploy Staging') {
+            steps { sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_staging' }
+        }
+
+        stage('Deploy Production') {
+            when { branch 'master' }
 
             stages {
-                stage('Launch Container') {
-                    steps {
-                        sh 'docker rm -f vvgo-prod || true'
-                        sh '''
-                            docker run -d --name vvgo-prod \
-                                --env GOOGLE_APPLICATION_CREDENTIALS=/etc/vvgo/google_api_credentials.json \
-                                --env REDIS_ADDRESS=redis-prod:6379 \
-                                --volume /etc/vvgo:/etc/vvgo \
-                                --publish 8080:8080 \
-                                --network prod-network \
-                                vvgo:master
-                        '''
-                    }
+                stage('Deploy Container') {
+                    steps { sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_prod' }
                 }
 
                 stage('Purge Cloudflare Cache') {

@@ -17,9 +17,6 @@ RUN go mod download
 COPY . .
 RUN BIN_PATH=/ make vvgo
 
-FROM builder as tester
-CMD ["make", "test"]
-
 FROM alpine:3.4 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils
 COPY ./public /public
