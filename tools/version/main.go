@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"os"
@@ -37,23 +36,17 @@ func hostname() string {
 }
 
 func gitSha() string {
-	if os.Getenv("GIT_COMMIT") != "" {
-		return os.Getenv("GIT_COMMIT")
-	}
 	output, err := exec.Command("git", "rev-parse", "HEAD").Output()
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "command `git rev-parse HEAD` failed!: %v\n", err)
+		log.Logger().Fatalf("command `git rev-parse HEAD` failed!: %v\n", err)
 	}
 	return strings.TrimSpace(string(output))
 }
 
 func gitBranch() string {
-	if os.Getenv("GIT_BRANCH") != "" {
-		return os.Getenv("GIT_BRANCH")
-	}
 	output, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "command `git rev-parse --abbrev-ref HEAD` failed!%v\n", err)
+		log.Logger().Fatalf("command `git rev-parse --abbrev-ref HEAD` failed!%v\n", err)
 	}
 	return strings.TrimSpace(string(output))
 }
