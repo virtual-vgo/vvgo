@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"net/http/httputil"
 	"time"
@@ -24,6 +25,7 @@ func (x responseWriter) WriteHeader(code int) {
 }
 
 func (x responseWriter) Write(b []byte) (int, error) {
+	version.SetVersionHeaders(x)
 	n, err := x.ResponseWriter.Write(b)
 	x.size += n
 	return n, err

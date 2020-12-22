@@ -1,49 +1,47 @@
 pipeline {
     agent any
     stages {
-        stage('Build & Test') {
-            parallel {
-                stage('Build Image') {
-                    steps {
-                        script {
-                            def author = sh(
-                                script: '''
-                                    curl -s  -H "Accept: application/vnd.github.v3+json"  \
-                                    https://api.github.com/repos/virtual-vgo/vvgo/commits/${GIT_COMMIT}|jq -r .author.login
-                                ''', returnStdout: true)
-                            docker.withRegistry('https://ghcr.io', 'github_packages') {
-                                def vvgoImage = docker.build("virtual-vgo/vvgo")
-                                vvgoImage.push('latest')
-                                vvgoImage.push(GIT_COMMIT)
-                                vvgoImage.push(BRANCH_NAME)
-                                if (author != "") { vvgoImage.push(author) }
-                            }
-                        }
-                    }
-                }
+        stage('Run Unit Tests') {
+            when { changeset "**/*.go" }
 
-                stage('Run Unit Tests') {
-                    agent {
-                        docker {
-                            image 'golang:1.14'
-                            args  "-v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
-                        }
-                    }
-                    environment {
-                        REDIS_ADDRESS  = 'redis-testing:6379'
-                        MINIO_ENDPOINT = 'minio-testing:9000'
-                    }
-                    steps {
-                        sh 'go generate ./...'
-                        sh 'go get -u github.com/jstemmer/go-junit-report'
-                        sh 'go test -v -race ./... 2>&1 | go-junit-report > report.xml'
-                        junit 'report.xml'
+            agent {
+                docker {
+                    image 'golang:1.14'
+                    args  "-v go-pkg-cache:/go/pkg -v go-build-cache:/.cache/go-build --network test-network"
+                }
+            }
+            environment {
+                REDIS_ADDRESS  = 'redis-testing:6379'
+                MINIO_ENDPOINT = 'minio-testing:9000'
+            }
+            steps {
+                sh 'go get -u github.com/jstemmer/go-junit-report'
+                sh 'go test -v -race ./... 2>&1 | go-junit-report > report.xml'
+                junit 'report.xml'
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                script {
+                    def author = sh(
+                        script: '''
+                            curl -s  -H "Accept: application/vnd.github.v3+json"  \
+                            https://api.github.com/repos/virtual-vgo/vvgo/commits/${GIT_COMMIT}|jq -r .author.login
+                        ''', returnStdout: true)
+                    docker.withRegistry('https://ghcr.io', 'github_packages') {
+                        def vvgoImage = docker.build("virtual-vgo/vvgo")
+                        vvgoImage.push('latest')
+                        vvgoImage.push(GIT_COMMIT)
+                        vvgoImage.push(BRANCH_NAME)
+                        if (author != "") { vvgoImage.push(author) }
                     }
                 }
             }
         }
 
         stage('Deploy Staging') {
+            when { not { branch 'master' } }
             steps { sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_staging' }
         }
 

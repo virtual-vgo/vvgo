@@ -1,12 +1,10 @@
 package version
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"sort"
-	"strings"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -29,12 +27,26 @@ func TestHeader(t *testing.T) {
 	assert.Equal(t, wantHeader, gotHeader)
 }
 
-func headerToString(header http.Header) string {
-	var buf bytes.Buffer
-	header.Write(&buf)
-	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
-	sort.Strings(lines)
-	return strings.Join(lines, "\n")
+func TestSetVersionHeaders(t *testing.T) {
+	w := httptest.NewRecorder()
+	version = Version{
+		BuildHost: "tuba-international.xyz",
+		BuildTime: "today",
+		GitSha:    "yeet",
+		GitBranch: "best-branch",
+		GoVersion: "1.14.1",
+	}
+
+	wantHeader := http.Header{
+		"Build-Host": []string{"tuba-international.xyz"},
+		"Build-Time": []string{"today"},
+		"Git-Sha":    []string{"yeet"},
+		"Git-Branch": []string{"best-branch"},
+		"Go-Version": []string{"1.14.1"},
+	}
+	SetVersionHeaders(w)
+	gotHeader := w.Result().Header
+	assert.Equal(t, wantHeader, gotHeader)
 }
 
 func TestJSON(t *testing.T) {
