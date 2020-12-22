@@ -2,10 +2,12 @@ pipeline {
     agent any
     stages {
         stage('Test this nonsense') {
-            sh 'curl -s -H"Accept: application/vnd.github.v3+json" https://api.github.com/repos/virtual-vgo/vvgo/commits/${GIT_COMMIT}|jq -r .author.login>author'
-            script {
-                File file = new File("author")
-                println(file.text)
+            steps {
+                    sh 'curl -s -H"Accept: application/vnd.github.v3+json" https://api.github.com/repos/virtual-vgo/vvgo/commits/${GIT_COMMIT}|jq -r .author.login>author'
+                    script {
+                        File file = new File("author")
+                        println(file.text)
+                    }
             }
         }
 
