@@ -1,9 +1,16 @@
 pipeline {
     agent any
     stages {
-        stage('Test this nonsense') {
+        stage ('Test This Nonsense') {
             steps {
-                    echo CHANGE_AUTHOR
+                script {
+                    def author = sh(
+                        script: '''
+                            curl -s  -H "Accept: application/vnd.github.v3+json"  \
+                            https://api.github.com/repos/virtual-vgo/vvgo/commits/${GIT_COMMIT}|jq -r .author.login
+                        ''', returnStdout: true)
+                    echo author
+                }
             }
         }
 
