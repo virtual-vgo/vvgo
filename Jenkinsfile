@@ -1,17 +1,28 @@
 pipeline {
     agent any
     stages {
+        stage('Test this nonsense') {
+            sh 'curl -s -H"Accept: application/vnd.github.v3+json" https://api.github.com/repos/virtual-vgo/vvgo/commits/${GIT_COMMIT}|jq -r .author.login>author'
+            script {
+                File file = new File("author")
+                println(file.text)
+                }
+            }
+        }
+
         stage('Build & Test') {
             parallel {
                 stage('Build Image') {
                     steps {
+                        sh 'curl -s -H"Accept: application/vnd.github.v3+json" https://api.github.com/repos/virtual-vgo/vvgo/commits/${GIT_COMMIT}|jq -r .author.login>author'
                         script {
                             docker.withRegistry('https://ghcr.io', 'github_packages') {
                                 def vvgoImage = docker.build("virtual-vgo/vvgo")
+                                File file = new File("author")
                                 vvgoImage.push('latest')
-                                vvgoImage.push(env.CHANGE_AUTHOR)
                                 vvgoImage.push(GIT_COMMIT)
                                 vvgoImage.push(BRANCH_NAME)
+                                vvgoImage.push(file.text)
                             }
                         }
                     }
