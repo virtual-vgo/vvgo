@@ -6,7 +6,6 @@ pipeline {
             script {
                 File file = new File("author")
                 println(file.text)
-                }
             }
         }
 
