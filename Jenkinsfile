@@ -9,8 +9,8 @@ pipeline {
                             docker.withRegistry('https://ghcr.io', 'github_packages') {
                                 def vvgoImage = docker.build("virtual-vgo/vvgo")
                                 vvgoImage.push('latest')
+                                vvgoImage.push(env.CHANGE_AUTHOR)
                                 vvgoImage.push(GIT_COMMIT)
-                                vvgoImage.push(commit.Committer)
                                 vvgoImage.push(BRANCH_NAME)
                             }
                         }
