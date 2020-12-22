@@ -1,5 +1,3 @@
-//go:generate go run github.com/virtual-vgo/vvgo/tools/version
-
 package main
 
 import (

@@ -4,24 +4,25 @@ COPY public/package-lock.json .
 RUN npm install
 
 FROM golang:1.14 as builder
-
-ARG GITHUB_REF
-ARG GITHUB_SHA
-
+WORKDIR /go/src/app/
 ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
-
-WORKDIR /go/src/github.com/virtual-vgo/vvgo
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
-RUN BIN_PATH=/ make vvgo
+COPY cmd cmd
+COPY pkg pkg
+RUN go build -o vvgo ./cmd/vvgo
+
+COPY tools tools
+COPY .git .git
+RUN go run ./tools/version
 
 FROM alpine:3.4 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils
-COPY ./public /public
-COPY --from=builder vvgo /vvgo
 COPY --from=node node_modules /public/node_modules
+COPY --from=builder /go/src/app/vvgo /vvgo
+COPY ./public /public
+COPY --from=builder /go/src/app/version.json ./version.json
 EXPOSE 8080
 CMD ["/vvgo"]
 ENTRYPOINT ["/vvgo"]

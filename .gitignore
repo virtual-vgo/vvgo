@@ -18,3 +18,4 @@ public/npm
 .google_api_credentials.json
 .run
 hello.lua
+version.json

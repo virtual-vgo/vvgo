@@ -10,16 +10,6 @@ func Version(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}
-
-	versionHeader := version.Header()
-	for k := range versionHeader {
-		w.Header().Set(k, versionHeader.Get(k))
-	}
-
-	switch true {
-	case acceptsType(r, "application/json"):
-		w.Write(version.JSON())
-	default:
-		w.Write([]byte(version.String()))
-	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(version.JSON())
 }
