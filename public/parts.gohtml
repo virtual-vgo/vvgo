@@ -95,7 +95,8 @@
 
 {{ define "parts_table" }}
     {{ $parts := parts }}
-    <table id="table-{{ .Name }}" style="width: 100%" class="table dt-responsive text-light">
+    <div class="loading text-center title vh-100"><h3>😩 Loading... 😩</h3></div>
+    <table id="table-{{ .Name }}" style="width: 100%" class="table dt-responsive text-light d-none">
         <thead>
         <tr>
             <th>Score Order</th>
