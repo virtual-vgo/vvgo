@@ -126,13 +126,6 @@
                                 </a>
                             </div>
                         {{ end }}
-                        {{ if .ReferenceTrack }}
-                            <div class="{{$col_class}}">
-                                <a href="{{ download_link .ReferenceTrack}}" class="{{$download_class}}">
-                                    <i class="far fa-file-audio"></i> reference track
-                                </a>
-                            </div>
-                        {{ end }}
                         {{ if .ConductorVideo }}
                             <div class="{{$col_class}}">
                                 <a href="{{.ConductorVideo}}" class="{{$download_class}}">
