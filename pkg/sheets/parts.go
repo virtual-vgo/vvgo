@@ -11,7 +11,6 @@ type Part struct {
 	SheetMusicFile     string `col_name:"Sheet Music File"`
 	ClickTrackFile     string `col_name:"Click Track File"`
 	ConductorVideo     string `col_name:"Conductor Video"`
-	ReferenceTrack     string `col_name:"Reference Track"`
 	PronunciationGuide string `col_name:"Pronunciation Guide"`
 }
 
