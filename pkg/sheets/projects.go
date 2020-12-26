@@ -29,6 +29,7 @@ type Project struct {
 	SubmissionLink          string `col_name:"Submission Link"`
 	Season                  string
 	BannerLink              string `col_name:"Banner Link"`
+	Hidden                  bool
 }
 
 func (x Project) ProjectPage() string { return "/projects/" + x.Name }
@@ -166,6 +167,16 @@ func (x Projects) NotReleasedYoutube() Projects {
 	var want Projects
 	for _, project := range x {
 		if project.YoutubeLink == "" {
+			want = append(want, project)
+		}
+	}
+	return want
+}
+
+func (x Projects) NotHidden() Projects {
+	var want Projects
+	for _, project := range x {
+		if project.Hidden == false {
 			want = append(want, project)
 		}
 	}
