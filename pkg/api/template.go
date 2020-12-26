@@ -20,6 +20,7 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"link_to_template": func() string { return "https://github.com/virtual-vgo/vvgo/blob/master/public/" + templateFile },
 		"user_info":        identity.Info,
 		"user_roles":       func() []login.Role { return identity.Roles },
+		"user_identity":    func() *login.Identity { return identity },
 		"title":            strings.Title,
 		"form_value":       func(key string) string { return r.FormValue(key) },
 		"user_logged_in":   func() bool { return identity.IsAnonymous() == false },
@@ -28,7 +29,8 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
 		"download_link":    func(obj string) string { return downloadLink(obj) },
 		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity) },
-		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx, identity) },
+		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx) },
+		"new_query":        sheets.NewQuery,
 	}).ParseFiles(
 		PublicFiles+"/"+templateFile,
 		PublicFiles+"/header.gohtml",

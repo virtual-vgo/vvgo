@@ -9,18 +9,20 @@
 <body class="">
 {{ template "navbar.gohtml" }}
 
+{{ $released := projects.WithField "Video Released" true }}
+{{ $latest := $released.Sort.Last }}
+
 <div class="mt-2 container">
-    {{ $latest_release := projects.ReleasedYoutube.Sort.Last }}
     <div class="row row-cols-1 justify-content-md-center text-center m-2">
         <div class="col">
-            <a href="{{ $latest_release.YoutubeLink }}" class="btn btn-link nav-link">
-                <img src="{{ $latest_release.BannerLink }}" class="mx-auto img-fluid" alt="banner">
+            <a href="{{ $latest.YoutubeLink }}" class="btn btn-link nav-link">
+                <img src="{{ $latest.BannerLink }}" class="mx-auto img-fluid" alt="banner">
             </a>
         </div>
 
-        {{ if $latest_release.YoutubeEmbed }}
+        {{ if $latest.YoutubeEmbed }}
             <div class="col project-iframe-wrapper text-center m-2">
-                <iframe class="project-iframe" src="{{ $latest_release.YoutubeEmbed }}"
+                <iframe class="project-iframe" src="{{ $latest.YoutubeEmbed }}"
                         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                         allowfullscreen></iframe>
             </div>
