@@ -7,13 +7,14 @@
     {{ template "header.gohtml" }}
 
     <link rel="stylesheet" type="text/css" href="/css/login.css">
+    <script type="text/javascript" src="/js/login.js"></script>
 </head>
 
 <body class="text-center">
 {{ template "navbar.gohtml" }}
 <div class="form-signin">
     <!--suppress HtmlUnknownTarget -->
-    <form action="/login/password" method="post">
+    <form id="signinForm">
         <img class="mb-4 mt-4" src="images/logo.svg" alt="" width="100%">
         <div>
             <label for="inputUser" class="sr-only">VVGO User</label>
@@ -24,11 +25,13 @@
             <label for="inputPassword" class="sr-only">Password</label>
             <input name="pass" type="password" id="inputPassword" class="form-control" placeholder="password" required>
         </div>
-
-        <button class="btn btn-lg btn-block bg-vvgo-purple text-light" type="submit">Sign in</button>
+        <div id="invalidAuth" class="m-2 text-warning d-none">Invalid user or password 😔 </div>
+        <button id="signinButton" class="btn btn-lg btn-block bg-vvgo-purple text-light" type="submit">Sign in</button>
     </form>
     <!--suppress HtmlUnknownTarget -->
-    <a class="mt-1 btn btn-lg btn-block bg-discord-blue text-light" href="/login/discord">Sign in with Discord</a>
+    <a class="mt-1 btn btn-lg btn-block bg-discord-blue text-light" href="/login/discord">
+        Sign in with Discord
+    </a>
 </div>
 </body>
 {{ template "footer.gohtml" }}
