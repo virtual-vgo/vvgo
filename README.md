@@ -12,10 +12,6 @@ HTML pages are generated from [go templates](https://golang.org/pkg/text/templat
 These are affectionately reffered to as _views_.
 Views, along with all public files are found in [here](https://github.com/virtual-vgo/vvgo/tree/master/public).
 
-If you change a view, you will most likely need to update a test as well.
-Test views can be found [here](https://github.com/virtual-vgo/vvgo/tree/master/pkg/api/testdata).
-The tests are used to ensure the views are rendered properly before the site can be deployed.
-
 ## Run VVGO locally
 
 ### 1. Install build tools
