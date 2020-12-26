@@ -229,7 +229,8 @@ If there are instruments missing here, please let Brandon know.
 #### Double Reeds, minus Bassoons
 * Tenor Crumhorn
 * Oboe 1, 2
-* English Horn
+* Cor Anglais/English Horn
+* Heckelphone
 * Duduk
 #### Clarinets
 * Eb Clarinet
@@ -259,15 +260,16 @@ If there are instruments missing here, please let Brandon know.
 
 ### Brass
 * Horn in F / F Mellophone 1, 2, 3, 4, (5, 6)
-* (Alto or Tenor) Horn in Eb (CP, dropped-octave treble clef)
 * French Horn Bugle in G-F-F#
 * Trumpet 1, 2, (3, 4)
 * Flugelhorn
+* F Alto Trumpet
+* (Alto or Tenor) Horn in Eb (CP, dropped-octave treble clef)
+* Baritone Horn
 * Soprano Trombone
 * Alto Trombone
-* Trombone 1, 2, 3
+* (Tenor) Trombone 1, 2, 3
 * Bass Trombone
-* Baritone Horn
 * Euphonium
 * Baritone Bugle in G-D-F#
 * Tuba / Helicon
@@ -285,6 +287,7 @@ If there are instruments missing here, please let Brandon know.
 * Tom-toms / Tenor Drums (211.212.21)
 * Bongos (211.251.2)
 * Congas (211.221.1)
+* Taiko Drums (211.222.1)
 * Bodhrán (211.311)
 #### Cymbals and Unpitched Gongs
 * Piatti (Clash)
@@ -299,22 +302,26 @@ If there are instruments missing here, please let Brandon know.
 #### Struck Unpitched Percussion
 * Triangle (111.211)
 * Wood Block (111.24)
-* Anvil (Brake drum)
+* Anvil/Brake Drum
 * Agogo Bells
 * Cowbell
 * Cajón (111.24)
 #### Shaken
+* Afuche/Cabasa (112.112)
 * Flexatone (112.121)
 * Tambourine (112.121)
 * Vibraslap (112.122)
 * Thundertube (112.122)
 * Shaker (112.13)
+### Friction
+* Sanding Blocks (132?)
 #### Pitched Percussion
 * Tongue Drum (D major, C major)
+* Crotales
 * Glockenspiel
 * Xylophone
 * Vibraphone
-* Marimba
+* Marimba (4.3 octave)
 * Chimes (Tubular Bells)
 #### Other
 * Waterphone
@@ -327,19 +334,17 @@ If there are instruments missing here, please let Brandon know.
 * Bouzouki (321.321)
 * Mandolin (321.321)
 * Ukulele (321.322)
-#### Modern Band (with some lutes)
+#### Modern Band
 * Acoustic Guitar (321.322)
 * Electric Guitar 1
 * (Electric Guitar 2)
 * Electric Bass
 * (Plucked) Double Bass / String Bass / Upright Bass
-* Drumset
+* Drum Set
 
 ### Harp, Keyboards, and Synthesizers
-* Harp 1
-* Harp 2
-* Piano 1
-* Piano 2
+* Harp 1, (2)
+* Piano 1, (2)
 * Keyboard
 * Synthesizer
 * Otamatone
@@ -347,14 +352,14 @@ If there are instruments missing here, please let Brandon know.
 * Organ
 
 ### Vocals
-* Soprano 1, 2
+* Soprano 1, (2)
 * Mezzo-soprano
-* Alto 1, 2
+* Alto 1, (2)
 * Countertenor
-* Tenor 1, 2
+* Tenor 1, (2)
 * (Barbershop Male) Lead
 * Baritone
-* Bass 1, 2
+* Bass 1, (2)
 * Beatbox / Vocal Percussion
 
 ### Bowed Strings
