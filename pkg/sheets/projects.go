@@ -9,8 +9,11 @@ import (
 type Project struct {
 	Name                    string
 	Title                   string
-	Released                bool
-	Archived                bool
+	Season                  string
+	Hidden                  bool
+	PartsReleased           bool `col_name:"Parts Released"`
+	PartsArchived           bool `col_name:"Parts Archived"`
+	VideoReleased           bool `col_name:"Video Released"`
 	Sources                 string
 	Composers               string
 	Arrangers               string
@@ -23,13 +26,11 @@ type Project struct {
 	AdditionalContent       string `col_name:"Additional Content"`
 	ReferenceTrack          string `col_name:"Reference Track"`
 	ChoirPronunciationGuide string `col_name:"Choir Pronunciation Guide"`
+	BannerLink              string `col_name:"Banner Link"`
 	YoutubeLink             string `col_name:"Youtube Link"`
 	YoutubeEmbed            string `col_name:"Youtube Embed"`
 	SubmissionDeadline      string `col_name:"Submission Deadline"`
 	SubmissionLink          string `col_name:"Submission Link"`
-	Season                  string
-	BannerLink              string `col_name:"Banner Link"`
-	Hidden                  bool
 }
 
 func (x Project) ProjectPage() string { return "/projects/" + x.Name }
@@ -66,22 +67,13 @@ func (x Projects) Get(name string) (Project, bool) {
 	return Project{}, false
 }
 
-func (x Projects) Has(name string) bool {
-	_, ok := x.Get(name)
-	return ok
-}
-
-func (x Projects) Len() int              { return len(x) }
-func (x Projects) Swap(i, j int)         { x[i], x[j] = x[j], x[i] }
-func (x Projects) Less(i, j int) bool    { return x[i].Name < x[j].Name }
-func (x Projects) Sort() Projects        { sort.Sort(x); return x }
-func (x Projects) ReverseSort() Projects { sort.Sort(sort.Reverse(x)); return x }
+func (x Projects) Has(name string) bool { _, ok := x.Get(name); return ok }
 
 func (x Projects) ForIdentity(identity *login.Identity) Projects {
 	var want Projects
 	for _, project := range x {
 		switch {
-		case project.Released == true:
+		case project.PartsReleased == true:
 			want = append(want, project)
 		case identity.HasRole(login.RoleVVGOTeams):
 			want = append(want, project)
@@ -90,16 +82,6 @@ func (x Projects) ForIdentity(identity *login.Identity) Projects {
 		}
 	}
 	return want
-}
-
-func (x Projects) Current() Projects {
-	var current []Project
-	for _, project := range x {
-		if project.Archived == false {
-			current = append(current, project)
-		}
-	}
-	return current
 }
 
 func (x Projects) Select(names ...string) Projects {
@@ -113,29 +95,7 @@ func (x Projects) Select(names ...string) Projects {
 	return want
 }
 
-func (x Projects) Append(projects Projects) Projects {
-	return append(x, projects...)
-}
-
-func (x Projects) ReleasedYoutube() Projects {
-	var want Projects
-	for _, project := range x {
-		if project.YoutubeLink != "" {
-			want = append(want, project)
-		}
-	}
-	return want
-}
-
-func (x Projects) Released() Projects {
-	var want Projects
-	for _, project := range x {
-		if project.Released {
-			want = append(want, project)
-		}
-	}
-	return want
-}
+func (x Projects) Append(projects Projects) Projects { return append(x, projects...) }
 
 func (x Projects) First() Project {
 	if x.Len() == 0 {
@@ -153,32 +113,24 @@ func (x Projects) Last() Project {
 	}
 }
 
-func (x Projects) Archived() Projects {
-	var want Projects
-	for _, project := range x {
-		if project.Archived {
-			want = append(want, project)
-		}
-	}
-	return want
+func (x Projects) WithField(key string, value interface{}) Projects {
+	return x.Query(NewQuery().WithField(key, value))
 }
 
-func (x Projects) NotReleasedYoutube() Projects {
-	var want Projects
-	for _, project := range x {
-		if project.YoutubeLink == "" {
-			want = append(want, project)
-		}
-	}
-	return want
+func (x Projects) WithFields(args ...interface{}) Projects {
+	return x.Query(NewQuery().WithFieldsUnsafe(args...))
 }
 
-func (x Projects) NotHidden() Projects {
-	var want Projects
-	for _, project := range x {
-		if project.Hidden == false {
-			want = append(want, project)
-		}
-	}
-	return want
+func (x Projects) Query(query map[string]interface{}) Projects {
+	want := make(Projects, 0, x.Len())
+	Query(query).MatchSlice(x, &want)
+	return want[:]
 }
+
+// Sorting
+
+func (x Projects) Len() int              { return len(x) }
+func (x Projects) Swap(i, j int)         { x[i], x[j] = x[j], x[i] }
+func (x Projects) Less(i, j int) bool    { return x[i].Name < x[j].Name }
+func (x Projects) Sort() Projects        { sort.Sort(x); return x }
+func (x Projects) ReverseSort() Projects { sort.Sort(sort.Reverse(x)); return x }

@@ -11,35 +11,31 @@
 <body>
 {{ template "navbar.gohtml" }}
 
-{{ $all_projects := projects }}
-{{ $all_parts := parts }}
-{{ $projects := projects }}
+{{ $projects := projects.ForIdentity user_identity }}
 {{ $parts := parts }}
+{{ $viewable_projects := $projects.WithField "Parts Archived" false }}
+
 {{ $show_all := form_value "all" }}
 {{ if not user_is_leader }}{{ $show_all = "" }}{{ end }}
-{{ if ne $show_all "true" }}
-    {{ $show_all = "" }}
-    {{ $projects = projects.Current }}
-    {{ $parts = parts.Current }}
+{{ if eq $show_all "true" }}
+    {{ $viewable_projects = $projects }}
 {{ end }}
 
-{{ $active := "" }}
+{{ $active_project := "" }}
 {{ $want := form_value "project" }}
-{{ if $projects.Has $want }}
-    {{ $active = $want }}
+{{ if $viewable_projects.Has $want }}
+    {{ $active_project = $want }}
 {{ else if user_is_leader }}
-    {{ if $all_projects.Has $want }}
-        {{ $wantProject := $all_projects.Select $want }}
-        {{ $projects = $wantProject.Append $projects }}
-        {{ $wantParts := $all_parts.ForProject $want }}
-        {{ $parts = $wantParts.Append $parts }}
-        {{ $active = $want }}
+    {{ if $projects.Has $want }}
+        {{ $wantProject := $projects.Select $want }}
+        {{ $viewable_projects = $wantProject.Append $viewable_projects }}
+        {{ $active_project = $want }}
     {{ end }}
 {{ end }}
-{{ if eq $active "" }}
-    {{ if gt $projects.Len 0 }}
-        {{ $wantProject := index $projects 0 }}
-        {{ $active = $wantProject.Name }}
+{{ if eq $active_project "" }}
+    {{ if gt $viewable_projects.Len 0 }}
+        {{ $wantProject := index $viewable_projects 0 }}
+        {{ $active_project = $wantProject.Name }}
     {{ end }}
 {{ end }}
 
@@ -62,12 +58,12 @@
                     </h3>
                 {{ end }}
                 <ul class="nav nav-pills" id="project-tabs" role="tablist">
-                    {{- range $projects }}
+                    {{- range $viewable_projects }}
                         <li class="nav-item">
-                            <a class="btn btn-outline-dark {{ if .Archived }}text-secondary{{ else if .Released }}text-light{{ else }}text-warning{{ end }} rounded-0 {{ if eq .Name $active }}active{{ end }}"
+                            <a class="btn btn-outline-dark {{ if .PartsArchived }}text-secondary{{ else if .PartsReleased }}text-light{{ else }}text-warning{{ end }} rounded-0 {{ if eq .Name $active_project }}active{{ end }}"
                                id="{{ .Name }}-tab" data-toggle="pill" href="#parts-{{ .Name }}" role="tab"
-                               aria-controls="parts-{{ .Name }}" aria-selected="{{ $active }}">
-                                {{ .Title }}{{ if .Archived }} <i class="fas fa-lock"></i>{{end}}</a>
+                               aria-controls="parts-{{ .Name }}" aria-selected="{{ $active_project }}">
+                                {{ .Title }}{{ if .PartsArchived }} <i class="fas fa-lock"></i>{{end}}</a>
                         </li>
                     {{ end }}
                 </ul>
@@ -75,16 +71,16 @@
         </div>
 
         <div class="tab-content">
-            {{- range $projects }}
-                <div class="tab-pane fade {{ if eq .Name $active }}active show{{ end }}"
+            {{- range $viewable_projects }}
+                <div class="tab-pane fade {{ if eq .Name $active_project }}active show{{ end }}"
                      id="parts-{{ .Name }}" role="tabpanel" aria-labelledby="{{ .Name }}-tab">
                     <div class="row row-cols-1">
                         <div class="col mt-3 text-center">
-                            {{ if .Archived }}
+                            {{ if .PartsArchived }}
                                 <div class="alert alert-warning">
                                     This project has been archived. Parts are only visible to leaders.
                                 </div>{{ end }}
-                            {{ if not .Released }}
+                            {{ if not .PartsReleased }}
                                 <div class="alert alert-warning">This project is unreleased and invisible to members!
                                 </div>{{ end }}
                             {{ if .BannerLink }}
