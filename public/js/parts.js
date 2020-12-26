@@ -2,7 +2,8 @@ $(document).ready(function () {
     $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
         $.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
     });
-    $('table.table').DataTable({
+    const tables = $('table.table')
+    const dataTable = tables.DataTable({
         dom: 'ft',
         paging: false,
         order: [[0, 'asc']],
@@ -23,4 +24,7 @@ $(document).ready(function () {
             },
         ]
     });
+    $('div.loading').addClass("d-none")
+    tables.removeClass("d-none")
+    dataTable.columns.adjust().draw();
 });
