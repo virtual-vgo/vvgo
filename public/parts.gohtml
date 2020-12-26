@@ -95,7 +95,11 @@
 
 {{ define "parts_table" }}
     {{ $parts := parts }}
-    <div class="loading text-center title vh-100"><h3>😩 Loading... 😩</h3></div>
+
+    {{ $loading_text := string_slice "😩 【Ｌｏａｄｉｎｇ】 😩" "(っ◔◡◔)っ ♥ 𝐿𝑜𝒶𝒹𝒾𝓃𝑔 ♥" "𝒲𝑒'𝓁𝓁 𝒷𝑒 𝓇𝒾𝑔𝒽𝓉 𝓌𝒾𝓉𝒽 𝓎𝑜𝓊 😘" }}
+    {{ $loading_text = append_strings $loading_text "😳👌  ⓛＯα𝓓𝕚ＮＧ  💗🍩" "🐏  🎀  𝒯𝐻𝐸 𝐸𝒜𝑅𝒯𝐻 𝐼𝒮 𝐹𝐿𝒜𝒯  🎀  🐏" }}
+    {{ $loading_text = pick_random_elem $loading_text }}
+    <div class="loading text-center title vh-100"><h3> {{ $loading_text }}</h3></div>
     <table id="table-{{ .Name }}" style="width: 100%" class="table dt-responsive text-light d-none">
         <thead>
         <tr>

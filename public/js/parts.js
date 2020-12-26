@@ -24,6 +24,11 @@ $(document).ready(function () {
             },
         ]
     });
+
+    let now = Date.now();
+    const end = now + 1000;
+    while (now < end) { now = Date.now(); }
+
     $('div.loading').addClass("d-none")
     tables.removeClass("d-none")
     dataTable.columns.adjust().draw();

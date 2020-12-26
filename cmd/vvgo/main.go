@@ -7,7 +7,9 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/version"
+	"math/rand"
 	"os"
+	"time"
 )
 
 var logger = log.Logger()
@@ -24,6 +26,8 @@ func (x *Flags) Parse() {
 }
 
 func main() {
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	var flags Flags
 	flags.Parse()
 
