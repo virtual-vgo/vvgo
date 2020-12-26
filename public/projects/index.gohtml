@@ -7,6 +7,8 @@
     {{ template "header.gohtml" }}
 </head>
 
+{{ $projects := projects.NotHidden }}
+
 <body>
 {{ template "navbar.gohtml" }}
 <main role="main">
@@ -26,7 +28,7 @@
             <div class="col-sm mt-2 text-center">
                 <h3>Open for Submissions</h3>
                 <table class="table text-light clickable">
-                    {{- range projects.Current.Released }}
+                    {{- range $projects.Current.Released }}
                         <tr>
                             <td>
                                 <a href="{{ .PartsPage }}" class="text-light">
@@ -40,7 +42,7 @@
             <div class="col-sm mt-2 text-center">
                 <h3>Post-Production</h3>
                 <table class="table text-light">
-                    {{- range projects.Archived.NotReleasedYoutube }}
+                    {{- range $projects.Archived.NotReleasedYoutube }}
                         <tr>
                             <td>
                                 <i class="text-light">{{ .Title }}<br/><small>{{ .Sources }}</small></i>
@@ -53,7 +55,7 @@
                 <h3>Released</h3>
                 <table class="table text-light clickable">
                     <tbody>
-                    {{- range projects.ReleasedYoutube.ReverseSort }}
+                    {{- range $projects.ReleasedYoutube.ReverseSort }}
                         <tr>
                             <td>
                                 <a href="{{ .ProjectPage }}" class="text-light">
