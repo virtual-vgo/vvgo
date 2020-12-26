@@ -2,67 +2,208 @@
 <html lang="en">
 
 <head>
-    {{ .Header }}
-    <title>Virtual Video Game Orchestra</title>
+    <title>Parts</title>
     <meta name="description" content="">
-
-    <link rel="stylesheet" type="text/css" href="npm/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="npm/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
-    <link rel="stylesheet" type="text/css" href="npm/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
-    <link rel="stylesheet" type="text/css" href="npm/@fortawesome/fontawesome-free/css/all.min.css">
-    <link rel="stylesheet" type="text/css" href="css/theme.css">
-    <link rel="stylesheet" type="text/css" href="css/parts.css">
-
-    <script type="text/javascript" src="npm/jquery/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" src="npm/datatables.net/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="npm/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
-    <script type="text/javascript" src="npm/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
-    <script type="text/javascript" src="npm/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
-    <script type="text/javascript" src="js/parts.js"></script>
+    {{ template "header.gohtml" }}
+    <script type="text/javascript" src="/js/parts.js"></script>
 </head>
 
 <body>
-{{ .NavBar }}
+{{ template "navbar.gohtml" }}
+
+{{ $projects := projects.ForIdentity user_identity }}
+{{ $viewable_projects := $projects.WithField "Parts Archived" false }}
+
+{{ $show_all := form_value "all" }}
+{{ if not user_is_leader }}{{ $show_all = "" }}{{ end }}
+{{ if eq $show_all "true" }}
+    {{ $viewable_projects = $projects }}
+{{ end }}
+
+{{ $active_project := "" }}
+{{ $want := form_value "project" }}
+{{ if $viewable_projects.Has $want }}
+    {{ $active_project = $want }}
+{{ else if user_is_leader }}
+    {{ if $projects.Has $want }}
+        {{ $wantProject := $projects.Select $want }}
+        {{ $viewable_projects = $wantProject.Append $viewable_projects }}
+        {{ $active_project = $want }}
+    {{ end }}
+{{ end }}
+{{ if eq $active_project "" }}
+    {{ if gt $viewable_projects.Len 0 }}
+        {{ $wantProject := index $viewable_projects 0 }}
+        {{ $active_project = $wantProject.Name }}
+    {{ end }}
+{{ end }}
+
+{{ define "parts_header" }}
+    {{ if .PartsArchived }}
+        <div class="alert alert-warning">
+            This project has been archived. Parts are only visible to leaders.
+        </div>{{ end }}
+    {{ if not .PartsReleased }}
+        <div class="alert alert-warning">This project is unreleased and invisible to members!
+        </div>{{ end }}
+    {{ if .BannerLink }}
+        <a href="{{ .YoutubeLink }}">
+            <img src="{{ .BannerLink }}" class="img-fluid mx-auto" alt="Banner">
+        </a>
+    {{ else }}
+        <h2 class="title">{{ .Title }}</h2>
+        <h3>{{ .Sources }}</h3>
+    {{ end }}
+    <div class="row row-cols-1">
+        <div class="col text-center">
+            Composed by {{ .Composers }}<br/>
+            <small>{{ .Arrangers }}</small>
+        </div>
+        <div class="col text-center">
+            {{ $link := printf "/parts?project=%s" .Name }}
+            <a href="{{ $link }}" class="text-light">link to parts <i
+                        class="fas fa-link"></i></a>
+        </div>
+        <div class="col text-center m-2">
+            <h4><strong>Submission Deadline:</strong>
+                <em>{{ .SubmissionDeadline }} (Hawaii Time)</em></h4>
+        </div>
+    </div>
+{{ end }}
+
+{{ define "parts_top_links" }}
+    <div class="card-deck">
+        {{ $card_class := "card bg-transparent text-center"}}
+        {{ $card_ref_class := "btn btn-lnk btn-outline-light text-info" }}
+        <div class="{{$card_class}}">
+            <a class="{{$card_ref_class}}" href="https://www.youtube.com/watch?v=VgqtZ30bMgM">
+                <i class="fab fa-youtube"></i> Recording Instructions
+            </a>
+        </div>
+        <div class="{{$card_class}}">
+            <a class="{{$card_ref_class}}" href="{{ download_link .ReferenceTrack }}">
+                <i class="far fa-file-audio"></i> Reference Track
+            </a>
+        </div>
+        <div class="{{$card_class}}">
+            <a class="{{$card_ref_class}}" href="{{ .SubmissionLink }}">
+                <i class="fab fa-dropbox"></i> Submit Recordings
+            </a>
+        </div>
+    </div>
+{{ end }}
+
+{{ define "parts_table" }}
+    {{ $parts := parts }}
+    <div class="loading text-center title vh-100"><h3>😩 Loading... 😩</h3></div>
+    <table id="table-{{ .Name }}" style="width: 100%" class="table dt-responsive text-light d-none">
+        <thead>
+        <tr>
+            <th>Score Order</th>
+            <th>Part</th>
+            <th>Downloads</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{- range $parts.ForProject .Name }}
+            <tr>
+                <td>{{.ScoreOrder}}</td>
+                <td class="title text-nowrap">{{ title .PartName}}</td>
+                <td>
+                    <div class="row justify-content-start">
+                        {{ $col_class := "col-sm-auto text-nowrap"}}
+                        {{ $download_class := "btn btn-sm btn-link btn-outline-light bg-dark text-light"}}
+                        {{ if .SheetMusicFile }}
+                            <div class="{{$col_class}}">
+                                <a href="{{ download_link .SheetMusicFile }}" class="{{$download_class}}">
+                                    <i class="far fa-file-pdf"></i> sheet music
+                                </a>
+                            </div>
+                        {{ end }}
+                        {{ if .ClickTrackFile }}
+                            <div class="{{$col_class}}">
+                                <a href="{{ download_link .ClickTrackFile }}" class="{{$download_class}}">
+                                    <i class="far fa-file-audio"></i> click track
+                                </a>
+                            </div>
+                        {{ end }}
+                        {{ if .ConductorVideo }}
+                            <div class="{{$col_class}}">
+                                <a href="{{.ConductorVideo}}" class="{{$download_class}}">
+                                    <i class="far fa-file-video"></i> conductor video
+                                </a>
+                            </div>
+                        {{ end }}
+                        {{ if .PronunciationGuide }}
+                            <div class="{{$col_class}}">
+                                <a href="{{ download_link .PronunciationGuide}}" class="{{$download_class}}">
+                                    <i class="fas fa-language"></i> pronunciation guide
+                                </a>
+                            </div>
+                        {{ end }}
+                    </div>
+                </td>
+            </tr>
+        {{- end }}
+        </tbody>
+    </table>
+{{ end }}
+
 <main role="main">
-    <div class="container parts-table">
-        <div class="jumbotron bg-transparent">
-            <div class="bg-terminal p-3 thick-border rounded">
-                <h1 class="title text-monospace">Parts</h1>
-                <table id="parts" class="table text-light">
-                    <thead>
-                    <tr>
-                        <th>Project</th>
-                        <th>Part</th>
-                        <th>Downloads</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {{- range .Rows}}
-                        <tr>
-                            <td class="title">{{.Project}}</td>
-                            <td class="title">{{.PartName}} #{{.PartNumber}}</td>
-                            <td>
-                                <a href="{{.SheetMusic}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    sheet music <i class="far fa-file-pdf"></i>
-                                </a>
-                                <a href="{{.ClickTrack}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    click track <i class="far fa-file-audio"></i>
-                                </a>
-                                <a href="{{.ReferenceTrack}}"
-                                   class="btn btn-sm btn-link btn-outline-light bg-dark text-light text-monospace">
-                                    reference track <i class="far fa-file-audio"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    {{- end }}
-                    </tbody>
-                </table>
+    <div class="container">
+        <div class="row row-cols-1">
+            <div class="col">
+                {{ if $show_all }}
+                    <h3 class="mt-2">
+                        All Projects <i class="fas fa-lock"></i>
+                        <small><a href="/parts" class="text-light">current projects</a></small>
+                    </h3>
+                {{ else }}
+                    <h3 class="mt-2"> Current Projects
+                        {{ if user_is_leader }}
+                            <small><a href="/parts?all=true" class="text-warning">all projects
+                                    <i class="fas fa-lock"></i>
+                                </a></small>
+                        {{end}}
+                    </h3>
+                {{ end }}
+                <ul class="nav nav-pills" id="project-tabs" role="tablist">
+                    {{- range $viewable_projects }}
+                        <li class="nav-item">
+                            <a class="btn btn-outline-dark {{ if .PartsArchived }}text-secondary{{ else if .PartsReleased }}text-light{{ else }}text-warning{{ end }} rounded-0 {{ if eq .Name $active_project }}active{{ end }}"
+                               id="{{ .Name }}-tab" data-toggle="pill" href="#parts-{{ .Name }}" role="tab"
+                               aria-controls="parts-{{ .Name }}" aria-selected="{{ $active_project }}">
+                                {{ .Title }}{{ if .PartsArchived }} <i class="fas fa-lock"></i>{{end}}</a>
+                        </li>
+                    {{ end }}
+                </ul>
             </div>
+        </div>
+
+        <div class="tab-content">
+            {{- range $viewable_projects }}
+                <div class="tab-pane fade {{ if eq .Name $active_project }}active show{{ end }}"
+                     id="parts-{{ .Name }}" role="tabpanel" aria-labelledby="{{ .Name }}-tab">
+                    <div class="row">
+                        <div class="col mt-3 text-center">
+                            {{ template "parts_header" . }}
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-auto">
+                            {{ template "parts_top_links" . }}
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-auto mt-4">
+                            {{ template "parts_table" . }}
+                        </div>
+                    </div>
+                </div>
+            {{- end }}
         </div>
     </div>
 </main>
+{{ template "footer.gohtml" }}
 </body>
 </html>

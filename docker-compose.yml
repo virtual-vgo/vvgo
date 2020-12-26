@@ -1,0 +1,65 @@
+version: "3.7"
+services:
+  minio:
+    image: minio/minio
+    command: server /data
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - target: 9000
+        published: 9000
+        protocol: tcp
+        mode: host
+
+  redis:
+    image: redis:6
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - target: 6379
+        published: 6379
+        protocol: tcp
+        mode: host
+
+  p3x-redis-ui:
+    image: patrikx3/p3x-redis-ui:latest
+    ports:
+      - target: 7843
+        published: 7843
+        protocol: tcp
+        mode: host
+    volumes:
+      - type: bind
+        source: .p3xrs.json
+        target: /settings/p3xrs.json
+      - type: bind
+        source: .p3xrs-conns.json
+        target: /settings/.p3xrs-conns.json
+
+  vvgo:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - target: 8080
+        published: 8081
+        protocol: tcp
+        mode: host
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /etc/vvgo/google_api_credentials.json
+    volumes:
+      - type: bind
+        source: .vvgo-config.json
+        target: /etc/vvgo/config.json
+      - type: bind
+        source: .google_api_credentials.json
+        target: /etc/vvgo/google_api_credentials.json
+      - type: bind
+        source: ./public
+        target: /public

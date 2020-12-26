@@ -1,108 +1,121 @@
 package api
 
 import (
-	"crypto/rand"
-	"encoding/binary"
-	"errors"
-	"fmt"
-	"github.com/sirupsen/logrus"
+	"context"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
-	"strconv"
+	"net/url"
 	"strings"
 )
 
-const HeaderVirtualVGOApiToken = "Virtual-VGO-Api-Token"
+const CtxKeyVVGOIdentity = "vvgo_identity"
 
-// Authenticates http requests using basic auth.
-// User name is the map key, and password is the value.
-// If the map is empty or nil, requests are always authenticated.
-type BasicAuth map[string]string
+func IdentityFromContext(ctx context.Context) *login.Identity {
+	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
+	identity, ok := ctxIdentity.(*login.Identity)
+	if !ok {
+		identity = new(login.Identity)
+		*identity = login.Anonymous()
+	}
+	return identity
+}
 
-func (auth BasicAuth) Authenticate(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if ok := func() bool {
-			user, pass, ok := r.BasicAuth()
-			if !ok || user == "" || pass == "" {
-				return false
-			}
-			if auth[user] == pass {
-				return true
-			} else {
-				logger.WithFields(logrus.Fields{
-					"user": user,
-				}).Error("user authentication failed")
-				return false
-			}
-		}(); !ok {
-			w.Header().Set("WWW-Authenticate", `Basic charset="UTF-8"`)
-			unauthorized(w)
-		} else {
-			handler.ServeHTTP(w, r)
+// Authenticate http requests using the sessions api
+// If the request has a valid session or token with the required role, it is allowed access.
+type RBACMux struct {
+	Basic  map[[2]string][]login.Role
+	Bearer map[string][]login.Role
+	*http.ServeMux
+}
+
+// HandleFunc registers the handler function for the given pattern.
+func (auth *RBACMux) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request), role login.Role) {
+	auth.Handle(pattern, http.HandlerFunc(handler), role)
+}
+
+func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Role) {
+	auth.ServeMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		var identity login.Identity
+		switch {
+		case auth.readBasicAuth(r, &identity):
+			break
+		case auth.readBearer(r, &identity):
+			break
+		case auth.readSession(ctx, r, &identity):
+			break
+		default:
+			identity = login.Anonymous()
 		}
+
+		if values := r.URL.Query(); len(values["roles"]) != 0 {
+			wantRoles := make([]login.Role, len(values["roles"]))
+			for i := range values["roles"] {
+				wantRoles[i] = login.Role(values["roles"][i])
+			}
+			identity = identity.AssumeRoles(wantRoles...)
+		}
+
+		if identity.HasRole(role) {
+			if role != login.RoleAnonymous {
+				logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access granted")
+			}
+			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, CtxKeyVVGOIdentity, &identity)))
+			return
+		}
+		logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
+
+		if identity.IsAnonymous() {
+			values := make(url.Values)
+			values.Set("target", r.RequestURI)
+			http.Redirect(w, r, "/login?"+values.Encode(), http.StatusFound)
+			return
+		}
+		unauthorized(w)
 	})
 }
 
-type TokenAuth []string
+func (auth *RBACMux) readBasicAuth(r *http.Request, dest *login.Identity) bool {
+	if auth.Basic == nil {
+		return false
+	}
 
-func (tokens TokenAuth) Authenticate(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if ok := func() bool {
-			auth := strings.TrimSpace(r.Header.Get("Authorization"))
-			for _, token := range tokens {
-				if auth == "Bearer "+token {
-					return true
-				}
-			}
-			return false
-		}(); ok {
-			handler.ServeHTTP(w, r)
-		} else {
-			logger.Error("token authentication failed")
-			unauthorized(w)
-		}
-	})
+	user, pass, _ := r.BasicAuth()
+	gotRoles, ok := auth.Basic[[2]string{user, pass}]
+	if !ok {
+		return false
+	}
+
+	*dest = login.Identity{
+		Kind:  login.KindBasic,
+		Roles: gotRoles,
+	}
+	return true
 }
 
-type Token [4]uint64
-
-var ErrInvalidToken = errors.New("invalid token")
-
-func NewToken() Token {
-	var token Token
-	for i := range token {
-		binary.Read(rand.Reader, binary.LittleEndian, &token[i])
+func (auth *RBACMux) readBearer(r *http.Request, dest *login.Identity) bool {
+	if auth.Bearer == nil {
+		return false
 	}
-	return token
+
+	bearer := strings.TrimSpace(r.Header.Get("Authorization"))
+	if !strings.HasPrefix(bearer, "Bearer ") {
+		return false
+	}
+	bearer = bearer[len("Bearer "):]
+
+	gotRoles, ok := auth.Bearer[bearer]
+	if !ok {
+		return false
+	}
+
+	*dest = login.Identity{
+		Kind:  login.KindBearer,
+		Roles: gotRoles,
+	}
+	return true
 }
 
-func (token Token) String() string {
-	var got [len(token)]string
-	for i := range token {
-		got[i] = fmt.Sprintf("%016x", token[i])
-	}
-	return strings.Join(got[:], "-")
-}
-
-func DecodeToken(tokenString string) (Token, error) {
-	tokenParts := strings.Split(tokenString, "-")
-	var token Token
-	if len(tokenParts) != len(token) {
-		return Token{}, ErrInvalidToken
-	}
-	for i := range token {
-		if len(tokenParts[i]) != 16 {
-			return Token{}, ErrInvalidToken
-		}
-		token[i], _ = strconv.ParseUint(tokenParts[i], 16, 64)
-	}
-	return token, token.Validate()
-}
-
-func (token Token) Validate() error {
-	for i := range token {
-		if token[i] == 0 {
-			return ErrInvalidToken
-		}
-	}
-	return nil
+func (auth *RBACMux) readSession(ctx context.Context, r *http.Request, dest *login.Identity) bool {
+	return login.NewStore(ctx).ReadSessionFromRequest(ctx, r, dest) == nil
 }

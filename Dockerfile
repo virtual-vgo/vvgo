@@ -1,30 +1,28 @@
-FROM node:13.12.0 as node
-COPY package.json .
-COPY yarn.lock .
-RUN yarn install
+FROM node:13.12 as node
+COPY public/package.json .
+COPY public/package-lock.json .
+RUN npm install
 
-FROM golang:1.14.1 as builder
-
-ARG GITHUB_REF
-ARG GITHUB_SHA
-
+FROM golang:1.14 as builder
+WORKDIR /go/src/app/
 ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
-
-WORKDIR /go/src/github.com/virtual-vgo/vvgo
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
-RUN BIN_PATH=/ make vvgo
+COPY cmd cmd
+COPY pkg pkg
+RUN go build -o vvgo ./cmd/vvgo
 
-FROM builder as tester
-CMD ["make", "test"]
+COPY tools tools
+COPY .git .git
+RUN go run ./tools/version
 
-FROM gcr.io/distroless/base-debian10 as vvgo
-COPY ./data/mime.types /etc/
+FROM alpine:3.4 as vvgo
+RUN apk add --no-cache ca-certificates apache2-utils
+COPY --from=node node_modules /public/node_modules
+COPY --from=builder /go/src/app/vvgo /vvgo
 COPY ./public /public
-COPY --from=builder vvgo /vvgo
-COPY --from=node node_modules /public/npm
+COPY --from=builder /go/src/app/version.json ./version.json
 EXPOSE 8080
 CMD ["/vvgo"]
 ENTRYPOINT ["/vvgo"]

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    {{ template "header.gohtml" }}
+    <title>{{ .Project.Title }}</title>
+    <meta name="description" content="">
+</head>
+
+<body>
+{{ template "navbar.gohtml" }}
+<main role="main">
+    <div class="container">
+        {{ if not .PartsReleased }}
+            <div class="row">
+                <div class="col">
+                    <div class="text-center alert-warning">This project is unreleased and invisible to members!</div>
+                </div>
+            </div>
+        {{ end }}
+        <div class="row">
+            <div class="col m-3 text-center">
+                {{ if .Project.BannerLink }}
+                    <a href="{{ if .Project.YoutubeLink }}{{ .Project.YoutubeLink }}{{ else }}#{{ end }}">
+                        <img src="{{ .Project.BannerLink }}" class="img-fluid mx-auto" alt="Banner">
+                    </a>
+                {{ else }}
+                    <h1 class="title">{{ .Project.Title }}</h1>
+                    <h2>{{ .Project.Sources }}</h2>
+                {{ end }}
+            </div>
+        </div>
+        {{ if .Project.YoutubeEmbed }}
+            <div class="row">
+                <div class="col m-2 project-iframe-wrapper">
+                    <iframe class="project-iframe" src="{{ .Project.YoutubeEmbed }}"
+                            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+        {{ end }}
+        <div class="row">
+            <div class="col m-4 text-center">
+                Composed by {{ .Project.Composers }}<br/>
+                {{ .Project.Arrangers }}
+            </div>
+        </div>
+        {{ range .Credits }}
+            <div class="row">
+                <div class="col text-center">
+                    <h2><strong>-- {{ .Name }} --</strong></h2>
+                </div>
+            </div>
+            <div class="card-columns">
+                {{ range .Rows }}
+                    <div class="card bg-transparent text-center">
+                        <h5>{{ .Name }}</h5>
+                        <ul class="list-unstyled">
+                            {{ range .Rows }}
+                                <li>{{ .Name }} <small>{{ .BottomText }}</small></li>
+                            {{ end }}
+                        </ul>
+                    </div>
+                {{ end }}
+            </div>
+        {{ end }}
+    </div>
+</main>
+{{ template "footer.gohtml" }}
+</body>
+</html>

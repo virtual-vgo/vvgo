@@ -3,18 +3,35 @@ package version
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"net/http"
+	"os"
 )
 
 // Package to query version information
 
+const VersionFile = "version.json"
+
 var version Version
+
+func init() {
+	if file, err := os.Open(VersionFile); err != nil {
+		log.Logger().WithError(err).WithField("path", VersionFile).Info("failed to open version file")
+	} else if err = json.NewDecoder(file).Decode(&version); err != nil {
+		log.Logger().WithError(err).WithField("path", VersionFile).Info("failed unmarshal version file")
+	}
+}
 
 func Set(ver Version)       { version = ver }
 func String() string        { return version.String() }
 func JSON() json.RawMessage { return version.JSON() }
 func Header() http.Header   { return version.Header() }
-func ReleaseTags() []string { return version.ReleaseTags() }
+func SetVersionHeaders(w http.ResponseWriter) {
+	versionHeader := version.Header()
+	for k := range versionHeader {
+		w.Header().Set(k, versionHeader.Get(k))
+	}
+}
 
 type Version struct {
 	BuildHost string `json:"build_host"`
@@ -25,7 +42,7 @@ type Version struct {
 }
 
 func (x Version) String() string {
-	return fmt.Sprintf("%s-%s", x.GitBranch, x.GitSha)
+	return fmt.Sprintf("%s", x.GitSha)
 }
 
 func (x Version) JSON() json.RawMessage {
@@ -41,11 +58,4 @@ func (x Version) Header() http.Header {
 	header.Set("Git-Branch", x.GitBranch)
 	header.Set("Go-Version", x.GoVersion)
 	return header
-}
-
-func (x Version) ReleaseTags() []string {
-	return []string{
-		x.GitBranch,
-		fmt.Sprintf("%s-%s", x.GitBranch, x.GitSha),
-	}
 }

@@ -1,9 +1,9 @@
 package api
 
 import (
+	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/parts"
-	"github.com/virtual-vgo/vvgo/pkg/storage"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"net/http/pprof"
 )
@@ -12,101 +12,59 @@ var logger = log.Logger()
 
 var PublicFiles = "public"
 
-type ServerConfig struct {
-	ListenAddress    string `split_words:"true" default:"0.0.0.0:8080"`
-	MaxContentLength int64  `split_words:"true" default:"10000000"`
-	SheetsBucketName string `split_words:"true" default:"sheets"`
-	ClixBucketName   string `split_words:"true" default:"clix"`
-	PartsBucketName  string `split_words:"true" default:"parts"`
-	PartsLockerKey   string `split_words:"true" default:"parts.lock"`
-	TracksBucketName string `split_words:"true" default:"tracks"`
-	MemberUser       string `split_words:"true" default:"admin"`
-	MemberPass       string `split_words:"true" default:"admin"`
-	PrepRepToken     string `split_words:"true" default:"admin"`
-	AdminToken       string `split_words:"true" default:"admin"`
+type Server struct {
+	*http.Server
 }
 
-type FileBucket interface {
-	PutFile(file *storage.File) bool
-	DownloadURL(name string) (string, error)
-}
+func NewServer(listenAddress string) *Server {
+	mux := RBACMux{ServeMux: http.NewServeMux()}
 
-type Storage struct {
-	parts.Parts
-	Sheets FileBucket
-	Clix   FileBucket
-	ServerConfig
-}
+	mux.Handle("/login/password", PasswordLoginHandler{}, login.RoleAnonymous)
+	mux.Handle("/login/discord", DiscordLoginHandler{}, login.RoleAnonymous)
+	mux.Handle("/login/success", LoginSuccessView{}, login.RoleAnonymous)
+	mux.Handle("/login/redirect", LoginRedirect{}, login.RoleAnonymous)
+	mux.Handle("/login", LoginView{}, login.RoleAnonymous)
+	mux.Handle("/logout", LogoutHandler{}, login.RoleAnonymous)
 
-func NewStorage(client *storage.Client, config ServerConfig) *Storage {
-	sheetsBucket := client.NewBucket(config.SheetsBucketName)
-	clixBucket := client.NewBucket(config.ClixBucketName)
-	partsBucket := client.NewBucket(config.PartsBucketName)
-	partsLocker := client.NewLocker(config.PartsLockerKey)
-	if sheetsBucket == nil || clixBucket == nil || partsBucket == nil || partsLocker == nil {
-		return nil
-	}
+	mux.Handle("/vvgo-auth/vvgo-leader", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		identity := IdentityFromContext(r.Context())
+		if !identity.HasRole(login.RoleVVGOLeader) {
+			unauthorized(w)
+		}
+	}), login.RoleAnonymous)
 
-	return &Storage{
-		Parts: parts.Parts{
-			Bucket: partsBucket,
-			Locker: partsLocker,
-		},
-		Sheets:       sheetsBucket,
-		Clix:         clixBucket,
-		ServerConfig: config,
-	}
-}
-
-func NewServer(config ServerConfig, database *Storage) *http.Server {
-	navBar := NavBar{MemberUser: config.MemberUser}
-	members := BasicAuth{config.MemberUser: config.MemberPass}
-	prepRep := TokenAuth{config.PrepRepToken, config.AdminToken}
-	admin := TokenAuth{config.AdminToken}
-
-	mux := http.NewServeMux()
-
-	mux.Handle("/auth",
-		prepRep.Authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("authenticated"))
-		})),
-	)
+	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		identity := IdentityFromContext(r.Context())
+		jsonEncode(w, &identity.Roles)
+	}), login.RoleAnonymous)
 
 	// debug endpoints from net/http/pprof
-	pprofMux := http.NewServeMux()
-	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
-	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	mux.Handle("/debug/pprof/", admin.Authenticate(pprofMux))
-	mux.Handle("/parts", members.Authenticate(PartsHandler{NavBar: navBar, Storage: database}))
-	mux.Handle("/parts/", http.RedirectHandler("/parts", http.StatusMovedPermanently))
+	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGOTeams)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGOTeams)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGOTeams)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
-	downloadHandler := DownloadHandler{
-		config.SheetsBucketName: database.Sheets.DownloadURL,
-		config.ClixBucketName:   database.Clix.DownloadURL,
-	}
-	mux.Handle("/download", members.Authenticate(downloadHandler))
-
-	// Uploads
-	uploadHandler := UploadHandler{database}
-	mux.Handle("/upload", prepRep.Authenticate(uploadHandler))
-
-	mux.Handle("/login", members.Authenticate(http.RedirectHandler("/", http.StatusTemporaryRedirect)))
-
-	mux.Handle("/version", http.HandlerFunc(Version))
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
+	mux.Handle("/projects", http.RedirectHandler("/projects/", http.StatusFound), login.RoleAnonymous)
+	mux.Handle("/projects/", ProjectsView{}, login.RoleAnonymous)
+	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
+	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
+	mux.Handle("/about", AboutView{}, login.RoleAnonymous)
+	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexHandler{NavBar: navBar}.ServeHTTP(w, r)
+			IndexView{}.ServeHTTP(w, r)
 		} else {
 			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}
-	}))
+	}, login.RoleAnonymous)
 
-	return &http.Server{
-		Addr:     config.ListenAddress,
-		Handler:  mux,
-		ErrorLog: log.StdLogger(),
+	return &Server{
+		Server: &http.Server{
+			Addr:     listenAddress,
+			Handler:  http_wrappers.Handler(&mux),
+			ErrorLog: log.StdLogger(),
+		},
 	}
 }
