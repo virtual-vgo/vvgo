@@ -7,6 +7,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"html/template"
+	"math/rand"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -31,6 +32,9 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity) },
 		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx) },
 		"new_query":        sheets.NewQuery,
+		"string_slice":     func(strs ...string) []string { return strs },
+		"append_strings":   func(slice []string, elems ...string) []string { return append(slice, elems...) },
+		"pick_random_elem": func(slice []string) string { return slice[rand.Intn(len(slice))] },
 	}).ParseFiles(
 		PublicFiles+"/"+templateFile,
 		PublicFiles+"/header.gohtml",

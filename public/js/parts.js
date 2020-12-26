@@ -24,6 +24,7 @@ $(document).ready(function () {
             },
         ]
     });
+
     $('div.loading').addClass("d-none")
     tables.removeClass("d-none")
     dataTable.columns.adjust().draw();
