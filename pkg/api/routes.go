@@ -44,8 +44,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
 	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
-	mux.Handle("/projects", http.RedirectHandler("/projects/", http.StatusFound), login.RoleAnonymous)
-	mux.Handle("/projects/", ProjectsView{}, login.RoleAnonymous)
+	mux.Handle("/projects", ProjectsView{}, login.RoleAnonymous)
 	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
 	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
 	mux.Handle("/about", AboutView{}, login.RoleAnonymous)

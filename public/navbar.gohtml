@@ -8,26 +8,27 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
+            {{ $selected := "bg-vvgo-purple"}}
             <ul class="navbar-nav mr-auto">
                 {{ if user_is_member }}
                     <li class="nav-item">
-                        <a class="{{- if eq template_file "parts.gohtml" }}bg-info{{ end }} nav-link"
+                        <a class="{{- if eq template_file "parts.gohtml" }}{{ $selected }}{{ end }} nav-link"
                            href="/parts">Parts
                         </a>
                     </li>
                 {{ end }}
                 <li class="nav-item">
-                    <a class="{{- if eq template_file "projects/index.gohtml" }}bg-info{{ end }} nav-link"
+                    <a class="{{if eq template_file "projects_index.gohtml"}}{{ $selected }}{{ end }}{{if eq template_file "project.gohtml"}}{{ $selected }}{{ end }} nav-link"
                        href="/projects">Projects
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="{{- if eq template_file "about.gohtml" }}bg-info{{ end }} nav-link"
+                    <a class="{{if eq template_file "about.gohtml" }}{{ $selected }}{{ end }} nav-link"
                        href="/about">About</a>
                 </li>
                 {{ if user_on_teams }}
                     <li class="nav-item">
-                        <a class="{{- if eq template_file "credits-maker.gohtml" }}alert-warning text-dark{{ else }}text-warning{{ end }} nav-link"
+                        <a class="{{if eq template_file "credits-maker.gohtml" }}alert-warning text-dark{{ else }}text-warning{{ end }} nav-link"
                            href="/credits-maker">Credits Maker <i class="fas fa-lock"></i>
                         </a>
                     </li>
@@ -38,7 +39,7 @@
                     {{ if user_logged_in }}
                         <a class="nav-link" href="/logout">Logout</a>
                     {{ else }}
-                        <a class="{{- if eq template_file "login.gohtml" }}bg-info{{ end }} nav-link"
+                        <a class="{{- if eq template_file "login.gohtml" }}{{ $selected }}{{ end }} nav-link"
                            href="/login">Login</a>
                     {{ end }}
                 </li>
