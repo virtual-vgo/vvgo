@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"net/http/pprof"
@@ -19,12 +20,15 @@ func Routes() http.Handler {
 	mux.Handle("/logout", LogoutHandler{}, login.RoleAnonymous)
 
 	for _, role := range []login.Role{login.RoleVVGOMember, login.RoleVVGOTeams, login.RoleVVGOLeader} {
-		mux.Handle("/authorize/"+role.String(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			identity := IdentityFromContext(r.Context())
-			if !identity.HasRole(role) {
-				unauthorized(w)
-			}
-		}), login.RoleAnonymous)
+		func(role login.Role) {
+			mux.Handle("/authorize/"+role.String(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				identity := IdentityFromContext(r.Context())
+				fmt.Println(identity)
+				if !identity.HasRole(role) {
+					unauthorized(w)
+				}
+			}), login.RoleAnonymous)
+		}(role)
 	}
 
 	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
