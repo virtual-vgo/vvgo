@@ -20,7 +20,13 @@ func Routes() http.Handler {
 
 	mux.Handle("/authorize", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		identity := IdentityFromContext(r.Context())
-		want := r.FormValue("role")
+		var want string
+		switch {
+		case r.Header.Get("VVGO-Role") != "":
+			want = r.Header.Get("VVGO-Role")
+		case r.FormValue("role") != "":
+			want = r.FormValue("role")
+		}
 		switch {
 		case want == "":
 			badRequest(w, "role cant be empty")

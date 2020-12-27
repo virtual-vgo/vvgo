@@ -66,20 +66,26 @@ func TestServer(t *testing.T) {
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
-		t.Run("user=anonymous, role=", func(t *testing.T) {
+		t.Run("user=anonymous role=", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/authorize")
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
-		t.Run("role=vvgo-member, user=vvgo-member", func(t *testing.T) {
+		t.Run("role=vvgo-member user=vvgo-member", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/authorize?role=vvgo-member", login.RoleVVGOMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
-		t.Run("user=vvgo-member, role=", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize")
+		t.Run("user=vvgo-member role=", func(t *testing.T) {
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize", login.RoleVVGOMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		})
+		t.Run("user=vvgo-member VVGO-Role:vvgo-member", func(t *testing.T) {
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize", login.RoleVVGOMember)
+			req.Header.Set("VVGO-Role", "vvgo-member")
+			resp := doRequest(t, req)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 	})
 
