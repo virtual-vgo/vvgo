@@ -33,7 +33,7 @@ type Project struct {
 	SubmissionLink          string `col_name:"Submission Link"`
 }
 
-func (x Project) ProjectPage() string { return "/projects/" + x.Name }
+func (x Project) ProjectPage() string { return "/projects?name=" + x.Name }
 func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 
 type Projects []Project

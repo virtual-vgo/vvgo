@@ -8,36 +8,7 @@ import (
 type ProjectsView struct{}
 
 func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/projects/" {
-		x.serveIndex(w, r)
-	} else {
-		x.serveProject(w, r, r.URL.Path[len("/projects/"):])
-	}
-}
-
-func (x ProjectsView) serveIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
-		return
-	}
-
-	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
-	if err != nil {
-		logger.WithError(err).Error("readSheet() failed")
-		internalServerError(w)
-		return
-	}
-	ParseAndExecute(ctx, w, r, &projects, "projects/index.gohtml")
-}
-
-func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name string) {
-	ctx := r.Context()
-	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
-		return
-	}
-
 	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("valuesToProjects() failed")
@@ -45,9 +16,19 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		return
 	}
 
-	wantProject, ok := projects.Get(name)
+	name := r.FormValue("name")
+	project, ok := projects.Get(name)
 	if !ok {
-		http.NotFound(w, r)
+		ParseAndExecute(ctx, w, r, &projects, "projects_index.gohtml")
+	} else {
+		x.serveProject(w, r, project)
+	}
+}
+
+func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, project sheets.Project) {
+	ctx := r.Context()
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
 		return
 	}
 
@@ -75,7 +56,7 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 	}
 	creditsTable.rowMap = make(map[string]*majorTable)
 
-	for _, projectCredit := range credits.ForProject(wantProject.Name) {
+	for _, projectCredit := range credits.ForProject(project.Name) {
 		if creditsTable.rowMap[projectCredit.MajorCategory] == nil {
 			creditsTable.rowMap[projectCredit.MajorCategory] = new(majorTable)
 			creditsTable.rowMap[projectCredit.MajorCategory].Name = projectCredit.MajorCategory
@@ -98,9 +79,9 @@ func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, name 
 		sheets.Project
 		Credits []*majorTable
 	}{
-		Project: wantProject,
+		Project: project,
 		Credits: creditsTable.Rows,
 	}
 
-	ParseAndExecute(ctx, w, r, &page, "projects/project.gohtml")
+	ParseAndExecute(ctx, w, r, &page, "project.gohtml")
 }
