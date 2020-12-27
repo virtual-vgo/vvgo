@@ -18,22 +18,14 @@ func Routes() http.Handler {
 	mux.Handle("/login", LoginView{}, login.RoleAnonymous)
 	mux.Handle("/logout", LogoutHandler{}, login.RoleAnonymous)
 
-	mux.Handle("/authorize", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		identity := IdentityFromContext(r.Context())
-		var want string
-		switch {
-		case r.Header.Get("VVGO-Role") != "":
-			want = r.Header.Get("VVGO-Role")
-		case r.FormValue("role") != "":
-			want = r.FormValue("role")
-		}
-		switch {
-		case want == "":
-			badRequest(w, "role cant be empty")
-		case !identity.HasRole(login.Role(want)):
-			unauthorized(w)
-		}
-	}), login.RoleAnonymous)
+	for _, role := range []login.Role{login.RoleVVGOMember, login.RoleVVGOTeams, login.RoleVVGOLeader} {
+		mux.Handle("/authorize/"+role.String(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			identity := IdentityFromContext(r.Context())
+			if !identity.HasRole(role) {
+				unauthorized(w)
+			}
+		}), login.RoleAnonymous)
+	}
 
 	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		identity := IdentityFromContext(r.Context())
