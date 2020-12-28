@@ -41,6 +41,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
 	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
+	mux.Handle("/parts_api", PartsAPI{}, login.RoleVVGOMember)
 	mux.Handle("/projects", ProjectsView{}, login.RoleAnonymous)
 	mux.Handle("/projects_api", ProjectsAPI{}, login.RoleAnonymous)
 	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)

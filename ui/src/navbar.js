@@ -1,5 +1,5 @@
 import React from 'react'
-import GetRoles from "./roles"
+import {GetRoles} from "./utils"
 
 class Navbar extends React.Component {
     constructor(props) {

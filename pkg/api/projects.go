@@ -9,6 +9,9 @@ import (
 type ProjectsAPI struct{}
 
 func (x ProjectsAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
 	ctx := r.Context()
 	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
@@ -16,8 +19,6 @@ func (x ProjectsAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
 	switch {
 	case r.FormValue("latest") == "true":
 		project := projects.WithField("Video Released", true).Sort().Last()

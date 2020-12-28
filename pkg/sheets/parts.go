@@ -2,6 +2,7 @@ package sheets
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 )
 
 type Part struct {
@@ -12,16 +13,26 @@ type Part struct {
 	ClickTrackFile     string `col_name:"Click Track File"`
 	ConductorVideo     string `col_name:"Conductor Video"`
 	PronunciationGuide string `col_name:"Pronunciation Guide"`
+
+	// Derived Columns
+	SheetMusicLink         string
+	ClickTrackLink         string
+	PronunciationGuideLink string
 }
 
 type Parts []Part
 
-func ListParts(ctx context.Context) (Parts, error) {
+func ListParts(ctx context.Context, identity *login.Identity) (Parts, error) {
+	projects, err := ListProjects(ctx, identity)
+	if err != nil {
+		return nil, err
+	}
+
 	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Parts")
 	if err != nil {
 		return nil, err
 	}
-	return valuesToParts(values), nil
+	return valuesToParts(values).ForProject(projects.Names()...), nil
 }
 
 func valuesToParts(values [][]interface{}) Parts {
@@ -32,15 +43,28 @@ func valuesToParts(values [][]interface{}) Parts {
 	parts := make([]Part, len(values)-1)
 	for i, row := range values[1:] {
 		processRow(row, &parts[i], index)
+		parts[i].SheetMusicLink = downloadLink(parts[i].SheetMusicFile)
+		parts[i].ClickTrackLink = downloadLink(parts[i].ClickTrackFile)
+		parts[i].PronunciationGuideLink = downloadLink(parts[i].PronunciationGuideLink)
 	}
 	return parts
 }
 
-func (x Parts) ForProject(project string) Parts {
+func downloadLink(object string) string {
+	if object == "" {
+		return ""
+	} else {
+		return "/downloads?object=" + object
+	}
+}
+
+func (x Parts) ForProject(projects ...string) Parts {
 	var want Parts
 	for _, part := range x {
-		if part.Project == project {
-			want = append(want, part)
+		for _, project := range projects {
+			if part.Project == project {
+				want = append(want, part)
+			}
 		}
 	}
 	return want

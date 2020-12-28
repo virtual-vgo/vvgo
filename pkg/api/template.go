@@ -30,7 +30,7 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
 		"download_link":    func(obj string) string { return downloadLink(obj) },
 		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity) },
-		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx) },
+		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx, identity) },
 		"new_query":        sheets.NewQuery,
 		"string_slice":     func(strs ...string) []string { return strs },
 		"append_strings":   func(slice []string, elems ...string) []string { return append(slice, elems...) },

@@ -6,25 +6,10 @@ import reportWebVitals from "./reportWebVitals"
 import Footer from './footer'
 import Navbar from './navbar'
 import About from './about'
+import Parts from './parts'
+import {Banner, YoutubeIframe} from './utils'
 
 const axios = require('axios').default;
-
-function Banner(props) {
-    return <a href={props.YoutubeLink} className="btn btn-link nav-link">
-        <img src={props.BannerLink}
-             className="mx-auto img-fluid"
-             alt="banner"/>
-    </a>;
-}
-
-function YoutubeIframe(props) {
-    return <div className="project-iframe-wrapper text-center m-2">
-        <iframe className="project-iframe" src={props.YoutubeEmbed}
-                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                title="latest.Title"
-                allowFullScreen/>
-    </div>;
-}
 
 class Index extends React.Component {
     constructor(props) {
@@ -69,6 +54,8 @@ class Main extends React.Component {
                 return <Index/>
             case "/about":
                 return <About/>
+            case "/parts":
+                return <Parts/>
             default:
                 return 404
         }

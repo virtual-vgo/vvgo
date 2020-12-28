@@ -2,7 +2,7 @@ import React from 'react'
 import 'bootstrap/dist/js/bootstrap.bundle.min'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import '@fortawesome/fontawesome-free/js/fontawesome.min.js'
-import GetRoles from "./roles"
+import {GetRoles} from "./utils"
 
 class Footer extends React.Component {
     constructor(props) {
