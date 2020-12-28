@@ -8,7 +8,7 @@ class Navbar extends React.Component {
     }
 
     componentDidMount() {
-        this.setState({roles: GetRoles()})
+        GetRoles().then(response => this.setState({roles: response.data}))
     }
 
     render() {

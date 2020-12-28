@@ -31,10 +31,7 @@ func Routes() http.Handler {
 		}(role)
 	}
 
-	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		identity := IdentityFromContext(r.Context())
-		jsonEncode(w, &identity.Roles)
-	}), login.RoleAnonymous)
+	mux.Handle("/roles", RolesAPI{}, login.RoleAnonymous)
 
 	// debug endpoints from net/http/pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGOTeams)
@@ -51,11 +48,7 @@ func Routes() http.Handler {
 	mux.Handle("/about", AboutView{}, login.RoleAnonymous)
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			IndexView{}.ServeHTTP(w, r)
-		} else {
-			http.FileServer(http.Dir(PublicFiles)).ServeHTTP(w, r)
-		}
+		http.FileServer(http.Dir("ui/build")).ServeHTTP(w, r)
 	}, login.RoleAnonymous)
 	return &mux
 }
