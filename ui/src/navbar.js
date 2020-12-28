@@ -12,10 +12,10 @@ class Navbar extends React.Component {
     }
 
     render() {
-        return <div className="container">
+        return <div className="container mb-2">
             <nav className="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
                 <a className="nav-link text-light" href="/">
-                    <img src="favicon-2020-11-26-thomas.png" alt="favicon"/>
+                    <img src="/images/favicons/favicon-2020-11-26-thomas.png" alt="favicon"/>
                 </a>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
                         aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@ class Navbar extends React.Component {
 
     linkClass(loc) {
         let classes = ["nav-link"]
-        if (window.location.href === loc) {
+        if (window.location.pathname === loc) {
             classes.push("bg-vvgo-purple")
         }
         return classes.join(" ")
@@ -66,7 +66,7 @@ class Navbar extends React.Component {
 
     CreditsMakerItem() {
         let classes = ["nav-link"]
-        if (window.location.href === "/credits-maker") {
+        if (window.location.pathname === "/credits-maker") {
             classes.push("alert-warning text-dark")
         } else {
             classes.push("text-warning")

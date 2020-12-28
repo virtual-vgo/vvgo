@@ -46,6 +46,7 @@ func Routes() http.Handler {
 	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
 	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
 	mux.Handle("/about", AboutView{}, login.RoleAnonymous)
+	mux.Handle("/leaders", Leaders{}, login.RoleAnonymous)
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.FileServer(http.Dir("ui/build")).ServeHTTP(w, r)

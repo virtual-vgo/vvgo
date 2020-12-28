@@ -93,7 +93,7 @@ class Footer extends React.Component {
     }
 
     roleCheckbox(role) {
-        return <div className="form-check">
+        return <div key={role} className="form-check">
             <input type="checkbox" className="form-check-input" name="roles" value={role}/>
             <label className="form-check-label" htmlFor="role">{role}</label>
         </div>

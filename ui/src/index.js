@@ -5,6 +5,7 @@ import './theme.css'
 import reportWebVitals from "./reportWebVitals"
 import Footer from './footer'
 import Navbar from './navbar'
+import About from './about'
 
 const axios = require('axios').default;
 
@@ -39,7 +40,7 @@ class Index extends React.Component {
     }
 
     render() {
-        return <div className="mt-2 container">
+        return <div className="container">
             <div className="row row-cols-1 justify-content-md-center text-center m-2">
                 <div className="col">
                     <Banner YoutubeLink={this.state.project.YoutubeLink} BannerLink={this.state.project.BannerLink}/>
@@ -60,13 +61,28 @@ class Index extends React.Component {
     }
 }
 
+
+class Main extends React.Component {
+    render() {
+        switch (window.location.pathname) {
+            case "/":
+                return <Index/>
+            case "/about":
+                return <About/>
+            default:
+                return 404
+        }
+    }
+}
+
 ReactDOM.render(
     <div>
         <Navbar/>
-        <Index/>
+        <Main/>
         <Footer/>
     </div>,
-    document.getElementById('root'));
+    document.getElementById('root')
+)
 
 // ref: https://bit.ly/CRA-vitals
 reportWebVitals(console.log);
