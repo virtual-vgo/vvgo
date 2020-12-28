@@ -1,14 +1,12 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import './theme.css';
-import reportWebVitals from "./reportWebVitals";
+import React from 'react'
+import ReactDOM from 'react-dom'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import './theme.css'
+import reportWebVitals from "./reportWebVitals"
+import Footer from './footer'
+import Navbar from './navbar'
 
 const axios = require('axios').default;
-const instance = axios.create({
-    baseURL: 'http://localhost:8080',
-    timeout: 1000,
-});
 
 function Banner(props) {
     return <a href={props.YoutubeLink} className="btn btn-link nav-link">
@@ -38,24 +36,6 @@ class Index extends React.Component {
     componentDidMount() {
         axios.get('/projects_api', {params: {latest: true}})
             .then(response => this.setState({project: response.data[0]}))
-            .catch(function (error) {
-                if (error.response) {
-                    // The request was made and the server responded with a status code
-                    // that falls out of the range of 2xx
-                    console.log(error.response.data);
-                    console.log(error.response.status);
-                    console.log(error.response.headers);
-                } else if (error.request) {
-                    // The request was made but no response was received
-                    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-                    // http.ClientRequest in node.js
-                    console.log(error.request);
-                } else {
-                    // Something happened in setting up the request that triggered an Error
-                    console.log('Error', error.message);
-                }
-                console.log(error.config);
-            })
     }
 
     render() {
@@ -81,9 +61,12 @@ class Index extends React.Component {
 }
 
 ReactDOM.render(
-    <Index/>,
-    document.getElementById('root')
-);
+    <div>
+        <Navbar/>
+        <Index/>
+        <Footer/>
+    </div>,
+    document.getElementById('root'));
 
 // ref: https://bit.ly/CRA-vitals
 reportWebVitals(console.log);
