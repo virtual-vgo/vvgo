@@ -45,6 +45,7 @@ func Routes() http.Handler {
 
 	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
 	mux.Handle("/projects", ProjectsView{}, login.RoleAnonymous)
+	mux.Handle("/projects_api", ProjectsAPI{}, login.RoleAnonymous)
 	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
 	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
 	mux.Handle("/about", AboutView{}, login.RoleAnonymous)

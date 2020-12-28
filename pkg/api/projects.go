@@ -1,9 +1,31 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
+
+type ProjectsAPI struct{}
+
+func (x ProjectsAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
+	if err != nil {
+		logger.WithError(err).Error("valuesToProjects() failed")
+		internalServerError(w)
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	switch {
+	case r.FormValue("latest") == "true":
+		project := projects.WithField("Video Released", true).Sort().Last()
+		json.NewEncoder(w).Encode(sheets.Projects{project})
+	default:
+		json.NewEncoder(w).Encode(projects)
+	}
+}
 
 type ProjectsView struct{}
 
