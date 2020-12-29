@@ -1,9 +1,5 @@
-body {
-    background: rgb(40, 38, 38);
-}
-
-img {
-    margin: auto;
+.errorImg {
+    margin: 10px auto;
     max-height: 100vh;
     max-width: 100vh;
     width: 100%;
@@ -13,9 +9,10 @@ img {
     border-color: #9600de;
     border-width: 2px;
     border-style: solid;
+    vertical-align: center;
 }
 
-a {
+a.helpme {
     font-weight: bold;
     color: ghostwhite;
 }

@@ -68,7 +68,6 @@ class About extends React.Component {
     }
 
     render() {
-        console.log(this.state.leaders)
         let leaderRows = this.state.leaders.map(leader => this.LeaderRow(leader))
         return <div className="container">
             {this.InfoRow()}

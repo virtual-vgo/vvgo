@@ -1,5 +1,6 @@
 import React from 'react'
 import {GetRoles} from "./utils"
+import {NavLink} from 'react-router-dom'
 
 class Navbar extends React.Component {
     constructor(props) {
@@ -14,9 +15,9 @@ class Navbar extends React.Component {
     render() {
         return <div className="container mb-2">
             <nav className="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
-                <a className="nav-link text-light" href="/">
+                <NavLink className="nav-link" to="/">
                     <img src="/images/favicons/favicon-2020-11-26-thomas.png" alt="favicon"/>
-                </a>
+                </NavLink>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
                         aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"/>
@@ -36,54 +37,39 @@ class Navbar extends React.Component {
         </div>
     }
 
-    linkClass(loc) {
-        let classes = ["nav-link"]
-        if (window.location.pathname === loc) {
-            classes.push("bg-vvgo-purple")
-        }
-        return classes.join(" ")
-    }
-
     PartsItem() {
         if (this.state.roles.includes("vvgo-member")) {
             return <li className="nav-item">
-                <a className={this.linkClass("/parts")} href="/parts">Parts</a>
+                <NavLink to="/parts" activeClassName="bg-vvgo-purple" className="nav-link">Parts</NavLink>
             </li>
         }
     }
 
     ProjectsItem() {
         return <li className="nav-item">
-            <a className={this.linkClass("/projects")} href="/projects">Projects</a>
+            <NavLink to="/projects" activeClassName="bg-vvgo-purple" className="nav-link">Projects</NavLink>
         </li>
     }
 
     AboutItem() {
         return <li className="nav-item">
-            <a className={this.linkClass("/about")} href="/about">About</a>
+            <NavLink to="/about" activeClassName="bg-vvgo-purple" className="nav-link">About</NavLink>
         </li>
     }
 
     CreditsMakerItem() {
-        let classes = ["nav-link"]
-        if (window.location.pathname === "/credits-maker") {
-            classes.push("alert-warning text-dark")
-        } else {
-            classes.push("text-warning")
-        }
         if (this.state.roles.includes("vvgo-teams")) {
             return <li className="nav-item">
-                <a className={classes.join(" ")} href="/credits-maker">
-                    Credits Maker <i className="fas fa-lock"/>
-                </a>
+                <NavLink to="/credits-maker" activeClassName="alert-warning text-dark"
+                         className="nav-link text-warning">About</NavLink>
             </li>
         }
     }
 
     LoginItem() {
-        let link = <a className={this.linkClass("/login")} href="/login">Login</a>
+        let link = <NavLink to="/login" activeClassName="bg-vvgo-purple" className="nav-link">Login</NavLink>
         if (userLoggedIn(this.state.roles)) {
-            link = <a className="nav-link" href="/logout">Logout</a>
+            link = <NavLink to="/logout" activeClassName="bg-vvgo-purple" className="nav-link">Logout</NavLink>
         }
         return <li className="nav-item">{link}</li>
     }

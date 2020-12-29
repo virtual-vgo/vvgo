@@ -14,12 +14,9 @@ class PartsTable extends React.Component {
     }
 
     componentDidMount() {
-        console.log("parts table mounted for " + this.props.Project)
         this.fetchParts()
             .then(response => {
                 this.setState({parts: response.data, done: true})
-                console.log("response data", response.data)
-                console.log("state data", this.state)
             })
             .catch(error => console.log(error))
     }
@@ -63,9 +60,7 @@ class PartsTable extends React.Component {
 
     render() {
         if (this.state.done) {
-            console.log("rendering parts", this.state)
             let rows = this.state.parts.map(part => this.partRow(part))
-            console.log("rows", rows)
             return <table className="table dt-responsive text-light w-100">
                 <thead>
                 <tr>
