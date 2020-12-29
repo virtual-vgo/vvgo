@@ -1,4 +1,5 @@
 import React from 'react'
+import Helmet from "react-helmet";
 
 const axios = require('axios').default;
 
@@ -70,6 +71,10 @@ class About extends React.Component {
     render() {
         let leaderRows = this.state.leaders.map(leader => this.LeaderRow(leader))
         return <div className="container">
+            <Helmet>
+                <title>About</title>
+                <meta name="description" content="About VVGO" />
+            </Helmet>
             {this.InfoRow()}
             <div className="row">
                 <div className="col text-center"><h2>VVGO Leadership</h2></div>

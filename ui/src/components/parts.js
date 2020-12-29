@@ -1,9 +1,9 @@
 import React from 'react'
 import MaterialTable from "material-table";
 import {ProjectBanner} from "./utils";
-
 import {Link, Route, Switch, useRouteMatch} from "react-router-dom";
 import Button from "@material-ui/core/Button";
+import tableIcons from "./table_icons";
 
 const axios = require('axios').default;
 
@@ -28,7 +28,7 @@ function ProjectsNavbar(props) {
     let {path, url} = useRouteMatch();
     return <div>
         {props.projects.map(project => <Button key={project.Name}>
-            <Link className="nav-link" to={`${url}/${project.Name}`}>{project.Title}</Link>
+            <Link className="nav-link" to={`${url}/${project.Name}`} key={project.Name}>{project.Title}</Link>
         </Button>)}
         <Switch>
             <Route exact path={path}>
@@ -145,6 +145,7 @@ class PartsTable extends React.Component {
 
     render() {
         return <MaterialTable
+            tableIcons={tableIcons}
             columns={[
                 {
                     title: <h4>Parts</h4>,
