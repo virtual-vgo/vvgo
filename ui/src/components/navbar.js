@@ -1,10 +1,8 @@
 import React from 'react'
 import {NavLink} from 'react-router-dom'
 import favicon from '../favicons/favicon-2020-11-26-thomas.png'
-import {useLoginRoles} from './hooks'
 
-export default function Navbar() {
-    const roles = useLoginRoles()
+export default function Navbar(props) {
     return <div className="container mb-2">
         <nav className="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
             <NavLink className="nav-link" to="/">
@@ -16,13 +14,13 @@ export default function Navbar() {
             </button>
             <div className="collapse navbar-collapse" id="navbarCollapse">
                 <ul className="navbar-nav mr-auto">
-                    <MemberNavItem to="/parts" roles={roles}>Parts</MemberNavItem>
+                    <MemberNavItem to="/parts" roles={props.roles}>Parts</MemberNavItem>
                     <NavItem to="/projects">Projects</NavItem>
                     <NavItem to="/about">About</NavItem>
-                    <TeamsNavItem to="/credits-maker" roles={roles}>Credits Maker</TeamsNavItem>
+                    <TeamsNavItem to="/credits-maker" roles={props.roles}>Credits Maker</TeamsNavItem>
                 </ul>
                 <ul className="navbar-nav mr-2">
-                    <LoginNavItem roles={roles}/>
+                    <LoginNavItem roles={props.roles}/>
                 </ul>
             </div>
         </nav>

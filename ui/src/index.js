@@ -8,10 +8,15 @@ import Parts from './components/parts'
 import {BrowserRouter, Route, Switch} from "react-router-dom";
 import Navbar from './components/navbar'
 import reportWebVitals from "./reportWebVitals";
-import {NotFound, AccessDenied, InternalOopsie} from "./components/error_page";
+import {AccessDenied, InternalOopsie, NotFound} from "./components/error_page";
 import Home from "./components/home";
 import Helmet from "react-helmet";
 import favicon from './favicons/favicon-2020-11-26-thomas.png'
+import 'bootstrap/dist/js/bootstrap.bundle.min'
+import '@fortawesome/fontawesome-free/css/all.min.css'
+import '@fortawesome/fontawesome-free/js/fontawesome.min.js'
+import {useLoginRoles} from "./components/hooks";
+
 
 ReactDOM.render(
     <BrowserRouter>
@@ -32,7 +37,8 @@ ReactDOM.render(
 )
 
 function Nav(props) {
-    return [<Navbar key="navbar"/>, props.children, <Footer key="footer"/>]
+    const roles = useLoginRoles()
+    return [<Navbar key="navbar" roles={roles}/>, props.children, <Footer key="footer" roles={roles}/>]
 }
 
 // ref: https://bit.ly/CRA-vitals
