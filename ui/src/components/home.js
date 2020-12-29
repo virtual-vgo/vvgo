@@ -1,5 +1,5 @@
 import React from "react";
-import {Banner, YoutubeIframe} from "./utils";
+import {ProjectBanner, YoutubeIframe} from "./utils";
 
 const axios = require('axios').default;
 
@@ -20,7 +20,7 @@ class Home extends React.Component {
         return <div className="container">
             <div className="row row-cols-1 justify-content-md-center text-center m-2">
                 <div className="col">
-                    <Banner YoutubeLink={this.state.project.YoutubeLink} BannerLink={this.state.project.BannerLink}/>
+                    <ProjectBanner project={this.state.project}/>
                 </div>
                 <div className="col">
                     <YoutubeIframe YoutubeEmbed={this.state.project.YoutubeEmbed}/>

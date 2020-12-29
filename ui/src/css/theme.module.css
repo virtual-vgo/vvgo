@@ -6,6 +6,10 @@ body {
     color: #E9E9E9;
 }
 
+.mainBackgroundColor {
+    background-color: rgb(15, 10, 24);
+}
+
 .title {
     text-align: center;
     font-weight: bold;
@@ -38,30 +42,6 @@ body {
 
 .bg-facebook-blue {
     background-color: #1877F2;
-}
-
-.bg-solid-snake {
-    background-image: url('/images/snake-eater-banner-solid-snake.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-}
-
-.bg-rathalos {
-    background-image: url('/images/Site_Background-_Rathalos_Tile.png');
-    background-repeat: repeat-y;
-    background-position: right;
-}
-
-.bg-god-of-war {
-    background-image: url('/images/VVGO_03_TEBTR_Website_Tile.png');
-    background-repeat: no-repeat;
-    background-position: right;
-}
-
-.bg-fire-emblem {
-    background-image: url('/images/crest_of_flames.png');
-    background-repeat: no-repeat;
-    background-position: center;
 }
 
 .thick-border {

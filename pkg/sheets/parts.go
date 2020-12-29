@@ -3,6 +3,7 @@ package sheets
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"sort"
 )
 
 type Part struct {
@@ -73,3 +74,10 @@ func (x Parts) ForProject(projects ...string) Parts {
 func (x Parts) Append(parts Parts) Parts {
 	return append(x, parts...)
 }
+
+// Sorting
+
+func (x Parts) Len() int           { return len(x) }
+func (x Parts) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x Parts) Less(i, j int) bool { return x[i].ScoreOrder < x[j].ScoreOrder }
+func (x Parts) Sort() Parts        { sort.Sort(x); return x }

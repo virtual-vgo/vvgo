@@ -2,10 +2,18 @@ import React from "react";
 
 const axios = require('axios').default;
 
-function Banner(props) {
-    return <a href={props.YoutubeLink}>
-        <img src={props.BannerLink} className="mx-auto img-fluid" alt="banner"/>
-    </a>;
+function ProjectBanner(props) {
+    if (props.project.YoutubeLink !== "") {
+        return <a href={props.project.YoutubeLink}>
+            <img src={props.project.BannerLink} className="mx-auto img-fluid" alt="banner"/>
+        </a>
+    } else {
+        return <div>
+            <h2 className="title">{props.project.Title}</h2>
+            <h3>{props.project.Sources}</h3>
+        </div>
+    }
+
 }
 
 function YoutubeIframe(props) {
@@ -23,4 +31,4 @@ function GetRoles() {
     return axios.post('/roles', paramRoles)
 }
 
-export {Banner, YoutubeIframe, GetRoles}
+export {ProjectBanner, YoutubeIframe, GetRoles}

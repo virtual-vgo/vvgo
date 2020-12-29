@@ -36,5 +36,5 @@ func (x PartsAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if parts == nil {
 		parts = sheets.Parts{}
 	}
-	json.NewEncoder(w).Encode(parts)
+	json.NewEncoder(w).Encode(parts.Sort())
 }
