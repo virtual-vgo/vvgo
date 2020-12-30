@@ -3,9 +3,7 @@ import {useEffect, useState} from 'react';
 const axios = require('axios').default;
 
 export function useLoginRoles() {
-    const params = new URLSearchParams(window.location.search)
-    const url = '/roles?' + params.getAll("roles").map(value => 'roles=' + value).join('&')
-    return useAndCacheApiData(url, [])
+    return useAndCacheApiData('/roles', [])
 }
 
 export function useProjects() {
@@ -16,29 +14,31 @@ export function useParts() {
     return useAndCacheApiData('/parts_api', [])
 }
 
-export const StatusNeedsRun = 'statusNeedsRun'
-export const StatusRunning = 'statusRunning'
-export const StatusComplete = 'statusComplete'
-export const StatusFailure = 'statusFailure'
+export const Status = Object.freeze({
+    NeedsRun: 'needsRun',
+    Running: 'running',
+    Complete: 'complete',
+    Failure: 'failure'
+})
 
 export function useAndCacheApiData(url, initialState) {
     const [data, setData] = useState(initialState)
-    const [status, setStatus] = useState(StatusRunning)
+    const [status, setStatus] = useState(Status.NeedsRun)
     const [cachedUrl, setCachedUrl] = useState(null)
     useEffect(() => {
-        if (status === StatusNeedsRun || cachedUrl !== url) {
-            setStatus(StatusRunning)
+        if (status === Status.NeedsRun || cachedUrl !== url) {
+            setStatus(Status.Running)
             axios.get(url)
                 .then(response => {
                     setData(response.data)
                     setCachedUrl(url)
-                    setStatus(StatusComplete)
+                    setStatus(Status.Complete)
                 })
                 .catch(error => {
                     console.log(error)
-                    setStatus(StatusFailure)
+                    setStatus(Status.Failure)
                 })
         }
-    }, [url, status, cachedUrl]);
-    return {data, status, setStatus}
+    }, [data, status, url, cachedUrl]);
+    return {data, setData, status, setStatus}
 }

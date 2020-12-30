@@ -1,11 +1,10 @@
 import React from 'react'
 
-export default function Footer(props) {
+export default function Footer() {
     return <footer className="footer">
-        <div className="container mt-3 text-center">
+        <div className="container mt-3">
             <SocialMediaRow/>
             <PolicyRow/>
-            <TeamsRow roles={props.roles}/>
         </div>
     </footer>
 }
@@ -15,7 +14,7 @@ function SocialMediaRow() {
         return <a className="text-light" href={props.href}>{props.children}</a>
     }
 
-    return <div className="row">
+    return <div className="row text-center">
         <div className="col">
             <SocialMediaLink href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
                 <i className="fab fa-youtube fa-2x"/>
@@ -43,47 +42,10 @@ function SocialMediaRow() {
 }
 
 function PolicyRow() {
-    return <div className="row">
+    return <div className="row text-center">
         <div className="col">
             <a className="text-light text-lowercase" href="https://vvgo.org/privacy">privacy policy</a>|
             <a className="text-light" href="https://vvgo.org/cookie-policy">cookie policy</a>
         </div>
     </div>
-}
-
-function TeamsRow(props) {
-    if (props.roles.includes("vvgo-teams")) {
-        return <div className="row alert-warning text-muted">
-            <div className="col">
-                <div className="dropdown">
-                    <button className="dropdown-toggle btn btn-sm" type="button" data-toggle="dropdown">
-                        View With Roles
-                    </button>
-                    <div className="dropdown-menu">
-                        <ChooseRolesForm roles={props.roles}/>
-                    </div>
-                </div>
-            </div>
-        </div>
-    } else {
-        return null
-    }
-}
-
-function ChooseRolesForm(props) {
-    function RoleCheckbox(props) {
-        return <div className="form-check">
-            <input type="checkbox" className="form-check-input" name="roles" value={props.role}/>
-            <label className="form-check-label" htmlFor="role">{props.role}</label>
-        </div>
-    }
-
-    return <form className="px-2">
-        {props.roles.map(role => <RoleCheckbox key={role} role={role}/>)}
-        <div className="form-check">
-            <input type="checkbox" className="form-check-input" name="roles" value="anonymous"/>
-            <label className="form-check-label" htmlFor="role">anonymous</label>
-        </div>
-        <button type="submit" className="btn-sm btn-secondary">Submit</button>
-    </form>
 }

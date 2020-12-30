@@ -16,6 +16,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import '@fortawesome/fontawesome-free/js/fontawesome.min.js'
 import {useLoginRoles, useParts, useProjects} from "./components/hooks";
+import DevTools from "./components/dev_tools";
 
 
 ReactDOM.render(
@@ -23,15 +24,17 @@ ReactDOM.render(
 )
 
 function App() {
-    const roles = useLoginRoles()
+    const apiRoles = useLoginRoles()
+    const uiRoles = useLoginRoles()
     const parts = useParts()
     const projects = useProjects()
 
     function Nav(props) {
         return [
-            <Navbar key="navbar" favicon={favicon} roles={roles.data}/>,
+            <DevTools key="dev-tools" uiRoles={uiRoles} apiRoles={apiRoles}/>,
+            <Navbar key="navbar" favicon={favicon} roles={uiRoles.data}/>,
             props.children,
-            <Footer key="footer" roles={roles.data}/>
+            <Footer key="footer" uiRoles={uiRoles} apiRoles={apiRoles}/>,
         ]
     }
 
@@ -40,7 +43,7 @@ function App() {
             <link rel="icon" href={favicon} sizes="32x32" type="image/png"/>
         </Helmet>
         <Switch>
-            <Route exact path="/"><Nav><Home/></Nav></Route>
+            <Route exact path="/"><Nav><Home projects={projects.data}/></Nav></Route>
             <Route path="/about"><Nav><About/></Nav></Route>
             <Route path="/parts"><Nav><Parts parts={parts.data} projects={projects.data}/></Nav></Route>
             <Route path="/401.html"><AccessDenied/></Route>

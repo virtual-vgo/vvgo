@@ -56,12 +56,19 @@ function TeamsNavItem(props) {
 
 function LoginNavItem(props) {
     function userLoggedIn(roles) {
-        return (roles.length !== 0 && roles[0] !== "anonymous")
+        switch (roles.length) {
+            case 0:
+                return false
+            case 1:
+                return roles[0] !== "anonymous"
+            default:
+                return true
+        }
     }
 
     if (userLoggedIn(props.roles)) {
-        return <NavItem to="/login">Login</NavItem>
-    } else {
         return <NavItem to="/logout">Logout</NavItem>
+    } else {
+        return <NavItem to="/login">Login</NavItem>
     }
 }
