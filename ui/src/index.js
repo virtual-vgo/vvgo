@@ -17,10 +17,19 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 import '@fortawesome/fontawesome-free/js/fontawesome.min.js'
 import {useLeaders, useLoginRoles, useParts, useProjects} from "./components/hooks";
 import DevTools from "./components/dev_tools";
+import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
+import {ThemeProvider} from '@material-ui/core/styles';
 
+const theme = createMuiTheme({
+    typography: {
+        fontFamily: 'Montserrat, sans-serif'
+    },
+});
 
 ReactDOM.render(
-    <App/>, document.getElementById('root')
+    <ThemeProvider theme={theme}>
+        <App/>
+    </ThemeProvider>, document.getElementById('root')
 )
 
 function App() {

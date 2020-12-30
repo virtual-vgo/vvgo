@@ -27,7 +27,7 @@ export default function About(props) {
 function InfoRow() {
     return <div className="row mt-4 text-justify">
         <div className="col">
-            <Typography paragraph={true} align={"justify"}>
+            <Typography paragraph align="justify">
                 Formed in March 2020, <strong>Virtual Video Game Orchestra</strong> (VVGO, "vee-vee-go") is an
                 online
                 volunteer-run music ensemble predicated on providing a musical performance outlet for musicians
