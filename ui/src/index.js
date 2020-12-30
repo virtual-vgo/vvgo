@@ -15,7 +15,7 @@ import favicon from './favicons/favicon-2020-11-26-thomas.png'
 import 'bootstrap/dist/js/bootstrap.bundle.min'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import '@fortawesome/fontawesome-free/js/fontawesome.min.js'
-import {useLoginRoles, useParts, useProjects} from "./components/hooks";
+import {useLeaders, useLoginRoles, useParts, useProjects} from "./components/hooks";
 import DevTools from "./components/dev_tools";
 
 
@@ -28,6 +28,7 @@ function App() {
     const uiRoles = useLoginRoles()
     const parts = useParts()
     const projects = useProjects()
+    const leaders = useLeaders()
 
     function Nav(props) {
         return [
@@ -44,7 +45,7 @@ function App() {
         </Helmet>
         <Switch>
             <Route exact path="/"><Nav><Home projects={projects.data}/></Nav></Route>
-            <Route path="/about"><Nav><About/></Nav></Route>
+            <Route path="/about"><Nav><About leaders={leaders.data}/></Nav></Route>
             <Route path="/parts"><Nav><Parts parts={parts.data} projects={projects.data}/></Nav></Route>
             <Route path="/401.html"><AccessDenied/></Route>
             <Route path="/404.html"><NotFound/></Route>

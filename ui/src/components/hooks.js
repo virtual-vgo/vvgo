@@ -14,6 +14,10 @@ export function useParts() {
     return useAndCacheApiData('/parts_api', [])
 }
 
+export function useLeaders() {
+    return useAndCacheApiData('/leaders', [])
+}
+
 export const Status = Object.freeze({
     NeedsRun: 'needsRun',
     Running: 'running',
