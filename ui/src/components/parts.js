@@ -5,50 +5,47 @@ import {Link, Route, Switch, useRouteMatch} from "react-router-dom";
 import Button from "@material-ui/core/Button";
 import tableIcons from "./table_icons";
 
-const axios = require('axios').default;
-
-class Parts extends React.Component {
-    constructor(props) {
-        super(props)
-        this.state = {projects: []}
-    }
-
-    componentDidMount() {
-        axios.get('/projects_api').then(response => this.setState({projects: response.data}))
-    }
-
-    render() {
-        return <div className="container">
-            <ProjectsNavbar projects={this.state.projects}/>
-        </div>
-    }
-}
-
-function ProjectsNavbar(props) {
+export default function Parts(props) {
     let {path, url} = useRouteMatch();
-    return <div>
-        {props.projects.map(project => <Button key={project.Name}>
-            <Link className="nav-link" to={`${url}/${project.Name}`} key={project.Name}>{project.Title}</Link>
-        </Button>)}
+
+    function PartsNav() {
+        return props.projects.map(project => <Button key={project.Name}>
+            <Link className="nav-link" to={`${url}/${project.Name}`}
+                  key={project.Name}>{project.Title}</Link>
+        </Button>)
+    }
+
+    return <div className="container">
         <Switch>
             <Route exact path={path}>
+                <PartsNav/>
                 <h3>Please select a topic.</h3>
             </Route>
-            {props.projects.map(project => <Route path={`${path}/${project.Name}`}>
-                <PartsTab project={project} key={project.Name}/>
+            {props.projects.map(project => <Route key={project.Name} path={`${path}/${project.Name}`}>
+                <PartsNav/>
+                <PartsTab project={project} parts={props.parts}/>
             </Route>)}
         </Switch>
     </div>
 }
 
-export default Parts
-
 function PartsTab(props) {
+    let wantParts = []
+    props.parts.forEach(part => {
+        if (props.project.Name === part.Project) {
+            wantParts.push(part)
+        }
+    })
+
     return <div>
         <div className="row">
             <div className="col mt-3 text-center">
-                <ArchivedWarning project={props.project}/>
-                <UnreleasedWarning project={props.project}/>
+                <WarnIf condition={props.project.Archived}>
+                    This project has been archived. Parts are only visible to leaders.
+                </WarnIf>
+                <WarnIf condition={!props.project.Released}>
+                    This project is unreleased and invisible to members!
+                </WarnIf>
                 <ProjectBanner project={props.project}/>
                 <ProjectInfo project={props.project}/>
             </div>
@@ -60,31 +57,24 @@ function PartsTab(props) {
         </div>
         <div className="row justify-content-center">
             <div className="col mt-4">
-                <PartsTable Project={props.project.Name}/>
+                <PartsTable parts={wantParts}/>
             </div>
         </div>
     </div>
 }
 
-function ArchivedWarning(props) {
-    if (props.project.PartsArchived) {
-        return <div className="alert alert-warning">
-            This project has been archived. Parts are only visible to leaders.
-        </div>
+function WarnIf(props) {
+    if (props.condition) {
+        return <Warning>{props.children}</Warning>
     } else {
         return null
     }
 }
 
-function UnreleasedWarning(props) {
-    if (!props.project.PartsReleased) {
-        return <div className="alert alert-warning">
-            This project is unreleased and invisible to members!
-        </div>
-    } else {
-        return null
-    }
+function Warning(props) {
+    return <div className="alert alert-warning">{props.children}</div>
 }
+
 
 function ProjectInfo(props) {
     return <div className="row row-cols-1">
@@ -125,65 +115,48 @@ function ProjectLinks(props) {
 }
 
 
-class PartsTable extends React.Component {
-    constructor(props) {
-        super(props)
-        this.state = {parts: [], done: false}
+function PartsTable(props) {
+    function PartTitle(props) {
+        return <div className="title text-left text-nowrap">
+            {props.children}
+        </div>
     }
 
-    fetchParts() {
-        return axios.get('/parts_api', {params: {project: this.props.Project}})
-    }
-
-    componentDidMount() {
-        this.fetchParts()
-            .then(response => {
-                this.setState({parts: response.data, done: true})
-            })
-            .catch(error => console.log(error))
-    }
-
-    render() {
-        return <MaterialTable
-            tableIcons={tableIcons}
-            columns={[
-                {
-                    title: <h4>Parts</h4>,
-                    field: "PartName",
-                    render: rowData => <PartTitle PartName={rowData.PartName}/>
-                },
-                {
-                    title: <h4>Downloads</h4>,
-                    render: rowData => <PartDownloads part={rowData}/>,
-                    searchable: false,
-                    sorting: false
-                }
-            ]}
-            data={this.state.parts}
-            options={{
-                showTitle: false, paging: false, isLoading: true, padding: "dense",
-                searchFieldStyle: {
-                    color: "black",
-                    backgroundColor: "white"
-                },
-                headerStyle: {
-                    color: "white",
-                    backgroundColor: "inherit",
-                }
-            }}
-            style={{
-                width: "100%",
+    return <MaterialTable
+        tableIcons={tableIcons}
+        columns={[
+            {
+                title: <h4>Parts</h4>,
+                field: "PartName",
+                render: rowData => <PartTitle>{rowData.PartName}</PartTitle>
+            },
+            {
+                title: <h4>Downloads</h4>,
+                render: rowData => <PartDownloads part={rowData}/>,
+                searchable: false,
+                sorting: false
+            }
+        ]}
+        data={props.parts}
+        options={{
+            showTitle: false, paging: false, isLoading: true, padding: "dense",
+            searchFieldStyle: {
+                color: "black",
+                backgroundColor: "white"
+            },
+            headerStyle: {
                 color: "white",
                 backgroundColor: "inherit",
-                maxWidth: "800px",
-                margin: "auto"
-            }}
-        />
-    }
-}
-
-function PartTitle(props) {
-    return <div className="title text-left text-nowrap">{props.PartName}</div>
+            }
+        }}
+        style={{
+            width: "100%",
+            color: "white",
+            backgroundColor: "inherit",
+            maxWidth: "800px",
+            margin: "auto"
+        }}
+    />
 }
 
 function PartDownloads(props) {

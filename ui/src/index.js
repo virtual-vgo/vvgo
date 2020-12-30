@@ -15,30 +15,40 @@ import favicon from './favicons/favicon-2020-11-26-thomas.png'
 import 'bootstrap/dist/js/bootstrap.bundle.min'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import '@fortawesome/fontawesome-free/js/fontawesome.min.js'
-import {useLoginRoles} from "./components/hooks";
+import {useLoginRoles, useParts, useProjects} from "./components/hooks";
 
 
 ReactDOM.render(
-    <BrowserRouter>
+    <App/>, document.getElementById('root')
+)
+
+function App() {
+    const roles = useLoginRoles()
+    const parts = useParts()
+    const projects = useProjects()
+
+    function Nav(props) {
+        return [
+            <Navbar key="navbar" favicon={favicon} roles={roles.data}/>,
+            props.children,
+            <Footer key="footer" roles={roles.data}/>
+        ]
+    }
+
+    return <BrowserRouter>
         <Helmet>
             <link rel="icon" href={favicon} sizes="32x32" type="image/png"/>
         </Helmet>
         <Switch>
             <Route exact path="/"><Nav><Home/></Nav></Route>
             <Route path="/about"><Nav><About/></Nav></Route>
-            <Route path="/parts"><Nav><Parts/></Nav></Route>
+            <Route path="/parts"><Nav><Parts parts={parts.data} projects={projects.data}/></Nav></Route>
             <Route path="/401.html"><AccessDenied/></Route>
             <Route path="/404.html"><NotFound/></Route>
             <Route path="/500.html"><InternalOopsie/></Route>
             <Route path="*"><NotFound/></Route>
         </Switch>
-    </BrowserRouter>,
-    document.getElementById('root')
-)
-
-function Nav(props) {
-    const roles = useLoginRoles()
-    return [<Navbar key="navbar" roles={roles}/>, props.children, <Footer key="footer" roles={roles}/>]
+    </BrowserRouter>
 }
 
 // ref: https://bit.ly/CRA-vitals

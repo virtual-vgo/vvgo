@@ -2,17 +2,43 @@ import {useEffect, useState} from 'react';
 
 const axios = require('axios').default;
 
-function useLoginRoles() {
+export function useLoginRoles() {
     const params = new URLSearchParams(window.location.search)
-    const paramRoles = params.getAll("roles")
-
-    const [roles, setRoles] = useState([]);
-    useEffect(() => {
-        axios.post('/roles', paramRoles)
-            .then(response => setRoles(response.data))
-            .catch(error => console.log(error))
-    });
-    return roles
+    const url = '/roles?' + params.getAll("roles").map(value => 'roles=' + value).join('&')
+    return useAndCacheApiData(url, [])
 }
 
-export {useLoginRoles}
+export function useProjects() {
+    return useAndCacheApiData('/projects_api', [])
+}
+
+export function useParts() {
+    return useAndCacheApiData('/parts_api', [])
+}
+
+export const StatusNeedsRun = 'statusNeedsRun'
+export const StatusRunning = 'statusRunning'
+export const StatusComplete = 'statusComplete'
+export const StatusFailure = 'statusFailure'
+
+export function useAndCacheApiData(url, initialState) {
+    const [data, setData] = useState(initialState)
+    const [status, setStatus] = useState(StatusRunning)
+    const [cachedUrl, setCachedUrl] = useState(null)
+    useEffect(() => {
+        if (status === StatusNeedsRun || cachedUrl !== url) {
+            setStatus(StatusRunning)
+            axios.get(url)
+                .then(response => {
+                    setData(response.data)
+                    setCachedUrl(url)
+                    setStatus(StatusComplete)
+                })
+                .catch(error => {
+                    console.log(error)
+                    setStatus(StatusFailure)
+                })
+        }
+    }, [url, status, cachedUrl]);
+    return {data, status, setStatus}
+}
