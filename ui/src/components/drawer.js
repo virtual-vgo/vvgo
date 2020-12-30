@@ -34,14 +34,9 @@ const useStyles = makeStyles((theme) => ({
             duration: theme.transitions.duration.enteringScreen,
         }),
     },
-    menuButton: {
-        marginRight: theme.spacing(2),
-    },
+    menuButton: {marginRight: theme.spacing(2)},
     hide: {display: 'none'},
-    drawer: {
-        width: drawerWidth,
-        flexShrink: 0,
-    },
+    drawer: {width: drawerWidth, flexShrink: 0},
     drawerPaper: {width: drawerWidth},
     drawerHeader: {
         display: 'flex',
@@ -80,11 +75,9 @@ export default function AppDrawer(props) {
     return (
         <div className={classes.root}>
             <CssBaseline/>
-            <AppBar position="fixed"
-                    className={clsx(classes.appBar, {[classes.appBarShift]: open})}>
+            <AppBar position="fixed" className={clsx(classes.appBar, {[classes.appBarShift]: open})}>
                 <Toolbar>
-                    <IconButton aria-label="open drawer" color="inherit" edge="start"
-                                onClick={openDrawer}
+                    <IconButton aria-label="open drawer" color="inherit" edge="start" onClick={openDrawer}
                                 className={clsx(classes.menuButton, open && classes.hide)}>
                         <MenuIcon/>
                     </IconButton>
@@ -103,7 +96,6 @@ export default function AppDrawer(props) {
                     <MyListItem to={"/about"}>About</MyListItem>
                     <MyListItem to={"/releases"}>Releases</MyListItem>
                     <MemberListItem roles={props.uiRoles.data} to={"/parts"}>Parts</MemberListItem>
-                    <LoginListItem roles={props.uiRoles.data}/>
                 </List>
             </Drawer>
             <main className={clsx(classes.content, {[classes.contentShift]: open})}>
@@ -135,24 +127,5 @@ function TeamsListItem(props) {
         </ListItem>
     } else {
         return null
-    }
-}
-
-function LoginListItem(props) {
-    const userLoggedIn = (() => {
-        switch (props.roles.length) {
-            case 0:
-                return false
-            case 1:
-                return props.roles[0] !== "anonymous"
-            default:
-                return true
-        }
-    })()
-
-    if (userLoggedIn) {
-        return <MyListItem to="/logout">Logout</MyListItem>
-    } else {
-        return <MyListItem to="/login">Login</MyListItem>
     }
 }

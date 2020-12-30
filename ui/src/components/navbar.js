@@ -1,6 +1,7 @@
 import React from 'react'
 import {NavLink} from 'react-router-dom'
 import Container from "@material-ui/core/Container";
+import Link from "@material-ui/core/Link";
 
 export default function Navbar(props) {
     return <Container>
@@ -68,7 +69,7 @@ function LoginNavItem(props) {
     }
 
     if (userLoggedIn(props.roles)) {
-        return <NavItem to="/logout">Logout</NavItem>
+        return <Link href="/logout">Logout</Link>
     } else {
         return <NavItem to="/login">Login</NavItem>
     }

@@ -6,7 +6,6 @@ import Footer from './components/footer'
 import About from './components/about'
 import Parts from './components/parts'
 import {BrowserRouter, Route, Switch} from "react-router-dom";
-import Navbar from './components/navbar'
 import reportWebVitals from "./reportWebVitals";
 import {AccessDenied, InternalOopsie, NotFound} from "./components/error_page";
 import Home from "./components/home";
@@ -25,6 +24,9 @@ const theme = createMuiTheme({
     typography: {
         fontFamily: 'Montserrat, sans-serif'
     },
+    palette: {
+        type: 'dark'
+    }
 });
 
 ReactDOM.render(
@@ -41,14 +43,13 @@ function App() {
     const leaders = useLeaders()
 
     function Nav(props) {
-        return [
-            <DevTools key="dev-tools" uiRoles={uiRoles} apiRoles={apiRoles}/>,
+        return <div>
             <AppDrawer uiRoles={uiRoles} key={"drawer"}>
-                <Navbar key="navbar" favicon={favicon} roles={uiRoles.data}/>
-                {props.children},
-                <Footer key="footer" uiRoles={uiRoles} apiRoles={apiRoles}/>
+                <DevTools uiRoles={uiRoles} apiRoles={apiRoles}/>
+                {props.children}
+                <Footer uiRoles={uiRoles} apiRoles={apiRoles}/>
             </AppDrawer>
-        ]
+        </div>
     }
 
     return <BrowserRouter>
