@@ -35,8 +35,8 @@ function Info() {
         </Typography>
         <Typography {...typographyProps}>
             We are always accepting new members into our community. If you would like to join our orchestra or
-            get more information about our current performance opportunities, please join us on
-            <Link href="https://discord.gg/9RVUJMQ">Discord</Link>!
+            get more information about our current performance opportunities, please join us
+            on <Link href="https://discord.gg/9RVUJMQ">Discord!</Link>
         </Typography>
     </div>
 }

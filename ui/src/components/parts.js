@@ -1,32 +1,21 @@
 import React from 'react'
 import MaterialTable from "material-table";
 import {ProjectBanner} from "./utils";
-import {Link as RouteLink, Route, Switch, useRouteMatch} from "react-router-dom";
+import {Route, Switch, useRouteMatch} from "react-router-dom";
 import Button from "@material-ui/core/Button";
 import tableIcons from "./table_icons";
 import Container from "@material-ui/core/Container";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
 
 export default function Parts(props) {
-    let {path, url} = useRouteMatch();
-
-    function PartsNav() {
-        return props.projects.map(project =>
-            <Button color='primary' component={RouteLink} key={project.Name} to={`${url}/${project.Name}`}>
-                {project.Title}
-            </Button>)
-    }
-
+    const {path} = useRouteMatch();
     return <Container>
         <Switch>
-            <Route exact path={path}>
-                <PartsNav/>
-                <h3>Please select a topic.</h3>
-            </Route>
-            {props.projects.map(project => <Route key={project.Name} path={`${path}/${project.Name}`}>
-                <PartsNav/>
-                <PartsTab project={project} parts={props.parts}/>
-            </Route>)}
+            {props.projects.map(project =>
+                <Route key={project.Name} path={`${path}/${project.Name}`}>
+                    <PartsTab project={project} parts={props.parts}/>
+                </Route>
+            )}
         </Switch>
     </Container>
 }
