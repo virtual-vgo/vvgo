@@ -11,10 +11,10 @@ export default function Parts(props) {
     let {path, url} = useRouteMatch();
 
     function PartsNav() {
-        return props.projects.map(project => <Button key={project.Name}>
-            <RouteLink to={`${url}/${project.Name}`}
-                       key={project.Name}>{project.Title}</RouteLink>
-        </Button>)
+        return props.projects.map(project =>
+            <Button color='primary' component={RouteLink} key={project.Name} to={`${url}/${project.Name}`}>
+                {project.Title}
+            </Button>)
     }
 
     return <Container>

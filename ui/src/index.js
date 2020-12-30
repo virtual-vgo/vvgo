@@ -19,6 +19,7 @@ import {useLeaders, useLoginRoles, useParts, useProjects} from "./components/hoo
 import DevTools from "./components/dev_tools";
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import {ThemeProvider} from '@material-ui/core/styles';
+import AppDrawer from "./components/drawer";
 
 const theme = createMuiTheme({
     typography: {
@@ -42,9 +43,11 @@ function App() {
     function Nav(props) {
         return [
             <DevTools key="dev-tools" uiRoles={uiRoles} apiRoles={apiRoles}/>,
-            <Navbar key="navbar" favicon={favicon} roles={uiRoles.data}/>,
-            props.children,
-            <Footer key="footer" uiRoles={uiRoles} apiRoles={apiRoles}/>,
+            <AppDrawer uiRoles={uiRoles} key={"drawer"}>
+                <Navbar key="navbar" favicon={favicon} roles={uiRoles.data}/>
+                {props.children},
+                <Footer key="footer" uiRoles={uiRoles} apiRoles={apiRoles}/>
+            </AppDrawer>
         ]
     }
 
