@@ -1,5 +1,6 @@
 import React from "react";
 import {ProjectBanner, YoutubeIframe} from "./utils";
+import Container from "@material-ui/core/Container";
 
 export default function Home(props) {
     let latestProject = {}
@@ -10,7 +11,7 @@ export default function Home(props) {
             }
         })
 
-    return <div className="container">
+    return <Container>
         <div className="row row-cols-1 justify-content-md-center text-center m-2">
             <div className="col">
                 <ProjectBanner project={latestProject}/>
@@ -27,5 +28,5 @@ export default function Home(props) {
                 </p>
             </div>
         </div>
-    </div>
+    </Container>
 }

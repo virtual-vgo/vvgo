@@ -1,8 +1,9 @@
 import React from 'react'
 import Helmet from "react-helmet";
+import {Container, Typography} from "@material-ui/core";
 
 export default function About(props) {
-    return <div className="container">
+    return <Container>
         <Helmet>
             <title>About</title>
             <meta name="description" content="About VVGO"/>
@@ -20,13 +21,13 @@ export default function About(props) {
                 </table>
             </div>
         </div>
-    </div>
+    </Container>
 }
 
 function InfoRow() {
     return <div className="row mt-4 text-justify">
         <div className="col">
-            <p className="blockquote">
+            <Typography paragraph={true} align={"justify"}>
                 Formed in March 2020, <strong>Virtual Video Game Orchestra</strong> (VVGO, "vee-vee-go") is an
                 online
                 volunteer-run music ensemble predicated on providing a musical performance outlet for musicians
@@ -37,7 +38,7 @@ function InfoRow() {
                 globe,
                 VVGO is open to any who wish to participate regardless of instrument, skill level, or musical
                 background.
-            </p>
+            </Typography>
             <p className="blockquote">
                 Our mission is to provide a fun and accessible virtual community of musicians from around the
                 world

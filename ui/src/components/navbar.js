@@ -1,8 +1,9 @@
 import React from 'react'
 import {NavLink} from 'react-router-dom'
+import Container from "@material-ui/core/Container";
 
 export default function Navbar(props) {
-    return <div className="container mb-2">
+    return <Container>
         <nav className="top-nav navbar navbar-expand-md navbar-dark bg-dark-blue-transparent fa-border">
             <NavLink className="nav-link" to="/">
                 <img src={props.favicon} alt="favicon"/>
@@ -23,7 +24,7 @@ export default function Navbar(props) {
                 </ul>
             </div>
         </nav>
-    </div>
+    </Container>
 }
 
 function NavItem(props) {
