@@ -56,7 +56,7 @@ func downloadLink(object string) string {
 	if object == "" {
 		return ""
 	} else {
-		return "/download/" + url.PathEscape(object)
+		return "/download?object=" + url.PathEscape(object)
 	}
 }
 

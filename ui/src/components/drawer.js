@@ -29,33 +29,31 @@ export default function AppDrawer(props) {
             .includes(searchState)
     )
 
-    return (
-        <div className={classes.root}>
-            <CssBaseline/>
-            <Drawer className={classes.drawer} variant="persistent" anchor="left"
-                    open={props.drawerState.isOpen} classes={{paper: classes.drawerPaper,}}>
-                <div className={classes.drawerHeader}>
-                    <IconButton onClick={props.drawerState.closeDrawer}>
-                        <ChevronLeftIcon/>
-                    </IconButton>
-                </div>
+    return <div className={classes.root}>
+        <CssBaseline/>
+        <Drawer className={classes.drawer} variant="persistent" anchor="left"
+                open={props.drawerState.isOpen} classes={{paper: classes.drawerPaper,}}>
+            <div className={classes.drawerHeader}>
+                <IconButton onClick={props.drawerState.closeDrawer}>
+                    <ChevronLeftIcon/>
+                </IconButton>
+            </div>
+            <Divider/>
+            <List>
+                <ListItem><ListItemText primary='Open Projects'/></ListItem>
+                <Search setSearchState={setSearchState}/>
                 <Divider/>
-                <List>
-                    <ListItem><ListItemText primary='Open Projects'/></ListItem>
-                    <Search setSearchState={setSearchState}/>
-                    <Divider/>
-                    <OpenProjects projects={props.projects} parts={parts}/>
-                    <Divider/>
-                </List>
-                <div style={{height: '100%'}}/>
-                <Footer/>
-            </Drawer>
-            <main className={clsx(classes.content, {[classes.contentShift]: props.drawerState.isOpen})}>
-                <div className={classes.drawerHeader}/>
-                {props.children}
-            </main>
-        </div>
-    );
+                <OpenProjects projects={props.projects} parts={parts}/>
+                <Divider/>
+            </List>
+            <div style={{height: '100%'}}/>
+            <Footer/>
+        </Drawer>
+        <main className={clsx(classes.content, {[classes.contentShift]: props.drawerState.isOpen})}>
+            <div className={classes.drawerHeader}/>
+            {props.children}
+        </main>
+    </div>
 }
 
 function Search(props) {

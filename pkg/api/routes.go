@@ -31,8 +31,6 @@ func Routes() http.Handler {
 		}(role)
 	}
 
-	mux.Handle("/roles", RolesAPI{}, login.RoleAnonymous)
-
 	// debug endpoints from net/http/pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGOTeams)
@@ -40,15 +38,23 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
-	mux.Handle("/parts_api", PartsAPI{}, login.RoleVVGOMember)
-	mux.Handle("/projects_api", ProjectsAPI{}, login.RoleAnonymous)
-	mux.Handle("/download/", DownloadHandler{}, login.RoleVVGOMember)
+	mux.Handle("/api/v1/parts", PartsAPI{}, login.RoleVVGOMember)
+	mux.Handle("/api/v1/projects", ProjectsAPI{}, login.RoleAnonymous)
+	mux.Handle("/api/v1/leaders", LeadersAPI{}, login.RoleAnonymous)
+	mux.Handle("/api/v1/roles", RolesAPI{}, login.RoleAnonymous)
+
+	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
+	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
+	mux.Handle("/projects", ProjectsView{}, login.RoleAnonymous)
 	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
 	mux.Handle("/about", AboutView{}, login.RoleAnonymous)
-	mux.Handle("/leaders", Leaders{}, login.RoleAnonymous)
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.FileServer(http.Dir("ui/build")).ServeHTTP(w, r)
+		if r.URL.Path == "/" {
+			IndexView{}.ServeHTTP(w, r)
+		} else {
+			http.FileServer(http.Dir(PublicFiles)).ServeHTTP(w, r)
+		}
 	}, login.RoleAnonymous)
 	return &mux
 }

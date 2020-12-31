@@ -34,4 +34,3 @@ func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	ParseAndExecute(ctx, w, r, leaders, "about.gohtml")
 }
-

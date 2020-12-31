@@ -5,9 +5,9 @@ import (
 	"net/http"
 )
 
-type Leaders struct{}
+type LeadersAPI struct{}
 
-func (x Leaders) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (x LeadersAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	leaders, err := sheets.ListLeaders(r.Context())
 	if err != nil {
 		logger.WithError(err).Error("readSheet() failed")

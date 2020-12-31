@@ -4,8 +4,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/minio"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 )
 
@@ -23,8 +21,7 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	object := strings.TrimPrefix(r.URL.Path, "/download/")
-	object, _ = url.PathUnescape(object)
+	object := r.URL.Query().Get("object")
 	if object == "" {
 		badRequest(w, "object required")
 		return
