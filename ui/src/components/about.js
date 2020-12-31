@@ -1,22 +1,21 @@
 import React from 'react'
-import Helmet from "react-helmet";
-import {Container, Divider, TableBody, Typography} from "@material-ui/core";
+import {Container, Typography} from "@material-ui/core";
 import Link from "@material-ui/core/Link";
+import VVGOAppBar from "./app_bar";
 import Table from "@material-ui/core/Table";
+import TableBody from "@material-ui/core/TableBody";
 import TableRow from "@material-ui/core/TableRow";
 import TableCell from "@material-ui/core/TableCell";
 
 export default function About(props) {
-    return <Container>
-        <Helmet>
-            <title>About</title>
-            <meta name="description" content="About VVGO"/>
-        </Helmet>
-        <Typography variant="h2">About VVGO</Typography>
-        <Divider/>
-        <Info/>
-        <LeaderTable leaders={props.leaders}/>
-    </Container>
+    document.title = 'About'
+    return <div>
+        <VVGOAppBar {...props}/>
+        <Container>
+            <Info/>
+            <LeaderTable leaders={props.leaders}/>
+        </Container>
+    </div>
 }
 
 function Info() {

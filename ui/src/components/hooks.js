@@ -2,6 +2,11 @@ import {useEffect, useState} from 'react';
 
 const axios = require('axios').default;
 
+export function useDrawerState(initialState) {
+    const [state, setState] = useState(initialState);
+    return {isOpen: state, openDrawer: () => setState(true), closeDrawer: () => setState(false)}
+}
+
 export function useLoginRoles() {
     return useAndCacheApiData('/roles', [])
 }

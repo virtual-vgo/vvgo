@@ -2,18 +2,13 @@ import React from "react";
 import {ButtonGroup, Typography} from "@material-ui/core";
 import Button from "@material-ui/core/Button";
 import Container from "@material-ui/core/Container";
-import IconButton from "@material-ui/core/IconButton";
-import Card from "@material-ui/core/Card";
-import CardContent from "@material-ui/core/CardContent";
-import CardMedia from "@material-ui/core/CardMedia"
-import PlayArrowIcon from '@material-ui/icons/PlayArrow';
-import makeStyles from "@material-ui/core/styles/makeStyles";
+import VVGOAppBar from "./app_bar";
 
 export default function Part(props) {
     function SheetMusic() {
         if (props.part.SheetMusicLink !== "") {
             return <div>
-                Sheet Music: <object style={{width: '100%', height: '90vh'}} data={props.part.SheetMusicLink}/>
+                Sheet Music: <embed style={{width: '100%', height: '90vh'}} src={props.part.SheetMusicLink}/>
             </div>
         } else {
             return null
@@ -40,26 +35,25 @@ export default function Part(props) {
         }
     }
 
-    props.setAppTitle(`${props.project.Title} | ${props.part.PartName}`)
     document.title = `${props.project.Title} | ${props.part.PartName}`
     console.log("displaying", props.part)
-    return <Container>
-        <ButtonGroup variant='outlined'>
-            <ProjectLinks {...props.project}/>
-            <PartDownloads {...props.part}/>
-        </ButtonGroup>
-        <ReferenceTrack/>
-        <ClickTrack/>
-        <SheetMusic/>
-    </Container>
+    return <div>
+        <VVGOAppBar drawerState={props.drawerState} title={`${props.project.Title} | ${props.part.PartName}`}/>
+        <Container>
+            <ProjectInfo {...props.project}/>
+            <ButtonGroup variant='outlined'>
+                <ProjectLinks {...props.project}/>
+                <PartDownloads {...props.part}/>
+            </ButtonGroup>
+            <ReferenceTrack/>
+            <ClickTrack/>
+            <SheetMusic/>
+        </Container>
+    </div>
 }
 
 function ProjectInfo(props) {
     return <div>
-        <Typography paragraph>
-            {props.Composers}<br/>
-            <small>{props.Arrangers}</small>
-        </Typography>
         <Typography variant='h4'>
             <strong>Submission Deadline:</strong> <em>{props.SubmissionDeadline} (Hawaii Time)</em>
         </Typography>
@@ -109,56 +103,4 @@ function PartDownloads(props) {
             children: 'pronunciation guide'
         },
     ].filter(b => b.href !== "").map(button => <Button key={button.href} {...button}/>)
-}
-
-const useStyles = makeStyles((theme) => ({
-    root: {
-        display: 'flex',
-    },
-    details: {
-        display: 'flex',
-        flexDirection: 'column',
-    },
-    content: {
-        flex: '1 0 auto',
-    },
-    cover: {
-        width: 151,
-    },
-    controls: {
-        display: 'flex',
-        alignItems: 'center',
-        paddingLeft: theme.spacing(1),
-        paddingBottom: theme.spacing(1),
-    },
-    playIcon: {
-        height: 38,
-        width: 38,
-    },
-}));
-
-function MediaControlCard(props) {
-    const classes = useStyles();
-    return <Card className={classes.root}>
-        <div className={classes.details}>
-            <CardContent className={classes.content}>
-                <Typography component="h5" variant="h5">
-                    {props.part.PartName} - Click Track
-                </Typography>
-                <Typography variant="subtitle1" color="textSecondary">
-                    {props.project.Title}
-                </Typography>
-            </CardContent>
-            <div className={classes.controls}>
-                <IconButton aria-label="play/pause">
-                    <PlayArrowIcon className={classes.playIcon}/>
-                </IconButton>
-            </div>
-        </div>
-        <CardMedia
-            className={classes.cover}
-            src={props.part.ClickTrackLink}
-            title={`${props.part.PartName} - Click Track`}
-        />
-    </Card>
 }

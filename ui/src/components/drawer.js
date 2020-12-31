@@ -1,67 +1,58 @@
 import React, {useState} from 'react';
 import clsx from 'clsx';
-import {useTheme} from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
 import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import IconButton from '@material-ui/core/IconButton';
-import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
-import {Link as RouteLink, NavLink as RouterLink} from "react-router-dom";
+import {Link as RouteLink} from "react-router-dom";
 import {ExpandLess, ExpandMore} from "@material-ui/icons";
 import Collapse from "@material-ui/core/Collapse";
 import {useVVGOStyles} from "./styles";
+import SearchIcon from '@material-ui/icons/Search';
+import InputBase from '@material-ui/core/InputBase';
+import Footer from "./footer";
 
 const useStyles = useVVGOStyles
 
 export default function AppDrawer(props) {
     const classes = useStyles();
-    const theme = useTheme();
 
-    // drawer
-    const [drawerState, setDrawerState] = useState(true);
-    const openDrawer = () => setDrawerState(true);
-    const closeDrawer = () => setDrawerState(false);
+    const [searchState, setSearchState] = useState('')
+    const parts = props.parts.filter(part =>
+        `${part.PartName}`
+            .toLowerCase()
+            .replaceAll('♭', 'b')
+            .includes(searchState)
+    )
+
     return (
         <div className={classes.root}>
             <CssBaseline/>
-            <AppBar position="fixed" className={clsx(classes.appBar, {[classes.appBarShift]: drawerState})}>
-                <Toolbar>
-                    <IconButton aria-label="open drawer" color="inherit" edge="start" onClick={openDrawer}
-                                className={clsx(classes.menuButton, drawerState && classes.hide)}>
-                        <MenuIcon/>
-                    </IconButton>
-                    <Typography variant="h6" noWrap>{props.appTitle}</Typography>
-                </Toolbar>
-            </AppBar>
             <Drawer className={classes.drawer} variant="persistent" anchor="left"
-                    open={drawerState} classes={{paper: classes.drawerPaper,}}>
+                    open={props.drawerState.isOpen} classes={{paper: classes.drawerPaper,}}>
                 <div className={classes.drawerHeader}>
-                    <Typography>Virtual VGO</Typography>
-                    <IconButton onClick={closeDrawer}>
-                        {theme.direction === 'ltr' ? <ChevronLeftIcon/> : <ChevronRightIcon/>}
+                    <Typography>Open Projects</Typography>
+                    <IconButton onClick={props.drawerState.closeDrawer}>
+                        <ChevronLeftIcon/>
                     </IconButton>
                 </div>
                 <Divider/>
                 <List>
-                    <ListItem divider><ListItemText primary="Open Projects"/></ListItem>
-                    <OpenProjects roles={props.uiRoles.data} projects={props.projects} parts={props.parts}/>
+                    <ListItem><ListItemText primary='Open Projects'/></ListItem>
+                    <Search setSearchState={setSearchState}/>
                     <Divider/>
-                    <ListItem divider><ListItemText primary="Releases"/></ListItem>
-                    <Releases projects={props.projects}/>
+                    <OpenProjects projects={props.projects} parts={parts}/>
                     <Divider/>
-                    <MyListItem to={"/about"}>About</MyListItem>
-                    <TeamsListItem roles={props.uiRoles.data} to={"/credits-maker"}>Credits Maker</TeamsListItem>
                 </List>
+                <div style={{height: '100%'}}/>
+                <Footer/>
             </Drawer>
-            <main className={clsx(classes.content, {[classes.contentShift]: drawerState})}>
+            <main className={clsx(classes.content, {[classes.contentShift]: props.drawerState.isOpen})}>
                 <div className={classes.drawerHeader}/>
                 {props.children}
             </main>
@@ -69,43 +60,27 @@ export default function AppDrawer(props) {
     );
 }
 
-// function AppBar() {
-//     return <AppBar position="fixed" className={clsx(classes.appBar, {[classes.appBarShift]: drawerState})}>
-//         <Toolbar>
-//             <IconButton aria-label="open drawer" color="inherit" edge="start" onClick={openDrawer}
-//                         className={clsx(classes.menuButton, drawerState && classes.hide)}>
-//                 <MenuIcon/>
-//             </IconButton>
-//             <Typography variant="h6" noWrap>{props.appTitle}</Typography>
-//         </Toolbar>
-//     </AppBar>
-// }
-
-function MyListItem(props) {
-    return <ListItem divider button component={RouterLink} to={props.to}>
-        <ListItemText primary={props.children}/>
-    </ListItem>
-}
-
-function TeamsListItem(props) {
-    if (props.roles.includes("vvgo-teams")) {
-        return <ListItem divider button component={RouterLink} to={props.to}>
-            <ListItemText primary={props.children} color='secondary'/>
-        </ListItem>
-    } else {
-        return null
+function Search(props) {
+    const classes = useStyles();
+    const updateSearch = (event) => {
+        props.setSearchState(event.target.value)
+        console.log("new search update", event.target.value)
     }
-}
 
-function Releases(props) {
-    const projects = props.projects.filter(project => (project.VideoReleased === true))
-    projects.sort((a, b) => b.Name.localeCompare(a.Name))
-    return projects
-        .map(project =>
-            <ListItem key={project.Name} button component={RouteLink} to={`/releases/${project.Name}`}>
-                <ListItemText primary={project.Title}/>
-            </ListItem>
-        )
+    return <ListItem className={classes.search}>
+        <div className={classes.searchIcon}>
+            <SearchIcon/>
+        </div>
+        <InputBase
+            placeholder="Search…"
+            classes={{
+                root: classes.searchInputRoot,
+                input: classes.searchInput,
+            }}
+            onChange={updateSearch}
+            inputProps={{'aria-label': 'search'}}
+        />
+    </ListItem>
 }
 
 function OpenProjects(props) {
@@ -128,7 +103,7 @@ function PartListing(props) {
         <Collapse in={open} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
                 {parts.map(part =>
-                    <ListItem key={part.PartName} button className={classes.nestedList}
+                    <ListItem key={`${part.project} - ${part.PartName}`} button className={classes.nestedList}
                               component={RouteLink} to={`/parts/${props.project.Name}/${part.PartName}`}>
                         {part.PartName}
                     </ListItem>
