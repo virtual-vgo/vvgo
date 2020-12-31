@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import clsx from 'clsx';
-import {makeStyles, useTheme} from '@material-ui/core/styles';
+import {useTheme} from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import AppBar from '@material-ui/core/AppBar';
@@ -17,57 +17,9 @@ import ListItemText from '@material-ui/core/ListItemText';
 import {Link as RouteLink, NavLink as RouterLink} from "react-router-dom";
 import {ExpandLess, ExpandMore} from "@material-ui/icons";
 import Collapse from "@material-ui/core/Collapse";
+import {useVVGOStyles} from "./styles";
 
-const drawerWidth = 300;
-
-const useStyles = makeStyles((theme) => ({
-    root: {display: 'flex'},
-    appBar: {
-        transition: theme.transitions.create(['margin', 'width'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-    },
-    appBarShift: {
-        width: `calc(100% - ${drawerWidth}px)`,
-        marginLeft: drawerWidth,
-        transition: theme.transitions.create(['margin', 'width'], {
-            easing: theme.transitions.easing.easeOut,
-            duration: theme.transitions.duration.enteringScreen,
-        }),
-    },
-    menuButton: {marginRight: theme.spacing(2)},
-    hide: {display: 'none'},
-    drawer: {width: drawerWidth, flexShrink: 0},
-    drawerPaper: {width: drawerWidth},
-    drawerHeader: {
-        display: 'flex',
-        alignItems: 'center',
-        padding: theme.spacing(0, 1),
-        // necessary for content to be below app bar
-        ...theme.mixins.toolbar,
-        justifyContent: 'flex-end',
-    },
-    content: {
-        flexGrow: 1,
-        padding: theme.spacing(3),
-        transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-        marginLeft: -drawerWidth,
-    },
-    contentShift: {
-        transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.easeOut,
-            duration: theme.transitions.duration.enteringScreen,
-        }),
-        marginLeft: 0,
-    },
-    nested: {
-        paddingLeft: theme.spacing(4),
-    },
-}));
+const useStyles = useVVGOStyles
 
 export default function AppDrawer(props) {
     const classes = useStyles();
@@ -77,7 +29,6 @@ export default function AppDrawer(props) {
     const [drawerState, setDrawerState] = useState(true);
     const openDrawer = () => setDrawerState(true);
     const closeDrawer = () => setDrawerState(false);
-
     return (
         <div className={classes.root}>
             <CssBaseline/>
@@ -117,6 +68,18 @@ export default function AppDrawer(props) {
         </div>
     );
 }
+
+// function AppBar() {
+//     return <AppBar position="fixed" className={clsx(classes.appBar, {[classes.appBarShift]: drawerState})}>
+//         <Toolbar>
+//             <IconButton aria-label="open drawer" color="inherit" edge="start" onClick={openDrawer}
+//                         className={clsx(classes.menuButton, drawerState && classes.hide)}>
+//                 <MenuIcon/>
+//             </IconButton>
+//             <Typography variant="h6" noWrap>{props.appTitle}</Typography>
+//         </Toolbar>
+//     </AppBar>
+// }
 
 function MyListItem(props) {
     return <ListItem divider button component={RouterLink} to={props.to}>
@@ -165,7 +128,7 @@ function PartListing(props) {
         <Collapse in={open} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
                 {parts.map(part =>
-                    <ListItem key={part.PartName} button className={classes.nested}
+                    <ListItem key={part.PartName} button className={classes.nestedList}
                               component={RouteLink} to={`/parts/${props.project.Name}/${part.PartName}`}>
                         {part.PartName}
                     </ListItem>
