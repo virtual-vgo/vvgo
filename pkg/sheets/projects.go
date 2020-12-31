@@ -31,6 +31,9 @@ type Project struct {
 	YoutubeEmbed            string `col_name:"Youtube Embed"`
 	SubmissionDeadline      string `col_name:"Submission Deadline"`
 	SubmissionLink          string `col_name:"Submission Link"`
+
+	// Derived
+	ReferenceTrackLink string
 }
 
 func (x Project) ProjectPage() string { return "/projects?name=" + x.Name }
@@ -54,6 +57,7 @@ func valuesToProjects(values [][]interface{}) Projects {
 	projects := make([]Project, len(values)-1) // ignore the header row
 	for i, row := range values[1:] {
 		processRow(row, &projects[i], index)
+		projects[i].ReferenceTrackLink = downloadLink(projects[i].ReferenceTrack)
 	}
 	return projects
 }
@@ -125,6 +129,14 @@ func (x Projects) Query(query map[string]interface{}) Projects {
 	want := make(Projects, 0, x.Len())
 	Query(query).MatchSlice(x, &want)
 	return want[:]
+}
+
+func (x Projects) Names() []string {
+	names := make([]string, x.Len())
+	for i := range x {
+		names[i] = x[i].Name
+	}
+	return names
 }
 
 // Sorting

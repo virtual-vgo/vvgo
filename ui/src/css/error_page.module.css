@@ -1,0 +1,22 @@
+.errorImg {
+    margin: 10px auto;
+    max-height: 100vh;
+    max-width: 100vh;
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 5px;
+    border-color: #9600de;
+    border-width: 2px;
+    border-style: solid;
+    vertical-align: center;
+}
+
+a.helpMe {
+    font-weight: bold;
+    color: ghostwhite;
+}
+
+.helpMe {
+    text-align: center;
+}

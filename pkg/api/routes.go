@@ -3,8 +3,10 @@ package api
 import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"io"
 	"net/http"
 	"net/http/pprof"
+	"os"
 )
 
 var PublicFiles = "public"
@@ -31,17 +33,26 @@ func Routes() http.Handler {
 		}(role)
 	}
 
-	mux.Handle("/roles", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		identity := IdentityFromContext(r.Context())
-		jsonEncode(w, &identity.Roles)
-	}), login.RoleAnonymous)
-
 	// debug endpoints from net/http/pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
+
+	mux.Handle("/api/v1/parts", PartsAPI{}, login.RoleVVGOMember)
+	mux.Handle("/api/v1/projects", ProjectsAPI{}, login.RoleAnonymous)
+	mux.Handle("/api/v1/leaders", LeadersAPI{}, login.RoleAnonymous)
+	mux.Handle("/api/v1/roles", RolesAPI{}, login.RoleAnonymous)
+
+	mux.Handle("/browser/static/",
+		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
+		login.RoleVVGOMember)
+	mux.HandleFunc("/browser/",
+		func(w http.ResponseWriter, r *http.Request) {
+			file, _ := os.Open("ui/build/index.html")
+			io.Copy(w, file)
+		}, login.RoleVVGOMember)
 
 	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
 	mux.Handle("/projects", ProjectsView{}, login.RoleAnonymous)
