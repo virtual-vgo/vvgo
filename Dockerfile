@@ -19,7 +19,7 @@ RUN go run ./tools/version
 
 FROM node:13.12 as ui
 COPY ui .
-RUN npm install && npm build
+RUN npm install && npm run-script build
 
 FROM alpine:3.4 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils
