@@ -1,6 +1,6 @@
 import React from 'react'
 import Button from "@material-ui/core/Button";
-import {ButtonGroup, useTheme} from "@material-ui/core";
+import {ButtonGroup} from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 
 export default function Footer() {
@@ -22,9 +22,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function SocialMediaRow() {
-    const theme = useTheme()
-    const classes = useStyles(theme);
-
+    const classes = useStyles();
     return <div className={classes.root}>
         <ButtonGroup variant="text">
             <Button href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
@@ -53,9 +51,7 @@ function SocialMediaRow() {
 }
 
 function PolicyRow() {
-    const theme = useTheme()
-    const classes = useStyles(theme);
-
+    const classes = useStyles();
     return <div className={classes.root}>
         <ButtonGroup size="small" variant="text">
             <Button href="https://vvgo.org/privacy">privacy policy</Button>

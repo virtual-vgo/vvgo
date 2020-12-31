@@ -3,6 +3,7 @@ package sheets
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"net/url"
 	"sort"
 )
 
@@ -55,7 +56,7 @@ func downloadLink(object string) string {
 	if object == "" {
 		return ""
 	} else {
-		return "/downloads?object=" + object
+		return "/download/" + url.PathEscape(object)
 	}
 }
 

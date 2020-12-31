@@ -40,11 +40,9 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
-	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
 	mux.Handle("/parts_api", PartsAPI{}, login.RoleVVGOMember)
-	mux.Handle("/projects", ProjectsView{}, login.RoleAnonymous)
 	mux.Handle("/projects_api", ProjectsAPI{}, login.RoleAnonymous)
-	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
+	mux.Handle("/download/", DownloadHandler{}, login.RoleVVGOMember)
 	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
 	mux.Handle("/about", AboutView{}, login.RoleAnonymous)
 	mux.Handle("/leaders", Leaders{}, login.RoleAnonymous)

@@ -34,12 +34,12 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	}{
 		{
 			name:    "post",
-			request: httptest.NewRequest(http.MethodPost, "/download?object=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodPost, "/download/danish", strings.NewReader("")),
 			wants:   wants{code: http.StatusMethodNotAllowed},
 		},
 		{
 			name:    "success",
-			request: httptest.NewRequest(http.MethodGet, "/download?object=danish", strings.NewReader("")),
+			request: httptest.NewRequest(http.MethodGet, "/download/danish", strings.NewReader("")),
 			wants:   wants{code: http.StatusFound},
 		},
 	} {

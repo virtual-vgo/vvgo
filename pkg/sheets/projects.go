@@ -58,7 +58,7 @@ func valuesToProjects(values [][]interface{}) Projects {
 	projects := make([]Project, len(values)-1) // ignore the header row
 	for i, row := range values[1:] {
 		processRow(row, &projects[i], index)
-		projects[i].ReferenceTrack = "/downloads?object=" + projects[i].ReferenceTrack
+		projects[i].ReferenceTrack = downloadLink(projects[i].ReferenceTrack)
 		projects[i].PartsPage = projects[i].partsPage()
 		projects[i].ProjectPage = projects[i].projectPage()
 	}

@@ -1,10 +1,35 @@
-import React from "react";
-import Button from "@material-ui/core/Button";
+import React, {useState} from "react";
 import Helmet from "react-helmet";
 import {ButtonGroup, Typography} from "@material-ui/core";
+import {Document, Page, pdfjs} from "react-pdf";
 import ReactPlayer from "react-player";
+import Button from "@material-ui/core/Button";
+
+//https://github.com/wojtekmaj/react-pdf#standard-browserify-and-others
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export default function Part(props) {
+    function SheetMusic() {
+        const [numPages, setNumPages] = useState(null);
+
+        function onDocumentLoadSuccess({numPages}) {
+            setNumPages(numPages);
+        }
+
+
+
+        if (props.part.SheetMusicLink !== "") {
+            return <Document file={props.part.SheetMusicLink} onLoadSuccess={onDocumentLoadSuccess}>
+                {Array.from(new Array(numPages), (el, index) => (
+                    <Page renderMode='canvas' key={`page_${index + 1}`} pageNumber={index + 1}/>
+                ))}
+            </Document>
+        } else {
+            return null
+        }
+    }
+
+    console.log("displaying", props.part)
     return <div>
         <Helmet>
             <title>{props.project.Title} | {props.part.PartName}</title>
@@ -16,8 +41,18 @@ export default function Part(props) {
             <ProjectLinks {...props.project}/>
             <PartDownloads {...props.part}/>
         </ButtonGroup>
-        <ReactPlayer url={props.part.ReferenceTrack}/>
+        <SheetMusic/>
     </div>
+}
+
+function MediaPlayer(props) {
+    if (ReactPlayer.canPlay(props.ClickTrackLink)) {
+        console.log("can play 😀", props.Project, props.PartName, props.ClickTrackLink)
+        return <ReactPlayer url={props.ClickTrackLink}/>
+    } else {
+        console.log("cant play yet 😩", props.Project, props.PartName)
+        return null
+    }
 }
 
 function ProjectInfo(props) {
