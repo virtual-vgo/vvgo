@@ -1,19 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import Footer from './components/footer'
 import {BrowserRouter, Route, Switch} from "react-router-dom";
-import reportWebVitals from "./reportWebVitals";
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import '@fortawesome/fontawesome-free/js/fontawesome.min.js'
-import {useDrawerState, useLoginRoles, useParts, useProjects} from "./components/hooks";
-import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
-import {ThemeProvider} from '@material-ui/core/styles';
+import {Container} from "@material-ui/core";
+import {ThemeProvider, createMuiTheme} from '@material-ui/core/styles';
 import AppDrawer from "./components/drawer";
 import Part from "./components/part";
 import {NotFound} from "./components/error_page";
-import {Container} from "@material-ui/core";
 import {YoutubeIframe} from "./components/utils";
 import VVGOAppBar from "./components/app_bar";
+import {useDrawerState, useParts, useProjects} from "./components/hooks";
+import reportWebVitals from "./reportWebVitals";
 
 const theme = createMuiTheme({
     typography: {fontFamily: 'Montserrat, sans-serif'},
@@ -27,15 +25,13 @@ ReactDOM.render(
 )
 
 function App() {
-    const apiRoles = useLoginRoles()
-    const uiRoles = useLoginRoles()
     const parts = useParts()
     const projects = useProjects()
     const drawerState = useDrawerState(true)
 
     function Nav(props) {
         return <div>
-            <AppDrawer uiRoles={uiRoles} projects={projects.data} parts={parts.data} drawerState={drawerState}>
+            <AppDrawer projects={projects.data} parts={parts.data} drawerState={drawerState}>
                 {props.children}
             </AppDrawer>
         </div>

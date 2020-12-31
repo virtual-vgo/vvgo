@@ -1,7 +1,7 @@
 import {makeStyles} from "@material-ui/core/styles";
 import {fade} from "@material-ui/core";
 
-const drawerWidth = 320;
+const drawerWidth = 340;
 
 export const useVVGOStyles = makeStyles((theme) => ({
     root: {display: 'flex'},

@@ -1,11 +1,6 @@
 import React from 'react'
-import {Container, Typography} from "@material-ui/core";
-import Link from "@material-ui/core/Link";
+import {Container, Link, Table, TableBody, TableCell, TableRow, Typography} from "@material-ui/core";
 import VVGOAppBar from "./app_bar";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableRow from "@material-ui/core/TableRow";
-import TableCell from "@material-ui/core/TableCell";
 
 export default function About(props) {
     document.title = 'About'

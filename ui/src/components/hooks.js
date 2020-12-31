@@ -1,7 +1,5 @@
 import {useEffect, useState} from 'react';
 
-const axios = require('axios').default;
-
 export function useDrawerState(initialState) {
     const [state, setState] = useState(initialState);
     return {isOpen: state, openDrawer: () => setState(true), closeDrawer: () => setState(false)}
@@ -37,9 +35,10 @@ export function useAndCacheApiData(url, initialState) {
     useEffect(() => {
         if (status === Status.NeedsRun || cachedUrl !== url) {
             setStatus(Status.Running)
-            axios.get(url)
-                .then(response => {
-                    setData(response.data)
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    setData(data)
                     setCachedUrl(url)
                     setStatus(Status.Complete)
                 })

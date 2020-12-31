@@ -1,22 +1,12 @@
 import React from "react";
-import {Status} from "./hooks";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox";
-import FormGroup from "@material-ui/core/FormGroup";
+import {Checkbox, FormControlLabel, FormGroup} from "@material-ui/core";
 import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
+import {Status} from "./hooks";
 
-export default function DevTools(props) {
-    if (props.apiRoles.data.includes("vvgo-teams") === false) {
-        return null
-    }
-
-    return <div>
-        <ChooseRolesForm {...props}/>
-    </div>
-}
-
-function ChooseRolesForm(props) {
+export default function ChooseRolesForm(props) {
     if (props.apiRoles.status !== Status.Complete) {
+        return null
+    } else if (props.apiRoles.data.includes("vvgo-teams") === false) {
         return null
     }
 

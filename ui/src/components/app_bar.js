@@ -1,10 +1,7 @@
-import {AppBar as MuiAppBar} from "@material-ui/core";
-import clsx from "clsx";
-import Toolbar from "@material-ui/core/Toolbar";
-import IconButton from "@material-ui/core/IconButton";
-import MenuIcon from "@material-ui/icons/Menu";
-import Typography from "@material-ui/core/Typography";
 import React from "react";
+import clsx from "clsx";
+import {AppBar as MuiAppBar, IconButton, Toolbar, Typography} from "@material-ui/core";
+import {ChevronRight} from '@material-ui/icons'
 import {useVVGOStyles} from "./styles";
 
 const useStyles = useVVGOStyles
@@ -16,7 +13,7 @@ export default function VVGOAppBar(props) {
         <Toolbar>
             <IconButton aria-label="open drawer" color="inherit" edge="start" onClick={props.drawerState.openDrawer}
                         className={clsx(classes.menuButton, props.drawerState.isOpen && classes.hide)}>
-                <MenuIcon/>
+                <ChevronRight/>
             </IconButton>
             <Typography variant="h6" noWrap>{props.title}</Typography>
         </Toolbar>

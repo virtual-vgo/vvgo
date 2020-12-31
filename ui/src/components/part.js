@@ -1,7 +1,5 @@
 import React from "react";
-import {ButtonGroup, Typography} from "@material-ui/core";
-import Button from "@material-ui/core/Button";
-import Container from "@material-ui/core/Container";
+import {Button, ButtonGroup, Container, Typography} from "@material-ui/core";
 import VVGOAppBar from "./app_bar";
 
 export default function Part(props) {

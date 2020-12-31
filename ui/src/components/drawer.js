@@ -1,20 +1,19 @@
 import React, {useState} from 'react';
 import clsx from 'clsx';
-import Drawer from '@material-ui/core/Drawer';
-import CssBaseline from '@material-ui/core/CssBaseline';
-import List from '@material-ui/core/List';
-import Typography from '@material-ui/core/Typography';
-import Divider from '@material-ui/core/Divider';
-import IconButton from '@material-ui/core/IconButton';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
 import {Link as RouteLink} from "react-router-dom";
-import {ExpandLess, ExpandMore} from "@material-ui/icons";
-import Collapse from "@material-ui/core/Collapse";
+import {ChevronLeft as ChevronLeftIcon, ExpandLess, ExpandMore, Search as SearchIcon} from "@material-ui/icons";
+import {
+    Collapse,
+    CssBaseline,
+    Divider,
+    Drawer,
+    IconButton,
+    InputBase,
+    List,
+    ListItem,
+    ListItemText
+} from '@material-ui/core';
 import {useVVGOStyles} from "./styles";
-import SearchIcon from '@material-ui/icons/Search';
-import InputBase from '@material-ui/core/InputBase';
 import Footer from "./footer";
 
 const useStyles = useVVGOStyles
@@ -36,7 +35,6 @@ export default function AppDrawer(props) {
             <Drawer className={classes.drawer} variant="persistent" anchor="left"
                     open={props.drawerState.isOpen} classes={{paper: classes.drawerPaper,}}>
                 <div className={classes.drawerHeader}>
-                    <Typography>Open Projects</Typography>
                     <IconButton onClick={props.drawerState.closeDrawer}>
                         <ChevronLeftIcon/>
                     </IconButton>
