@@ -4,7 +4,7 @@ import {BrowserRouter, Route, Switch} from "react-router-dom";
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import '@fortawesome/fontawesome-free/js/fontawesome.min.js'
 import {Container} from "@material-ui/core";
-import {ThemeProvider, createMuiTheme} from '@material-ui/core/styles';
+import {createMuiTheme, ThemeProvider} from '@material-ui/core/styles';
 import AppDrawer from "./components/drawer";
 import Part from "./components/part";
 import {NotFound} from "./components/error_page";
@@ -42,7 +42,7 @@ function App() {
         const projectIndex = {}
         props.projects.forEach(project => projectIndex[project.Name] = project)
         return props.parts.map(part =>
-            <Route key={`${part.Project}-${part.PartName}`} path={`/parts/${part.Project}/${part.PartName}`}>
+            <Route key={`${part.Project}-${part.PartName}`} path={`/browser/parts/${part.Project}/${part.PartName}`}>
                 <Part drawerState={drawerState} project={projectIndex[part.Project]} part={part}/>
             </Route>
         )
@@ -51,7 +51,7 @@ function App() {
     return <BrowserRouter>
         <Nav>
             <Switch>
-                <Route exact path='/'>
+                <Route exact path='/browser'>
                     <VVGOAppBar drawerState={drawerState} title='Parts Browser'/>
                     <Container>
                         <YoutubeIframe src='https://www.youtube.com/embed/VgqtZ30bMgM'/>

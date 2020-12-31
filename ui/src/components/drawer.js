@@ -100,7 +100,7 @@ function PartListing(props) {
             <List component="div" disablePadding>
                 {parts.map(part =>
                     <ListItem key={`${part.project} - ${part.PartName}`} button className={classes.nestedList}
-                              component={RouteLink} to={`/parts/${props.project.Name}/${part.PartName}`}>
+                              component={RouteLink} to={`/browser/parts/${props.project.Name}/${part.PartName}`}>
                         {part.PartName}
                     </ListItem>
                 )}

@@ -6,19 +6,19 @@ export function useDrawerState(initialState) {
 }
 
 export function useLoginRoles() {
-    return useAndCacheApiData('/roles', [])
+    return useAndCacheApiData('/api/v1/roles', [])
 }
 
 export function useProjects() {
-    return useAndCacheApiData('/projects_api', [])
+    return useAndCacheApiData('/api/v1/projects', [])
 }
 
 export function useParts() {
-    return useAndCacheApiData('/parts_api', [])
+    return useAndCacheApiData('/api/v1/parts', [])
 }
 
 export function useLeaders() {
-    return useAndCacheApiData('/leaders', [])
+    return useAndCacheApiData('/api/v1/leaders', [])
 }
 
 export const Status = Object.freeze({

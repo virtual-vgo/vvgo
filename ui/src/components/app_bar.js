@@ -8,8 +8,9 @@ const useStyles = useVVGOStyles
 
 export default function VVGOAppBar(props) {
     const classes = useStyles();
-    return <MuiAppBar position="fixed"
-                      className={clsx(classes.appBar, {[classes.appBarShift]: props.drawerState.isOpen})}>
+    //const appBarClass = clsx(classes.appBar, {[classes.appBarShift]: props.drawerState.isOpen})
+    const appBarClass = classes.appBarShift
+    return <MuiAppBar position="fixed" className={appBarClass}>
         <Toolbar>
             <IconButton aria-label="open drawer" color="inherit" edge="start" onClick={props.drawerState.openDrawer}
                         className={clsx(classes.menuButton, props.drawerState.isOpen && classes.hide)}>

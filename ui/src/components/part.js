@@ -24,9 +24,9 @@ export default function Part(props) {
     }
 
     function ReferenceTrack() {
-        if (props.project.ReferenceTrack !== "") {
+        if (props.project.ReferenceTrackLink !== "") {
             return <div>
-                Reference Track: <audio controls src={props.project.ReferenceTrack}/>
+                Reference Track: <audio controls src={props.project.ReferenceTrackLink}/>
             </div>
         } else {
             return null

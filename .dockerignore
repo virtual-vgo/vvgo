@@ -4,3 +4,6 @@
 .google_api_credentials.json
 Dockerfile
 LICENSE
+public/node_modules
+ui/node_modules
+ui/build

@@ -3,8 +3,10 @@ package api
 import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"io"
 	"net/http"
 	"net/http/pprof"
+	"os"
 )
 
 var PublicFiles = "public"
@@ -43,13 +45,21 @@ func Routes() http.Handler {
 	mux.Handle("/api/v1/leaders", LeadersAPI{}, login.RoleAnonymous)
 	mux.Handle("/api/v1/roles", RolesAPI{}, login.RoleAnonymous)
 
+	mux.Handle("/browser/static/",
+		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
+		login.RoleVVGOMember)
+	mux.HandleFunc("/browser/",
+		func(w http.ResponseWriter, r *http.Request) {
+			file, _ := os.Open("ui/build/index.html")
+			io.Copy(w, file)
+		}, login.RoleVVGOMember)
+
 	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
 	mux.Handle("/projects", ProjectsView{}, login.RoleAnonymous)
 	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
 	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
 	mux.Handle("/about", AboutView{}, login.RoleAnonymous)
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
-	mux.Handle("/browser/", http.FileServer(http.Dir("ui/build")), login.RoleVVGOMember)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			IndexView{}.ServeHTTP(w, r)
