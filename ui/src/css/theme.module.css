@@ -49,12 +49,13 @@ body {
     border-width: thick;
 }
 
-.project-iframe-wrapper {
+.projectIframeWrapper {
     position: relative;
     padding-top: 56.25%;
+    text-align: center;
 }
 
-.project-iframe {
+.projectIframe {
     position: absolute;
     top: 0;
     left: 0;

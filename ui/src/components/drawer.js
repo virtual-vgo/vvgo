@@ -72,25 +72,26 @@ const useStyles = makeStyles((theme) => ({
 export default function AppDrawer(props) {
     const classes = useStyles();
     const theme = useTheme();
-    const [open, setOpen] = useState(true);
 
-    const openDrawer = () => setOpen(true);
-    const closeDrawer = () => setOpen(false);
+    // drawer
+    const [drawerState, setDrawerState] = useState(true);
+    const openDrawer = () => setDrawerState(true);
+    const closeDrawer = () => setDrawerState(false);
 
     return (
         <div className={classes.root}>
             <CssBaseline/>
-            <AppBar position="fixed" className={clsx(classes.appBar, {[classes.appBarShift]: open})}>
+            <AppBar position="fixed" className={clsx(classes.appBar, {[classes.appBarShift]: drawerState})}>
                 <Toolbar>
                     <IconButton aria-label="open drawer" color="inherit" edge="start" onClick={openDrawer}
-                                className={clsx(classes.menuButton, open && classes.hide)}>
+                                className={clsx(classes.menuButton, drawerState && classes.hide)}>
                         <MenuIcon/>
                     </IconButton>
-                    <Typography variant="h6" noWrap>Virtual VGO</Typography>
+                    <Typography variant="h6" noWrap>{props.appTitle}</Typography>
                 </Toolbar>
             </AppBar>
             <Drawer className={classes.drawer} variant="persistent" anchor="left"
-                    open={open} classes={{paper: classes.drawerPaper,}}>
+                    open={drawerState} classes={{paper: classes.drawerPaper,}}>
                 <div className={classes.drawerHeader}>
                     <Typography>Virtual VGO</Typography>
                     <IconButton onClick={closeDrawer}>
@@ -109,7 +110,7 @@ export default function AppDrawer(props) {
                     <TeamsListItem roles={props.uiRoles.data} to={"/credits-maker"}>Credits Maker</TeamsListItem>
                 </List>
             </Drawer>
-            <main className={clsx(classes.content, {[classes.contentShift]: open})}>
+            <main className={clsx(classes.content, {[classes.contentShift]: drawerState})}>
                 <div className={classes.drawerHeader}/>
                 {props.children}
             </main>
@@ -133,12 +134,6 @@ function TeamsListItem(props) {
     }
 }
 
-function OpenProjects(props) {
-    return props.projects
-        .filter(project => (project.PartsReleased === true && project.PartsArchived === false))
-        .map(project => <PartListing key={project.Name} project={project} parts={props.parts}/>)
-}
-
 function Releases(props) {
     const projects = props.projects.filter(project => (project.VideoReleased === true))
     projects.sort((a, b) => b.Name.localeCompare(a.Name))
@@ -148,6 +143,12 @@ function Releases(props) {
                 <ListItemText primary={project.Title}/>
             </ListItem>
         )
+}
+
+function OpenProjects(props) {
+    return props.projects
+        .filter(project => (project.PartsReleased === true && project.PartsArchived === false))
+        .map(project => <PartListing key={project.Name} project={project} parts={props.parts}/>)
 }
 
 function PartListing(props) {

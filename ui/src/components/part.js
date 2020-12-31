@@ -1,58 +1,50 @@
-import React, {useState} from "react";
-import Helmet from "react-helmet";
+import React from "react";
 import {ButtonGroup, Typography} from "@material-ui/core";
-import {Document, Page, pdfjs} from "react-pdf";
-import ReactPlayer from "react-player";
 import Button from "@material-ui/core/Button";
-
-//https://github.com/wojtekmaj/react-pdf#standard-browserify-and-others
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+import Box from "@material-ui/core/Box";
+import {YoutubeIframe} from "./utils";
+import Container from "@material-ui/core/Container";
 
 export default function Part(props) {
     function SheetMusic() {
-        const [numPages, setNumPages] = useState(null);
-
-        function onDocumentLoadSuccess({numPages}) {
-            setNumPages(numPages);
-        }
-
-
-
         if (props.part.SheetMusicLink !== "") {
-            return <Document file={props.part.SheetMusicLink} onLoadSuccess={onDocumentLoadSuccess}>
-                {Array.from(new Array(numPages), (el, index) => (
-                    <Page renderMode='canvas' key={`page_${index + 1}`} pageNumber={index + 1}/>
-                ))}
-            </Document>
+            return <Box>
+                <object style={{width: '100%', height: '90vh'}} data={props.part.SheetMusicLink}/>
+            </Box>
         } else {
             return null
         }
     }
 
+    function ClickTrack() {
+        if (props.part.ClickTrackLink !== "") {
+            return <object data={props.part.ClickTrackLink}/>
+        } else {
+            return null
+        }
+    }
+
+    function ConductorVideo() {
+        if (props.part.ConductorVideo !== "") {
+            return <Box width={'50%'}>
+                <YoutubeIframe YoutubeEmbed="https://www.youtube.com/embed/bsFMaH1tTws"/>
+            </Box>
+        } else {
+            return null
+        }
+    }
+
+    props.setAppTitle(`${props.project.Title} | ${props.part.PartName}`)
+    document.title = `${props.project.Title} | ${props.part.PartName}`
     console.log("displaying", props.part)
-    return <div>
-        <Helmet>
-            <title>{props.project.Title} | {props.part.PartName}</title>
-            <meta name="description" content=""/>
-        </Helmet>
-        <Typography variant='h3'>{props.project.Title} - {props.part.PartName}</Typography>
-        <ProjectInfo {...props.project}/>
+    return <Container>
         <ButtonGroup variant='outlined'>
             <ProjectLinks {...props.project}/>
             <PartDownloads {...props.part}/>
         </ButtonGroup>
+        <ConductorVideo/>
         <SheetMusic/>
-    </div>
-}
-
-function MediaPlayer(props) {
-    if (ReactPlayer.canPlay(props.ClickTrackLink)) {
-        console.log("can play 😀", props.Project, props.PartName, props.ClickTrackLink)
-        return <ReactPlayer url={props.ClickTrackLink}/>
-    } else {
-        console.log("cant play yet 😩", props.Project, props.PartName)
-        return null
-    }
+    </Container>
 }
 
 function ProjectInfo(props) {

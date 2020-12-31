@@ -1,7 +1,7 @@
-import React from 'react'
+import React, {useState} from 'react'
 import ReactDOM from 'react-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
-import './theme.css'
+import './css/theme.module.css'
 import Footer from './components/footer'
 import About from './components/about'
 import {BrowserRouter, Route, Switch} from "react-router-dom";
@@ -36,9 +36,11 @@ function App() {
     const projects = useProjects()
     const leaders = useLeaders()
 
+    const [appTitle, setAppTitle] = useState('Virtual VGO')
+
     function Nav(props) {
         return <div>
-            <AppDrawer uiRoles={uiRoles} projects={projects.data} parts={parts.data}>
+            <AppDrawer uiRoles={uiRoles} projects={projects.data} parts={parts.data} appTitle={appTitle}>
                 <DevTools uiRoles={uiRoles} apiRoles={apiRoles}/>
                 {props.children}
                 <Footer uiRoles={uiRoles} apiRoles={apiRoles}/>
@@ -51,24 +53,27 @@ function App() {
         const projectIndex = {}
         props.projects.forEach(project => projectIndex[project.Name] = project)
 
-        return <Switch>
-            {props.parts.map(part =>
-                <Route key={part.PartName} path={`/parts/${part.Project}/${part.PartName}`}>
-                    <Nav><Part project={projectIndex[part.Project]} part={part}/></Nav>
-                </Route>
-            )}
-        </Switch>
+        return props.parts.map(part =>
+            <Route key={part.PartName} path={`/parts/${part.Project}/${part.PartName}`}>
+                <Part setAppTitle={setAppTitle} project={projectIndex[part.Project]} part={part}/>
+            </Route>
+        )
     }
 
     return <BrowserRouter>
         <Switch>
-            <Route exact path="/"><Nav><Home projects={projects.data}/></Nav></Route>
-            <Route path="/about"><Nav><About leaders={leaders.data}/></Nav></Route>
-            <PartRouter parts={parts.data} projects={projects.data}/>
-            <Route path="/401.html"><AccessDenied/></Route>
-            <Route path="/404.html"><NotFound/></Route>
-            <Route path="/500.html"><InternalOopsie/></Route>
-            <Route path="*"><NotFound/></Route>
+            <Route exact path="/401.html"><AccessDenied/></Route>
+            <Route exact path="/404.html"><NotFound/></Route>
+            <Route exact path="/500.html"><InternalOopsie/></Route>
+            <Route path="/">
+                <Nav>
+                    <Switch>
+                        <Route exact path="/"><Home projects={projects.data}/></Route>
+                        <Route path="/about"><About leaders={leaders.data}/></Route>
+                        <PartRouter parts={parts.data} projects={projects.data}/>
+                    </Switch>
+                </Nav>
+            </Route>
         </Switch>
     </BrowserRouter>
 }

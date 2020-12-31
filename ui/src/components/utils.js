@@ -1,4 +1,5 @@
 import React from "react";
+import styles from '../css/theme.module.css'
 
 const axios = require('axios').default;
 
@@ -17,8 +18,10 @@ function ProjectBanner(props) {
 }
 
 function YoutubeIframe(props) {
-    return <div className="project-iframe-wrapper text-center m-2">
-        <iframe className="project-iframe" src={props.YoutubeEmbed}
+    const width = (window.width * 9) / 10
+    const height = (9 * width) / 16
+    return <div className={styles.projectIframeWrapper}>
+        <iframe className={styles.projectIframe} height={height} width={width} src={props.YoutubeEmbed}
                 allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                 title="latest.Title"
                 allowFullScreen/>
