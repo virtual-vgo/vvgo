@@ -32,13 +32,12 @@ type Project struct {
 	SubmissionDeadline      string `col_name:"Submission Deadline"`
 	SubmissionLink          string `col_name:"Submission Link"`
 
-	// Derived Columns
-	ProjectPage string
-	PartsPage   string
+	// Derived
+	ReferenceTrackLink string
 }
 
-func (x Project) projectPage() string { return "/projects?name=" + x.Name }
-func (x Project) partsPage() string   { return "/parts?project=" + x.Name }
+func (x Project) ProjectPage() string { return "/projects?name=" + x.Name }
+func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 
 type Projects []Project
 
@@ -58,9 +57,7 @@ func valuesToProjects(values [][]interface{}) Projects {
 	projects := make([]Project, len(values)-1) // ignore the header row
 	for i, row := range values[1:] {
 		processRow(row, &projects[i], index)
-		projects[i].ReferenceTrack = downloadLink(projects[i].ReferenceTrack)
-		projects[i].PartsPage = projects[i].partsPage()
-		projects[i].ProjectPage = projects[i].projectPage()
+		projects[i].ReferenceTrackLink = downloadLink(projects[i].ReferenceTrack)
 	}
 	return projects
 }

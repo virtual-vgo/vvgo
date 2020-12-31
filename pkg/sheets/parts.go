@@ -2,8 +2,6 @@ package sheets
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/login"
-	"net/url"
 	"sort"
 )
 
@@ -24,17 +22,12 @@ type Part struct {
 
 type Parts []Part
 
-func ListParts(ctx context.Context, identity *login.Identity) (Parts, error) {
-	projects, err := ListProjects(ctx, identity)
-	if err != nil {
-		return nil, err
-	}
-
+func ListParts(ctx context.Context) (Parts, error) {
 	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Parts")
 	if err != nil {
 		return nil, err
 	}
-	return valuesToParts(values).ForProject(projects.Names()...), nil
+	return valuesToParts(values), nil
 }
 
 func valuesToParts(values [][]interface{}) Parts {
@@ -56,7 +49,7 @@ func downloadLink(object string) string {
 	if object == "" {
 		return ""
 	} else {
-		return "/download?object=" + url.PathEscape(object)
+		return "/download?object=" + object
 	}
 }
 

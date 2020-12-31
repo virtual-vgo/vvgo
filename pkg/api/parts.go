@@ -24,12 +24,22 @@ func (x PartsAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	ctx := r.Context()
-	parts, err := sheets.ListParts(ctx, IdentityFromContext(ctx))
+
+	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
-		logger.WithError(err).Error("valuesToProjects() failed")
+		logger.WithError(err).Error("listProjects() failed")
 		internalServerError(w)
 		return
 	}
+
+	parts, err := sheets.ListParts(ctx)
+	if err != nil {
+		logger.WithError(err).Error("listParts() failed")
+		internalServerError(w)
+		return
+	}
+	parts = parts.ForProject(projects.Names()...)
+
 	if project := r.FormValue("project"); project != "" {
 		parts = parts.ForProject(project)
 	}
