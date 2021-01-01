@@ -224,6 +224,7 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request, c
 	loginSuccess(w, r, ctx, &login.Identity{
 		Kind:  login.KindDiscord,
 		Roles: loginRoles,
+		DiscordID: discordUser.ID,
 	})
 }
 
