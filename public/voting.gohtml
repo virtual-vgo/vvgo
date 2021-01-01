@@ -9,6 +9,20 @@
     <script type="text/javascript" src="/js/voting.js"></script>
 </head>
 
+<style>
+    .vote {
+        cursor: grab;
+        text-align: left;
+        padding-right: 10px;
+        padding-left: 10px;
+        border-color: #8C17D9;
+        border-style: solid;
+        border-width: 2px;
+        border-radius: 5px;
+        min-width: 200px;
+    }
+</style>
+
 <body class="">
 {{ template "navbar.gohtml" }}
 
@@ -16,15 +30,16 @@
     <div class="row row-cols-1 justify-content-center">
         <div class="col col-md-auto text-light text-center">
             <h1>Ballot</h1>
-            <h4>Choices</h4>
-            <ul id="sortable" class="list-group">
-                <li class="vote list-group-item list-group-item-primary">Mario</li>
-                <li class="vote list-group-item list-group-item-primary">Zelda</li>
-                <li class="vote list-group-item list-group-item-primary">Animal Crossing</li>
-            </ul>
-            <button type="submit" class="btn btn-primary" onclick="submitVote()">Submit</button>
+            <h4>Choices:</h4>
+            <ol id="sortable" class="">
+                <li class="vote" ondrag="clickVote()">Mario</li>
+                <li class="vote">Zelda</li>
+                <li class="vote">Animal Crossing</li>
+            </ol>
+            <button type="submit" class="btn bg-vvgo-purple text-light" onclick="submitVote()">Submit</button>
         </div>
     </div>
+</div>
 </div>
 {{ template "footer.gohtml" }}
 </body>

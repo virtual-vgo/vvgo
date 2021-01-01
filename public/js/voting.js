@@ -5,7 +5,7 @@ $(document).ready(function () {
 })
 
 function submitVote() {
-    let votes = $("li.vote").map(function () {
+    let votes = $("li.vote").map(function() {
         return $(this).text();
     }).get();
 
