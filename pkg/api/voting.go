@@ -48,11 +48,11 @@ func (VotingResultsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var ballot []string
 		json.Unmarshal([]byte(ballotJSON), &ballot)
 	}
-	results := countBallots(ballots)
+	results := determineWinners(ballots)
 	json.NewEncoder(w).Encode(results)
 }
 
-func countBallots(ballots [][]string) []string {
+func determineWinners(ballots [][]string) []string {
 	if len(ballots) < 1 {
 		return []string{}
 	}

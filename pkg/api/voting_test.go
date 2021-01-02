@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestCountBallots(t *testing.T) {
+func Test_determineWinners(t *testing.T) {
 	ballots := [][]string{
 		{"Choice A", "Choice B", "Choice C", "Choice D", "Choice E"},
 		{"Choice D", "Choice B", "Choice A", "Choice C", "Choice E"},
@@ -13,5 +13,5 @@ func TestCountBallots(t *testing.T) {
 		{"Choice C", "Choice B", "Choice D", "Choice E", "Choice A"},
 		{"Choice A", "Choice B", "Choice C", "Choice D", "Choice E"},
 	}
-	assert.Equal(t, []string{"Choice A", "Choice B", "Choice C", "Choice D", "Choice E"}, countBallots(ballots))
+	assert.Equal(t, []string{"Choice A", "Choice B", "Choice C", "Choice D", "Choice E"}, determineWinners(ballots))
 }
