@@ -2,10 +2,12 @@ $(document).ready(function () {
     let sortable = $("#sortable")
     sortable.sortable();
     sortable.disableSelection();
+
+    $("vote").map(() => $(this).style())
 })
 
 function submitVote() {
-    let votes = $("li.vote").map(function() {
+    let votes = $("vote").map(function() {
         return $(this).text();
     }).get();
 
