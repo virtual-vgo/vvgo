@@ -140,5 +140,5 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
 	assert.Equal(t, "/guilds/test-guild-id/members/test-user-id", gotRequest.URL.String())
 	assert.Equal(t, []string{"Bot test-bot-auth-token"}, gotRequest.Header["Authorization"])
-	assert.Equal(t, &GuildMember{Roles: []string{"jelly", "donut"}}, gotMember)
+	assert.Equal(t, &GuildMember{Nick: "NOT API SUPPORT", Roles: []string{"jelly", "donut"}}, gotMember)
 }
