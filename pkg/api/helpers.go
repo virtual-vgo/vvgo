@@ -43,16 +43,6 @@ func jsonEncode(dest io.Writer, src interface{}) bool {
 	return true
 }
 
-func jsonEncodeBeautify(dest io.Writer, src interface{}) bool {
-	encoder := json.NewEncoder(dest)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(src); err != nil {
-		logger.WithError(err).Error("json.Encode() failed")
-		return false
-	}
-	return true
-}
-
 func gobEncode(dest io.Writer, src interface{}) bool {
 	if err := gob.NewEncoder(dest).Encode(src); err != nil {
 		logger.WithError(err).Error("gob.Encode() failed")
@@ -88,34 +78,41 @@ func acceptsType(r *http.Request, mediaType string) bool {
 	return false
 }
 
-func badRequest(w http.ResponseWriter, reason string) {
-	http.Error(w, reason, http.StatusBadRequest)
+type errorHandler struct{ error error } // not an error type
+
+func handleError(err error) errorHandler { return errorHandler{err} }
+func (x errorHandler) ifSuccess(do func()) errorHandler {
+	if x.error == nil {
+		do()
+	}
+	return x
+}
+func (x errorHandler) logSuccess(args ...interface{}) errorHandler {
+	if x.error == nil {
+		logger.Infoln(args...)
+	}
+	return x
+}
+func (x errorHandler) ifError(do func(error)) errorHandler {
+	if x.error != nil {
+		do(x.error)
+	}
+	return x
+}
+func (x errorHandler) logError(args ...interface{}) errorHandler {
+	if x.error != nil {
+		logger.WithError(x.error).Errorln(args...)
+	}
+	return x
 }
 
-func internalServerError(w http.ResponseWriter) {
-	http.Error(w, "", http.StatusInternalServerError)
-}
-
-func methodNotAllowed(w http.ResponseWriter) {
-	http.Error(w, "", http.StatusMethodNotAllowed)
-}
-
-func tooManyBytes(w http.ResponseWriter) {
-	http.Error(w, "", http.StatusRequestEntityTooLarge)
-}
-
-func invalidContent(w http.ResponseWriter) {
-	http.Error(w, "", http.StatusUnsupportedMediaType)
-}
-
-func notFound(w http.ResponseWriter) {
-	http.Error(w, "404 page not found", http.StatusNotFound)
-}
-
+func badRequest(w http.ResponseWriter, reason string) { http.Error(w, reason, http.StatusBadRequest) }
+func internalServerError(w http.ResponseWriter)       { http.Error(w, "", http.StatusInternalServerError) }
+func methodNotAllowed(w http.ResponseWriter)          { http.Error(w, "", http.StatusMethodNotAllowed) }
+func tooManyBytes(w http.ResponseWriter)              { http.Error(w, "", http.StatusRequestEntityTooLarge) }
+func invalidContent(w http.ResponseWriter)            { http.Error(w, "", http.StatusUnsupportedMediaType) }
+func notFound(w http.ResponseWriter)                  { http.Error(w, "404 page not found", http.StatusNotFound) }
 func unauthorized(w http.ResponseWriter) {
 	http.Error(w, "authorization failed", http.StatusUnauthorized)
 }
-
-func notImplemented(w http.ResponseWriter) {
-	http.Error(w, "", http.StatusNotImplemented)
-}
+func notImplemented(w http.ResponseWriter) { http.Error(w, "", http.StatusNotImplemented) }
