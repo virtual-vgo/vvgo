@@ -45,6 +45,10 @@ func Routes() http.Handler {
 	mux.Handle("/api/v1/leaders", LeadersAPI{}, login.RoleAnonymous)
 	mux.Handle("/api/v1/roles", RolesAPI{}, login.RoleAnonymous)
 
+	mux.Handle("/voting", VotingView{}, login.RoleVVGOLeader)
+	mux.Handle("/voting/submit", VotingCollector{}, login.RoleVVGOLeader)
+	mux.Handle("/voting/results", VotingResultsView{}, login.RoleVVGOLeader)
+
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
 		login.RoleVVGOMember)
