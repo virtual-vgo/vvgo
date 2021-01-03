@@ -19,7 +19,6 @@
         border-style: solid;
         border-width: 2px;
         border-radius: 5px;
-        min-width: 200px;
     }
 </style>
 
@@ -31,16 +30,15 @@
         <div class="col col-md-auto text-light text-center">
             <h1>Ballot</h1>
             <h4>Choices:</h4>
-            <ol id="sortable" style="width: 500px;">
-                {{range .}}
-                    <li class="vote">{{.}}</li>
-                {{end}}
-            </ol>
+            <div id="loading"></div>
+            <div id="ballot" style="max-width: 500px;"></div>
             <button type="submit" class="btn bg-vvgo-purple text-light" onclick="submitVote()">Submit</button>
-        </div>
-        <div class="col">
-            <p id="voteSubmitted" class="text-info text-center d-none mt-3">Vote submitted! Feel free to resubmit.
-                Results are <a href="/voting/results">here.</a></p>
+            <p id="voteSubmitted" class="text-info text-center d-none mt-3">
+                🎉 Vote submitted! Feel free to resubmit. Results are <a href="/voting/results">here.</a>
+            </p>
+            <p id="submissionFailed" class="text-warning text-center d-none mt-3">
+                Failed to submit ballot. 😔
+            </p>
         </div>
     </div>
 </div>

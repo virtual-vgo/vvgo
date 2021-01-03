@@ -11,42 +11,78 @@ import (
 	"strings"
 )
 
-type VotingView struct{}
-
 const season = "season2"
 
-func (x VotingView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+var VotingView = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var choices []string
-	redis.Do(ctx, redis.Cmd(&choices, "LRANGE", "arrangements:"+season+":submissions", "0", "-1"))
-	sort.Strings(choices)
-	ParseAndExecute(ctx, w, r, &choices, "voting.gohtml")
-}
+	ParseAndExecute(ctx, w, r, nil, "voting.gohtml")
+})
 
-type arrangementSubmission struct {
-	PieceTitle     string `json:"piece_title"`
-	SourceMaterial string `json:"source_material"`
-}
-
-type VotingCollector struct{}
-
-func (x VotingCollector) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+var ArrangementsBallotAPI = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	identity := IdentityFromContext(ctx)
 
-	var config DiscordLoginConfig
-	if err := parse_config.ReadFromRedisHash(ctx, "discord_login", &config); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-		internalServerError(w)
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Disposition", `attachment; filename="ballot.json"`)
+
+		var ballotJSON string
+		handleError(redis.Do(ctx, redis.Cmd(&ballotJSON, "HGET",
+			"arrangements:"+season+":ballots", identity.DiscordID.String()))).
+			logError("redis.Do() failed")
+		if ballotJSON != "" {
+			handleError(json.NewEncoder(w).Encode(json.RawMessage(ballotJSON))).
+				logError("json.Encode() failed")
+			return
+		}
+
+		var ballot []string
+		handleError(redis.Do(ctx, redis.Cmd(&ballot, "LRANGE",
+			"arrangements:"+season+":submissions", "0", "-1"))).
+			logError("redis.Do() failed")
+		sort.Strings(ballot)
+		handleError(json.NewEncoder(w).Encode(ballot)).
+			logError("json.Encode() failed")
+
+	case http.MethodPost:
+		var ballot []string
+
+		handleError(json.NewDecoder(r.Body).Decode(&ballot)).
+			logError("json.Decode() failed")
+		if validateBallot(ctx, ballot) == false {
+			badRequest(w, "invalid ballot")
+			return
+		}
+
+		ballotJSON, _ := json.Marshal(ballot)
+		handleError(redis.Do(ctx, redis.Cmd(nil, "HSET",
+			"arrangements:"+season+":ballots", identity.DiscordID.String(), string(ballotJSON)))).
+			logError("redis.Do() failed")
+	}
+})
+
+func validateBallot(ctx context.Context, ballot []string) bool {
+	var allowedChoices []string
+	handleError(redis.Do(ctx, redis.Cmd(&allowedChoices, "LRANGE",
+		"arrangements:"+season+":submissions", "0", "-1"))).
+		logError("redis.Do() failed")
+
+	if len(ballot) != len(allowedChoices) {
+		return false
 	}
 
-	var ballot []string
-	jsonDecode(r.Body, &ballot) // decode ballot to make sure its valid json
-	// re-encode to json
-	ballotJSON, _ := json.Marshal(ballot)
-	guildMember, _ := discord.NewClient(ctx).QueryGuildMember(ctx, discord.GuildID(config.GuildID), identity.DiscordID)
-	redis.Do(ctx, redis.Cmd(nil, "HSET", "arrangements:"+season+":ballots", identity.DiscordID.String(), string(ballotJSON)))
-	logger.Printf("%s submitted ballot: %s", guildMember.Nick, ballot)
+	index := make(map[string]struct{}, len(allowedChoices))
+	for _, choice := range allowedChoices {
+		index[choice] = struct{}{}
+	}
+
+	for _, choice := range ballot {
+		if _, ok := index[choice]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 type VotingResultsView struct{}
@@ -183,6 +219,7 @@ func pickNextWinner(ballots [][]string) []string {
 
 	// dead tie
 	if minVotes == maxVotes {
+		sort.Strings(losers)
 		return losers
 	}
 
