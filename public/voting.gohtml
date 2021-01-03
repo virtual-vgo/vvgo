@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Votabulatron 5000</title>
+    <title>Votabulatron 5000 | Submit Ballot</title>
     <meta name="description" content="">
     {{ template "header.gohtml" }}
     <script type="text/javascript" src="/node_modules/jquery-ui-dist/jquery-ui.min.js"></script>
@@ -31,12 +31,16 @@
         <div class="col col-md-auto text-light text-center">
             <h1>Ballot</h1>
             <h4>Choices:</h4>
-            <ol id="sortable" class="">
-                <li class="vote">Mario</li>
-                <li class="vote">Zelda</li>
-                <li class="vote">Animal Crossing</li>
+            <ol id="sortable" style="width: 500px;">
+                {{range .}}
+                    <li class="vote">{{.}}</li>
+                {{end}}
             </ol>
             <button type="submit" class="btn bg-vvgo-purple text-light" onclick="submitVote()">Submit</button>
+        </div>
+        <div class="col">
+            <p id="voteSubmitted" class="text-info text-center d-none mt-3">Vote submitted! Feel free to resubmit.
+                Results are <a href="/voting/results">here.</a></p>
         </div>
     </div>
 </div>

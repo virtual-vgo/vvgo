@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Votabulatron 5000 | Results</title>
+    <meta name="description" content="">
+    {{ template "header.gohtml" }}
+    <script type="text/javascript" src="/node_modules/jquery-ui-dist/jquery-ui.min.js"></script>
+    <meta http-equiv="refresh" content="5">
+</head>
+
+<body class="">
+{{ template "navbar.gohtml" }}
+
+<div class="mt-2 container">
+    <div class="row row-cols-1 justify-content-center">
+        <div class="col col-md-auto text-light text-left" style="width: 500px;">
+            <h1>Results</h1>
+            <table class="table text-light">
+                <tbody>
+                {{range .Results}}
+                    <tr>
+                        <td>{{.Rank}}</td>
+                        <td>{{.Names}}</td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col">
+            <h2>Ballots</h2>
+            {{ range .Ballots}}
+                <div class="title text-light text-left">
+                    {{.Nick}}
+                </div>
+                <ol>
+                    {{ range .Votes }}
+                        <li class="text-light text-left ">{{.}}</li>
+                    {{ end }}
+                </ol>
+            {{end}}
+        </div>
+    </div>
+</div>
+</div>
+{{ template "footer.gohtml" }}
+</body>
+</html>
