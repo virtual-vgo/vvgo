@@ -46,6 +46,8 @@ func Routes() http.Handler {
 	mux.Handle("/api/v1/roles", RolesAPI{}, login.RoleAnonymous)
 	mux.Handle("/api/v1/arrangements/ballot", ArrangementsBallotAPI, login.RoleVVGOLeader)
 
+	mux.Handle("/slash_commands/parts", PartsCommand, login.RoleAnonymous)
+
 	mux.Handle("/voting", VotingView, login.RoleVVGOLeader)
 	mux.Handle("/voting/results", VotingResultsView{}, login.RoleVVGOLeader)
 
