@@ -21,10 +21,18 @@ var PartsCommand = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	handleError(json.NewDecoder(r.Body).Decode(&request)).logError("json.Decode() failed").
 		ifError(func(err error) { badRequest(w, "invalid request body: "+err.Error()) }).
 		ifSuccess(func() {
-			response := map[string]interface{}{
-				"type": InteractionResponseTypeChannelMessageWithSource,
-				"data": map[string]interface{}{"tts": false, "content": "https://vvgo.org/parts"},
+			switch request["type"] {
+			case InteractionTypePing:
+				return
+			case InteractionTypeApplicationCommand:
+				response := map[string]interface{}{
+					"type": InteractionResponseTypeChannelMessageWithSource,
+					"data": map[string]interface{}{"tts": false, "content": "https://vvgo.org/parts"},
+				}
+				handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
+			default:
+				badRequest(w, "unsupported interaction type")
 			}
-			handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
+
 		})
 })
