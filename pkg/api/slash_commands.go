@@ -13,6 +13,7 @@ const (
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response-interactionresponsetype
 const (
+	InteractionResponseTypePong                     = 1
 	InteractionResponseTypeChannelMessageWithSource = 4
 )
 
@@ -21,18 +22,19 @@ var PartsCommand = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	handleError(json.NewDecoder(r.Body).Decode(&request)).logError("json.Decode() failed").
 		ifError(func(err error) { badRequest(w, "invalid request body: "+err.Error()) }).
 		ifSuccess(func() {
+			var response map[string]interface{}
 			switch request["type"] {
 			case InteractionTypePing:
-				return
+				response = map[string]interface{}{"type": InteractionResponseTypePong}
 			case InteractionTypeApplicationCommand:
-				response := map[string]interface{}{
+				response = map[string]interface{}{
 					"type": InteractionResponseTypeChannelMessageWithSource,
 					"data": map[string]interface{}{"tts": false, "content": "https://vvgo.org/parts"},
 				}
-				handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
 			default:
 				badRequest(w, "unsupported interaction type")
+				return
 			}
-
+			handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
 		})
 })
