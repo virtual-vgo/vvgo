@@ -307,6 +307,7 @@ If there are instruments missing here, please let Brandon know.
 * Cowbell
 * Cajón (111.24)
 #### Shaken
+* Sleigh Bells (112.111)
 * Afuche/Cabasa (112.112)
 * Flexatone (112.121)
 * Tambourine (112.121)
