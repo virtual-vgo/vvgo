@@ -212,19 +212,21 @@ If there are instruments missing here, please let Brandon know.
 * Flute 1, 2
 * Alto Flute
 * Bass Flute
+* Kaval
 * Ryūteki
 * C Soprano Ocarina
 * G Soprano Ocarina
-* C Alto (or Tenor) Ocarina
+* C Alto (aka Tenor) Ocarina
 * G Alto Ocarina
 * C Bass Ocarina
 * C Contrabass Ocarina
+* Garklein Recorder (in C6, CP)
 * Sopranino Recorder (in F5, CP)
 * Soprano Recorder (in C5, CP)
 * Alto Recorder (in F4, CP)
 * Tenor Recorder (in C4, CP)
 * Bass Recorder (in F3, CP)
-* Soprano Tin Whistle (in any key from Bb4-Eb5, F5, G5) (D5 CP is standard)
+* Soprano Tin Whistle/Irish Whistle (in any key from Bb4-Eb5, F5, G5) (D5 CP is standard)
 * Low Whistle (in D4)
 #### Double Reeds, minus Bassoons
 * Tenor Crumhorn
@@ -261,7 +263,8 @@ If there are instruments missing here, please let Brandon know.
 ### Brass
 * Horn in F / F Mellophone 1, 2, 3, 4, (5, 6)
 * French Horn Bugle in G-F-F#
-* Trumpet 1, 2, (3, 4)
+* (Bb) Trumpet 1, 2, (3, 4)
+* (Bb) Cornet
 * Flugelhorn
 * F Alto Trumpet
 * (Alto or Tenor) Horn in Eb (CP, dropped-octave treble clef)
@@ -287,16 +290,19 @@ If there are instruments missing here, please let Brandon know.
 * Tom-toms / Tenor Drums (211.212.21)
 * Bongos (211.251.2)
 * Congas (211.221.1)
-* Taiko Drums (211.222.1)
+* Taiko Drums (211.222.1) (Chū-daiko)
 * Bodhrán (211.311)
 #### Cymbals and Unpitched Gongs
-* Piatti (Clash)
+* Piatti (Clash/Crash Cymbals)
 * Suspended Cymbal
 * Tam-tam
 #### Unpitched Concussion
+* Finger Cymbals
 * Claves
 * Whip (Slapstick)
+* Bones
 * Spoons
+* Finger Snaps
 * Castanets
 * Mark Tree
 #### Struck Unpitched Percussion
@@ -313,7 +319,7 @@ If there are instruments missing here, please let Brandon know.
 * Tambourine (112.121)
 * Vibraslap (112.122)
 * Thundertube (112.122)
-* Shaker (112.13)
+* Shaker(s) (112.13) (Various)
 ### Friction
 * Sanding Blocks (132?)
 #### Pitched Percussion
@@ -327,7 +333,9 @@ If there are instruments missing here, please let Brandon know.
 #### Other
 * Waterphone
 
-### Zithers, Lutes, and Modern Band
+### Lamellophones, Zithers, Lutes, and Modern Band
+#### Lamellophones
+* Kalimba (in C, C4-E6)
 #### Zithers
 * Kantele (314.11)
 * Koto (314.122)
@@ -341,10 +349,11 @@ If there are instruments missing here, please let Brandon know.
 * (Electric Guitar 2)
 * Electric Bass
 * (Plucked) Double Bass / String Bass / Upright Bass
-* Drum Set
+* Drums
 
 ### Harp, Keyboards, and Synthesizers
-* Harp 1, (2)
+* (Pedal) Harp 1, (2)
+* Lever Harp
 * Piano 1, (2)
 * Keyboard
 * Synthesizer
