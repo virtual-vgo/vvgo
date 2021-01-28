@@ -34,3 +34,8 @@ func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	ParseAndExecute(ctx, w, r, leaders, "about.gohtml")
 }
+
+var ContactUs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ParseAndExecute(ctx, w, r, nil, "contact_us.gohtml")
+})
