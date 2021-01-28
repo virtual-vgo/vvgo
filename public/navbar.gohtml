@@ -26,6 +26,10 @@
                     <a class="{{if eq template_file "about.gohtml" }}{{ $selected }}{{ end }} nav-link"
                        href="/about">About</a>
                 </li>
+                <li class="nav-item">
+                    <a class="{{if eq template_file "contact_us.gohtml" }}{{ $selected }}{{ end }} nav-link"
+                       href="/contact_us">Contact Us</a>
+                </li>
                 {{ if user_is_member }}
                     <li class="nav-item">
                         <a class="nav-link"

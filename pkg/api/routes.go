@@ -64,6 +64,7 @@ func Routes() http.Handler {
 	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
 	mux.Handle("/about", AboutView{}, login.RoleAnonymous)
 	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
+	mux.Handle("/contact_us", ContactUs, login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			IndexView{}.ServeHTTP(w, r)
