@@ -13,12 +13,9 @@ import (
 
 const season = "season2"
 
-var VotingView = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	ParseAndExecute(ctx, w, r, nil, "voting.gohtml")
-})
+var VotingView = ServeTemplate("voting.gohtml")
 
-var ArrangementsBallotAPI = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	identity := IdentityFromContext(ctx)
 
@@ -85,9 +82,7 @@ func validateBallot(ctx context.Context, ballot []string) bool {
 	return true
 }
 
-type VotingResultsView struct{}
-
-func (VotingResultsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+var VotingResultsView = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := make(map[string]string)
 	redis.Do(ctx, redis.Cmd(&data, "HGETALL", "arrangements:"+season+":ballots"))
@@ -114,7 +109,7 @@ func (VotingResultsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Ballots: nameBallots(ctx, discord.GuildID(config.GuildID), data),
 	}
 	ParseAndExecute(ctx, w, r, &page, "voting_results.gohtml")
-}
+})
 
 type namedBallot struct {
 	Nick  string

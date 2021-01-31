@@ -5,26 +5,11 @@ import (
 	"net/http"
 )
 
-type IndexView struct{}
+var IndexView = ServeTemplate("index.gohtml")
+var ContactUs = ServeTemplate("contact_us.gohtml")
 
-func (x IndexView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+var AboutView = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
-	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
-		return
-	}
-	ParseAndExecute(ctx, w, r, nil, "index.gohtml")
-}
-
-type AboutView struct{}
-
-func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
-		return
-	}
 
 	leaders, err := sheets.ListLeaders(ctx)
 	if err != nil {
@@ -33,9 +18,10 @@ func (x AboutView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ParseAndExecute(ctx, w, r, leaders, "about.gohtml")
-}
-
-var ContactUs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	ParseAndExecute(ctx, w, r, nil, "contact_us.gohtml")
 })
+
+func ServeTemplate(templateFile string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ParseAndExecute(r.Context(), w, r, nil, templateFile)
+	}
+}

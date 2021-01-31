@@ -9,13 +9,11 @@ import (
 
 const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
-type DownloadHandler struct{}
-
 type DownloadConfig struct {
 	DistroBucket string `redis:"distro_bucket"`
 }
 
-func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -49,4 +47,4 @@ func (x DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, downloadUrl.String(), http.StatusFound)
-}
+})

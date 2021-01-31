@@ -23,7 +23,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	_, err = minioClient.PutObject(bucketName, "danish", strings.NewReader(""), -1, minio.PutObjectOptions{})
 	require.NoError(t, err, "minioClient.PutObject() failed")
 
-	downloadHandler := DownloadHandler{}
+	downloadHandler := DownloadHandler
 	config := DownloadConfig{DistroBucket: bucketName}
 	require.NoError(t, parse_config.WriteToRedisHash(ctx, "download", &config), "redis.Do() failed")
 

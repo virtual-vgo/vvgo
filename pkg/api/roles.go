@@ -5,9 +5,7 @@ import (
 	"net/http"
 )
 
-type RolesAPI struct{}
-
-func (RolesAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func RolesApi(w http.ResponseWriter, r *http.Request) {
 	identity := IdentityFromContext(r.Context())
 	var wantRoles []login.Role
 	jsonDecode(r.Body, &wantRoles)

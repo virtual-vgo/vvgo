@@ -40,14 +40,14 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
-	mux.Handle("/api/v1/parts", PartsAPI{}, login.RoleVVGOMember)
-	mux.Handle("/api/v1/projects", ProjectsAPI{}, login.RoleAnonymous)
-	mux.Handle("/api/v1/leaders", LeadersAPI{}, login.RoleAnonymous)
-	mux.Handle("/api/v1/roles", RolesAPI{}, login.RoleAnonymous)
-	mux.Handle("/api/v1/arrangements/ballot", ArrangementsBallotAPI, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/parts", PartsApi, login.RoleVVGOMember)
+	mux.HandleFunc("/api/v1/projects", ProjectsApi, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/leaders", LeadersApi, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/roles", RolesApi, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)
 
-	mux.Handle("/voting", VotingView, login.RoleVVGOLeader)
-	mux.Handle("/voting/results", VotingResultsView{}, login.RoleVVGOLeader)
+	mux.HandleFunc("/voting", VotingView, login.RoleVVGOLeader)
+	mux.HandleFunc("/voting/results", VotingResultsView, login.RoleVVGOLeader)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
@@ -58,16 +58,16 @@ func Routes() http.Handler {
 			io.Copy(w, file)
 		}, login.RoleVVGOMember)
 
-	mux.Handle("/parts", PartView{}, login.RoleVVGOMember)
-	mux.Handle("/projects", ProjectsView{}, login.RoleAnonymous)
-	mux.Handle("/download", DownloadHandler{}, login.RoleVVGOMember)
-	mux.Handle("/credits-maker", CreditsMaker{}, login.RoleVVGOTeams)
-	mux.Handle("/about", AboutView{}, login.RoleAnonymous)
-	mux.Handle("/version", http.HandlerFunc(Version), login.RoleAnonymous)
-	mux.Handle("/contact_us", ContactUs, login.RoleAnonymous)
+	mux.HandleFunc("/parts", PartsView, login.RoleVVGOMember)
+	mux.HandleFunc("/projects", ProjectsView, login.RoleAnonymous)
+	mux.HandleFunc("/download", DownloadHandler, login.RoleVVGOMember)
+	mux.HandleFunc("/credits-maker", CreditsMaker, login.RoleVVGOTeams)
+	mux.HandleFunc("/about", AboutView, login.RoleAnonymous)
+	mux.HandleFunc("/version", Version, login.RoleAnonymous)
+	mux.HandleFunc("/contact_us", ContactUs, login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexView{}.ServeHTTP(w, r)
+			IndexView(w, r)
 		} else {
 			http.FileServer(http.Dir(PublicFiles)).ServeHTTP(w, r)
 		}

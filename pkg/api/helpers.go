@@ -35,8 +35,9 @@ func readBody(dest io.Writer, r *http.Request) bool {
 	return true
 }
 
-func jsonEncode(dest io.Writer, src interface{}) bool {
-	if err := json.NewEncoder(dest).Encode(src); err != nil {
+func jsonEncode(w http.ResponseWriter, src interface{}) bool {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(src); err != nil {
 		logger.WithError(err).Error("json.Encode() failed")
 		return false
 	}
