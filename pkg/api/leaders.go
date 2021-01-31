@@ -5,14 +5,11 @@ import (
 	"net/http"
 )
 
-type LeadersAPI struct{}
-
-func (x LeadersAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func LeadersApi(w http.ResponseWriter, r *http.Request) {
 	leaders, err := sheets.ListLeaders(r.Context())
 	if err != nil {
-		logger.WithError(err).Error("readSheet() failed")
+		logger.WithError(err).Error("sheets.ListLeaders() failed")
 		internalServerError(w)
-		return
 	}
 	jsonEncode(w, &leaders)
 }

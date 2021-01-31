@@ -6,9 +6,7 @@ import (
 	"net/http"
 )
 
-type ProjectsAPI struct{}
-
-func (x ProjectsAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func ProjectsApi(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
@@ -22,33 +20,32 @@ func (x ProjectsAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.FormValue("latest") == "true":
 		project := projects.WithField("Video Released", true).Sort().Last()
-		json.NewEncoder(w).Encode(sheets.Projects{project})
+		handleError(json.NewEncoder(w).Encode(sheets.Projects{project})).
+			logError("json.Encode() failed")
 	default:
-		json.NewEncoder(w).Encode(projects)
+		handleError(json.NewEncoder(w).Encode(projects)).
+			logError("json.Encode() failed")
 	}
 }
 
-type ProjectsView struct{}
-
-func (x ProjectsView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func ProjectsView(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
-	if err != nil {
-		logger.WithError(err).Error("valuesToProjects() failed")
+	handleError(err).ifError(func(err error) {
+		logger.WithError(err).Error("sheets.ListProjects() failed")
 		internalServerError(w)
-		return
-	}
-
-	name := r.FormValue("name")
-	project, ok := projects.Get(name)
-	if !ok {
-		ParseAndExecute(ctx, w, r, &projects, "projects_index.gohtml")
-	} else {
-		x.serveProject(w, r, project)
-	}
+	}).ifSuccess(func() {
+		name := r.FormValue("name")
+		project, ok := projects.Get(name)
+		if !ok {
+			ParseAndExecute(ctx, w, r, &projects, "projects_index.gohtml")
+		} else {
+			serveProject(w, r, project)
+		}
+	})
 }
 
-func (x ProjectsView) serveProject(w http.ResponseWriter, r *http.Request, project sheets.Project) {
+func serveProject(w http.ResponseWriter, r *http.Request, project sheets.Project) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)

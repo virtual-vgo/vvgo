@@ -6,15 +6,13 @@ import (
 	"net/http"
 )
 
-type CreditsMaker struct{}
-
 type CreditsMakerConfig struct {
 	DefaultSpreadsheetID string `redis:"default_spreadsheet_id"`
 	DefaultReadRange     string `redis:"default_read_range"`
 	DefaultProject       string `redis:"default_project"`
 }
 
-func (x CreditsMaker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+var CreditsMaker = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	data := struct {
@@ -58,4 +56,4 @@ func (x CreditsMaker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		data.Project = "06-aurene-dragon-full-of-light"
 	}
 	ParseAndExecute(ctx, w, r, &data, "credits-maker.gohtml")
-}
+})

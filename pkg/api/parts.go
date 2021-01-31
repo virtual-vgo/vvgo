@@ -6,20 +6,9 @@ import (
 	"net/http"
 )
 
-type PartView struct{}
+var PartsView = ServeTemplate("parts.gohtml")
 
-func (x PartView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
-		return
-	}
-	ParseAndExecute(ctx, w, r, nil, "parts.gohtml")
-}
-
-type PartsAPI struct{}
-
-func (x PartsAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func PartsApi(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
