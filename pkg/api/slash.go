@@ -16,13 +16,19 @@ func SlashCommand(w http.ResponseWriter, r *http.Request) {
 	_, _ = body.ReadFrom(r.Body)
 
 	// validate requests
-	publicKey, err := hex.DecodeString(discord.ClientPublicKey)
-	if err != nil {
-		panic("failed to decode public key" + err.Error())
+	publicKey, _ := hex.DecodeString(discord.ClientPublicKey)
+	if len(publicKey) == 0 {
+		logger.Error("invalid discord public key")
+		internalServerError(w)
 	}
-	signature := []byte(r.Header.Get("X-Signature-Ed25519"))
-	timestamp := []byte(r.Header.Get("X-Signature-Timestamp"))
-	if ed25519.Verify(publicKey, append(timestamp, body.Bytes()...), signature) == false {
+
+	signature, _ := hex.DecodeString(r.Header.Get("X-Signature-Ed25519"))
+	if len(signature) == 0 {
+		badRequest(w, "invalid signature")
+	}
+
+	timestamp := r.Header.Get("X-Signature-Timestamp")
+	if ed25519.Verify(publicKey, []byte(timestamp+body.String()), signature) == false {
 		unauthorized(w)
 	}
 
