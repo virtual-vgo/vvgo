@@ -15,293 +15,134 @@ VVGO would like to be transparent and forthcoming with our expectations for arra
 
 We understand that arranging can take a lot of time and personal investment on the part of the arranger--many of us are arrangers and orchestrators ourselves. We realize that the VVGO community has a very wide breadth in terms of instrument availability, and the following score orders reflect that. Since VVGO aims to include as many musicians from as many backgrounds as we can, the score orders may look dauntingly grandiose to prospective arrangers. Keep in mind that these score orders strictly represent idealized scenarios, and are certainly not a deal-breaker for any arrangement. Consider them as goals for orchestration.
 
-The pipeline for arrangements is roughly: (rev. 2020-09-19)
+The pipeline for arrangements is roughly: (rev. 2021-01-31)
 
 1. **Idea Stage:** Someone has an idea to arrange a piece, and brings it up in the Discord server in an appropriate channel.
-2. **Arrangement Stage:** Someone (or, potentially, many people) arranges the piece, keeping in mind the orchestrations listed here. This can be done privately, or can be done via the Discord server as a community arranging project, at the discretion of the VVGO Leaders. Getting a piece approved as a community arranging project does NOT guarantee that VVGO will perform it, but is considered as a high-priority arrangement due to it being made specifically for VVGO from its community.
+2. **Arrangement Stage:** Someone (or, potentially, many people) arranges the piece, keeping in mind the orchestrations listed here. This can be done privately, or can be done via the Discord server as a community arranging project, pending approval from the VVGO Executive Directors. Getting a piece approved as a community arranging project does NOT guarantee that VVGO will perform it, but is considered as a high-priority arrangement due to it being made specifically for VVGO from its community.
 3. **Arrangement Submission:** Once the score for the arrangement is done, arrangers then submit their arrangement for consideration as VVGO repertoire via the "Arrangement Submissions" Google Form (available in the #submit-arrangements channel). This requires the inclusion of an audio mockup (i.e. preview), full PDF score, and any notation files used. Arrangers must also specify the "scale" of their piece, by which we mean "What kind of ensemble is meant to play this arrangement, and just how large is that ensemble?"
-4. **Rep-Prep Vetting:** Three to four weeks prior to the public recording submission deadline for the current VVGO project, the VVGO Music Preparation Team ("Rep-Prep") meets to listen to the submitted arrangements, plus any arrangements that were not selected previously but were kept in consideration for future VVGO projects. They consider each piece for its technical and logistical feasibility, for its inclusivity, and for its entertainment value. The Rep-Prep Team compiles their thoughts, feedback, and concerns in a document that is sent to the VVGO Leaders.
-5. **Leaders Vote:** The VVGO Leaders meet to listen to the arrangements under consideration, discuss Rep-Prep's notes, and ultimately vote (using a fancy ranked preference system) on what piece(s) that VVGO will perform next.
-6. **Start of Pre-Production:** The VVGO Leaders inform the VVGO Teams what piece(s) to prepare for next, and set a goal date to open public recording submissions. The Rep-Prep Team Lead invites the arranger(s) of the selected piece(s) to be a temporary member of Rep-Prep for the duration of music preparation, and longer at the Rep-Prep Team Lead's discretion.
-7. **Adaptation Stage:** The arranger(s) and members of the Rep-Prep team work together to adapt each selected arrangement for VVGO, with the goal of creating a "viable score"--that is, a score that is ready to be sent to an engraver for part preparation, and to the Audio Team for MIDI translation to a reference track and a click track. This adaptation stage normally involves expanding the original instrumentation (colloquially referred to as "explosion") to suit as many instruments in the "idealized score order" as is feasible. This stage also involves reviewing each part for technical feasibility, ideally by members of VVGO Teams who play each particular instrument.
+4. **Initial Quality Check:** Three to four weeks prior to the public recording submission deadline for the current VVGO project, the VVGO Music Preparation Team ("Rep-Prep") meets to listen to the submitted arrangements, plus any arrangements that were not selected previously but were kept in consideration for future VVGO projects. They consider each piece for its technical and logistical feasibility, for its inclusivity, and for its entertainment value. Rep-Prep compiles their thoughts, feedback, and concerns in a document that is sent to the VVGO Leaders.
+5. **Executive Directors Vote:** The VVGO Executive Directors meet to discuss the arrangements under consideration, heeding Rep-Prep's notes, and ultimately vote (using a fancy ranked preference system) on what piece(s) that VVGO will perform next.
+6. **Start of Pre-Production:** The VVGO Executive Directors inform the Production Teams what piece(s) to prepare for next, and set a goal date to open public recording submissions. The Music Preparation Director(s) invite(s) the arranger(s) of the selected piece(s) to be a temporary member of Rep-Prep for the duration of music preparation, and longer at the discretion of the Music Preparation Director(s).
+7. **Adaptation Stage:** The arranger(s) and members of the Rep-Prep team work together to adapt each selected arrangement for VVGO, with the goal of creating a "viable score"--that is, a score that is ready to be sent to an engraver for part preparation, and to the Audio Team for MIDI translation to a reference track and a click track, and in the case of choral pieces, individualized learning tracks for each part. This adaptation stage normally involves expanding the original instrumentation (colloquially referred to as "explosion") to suit as many instruments in the "idealized score order" as is feasible. This stage also involves reviewing each part for technical feasibility, ideally by members of VVGO Teams who play each particular instrument.
 8. **Pulling It All Together:** This is crunch time!
     1. The engraver prepares sheet music proofs for each part, which are then reviewed by a select handful of Rep-Prep members.
     2. The click track is sent to a conductor, who works with the Video Team to produce conducting videos and upload them to the VVGO YouTube channel.
     3. The Web + Coding Team formulates the public materials distribution via [VVGO.org](https://vvgo.org).
-    4. The VVGO Leaders create the public recording submission links and all shortlinks, setting publicly visible deadlines where needed.
+    4. The VVGO Executive Directors create the public recording submission links and all shortlinks, setting publicly visible deadlines where needed.
     5. The Communications Team drafts announcement posts for Discord and social media.
-    6. Someone on VVGO Teams posts "clues" for several days leading to the project announcement about what the next piece is to the Discord server and social media, and encourages people to guess.
+    6. Someone on VVGO Production Teams posts "clues" for several days leading to the project announcement about what the next piece is to the Discord server and social media, and encourages people to guess.
 9. **Project Launched:** The project goes live, and public recording submissions open. Tada! This is usually aligned with the closure of public recording submissions for the previous project.
 
 
-# VVGO Standard Full Instrumentation (rev 2020-11-28)
+# VVGO Standard Full Instrumentation (rev 2021-01-31)
 It's a bold title, but this is the "ideal" scenario for instrumentation. Finding VGM pieces that fit this bill isn't easy.
 These are instruments that, at the moment, we can rely on being covered. These are also mostly common orchestral, jazz, and band instruments. Part indices that are given are also "idealized" based on our participation and on common industry practices.
 
-### Orchestral Woodwinds
-* Piccolo
-* Flute 1, 2
-* Oboe 1, 2
-* English Horn / Cor Anglais
-* Eb Clarinet
-* Bb Clarinet 1, 2
-* Bb Bass Clarinet
-* Bb Contrabass Clarinet
-* Bassoon 1, 2
-* Contrabassoon
-
 Note: Sometimes Bassoons and Contrabassoon are put underneath the Saxophone bloc. This is fine.
 
-### Saxophones
-* Bb Soprano Saxophone
-* Eb Alto Saxophone 1, 2
-* Bb Tenor Saxophone
-* Eb Baritone Saxophone
+**Orchestral Woodwinds:** Piccolo, 2 Flutes, 2 Oboes, English Horn/Cor Anglais, Eb Clarinet, 2 Bb Clarinets, Bass Clarinet, Contrabass Clarinet, 2 Bassoons, Contrabassoon
 
-### Brass
-* Horn in F 1, 2, 3, 4 (with add'l parts in C, dropped-octave treble clef)
-* Bb Trumpet 1, 2, 3
-* Trombone 1, 2, (3 if no Bass Trombone)
-* Bass Trombone
-* Euphonium (with add'l Bb treble clef transposed part)
-* Tuba
+**Saxophones:** Bb Soprano Saxophone, 2 Eb Alto Saxophones, Bb Tenor Saxophone, Eb Baritone Saxophone
 
-### Percussion
-* Timpani
-* Snare Drum
-* Bass Drum
-* Piatti (Clash)
-* Suspended Cymbal
-* Tam-tam
-* Triangle
-* Tambourine
-* Shaker
-* Glockenspiel
+**Brass:** 4 Horns in F, 3 Bb Trumpets, 2 Trombones, Bass Trombone, Euphonium (with add'l TC part), Tuba
 
-### Rock Band
-* Electric Guitar
-* Electric Bass
-* Drumset
+**Percussion:** Timpani, Snare Drum, Bass Drum, Piatti (Clash), Suspended Cymbal, Tam-tam, Triangle, Tambourine, Shaker, Glockenspiel
 
-### Harp and Keyboards
-* Harp
-* Piano
+**Modern Band and Non-Bowed Strings:** Electric Guitar, Electric Bass, Drums, Harp, Piano
 
-### Vocals (divisi okay)
-* Soprano
-* Alto
-* Tenor
-* Bass
+**Vocals (divisi okay):** Soprano, Alto, Tenor, Bass
 
-### Bowed Strings (divisi okay)
-* Violin I
-* Violin II
-* Viola
-* Violoncello
-* Contrabass / Double Bass / Upright Bass
+**Bowed Strings (divisi okay):** Violin I, Violin II, Viola, Violoncello, Contrabass/Double Bass/Upright Bass
 
 
 
 # Big Band Instrumentation
+This is standard 5444 big band instrumentation, but with several optional instruments (in parentheses).
 
-This is standard 5444 big band instrumentation (in bold), but with several optional instruments (not bolded).
+**Saxophones**: (Bb Soprano Saxophone), 2 Eb Alto Saxophones, 2 Bb Tenor Saxophones, Eb Baritone Saxophone, (Bb Bass Saxophone)
 
-### Saxophones
-* Bb Soprano Saxophone (recommended)
-* **Eb Alto Saxophone 1, 2**
-* **Bb Tenor Saxophone 1, 2**
-* **Eb Baritone Saxophone**
+**Other Woodwinds (all optional):** Flute, Bb Clarinet, Bb Bass Clarinet
 
-### Other Woodwinds
-* Flute
-* Bb Clarinet 1, (2, 3)
-* Bb Bass Clarinet
+**Brass:** 4 Bb Trumpets, (Flügelhorn), (Horn in F/F Mellophone), 4 Trombones, (Bass Trombone), (Baritone Horn/Euphonium), (Tuba)
 
-### Big Band Brass
-* **Bb Trumpet 1, 2, 3, 4**
-* Flugelhorn
-* **Trombone 1, 2, 3, (4 if no Bass Trombone)**
-* **Bass Trombone (if no Trombone 4)**
+**Bowed Strings (all optional):** Violins, Violas, Cellos
 
-### Other Brass
-* Horn in F / F Mellophone
-* Horn in Eb
-* Baritone Horn/Euphonium
-* Tuba
-
-### Bowed Strings (all optional)
-* Violins (A, B, C)
-* Violas (A, B)
-* Cellos (A, B)
-
-### Rhythm Section (and the Rest)
-* Harp
-* Mallet Percussion
-* **(Electric) Guitar**
-* **Piano**
-* **Bass (Electric or Upright)**
-* **Drumset**
-* Auxiliary Percussion (one staff per instrument)
+**Rhythm Section:** (Mallet Percussion), (Electric) Guitar, Piano, Bass (Electric or Upright), Drums, (Auxiliary Percussion)
 
 
 
 # Wind Ensemble Instrumentation
-
 This is based on common instrumentations for concert band/wind ensemble.
 
-### Woodwinds
-#### Flutes
-* Piccolo 1, (2)
-* Flute 1, 2, (3)
-* Alto Flute
-#### Double Reeds
-* Oboe 1, 2
-* English Horn
-* Bassoon 1, 2
-* Contrabassoon
-#### Clarinets
-* Eb Clarinet
-* Bb Clarinet 1, 2, (3)
-* Eb Alto Clarinet
-* Bb Bass Clarinet
-* Eb Great Bass (Contra-alto) Clarinet or Bb Contrabass Clarinet
-#### Saxophones
-* Bb Soprano Saxophone
-* Eb Alto Saxophone 1, 2
-* Bb Tenor Saxophone 1, (2)
-* Eb Baritone Saxophone
+**Orchestral Woodwinds:** Piccolo, 2 Flutes, Alto Flute, 2 Oboes, English Horn/Cor Anglais, 2 Bassoons, Contrabassoon, Eb Clarinet, 2 Bb Clarinets, Eb Alto Clarinet, Bb Bass Clarinet, Eb Contra-alto (aka Great Bass) or Bb Contrabass Clarinet
 
-### Brass
-* Bb Trumpet 1, 2, 3
-* Horn in F 1, 2, 3, 4
-* (Alto or Tenor) Horn in Eb (CP, dropped-octave treble clef)
-* Trombone 1, 2, (3 if no Bass Trombone)
-* Bass Trombone (if no Trombone 3)
-* Baritone Horn/Euphonium (with add'l Bb treble clef transposed part)
-* Tuba
+**Saxophones:** Bb Soprano Saxophone, 2 Eb Alto Saxophones, 2 Bb Tenor Saxophones, Eb Baritone Saxophone, Bb Bass Saxophone
 
-### Percussion (nearly all optional)
-* Timpani
-* Snare Drum
-* Bass Drum
-* Bongos
-* Congas
-* Tom-toms / Tenor drums
-* Piatti (Clash)
-* Suspended Cymbal
-* Tam-tam
-* Triangle
-* Tambourine
-* Shaker
-* Glockenspiel
-* Xylophone
-* Vibraphone
-* Marimba
-* Chimes (Tubular Bells)
+**Brass:** 3 Bb Trumpets, 4 Horns in F, Eb Alto/Tenor Horn, 2-3 Trombones, Bass Trombone (if no Trombone 3), Baritone Horn/Euphonium (with add'l TC part), Tuba
 
+**Percussion (nearly all optional)**: Timpani, Snare Drum, Bass Drum, Bongos, Congas, Tom-toms/Tenor drums, Piatti (Clash), Suspended Cymbal, Tam-tam, Triangle, Tambourine, Shaker, Glockenspiel, Xylophone, Vibraphone, Marimba, Chimes (Tubular Bells)
 
 # "Everything We Have" Instrumentation
-
 This is exactly what it sounds like: this is the full scope of instruments that recently active VVGO members have access to, as far as we know.
-Lots of these instruments have their Hornbostel Sachs number in parentheses, particularly in percussion.
+Lots of these instruments have their Hornbostel-Sachs number in parentheses, particularly in percussion.
 If there are instruments missing here, please let Brandon know.
 
 ### Woodwinds
 #### Flutes
-* Piccolo
-* Flute 1, 2
-* Alto Flute
-* Bass Flute
-* Kaval
-* Ryūteki
-* C Soprano Ocarina
-* G Soprano Ocarina
-* C Alto (aka Tenor) Ocarina
-* G Alto Ocarina
-* C Bass Ocarina
-* C Contrabass Ocarina
-* Garklein Recorder (in C6, CP)
-* Sopranino Recorder (in F5, CP)
-* Soprano Recorder (in C5, CP)
-* Alto Recorder (in F4, CP)
-* Tenor Recorder (in C4, CP)
-* Bass Recorder (in F3, CP)
-* Soprano Tin Whistle/Irish Whistle (in any key from Bb4-Eb5, F5, G5) (D5 CP is standard)
-* Low Whistle (in D4)
+* **Western Concert Flutes:** Piccolo, 2 Flutes, Alto Flute, Bass Flute
+* Kaval, Ryūteki
+* **Ocarinas:** C Soprano Ocarina, G Soprano Ocarina, C Alto (aka Tenor) Ocarina, G Alto Ocarina, C Bass Ocarina, C Contrabass Ocarina
+* **Recorders:** Garklein Recorder (in C6, CP), Sopranino Recorder (in F5, CP), Soprano Recorder (in C5, CP), Alto Recorder (in F4, CP), Tenor Recorder (in C4, CP), Bass Recorder (in F3, CP)
+* **Whistles:** Soprano Tin Whistle/Irish Whistle (in any key from Bb4-Eb5, F5, G5) (D5 CP is standard), Low Whistle (in D4)
 #### Double Reeds, minus Bassoons
 * Tenor Crumhorn
-* Oboe 1, 2
-* Cor Anglais/English Horn
-* Heckelphone
+* 2 Oboes, Cor Anglais/English Horn, Heckelphone
 * Duduk
 #### Clarinets
-* Eb Clarinet
-* Bb Clarinet 1, 2
-* Eb Alto Clarinet
-* Bb Bass Clarinet
-* Eb Contra-alto (aka Great Bass) Clarinet
-* Bb Contrabass Clarinet
+* Eb Clarinet, 2 Bb Clarinets, Eb Alto Clarinet, Bb Bass Clarinet, Eb Contra-alto (aka Great Bass) Clarinet, Bb Contrabass Clarinet
 #### Bassoons
 (Note: by some conventions, bassoons go after saxophones. We don't really care either way.)
-* Bassoon 1, 2
-* Contrabassoon
+* 2 Bassoons, Contrabassoon
 #### Saxophones
-* Soprano Saxophone
-* Alto Saxophone 1, 2
-* Tenor Saxophone 1, 2
-* Baritone Saxophone
+* Bb Soprano Saxophone, 2 Eb Alto Saxophones, 2 Bb Tenor Saxophones, Eb Baritone Saxophone, Bb Bass Saxophone
 #### Electronic
-* EWI
+* Electronic Wind Instrument (EWI)
 
 ### Free Reed
 * Shō
-* Soprano Melodica
-* Alto Melodica
-* Bass Melodica
-* (Anglo) Concertina
+* **Melodicas:** Soprano Melodica, Alto Melodica, Bass Melodica
+* Accordion
+* Anglo Concertina
 
 ### Brass
-* Horn in F / F Mellophone 1, 2, 3, 4, (5, 6)
-* French Horn Bugle in G-F-F#
-* (Bb) Trumpet 1, 2, (3, 4)
-* (Bb) Cornet
-* Flugelhorn
+* 4-6 Horns in F, F Mellophone, French Horn Bugle in G-F-F#
+* Piccolo Trumpet, 2-4 (Bb) Trumpets
+* Eb Soprano Cornet, (Bb) Cornet
+* (Bb) Flügelhorn
 * F Alto Trumpet
-* (Alto or Tenor) Horn in Eb (CP, dropped-octave treble clef)
-* Baritone Horn
-* Soprano Trombone
-* Alto Trombone
-* (Tenor) Trombone 1, 2, 3
-* Bass Trombone
+* (Alto or Tenor) Horn in Eb, Baritone Horn
+* Soprano Trombone, Alto Trombone, 3 (Tenor) Trombones, Bass Trombone
 * Euphonium
 * Baritone Bugle in G-D-F#
-* Tuba / Helicon
+* Tuba/Helicon
 
 ### Percussion (nearly all optional)
 #### Membranophones
 * Timpani (211.11)
-* Concert Snare Drum (211.212.11)
-* Field Snare Drum (211.212.11)
-* Kick Snare Drum (211.212.11)
-* Marching Snare Drum (211.212.11)
-* Concert Bass Drum / Gran Cassa (211.212.12)
-* Marching Bass Drum (211.212.12)
+* **Snare Drums:** Concert Snare Drum, Field Snare Drum, Kick Snare Drum, Marching Snare Drum (211.212.11)
+* **Bass Drums:** Concert Bass Drum/Gran Cassa, Marching Bass Drum (211.212.12)
 * Kakko (211.212.12)
-* Tom-toms / Tenor Drums (211.212.21)
-* Bongos (211.251.2)
-* Congas (211.221.1)
+* Tom-toms/Tenor Drums (211.212.21)
+* Bongos (211.251.2), Congas (211.221.1)
 * Taiko Drums (211.222.1) (Chū-daiko)
 * Bodhrán (211.311)
 #### Cymbals and Unpitched Gongs
-* Piatti (Clash/Crash Cymbals)
-* Suspended Cymbal
-* Tam-tam
+* Piatti (Clash/Crash Cymbals), Suspended Cymbal, Tam-tam
 #### Unpitched Concussion
 * Finger Cymbals
 * Claves
 * Whip (Slapstick)
-* Bones
-* Spoons
+* Bones, Spoons
 * Finger Snaps
 * Castanets
 * Mark Tree
@@ -309,8 +150,7 @@ If there are instruments missing here, please let Brandon know.
 * Triangle (111.211)
 * Wood Block (111.24)
 * Anvil/Brake Drum
-* Agogo Bells
-* Cowbell
+* Agogo Bells, Cowbell
 * Cajón (111.24)
 #### Shaken
 * Sleigh Bells (112.111)
@@ -325,7 +165,7 @@ If there are instruments missing here, please let Brandon know.
 #### Pitched Percussion
 * Tongue Drum (D major, C major)
 * Crotales
-* Glockenspiel
+* Glockenspiel/Bells
 * Xylophone
 * Vibraphone
 * Marimba (4.3 octave)
@@ -337,44 +177,26 @@ If there are instruments missing here, please let Brandon know.
 #### Lamellophones
 * Kalimba (in C, C4-E6)
 #### Zithers
-* Kantele (314.11)
-* Koto (314.122)
+* Kantele (314.11), Koto (314.122)
 #### Lutes
-* Bouzouki (321.321)
-* Mandolin (321.321)
-* Ukulele (321.322)
+* (Irish) Bouzouki (321.321), Mandolin (321.321), Ukulele (321.322)
 #### Modern Band
-* Acoustic Guitar (321.322)
-* Electric Guitar 1
-* (Electric Guitar 2)
-* Electric Bass
-* (Plucked) Double Bass / String Bass / Upright Bass
+* Acoustic Guitar, 1-2 Electric Guitars, Electric Bass
+* (Plucked) Double Bass/String Bass/Upright Bass
 * Drums
 
 ### Harp, Keyboards, and Synthesizers
-* (Pedal) Harp 1, (2)
-* Lever Harp
-* Piano 1, (2)
-* Keyboard
+* 1-2 (Pedal) Harps, Lever Harp
+* 1-2 Pianos, Keyboard
 * Synthesizer
 * Otamatone
 * Celesta
 * Organ
 
 ### Vocals
-* Soprano 1, (2)
-* Mezzo-soprano
-* Alto 1, (2)
-* Countertenor
-* Tenor 1, (2)
-* (Barbershop Male) Lead
-* Baritone
-* Bass 1, (2)
-* Beatbox / Vocal Percussion
+* 1-2 Sopranos, Mezzo-soprano, 2 Altos
+* Countertenor, 2 Tenors, (Barbershop Male) Lead, Baritone, 2 Basses
+* Beatbox/Vocal Percussion
 
-### Bowed Strings
-* Violin I (A, B)
-* Violin II (A, B)
-* Viola (A, B)
-* Violoncello (A, B)
-* Contrabass / Double Bass / String Bass / Upright Bass (A, B)
+### Bowed Strings (divisi okay)
+* Violin I, Violin II, Viola, Violoncello, Contrabass/Double Bass/String Bass/Upright Bass
