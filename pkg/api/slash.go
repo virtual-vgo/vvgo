@@ -15,24 +15,30 @@ func SlashCommand(w http.ResponseWriter, r *http.Request) {
 	var body bytes.Buffer
 	_, _ = body.ReadFrom(r.Body)
 
-	// validate requests
 	publicKey, _ := hex.DecodeString(discord.ClientPublicKey)
 	if len(publicKey) == 0 {
 		logger.Error("invalid discord public key")
 		internalServerError(w)
+		return
 	}
 
 	signature, _ := hex.DecodeString(r.Header.Get("X-Signature-Ed25519"))
 	if len(signature) == 0 {
 		badRequest(w, "invalid signature")
+		return
 	}
 
 	timestamp := r.Header.Get("X-Signature-Timestamp")
-	if ed25519.Verify(publicKey, []byte(timestamp+body.String()), signature) == false {
-		unauthorized(w)
+	if len(timestamp) == 0 {
+		badRequest(w, "invalid signature timestamp")
+		return
 	}
 
-	// read the interaction
+	if ed25519.Verify(publicKey, []byte(timestamp+body.String()), signature) == false {
+		unauthorized(w)
+		return
+	}
+
 	var interaction discord.Interaction
 	handleError(json.NewDecoder(&body).Decode(&interaction)).logError("json.Decode() failed").
 		ifError(func(err error) { badRequest(w, "invalid request body: "+err.Error()) }).
