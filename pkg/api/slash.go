@@ -40,28 +40,51 @@ func SlashCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var interaction discord.Interaction
-	handleError(json.NewDecoder(&body).Decode(&interaction)).logError("json.Decode() failed").
+	handleError(json.NewDecoder(&body).Decode(&interaction)).
+		logError("json.Decode() failed").
 		ifError(func(err error) { badRequest(w, "invalid request body: "+err.Error()) }).
-		ifSuccess(func() {
-			var response discord.InteractionResponse
-			switch interaction.Type {
-			case discord.InteractionTypePing:
-				response = discord.InteractionResponse{Type: discord.InteractionResponseTypePong}
-			case discord.InteractionTypeApplicationCommand:
-				switch interaction.Data.Name {
-				case "beep":
-					response = discord.InteractionResponse{
-						Type: discord.InteractionResponseTypeChannelMessageWithSource,
-						Data: &discord.InteractionApplicationCommandCallbackData{
-							TTS:     false,
-							Content: "boop",
-						},
-					}
-				}
-			default:
-				badRequest(w, "unsupported interaction type")
-				return
-			}
-			handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
-		})
+		ifSuccess(func() { handleInteraction(w, interaction) })
+}
+
+func handleInteraction(w http.ResponseWriter, interaction discord.Interaction) {
+	var response discord.InteractionResponse
+	switch interaction.Type {
+	case discord.InteractionTypePing:
+		response = discord.InteractionResponse{Type: discord.InteractionResponseTypePong}
+	case discord.InteractionTypeApplicationCommand:
+		switch interaction.Data.Name {
+		case "beep":
+			response = handleBeepInteraction()
+		case "parts":
+			response = handlePartsInteraction(interaction)
+		}
+	default:
+		badRequest(w, "unsupported interaction type")
+		return
+	}
+	handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
+}
+
+func handleBeepInteraction() discord.InteractionResponse {
+	return discord.InteractionResponse{
+		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{
+			Content: "boop",
+		},
+	}
+}
+
+func handlePartsInteraction(interaction discord.Interaction) discord.InteractionResponse {
+	var project string
+	for _, option := range interaction.Data.Options {
+		if option.Name == "project" {
+			project = option.Value
+		}
+	}
+	return discord.InteractionResponse{
+		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{
+			Content: "https://vvgo.org/parts?project=" + project,
+		},
+	}
 }
