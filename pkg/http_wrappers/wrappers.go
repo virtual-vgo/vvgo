@@ -79,7 +79,7 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-var DebugHTTP bool
+var DebugHTTP bool = true
 
 func debugRequestOut(r *http.Request) {
 	if DebugHTTP {
