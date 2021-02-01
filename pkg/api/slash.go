@@ -61,6 +61,8 @@ func handleInteraction(w http.ResponseWriter, interaction discord.Interaction) {
 			response = HandleBeepInteraction()
 		case "parts":
 			response = HandlePartsInteraction(interaction)
+		case "submit":
+			response = HandleSubmissionInteraction(interaction)
 		default:
 			response = discord.InteractionResponse{
 				Type: discord.InteractionResponseTypeChannelMessageWithSource,
