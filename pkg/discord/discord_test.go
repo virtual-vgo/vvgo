@@ -14,7 +14,7 @@ import (
 func TestClient_QueryOAuth(t *testing.T) {
 	ctx := context.Background()
 	client := Client{
-		config: Config{
+		Config: Config{
 			BotAuthToken:      "test-bot-auth-token",
 			OAuthClientID:     "test-oauth-client-id",
 			OAuthClientSecret: "test-oauth-client-secret",
@@ -43,7 +43,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	client.config.Endpoint = ts.URL
+	client.Config.Endpoint = ts.URL
 	gotToken, gotError := client.QueryOAuth(ctx, "test-code")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodPost, gotRequest.Method)
@@ -72,7 +72,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 func TestClient_QueryIdentity(t *testing.T) {
 	ctx := context.Background()
 	client := Client{
-		config: Config{
+		Config: Config{
 			BotAuthToken: "test-bot-auth-token",
 		},
 	}
@@ -102,7 +102,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	client.config.Endpoint = ts.URL
+	client.Config.Endpoint = ts.URL
 	gotUser, gotError := client.QueryIdentity(ctx, token)
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
@@ -115,7 +115,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 func TestClient_QueryGuildMember(t *testing.T) {
 	ctx := context.Background()
 	client := Client{
-		config: Config{
+		Config: Config{
 			BotAuthToken: "test-bot-auth-token",
 		},
 	}
@@ -134,7 +134,7 @@ func TestClient_QueryGuildMember(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	client.config.Endpoint = ts.URL
+	client.Config.Endpoint = ts.URL
 	gotMember, gotError := client.QueryGuildMember(ctx, "test-guild-id", "test-user-id")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
