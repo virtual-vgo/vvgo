@@ -2,17 +2,14 @@ package api
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
-	"testing"
-)
-
-import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"testing"
 )
 
 func TestSlashCommand(t *testing.T) {
