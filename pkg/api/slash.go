@@ -7,6 +7,7 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"net/http"
 )
@@ -75,16 +76,16 @@ func handleBeepInteraction() discord.InteractionResponse {
 }
 
 func handlePartsInteraction(interaction discord.Interaction) discord.InteractionResponse {
-	var project string
+	var project discord.ApplicationCommandInteractionDataOption
 	for _, option := range interaction.Data.Options {
 		if option.Name == "project" {
-			project = option.Value
+			project = option
 		}
 	}
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: "https://vvgo.org/parts?project=" + project,
+			Content: fmt.Sprintf("[%s](https://vvgo.org/parts?project=%s", project.Name, project.Value),
 		},
 	}
 }
