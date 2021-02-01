@@ -54,9 +54,7 @@ func partsCommand() CreateApplicationCommand {
 				Name:        "project",
 				Description: "Name of the project",
 				Required:    true,
-				Choices: []discord.ApplicationCommandOptionChoice{
-					{Name: "Hilda's Healing", Value: "10-hildas-healing"},
-				},
+				Choices:     choices,
 			},
 		},
 	}
