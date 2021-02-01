@@ -5,6 +5,7 @@ package api
 import (
 	"bytes"
 	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"net/http"
@@ -15,7 +16,10 @@ func SlashCommand(w http.ResponseWriter, r *http.Request) {
 	_, _ = body.ReadFrom(r.Body)
 
 	// validate requests
-	publicKey := []byte(discord.ClientPublicKey)
+	publicKey, err := hex.DecodeString(discord.ClientPublicKey)
+	if err != nil {
+		panic("failed to decode public key" + err.Error())
+	}
 	signature := []byte(r.Header.Get("X-Signature-Ed25519"))
 	timestamp := []byte(r.Header.Get("X-Signature-Timestamp"))
 	if ed25519.Verify(publicKey, append(timestamp, body.Bytes()...), signature) == false {
