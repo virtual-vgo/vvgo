@@ -22,7 +22,7 @@ func SlashCommand(w http.ResponseWriter, r *http.Request) {
 				case "beep":
 					response = discord.InteractionResponse{
 						Type: discord.InteractionResponseTypeChannelMessageWithSource,
-						Data: discord.InteractionApplicationCommandCallbackData{
+						Data: &discord.InteractionApplicationCommandCallbackData{
 							TTS:     false,
 							Content: "boop",
 						},

@@ -40,8 +40,8 @@ type ApplicationCommandInteractionDataOption struct {
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response
 
 type InteractionResponse struct {
-	Type InteractionResponseType                   `json:"type"`
-	Data InteractionApplicationCommandCallbackData `json:"data"`
+	Type InteractionResponseType                    `json:"type"`
+	Data *InteractionApplicationCommandCallbackData `json:"data,omitempty"`
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response-interactionresponsetype
