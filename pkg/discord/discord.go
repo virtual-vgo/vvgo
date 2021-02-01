@@ -20,6 +20,8 @@ var logger = log.Logger()
 var ErrNon200Response = errors.New("non-200 response from discord")
 var ErrInvalidOAuthCode = errors.New("invalid oauth code")
 
+const ClientPublicKey = "a56a084a21829d02f272e4e3f4b67a846a831281849f6740f7bbf873840c4076"
+
 // Client that makes discord requests.
 type Client struct {
 	Config Config
