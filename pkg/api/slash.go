@@ -4,11 +4,14 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"crypto/ed25519"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
 
@@ -76,16 +79,27 @@ func handleBeepInteraction() discord.InteractionResponse {
 }
 
 func handlePartsInteraction(interaction discord.Interaction) discord.InteractionResponse {
-	var project discord.ApplicationCommandInteractionDataOption
+	var projectName string
 	for _, option := range interaction.Data.Options {
 		if option.Name == "project" {
-			project = option
+			projectName = option.Value
 		}
+	}
+
+	var content string
+	identity := login.Anonymous()
+	projects, err := sheets.ListProjects(context.Background(), &identity)
+	if err != nil {
+		logger.WithError(err).Error("sheets.ListProjects() failed")
+	} else if project, ok := projects.Get(projectName); ok {
+		content = fmt.Sprintf("[Parts for %s](https://vvgo.org%s)", project.Title, project.PartsPage())
+	}
+
+	if content == "" {
+		content = "oof please try again 😅"
 	}
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: fmt.Sprintf("[%s](https://vvgo.org/parts?project=%s", project.Name, project.Value),
-		},
+		Data: &discord.InteractionApplicationCommandCallbackData{Content: content},
 	}
 }
