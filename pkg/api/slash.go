@@ -58,9 +58,14 @@ func handleInteraction(w http.ResponseWriter, interaction discord.Interaction) {
 	case discord.InteractionTypeApplicationCommand:
 		switch interaction.Data.Name {
 		case "beep":
-			response = handleBeepInteraction()
+			response = HandleBeepInteraction()
 		case "parts":
-			response = handlePartsInteraction(interaction)
+			response = HandlePartsInteraction(interaction)
+		default:
+			response = discord.InteractionResponse{
+				Type: discord.InteractionResponseTypeChannelMessageWithSource,
+				Data: &discord.InteractionApplicationCommandCallbackData{
+					Content: fmt.Sprintf("i don't how to %s yet 😥", interaction.Data.Name)}}
 		}
 	default:
 		badRequest(w, "unsupported interaction type")
@@ -69,7 +74,7 @@ func handleInteraction(w http.ResponseWriter, interaction discord.Interaction) {
 	handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
 }
 
-func handleBeepInteraction() discord.InteractionResponse {
+func HandleBeepInteraction() discord.InteractionResponse {
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
@@ -78,7 +83,7 @@ func handleBeepInteraction() discord.InteractionResponse {
 	}
 }
 
-func handlePartsInteraction(interaction discord.Interaction) discord.InteractionResponse {
+func HandlePartsInteraction(interaction discord.Interaction) discord.InteractionResponse {
 	var projectName string
 	for _, option := range interaction.Data.Options {
 		if option.Name == "project" {
@@ -99,7 +104,33 @@ func handlePartsInteraction(interaction discord.Interaction) discord.Interaction
 		content = "oof please try again 😅"
 	}
 	return discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Type: discord.InteractionResponseTypeChannelMessage,
+		Data: &discord.InteractionApplicationCommandCallbackData{Content: content},
+	}
+}
+
+func HandleSubmissionInteraction(interaction discord.Interaction) discord.InteractionResponse {
+	var projectName string
+	for _, option := range interaction.Data.Options {
+		if option.Name == "project" {
+			projectName = option.Value
+		}
+	}
+
+	var content string
+	identity := login.Anonymous()
+	projects, err := sheets.ListProjects(context.Background(), &identity)
+	if err != nil {
+		logger.WithError(err).Error("sheets.ListProjects() failed")
+	} else if project, ok := projects.Get(projectName); ok {
+		content = fmt.Sprintf("[Submit here for %s](%s)", project.Title, project.SubmissionLink)
+	}
+
+	if content == "" {
+		content = "oof please try again 😅"
+	}
+	return discord.InteractionResponse{
+		Type: discord.InteractionResponseTypeChannelMessage,
 		Data: &discord.InteractionApplicationCommandCallbackData{Content: content},
 	}
 }

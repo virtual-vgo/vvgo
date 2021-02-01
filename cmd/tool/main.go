@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"log"
 	"net/http"
+	"os"
 )
 
 const ApplicationId = "700963768787795998"
@@ -26,19 +26,10 @@ type CreateApplicationCommand struct {
 
 var beepCommand = CreateApplicationCommand{
 	Name:        "beep",
-	Description: "Send a beep",
+	Description: "Send a beep.",
 }
 
-func partsCommand() CreateApplicationCommand {
-	identity := login.Anonymous()
-	projects, err := sheets.ListProjects(context.Background(), &identity)
-	if err != nil {
-		log.Fatal("sheets.ListProjects() failed:", err)
-	}
-	projects = projects.Query(map[string]interface{}{
-		"Hidden": false, "Video Released": false,
-		"Parts Archived": false, "Parts Released": true})
-
+func partsCommand(projects sheets.Projects) CreateApplicationCommand {
 	var choices []discord.ApplicationCommandOptionChoice
 	for _, project := range projects {
 		choices = append(choices, discord.ApplicationCommandOptionChoice{
@@ -47,7 +38,29 @@ func partsCommand() CreateApplicationCommand {
 	}
 	return CreateApplicationCommand{
 		Name:        "parts",
-		Description: "Link to parts",
+		Description: "Parts link for a project.",
+		Options: []discord.ApplicationCommandOption{
+			{
+				Type:        discord.ApplicationCommandOptionTypeString,
+				Name:        "project",
+				Description: "Name of the project",
+				Required:    true,
+				Choices:     choices,
+			},
+		},
+	}
+}
+
+func submissionCommand(projects sheets.Projects) CreateApplicationCommand {
+	var choices []discord.ApplicationCommandOptionChoice
+	for _, project := range projects {
+		choices = append(choices, discord.ApplicationCommandOptionChoice{
+			Name: project.Title, Value: project.Name,
+		})
+	}
+	return CreateApplicationCommand{
+		Name:        "submit",
+		Description: "Submission link for a project.",
 		Options: []discord.ApplicationCommandOption{
 			{
 				Type:        discord.ApplicationCommandOptionTypeString,
@@ -65,8 +78,18 @@ func main() {
 	client := discord.NewClient(context.Background())
 	var authToken = client.Config.BotAuthToken
 
+	identity := login.Anonymous()
+	currentProjects, err := sheets.ListProjects(context.Background(), &identity)
+	if err != nil {
+		log.Fatal("sheets.ListProjects() failed:", err)
+	}
+	currentProjects = currentProjects.Query(map[string]interface{}{
+		"Hidden": false, "Video Released": false,
+		"Parts Archived": false, "Parts Released": true})
+
 	registerCommand(authToken, beepCommand)
-	registerCommand(authToken, partsCommand())
+	registerCommand(authToken, partsCommand(currentProjects))
+	registerCommand(authToken, submissionCommand(currentProjects))
 	listSlashCommands(authToken)
 }
 
@@ -92,9 +115,13 @@ func listSlashCommands(authToken string) {
 	req.Header.Set("Authorization", "Bot "+authToken)
 	resp := doRequest(req)
 
-	var body bytes.Buffer
-	_, _ = body.ReadFrom(resp.Body)
-	fmt.Println(body.String())
+	var body []discord.ApplicationCommand
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		log.Println("json.Decode() failed: ", err)
+	}
+	outEncoder := json.NewEncoder(os.Stdout)
+	outEncoder.SetIndent("", "  ")
+	outEncoder.Encode(body)
 }
 
 func doRequest(req *http.Request) *http.Response {
