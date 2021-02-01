@@ -3,7 +3,6 @@ module github.com/virtual-vgo/vvgo
 go 1.14
 
 require (
-	github.com/fatih/color v1.10.0
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
