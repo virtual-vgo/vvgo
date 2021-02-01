@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
+	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"log"
 	"net/http"
 )
@@ -27,20 +29,37 @@ var beepCommand = CreateApplicationCommand{
 	Description: "Send a beep",
 }
 
-var partsCommand = CreateApplicationCommand{
-	Name:        "parts",
-	Description: "Link to parts",
-	Options: []discord.ApplicationCommandOption{
-		{
-			Type:        discord.ApplicationCommandOptionTypeString,
-			Name:        "project",
-			Description: "Name of the project",
-			Required:    true,
-			Choices: []discord.ApplicationCommandOptionChoice{
-				{Name: "Hilda's Healing", Value: "10-hildas-healing"},
+func partsCommand() CreateApplicationCommand {
+	identity := login.Anonymous()
+	projects, err := sheets.ListProjects(context.Background(), &identity)
+	if err != nil {
+		log.Fatal("sheets.ListProjects() failed:", err)
+	}
+	projects = projects.Query(map[string]interface{}{
+		"Hidden": false, "Video Released": false,
+		"Parts Archived": false, "Parts Released": true})
+
+	var choices []discord.ApplicationCommandOptionChoice
+	for _, project := range projects {
+		choices = append(choices, discord.ApplicationCommandOptionChoice{
+			Name: project.Title, Value: project.Name,
+		})
+	}
+	return CreateApplicationCommand{
+		Name:        "parts",
+		Description: "Link to parts",
+		Options: []discord.ApplicationCommandOption{
+			{
+				Type:        discord.ApplicationCommandOptionTypeString,
+				Name:        "project",
+				Description: "Name of the project",
+				Required:    true,
+				Choices: []discord.ApplicationCommandOptionChoice{
+					{Name: "Hilda's Healing", Value: "10-hildas-healing"},
+				},
 			},
 		},
-	},
+	}
 }
 
 func main() {
@@ -49,7 +68,7 @@ func main() {
 	var authToken = client.Config.BotAuthToken
 
 	registerCommand(authToken, beepCommand)
-	registerCommand(authToken, partsCommand)
+	registerCommand(authToken, partsCommand())
 	listSlashCommands(authToken)
 }
 
@@ -73,16 +92,17 @@ func listSlashCommands(authToken string) {
 		panic(err)
 	}
 	req.Header.Set("Authorization", "Bot "+authToken)
-	doRequest(req)
-}
-
-func doRequest(req *http.Request) {
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		panic(err)
-	}
+	resp := doRequest(req)
 
 	var body bytes.Buffer
 	_, _ = body.ReadFrom(resp.Body)
 	fmt.Println(body.String())
+}
+
+func doRequest(req *http.Request) *http.Response {
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	return resp
 }
