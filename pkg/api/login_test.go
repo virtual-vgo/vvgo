@@ -339,7 +339,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("not a member", func(t *testing.T) {
 		discordTs := newDiscordServer(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/guilds/"+ discord.VVGOGuildID +"/members/80351110224678912" {
+			if r.URL.Path == "/guilds/"+discord.VVGOGuildID+"/members/80351110224678912" {
 				w.Write([]byte(`{"roles": ["jelly", "donut"]}`))
 			}
 		})

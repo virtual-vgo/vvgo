@@ -23,10 +23,10 @@ var ErrInvalidOAuthCode = errors.New("invalid oauth code")
 const ClientPublicKey = "a56a084a21829d02f272e4e3f4b67a846a831281849f6740f7bbf873840c4076"
 const ApplicationID = "700963768787795998"
 const OAuthClientID = ApplicationID
-const VVGOGuildID  = "690626216637497425" // The VVGO discord server
-const VVGOVerifiedMemberRoleID  = "690636730281230396"
-const VVGOProductionTeamRoleID  = "746434659252174971"
-const VVGOExecutiveDirectorRoleID  = "690626333062987866"
+const VVGOGuildID = "690626216637497425" // The VVGO discord server
+const VVGOVerifiedMemberRoleID = "690636730281230396"
+const VVGOProductionTeamRoleID = "746434659252174971"
+const VVGOExecutiveDirectorRoleID = "690626333062987866"
 
 // Client that makes discord requests.
 type Client struct {
