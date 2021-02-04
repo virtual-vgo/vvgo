@@ -79,6 +79,14 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
+func Get(url string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return DoRequest(req)
+}
+
 var DebugHTTP bool
 
 func debugRequestOut(r *http.Request) {

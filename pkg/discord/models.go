@@ -21,6 +21,7 @@ type User struct {
 
 // https://discordapp.com/developers/docs/resources/guild#guild-member-object
 type GuildMember struct {
+	User  User     `json:"user"`
 	Nick  string   `json:"nick"`
 	Roles []string `json:"roles"`
 }

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/foaas"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
@@ -32,6 +33,11 @@ var SlashCommands = []SlashCommand{
 		Description: "Submission link for a project.",
 		Options:     submitCommandOptions,
 		Handler:     submitInteractionHandler,
+	},
+	{
+		Name:        "fuckoff",
+		Description: "A modern solution to the common problem of telling people to fuck off.",
+		Handler:     fuckoffInteractionHandler,
 	},
 }
 
@@ -237,5 +243,19 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessage,
 		Data: &discord.InteractionApplicationCommandCallbackData{Content: content},
+	}
+}
+
+func fuckoffInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+	content, _ := foaas.FuckOff(fmt.Sprintf("<@%s>", interaction.Member.User.ID))
+	if content == "" {
+		content = "oof please try again 😅"
+	}
+
+	return discord.InteractionResponse{
+		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{
+			Content: content,
+		},
 	}
 }
