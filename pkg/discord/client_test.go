@@ -15,10 +15,9 @@ func TestClient_QueryOAuth(t *testing.T) {
 	ctx := context.Background()
 	client := Client{
 		Config: Config{
-			BotAuthToken:      "test-bot-auth-token",
-			OAuthClientID:     "test-oauth-client-id",
-			OAuthClientSecret: "test-oauth-client-secret",
-			OAuthRedirectURI:  "https://localhost/test-oauth-redirect-uri",
+			BotAuthenticationToken: "test-bot-auth-token",
+			OAuthClientSecret:      "test-oauth-client-secret",
+			OAuthRedirectURI:       "https://localhost/test-oauth-redirect-uri",
 		},
 	}
 
@@ -51,7 +50,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	assert.Equal(t, "application/x-www-form-urlencoded", gotRequest.Header.Get("Content-Type"))
 
 	wantForm := make(url.Values)
-	wantForm.Add("client_id", "test-oauth-client-id")
+	wantForm.Add("client_id", OAuthClientID)
 	wantForm.Add("client_secret", "test-oauth-client-secret")
 	wantForm.Add("grant_type", "authorization_code")
 	wantForm.Add("code", "test-code")
@@ -73,7 +72,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	ctx := context.Background()
 	client := Client{
 		Config: Config{
-			BotAuthToken: "test-bot-auth-token",
+			BotAuthenticationToken: "test-bot-auth-token",
 		},
 	}
 	//goland:noinspection SpellCheckingInspection
@@ -116,7 +115,7 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	ctx := context.Background()
 	client := Client{
 		Config: Config{
-			BotAuthToken: "test-bot-auth-token",
+			BotAuthenticationToken: "test-bot-auth-token",
 		},
 	}
 
@@ -135,10 +134,10 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	}))
 	defer ts.Close()
 	client.Config.Endpoint = ts.URL
-	gotMember, gotError := client.QueryGuildMember(ctx, "test-guild-id", "test-user-id")
+	gotMember, gotError := client.QueryGuildMember(ctx, "test-user-id")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
-	assert.Equal(t, "/guilds/test-guild-id/members/test-user-id", gotRequest.URL.String())
+	assert.Equal(t, "/guilds/690626216637497425/members/test-user-id", gotRequest.URL.String())
 	assert.Equal(t, []string{"Bot test-bot-auth-token"}, gotRequest.Header["Authorization"])
 	assert.Equal(t, &GuildMember{Nick: "NOT API SUPPORT", Roles: []string{"jelly", "donut"}}, gotMember)
 }

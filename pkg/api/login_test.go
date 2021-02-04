@@ -166,14 +166,6 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "SETEX", "oauth_state:"+oauthState, "300", oauthValue)))
 
 	loginHandler := DiscordLoginHandler{}
-	config := DiscordLoginConfig{
-		GuildID:          "test-guild-id",
-		RoleVVGOMemberID: "vvgo-member",
-		RoleVVGOTeamsID:  "vvgo-teams",
-		RoleVVGOLeaderID: "vvgo-leader",
-	}
-	require.NoError(t, parse_config.WriteToRedisHash(ctx, "discord_login", &config), "redis.Do() failed")
-
 	ts := httptest.NewServer(&loginHandler)
 	defer ts.Close()
 
@@ -203,9 +195,9 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 				} else {
 					http.Error(w, "access denied; invalid authorization: "+r.Header.Get("Authorization"), http.StatusUnauthorized)
 				}
-			case "/guilds/test-guild-id/members/80351110224678912":
+			case "/guilds/" + discord.VVGOGuildID + "/members/80351110224678912":
 				if r.Header.Get("Authorization") == "Bot test-bot-auth-token" {
-					w.Write([]byte(`{"roles": ["jelly", "donut", "vvgo-member"]}`))
+					w.Write([]byte(`{"roles": ["jelly", "donut", "` + discord.VVGOVerifiedMemberRoleID + `"]}`))
 				} else {
 					http.Error(w, "access denied; invalid authorization: "+r.Header.Get("Authorization"), http.StatusUnauthorized)
 				}
@@ -213,8 +205,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		}))
 
 		discordConfig := discord.Config{
-			Endpoint:     ts.URL,
-			BotAuthToken: "test-bot-auth-token",
+			Endpoint:               ts.URL,
+			BotAuthenticationToken: "test-bot-auth-token",
 		}
 		require.NoError(t, parse_config.WriteToRedisHash(ctx, "discord", &discordConfig), "redis.Do() failed")
 		return ts
@@ -335,7 +327,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("discord guild fails", func(t *testing.T) {
 		discordTs := newDiscordServer(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/guilds/test-guild-id/members/80351110224678912" {
+			if r.URL.Path == "/guilds/"+discord.VVGOGuildID+"/members/80351110224678912" {
 				w.WriteHeader(http.StatusBadRequest)
 			}
 		})
@@ -347,7 +339,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("not a member", func(t *testing.T) {
 		discordTs := newDiscordServer(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/guilds/test-guild-id/members/80351110224678912" {
+			if r.URL.Path == "/guilds/"+ discord.VVGOGuildID +"/members/80351110224678912" {
 				w.Write([]byte(`{"roles": ["jelly", "donut"]}`))
 			}
 		})

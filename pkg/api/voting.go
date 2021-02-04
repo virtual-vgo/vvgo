@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
 	"sort"
@@ -94,19 +93,12 @@ var VotingResultsView = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 		ballots = append(ballots, ballot)
 	}
 	results := rankResultsForView(determineWinners(ballots))
-
-	var config DiscordLoginConfig
-	if err := parse_config.ReadFromRedisHash(ctx, "discord_login", &config); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-		internalServerError(w)
-	}
-
 	page := struct {
 		Results []voteRanking
 		Ballots []namedBallot
 	}{
 		Results: results,
-		Ballots: nameBallots(ctx, discord.GuildID(config.GuildID), data),
+		Ballots: nameBallots(ctx, data),
 	}
 	ParseAndExecute(ctx, w, r, &page, "voting_results.gohtml")
 })
@@ -116,11 +108,11 @@ type namedBallot struct {
 	Votes []string
 }
 
-func nameBallots(ctx context.Context, guildId discord.GuildID, data map[string]string) []namedBallot {
+func nameBallots(ctx context.Context, data map[string]string) []namedBallot {
 	ballots := make([]namedBallot, 0, len(data))
 	for userID, ballotJSON := range data {
 		var nick string
-		guildMember, err := discord.NewClient(ctx).QueryGuildMember(ctx, guildId, discord.UserID(userID))
+		guildMember, err := discord.NewClient(ctx).QueryGuildMember(ctx, discord.Snowflake(userID))
 		if err != nil {
 			logger.WithError(err).Error("discord.QueryGuildMember() failed")
 		} else {

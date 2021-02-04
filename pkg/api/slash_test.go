@@ -13,7 +13,7 @@ import (
 )
 
 func TestSlashCommand(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(SlashCommand))
+	ts := httptest.NewServer(http.HandlerFunc(HandleSlashCommand))
 	req, err := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader(`{"type":1}`))
 	require.NoError(t, err, "http.NewRequest() failed")
 	req.Header.Set("X-Signature-Ed25519", "acbd")
@@ -27,7 +27,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{Content: "boop"},
-	}, HandleBeepInteraction())
+	}, BeepInteractionHandler(context.Background(), discord.Interaction{}))
 }
 
 func TestHandlePartsInteraction(t *testing.T) {
@@ -48,7 +48,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "[Parts for Hilda's Healing](https://vvgo.org/parts?project=10-hildas-healing)",
 		},
-	}, HandlePartsInteraction(interaction))
+	}, PartsInteractionHandler(ctx, interaction))
 }
 
 func TestHandleSubmissionInteraction(t *testing.T) {
@@ -69,7 +69,7 @@ func TestHandleSubmissionInteraction(t *testing.T) {
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "[Submit here for Hilda's Healing](https://bit.ly/vvgo10submit)",
 		},
-	}, HandleSubmissionInteraction(interaction))
+	}, SubmissionInteractionHandler(ctx, interaction))
 }
 
 func assertEqualInteractionResponse(t *testing.T, want, got discord.InteractionResponse) {

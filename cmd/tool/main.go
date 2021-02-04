@@ -17,26 +17,19 @@ const ApplicationId = "700963768787795998"
 const GuildId = "690626216637497425"
 const RegistrationEndpoint = "https://discord.com/api/v8/applications/" + ApplicationId + "/guilds/" + GuildId + "/commands"
 
-// https://discord.com/developers/docs/interactions/slash-commands#create-guild-application-command
-type CreateApplicationCommand struct {
-	Name        string                             `json:"name"`
-	Description string                             `json:"description"`
-	Options     []discord.ApplicationCommandOption `json:"options,omitempty"`
-}
-
-var beepCommand = CreateApplicationCommand{
+var beepCommand = discord.CreateApplicationCommandParams{
 	Name:        "beep",
 	Description: "Send a beep.",
 }
 
-func partsCommand(projects sheets.Projects) CreateApplicationCommand {
+func partsCommand(projects sheets.Projects) discord.CreateApplicationCommandParams {
 	var choices []discord.ApplicationCommandOptionChoice
 	for _, project := range projects {
 		choices = append(choices, discord.ApplicationCommandOptionChoice{
 			Name: project.Title, Value: project.Name,
 		})
 	}
-	return CreateApplicationCommand{
+	return discord.CreateApplicationCommandParams{
 		Name:        "parts",
 		Description: "Parts link for a project.",
 		Options: []discord.ApplicationCommandOption{
@@ -51,14 +44,14 @@ func partsCommand(projects sheets.Projects) CreateApplicationCommand {
 	}
 }
 
-func submissionCommand(projects sheets.Projects) CreateApplicationCommand {
+func submissionCommand(projects sheets.Projects) discord.CreateApplicationCommandParams {
 	var choices []discord.ApplicationCommandOptionChoice
 	for _, project := range projects {
 		choices = append(choices, discord.ApplicationCommandOptionChoice{
 			Name: project.Title, Value: project.Name,
 		})
 	}
-	return CreateApplicationCommand{
+	return discord.CreateApplicationCommandParams{
 		Name:        "submit",
 		Description: "Submission link for a project.",
 		Options: []discord.ApplicationCommandOption{
@@ -76,7 +69,7 @@ func submissionCommand(projects sheets.Projects) CreateApplicationCommand {
 func main() {
 	redis.InitializeFromEnv()
 	client := discord.NewClient(context.Background())
-	var authToken = client.Config.BotAuthToken
+	var authToken = client.Config.BotAuthenticationToken
 
 	identity := login.Anonymous()
 	currentProjects, err := sheets.ListProjects(context.Background(), &identity)
@@ -93,7 +86,7 @@ func main() {
 	listSlashCommands(authToken)
 }
 
-func registerCommand(AuthToken string, command CreateApplicationCommand) {
+func registerCommand(AuthToken string, command discord.CreateApplicationCommandParams) {
 	var commandBytes bytes.Buffer
 	if err := json.NewEncoder(&commandBytes).Encode(command); err != nil {
 		log.Fatal("json.Encode() failed: ", err)
