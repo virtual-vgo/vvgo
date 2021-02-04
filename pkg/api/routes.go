@@ -56,8 +56,8 @@ func Routes() http.Handler {
 			io.Copy(w, file)
 		}, login.RoleVVGOMember)
 
-	mux.HandleFunc("/slash_commands", ViewSlashCommands, login.RoleVVGOLeader)
-	mux.HandleFunc("/slash_commands/create", CreateSlashCommands, login.RoleVVGOLeader)
+	mux.HandleFunc("/slash_commands", ViewSlashCommands, login.RoleVVGOTeams)
+	mux.HandleFunc("/slash_commands/create", CreateSlashCommands, login.RoleVVGOTeams)
 
 	mux.HandleFunc("/voting", VotingView, login.RoleVVGOLeader)
 	mux.HandleFunc("/voting/results", VotingResultsView, login.RoleVVGOLeader)

@@ -19,28 +19,30 @@ var SlashCommands = []SlashCommand{
 	{
 		Name:        "beep",
 		Description: "Send a beep.",
-		Handler:     BeepInteractionHandler,
+		Handler:     beepInteractionHandler,
 	},
 	{
 		Name:        "parts",
 		Description: "Parts link for a project.",
-		Options:     PartsCommandOptions,
-		Handler:     PartsInteractionHandler,
+		Options:     partsCommandOptions,
+		Handler:     partsInteractionHandler,
 	},
 	{
 		Name:        "submit",
 		Description: "Submission link for a project.",
-		Options:     SubmissionCommandOptions,
-		Handler:     SubmissionInteractionHandler,
+		Options:     submitCommandOptions,
+		Handler:     submitInteractionHandler,
 	},
 }
 
 func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	for _, command := range SlashCommands {
-		handleError(command.Create(ctx)).logError("SlashCommand.Create() failed")
+		handleError(command.Create(ctx)).
+			logError("SlashCommand.Create() failed").
+			logSuccess(command.Name + " command created")
 	}
-	ViewSlashCommands(w, r)
+	http.Redirect(w, r, "/slash_commands", http.StatusFound)
 }
 
 func ViewSlashCommands(w http.ResponseWriter, r *http.Request) {
@@ -88,34 +90,33 @@ func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
 	handleError(json.NewDecoder(&body).Decode(&interaction)).
 		logError("json.Decode() failed").
 		ifError(func(err error) { badRequest(w, "invalid request body: "+err.Error()) }).
-		ifSuccess(func() { handleInteraction(w, ctx, interaction) })
+		ifSuccess(func() {
+			response, ok := HandleInteraction(ctx, interaction)
+			if !ok {
+				badRequest(w, "unsupported interaction type")
+				return
+			}
+			json.NewEncoder(w).Encode(response)
+		})
 }
 
-func handleInteraction(w http.ResponseWriter, ctx context.Context, interaction discord.Interaction) {
-	var response discord.InteractionResponse
+func HandleInteraction(ctx context.Context, interaction discord.Interaction) (discord.InteractionResponse, bool) {
 	switch interaction.Type {
 	case discord.InteractionTypePing:
-		response = discord.InteractionResponse{Type: discord.InteractionResponseTypePong}
+		return discord.InteractionResponse{Type: discord.InteractionResponseTypePong}, true
 	case discord.InteractionTypeApplicationCommand:
-		var handler InteractionHandler
 		for _, command := range SlashCommands {
 			if interaction.Data.Name == command.Name {
-				handler = command.Handler
+				return command.Handler(ctx, interaction), true
 			}
 		}
-		if handler != nil {
-			response = handler(ctx, interaction)
-		} else {
-			response = discord.InteractionResponse{
-				Type: discord.InteractionResponseTypeChannelMessageWithSource,
-				Data: &discord.InteractionApplicationCommandCallbackData{
-					Content: fmt.Sprintf("i don't how to %s yet 😥", interaction.Data.Name)}}
-		}
+		return discord.InteractionResponse{
+			Type: discord.InteractionResponseTypeChannelMessageWithSource,
+			Data: &discord.InteractionApplicationCommandCallbackData{
+				Content: "this interaction is too galaxy brain for me 😥"}}, true
 	default:
-		badRequest(w, "unsupported interaction type")
-		return
+		return discord.InteractionResponse{}, false
 	}
-	handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
 }
 
 type SlashCommand struct {
@@ -144,7 +145,7 @@ func (x SlashCommand) Create(ctx context.Context) (err error) {
 	return err
 }
 
-func BeepInteractionHandler(context.Context, discord.Interaction) discord.InteractionResponse {
+func beepInteractionHandler(context.Context, discord.Interaction) discord.InteractionResponse {
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
@@ -153,7 +154,7 @@ func BeepInteractionHandler(context.Context, discord.Interaction) discord.Intera
 	}
 }
 
-func PartsCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
+func partsCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
 	identity := login.Anonymous()
 	projects, err := sheets.ListProjects(ctx, &identity)
 	if err != nil {
@@ -162,7 +163,7 @@ func PartsCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOptio
 	return []discord.ApplicationCommandOption{projectCommandOption(projects.Current())}, nil
 }
 
-func PartsInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func partsInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	var projectName string
 	for _, option := range interaction.Data.Options {
 		if option.Name == "project" {
@@ -188,7 +189,7 @@ func PartsInteractionHandler(ctx context.Context, interaction discord.Interactio
 	}
 }
 
-func SubmissionCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
+func submitCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
 	identity := login.Anonymous()
 	projects, err := sheets.ListProjects(ctx, &identity)
 	if err != nil {
@@ -213,7 +214,7 @@ func projectCommandOption(projects sheets.Projects) discord.ApplicationCommandOp
 	}
 }
 
-func SubmissionInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func submitInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	var projectName string
 	for _, option := range interaction.Data.Options {
 		if option.Name == "project" {
@@ -227,7 +228,7 @@ func SubmissionInteractionHandler(ctx context.Context, interaction discord.Inter
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListProjects() failed")
 	} else if project, ok := projects.Get(projectName); ok {
-		content = fmt.Sprintf("[Submit here for %s](%s)", project.Title, project.SubmissionLink)
+		content = fmt.Sprintf("[Submit here](%s) for %s.", project.SubmissionLink, project.Title)
 	}
 
 	if content == "" {
