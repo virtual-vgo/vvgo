@@ -62,6 +62,12 @@ func valuesToProjects(values [][]interface{}) Projects {
 	return projects
 }
 
+func (x Projects) Current() Projects {
+	return x.Query(map[string]interface{}{
+		"Hidden": false, "Video Released": false,
+		"Parts Archived": false, "Parts Released": true})
+}
+
 func (x Projects) Get(name string) (Project, bool) {
 	for _, project := range x {
 		if project.Name == name {

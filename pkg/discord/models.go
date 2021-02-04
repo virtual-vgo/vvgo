@@ -1,7 +1,38 @@
 package discord
 
-// https://discord.com/developers/docs/interactions/slash-commands#applicationcommand
+// https://discordapp.com/developers/docs/topics/oauth2
+type OAuthToken struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+}
 
+// https://discordapp.com/developers/docs/reference#snowflakes
+type Snowflake string
+
+func (x Snowflake) String() string { return string(x) }
+
+// https://discordapp.com/developers/docs/resources/user#user-object
+type User struct {
+	ID Snowflake `json:"id"`
+}
+
+// https://discordapp.com/developers/docs/resources/guild#guild-member-object
+type GuildMember struct {
+	Nick  string   `json:"nick"`
+	Roles []string `json:"roles"`
+}
+
+// https://discord.com/developers/docs/interactions/slash-commands#create-guild-application-command
+type CreateApplicationCommandParams struct {
+	Name        string                     `json:"name"`
+	Description string                     `json:"description"`
+	Options     []ApplicationCommandOption `json:"options,omitempty"`
+}
+
+// https://discord.com/developers/docs/interactions/slash-commands#applicationcommand
 type ApplicationCommand struct {
 	ID            string                     `json:"id"`
 	ApplicationID string                     `json:"application_id"`
@@ -11,7 +42,6 @@ type ApplicationCommand struct {
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#applicationcommandoption
-
 type ApplicationCommandOption struct {
 	Type        ApplicationCommandOptionType     `json:"type"`
 	Name        string                           `json:"name"`
@@ -22,7 +52,6 @@ type ApplicationCommandOption struct {
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#applicationcommandoptiontype
-
 type ApplicationCommandOptionType int
 
 const (
@@ -37,14 +66,12 @@ const (
 )
 
 // https://discord.com/developers/docs/interactions/slash-commands#applicationcommandoptionchoice
-
 type ApplicationCommandOptionChoice struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction
-
 type Interaction struct {
 	ID        string                             `json:"id"`
 	Type      InteractionType                    `json:"type"`
@@ -56,7 +83,6 @@ type Interaction struct {
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-interactiontype
-
 type InteractionType int
 
 const (
@@ -65,7 +91,6 @@ const (
 )
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-applicationcommandinteractiondataoption
-
 type ApplicationCommandInteractionData struct {
 	ID      string                                    `json:"id"`
 	Name    string                                    `json:"name"`
@@ -73,7 +98,6 @@ type ApplicationCommandInteractionData struct {
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-applicationcommandinteractiondataoption
-
 type ApplicationCommandInteractionDataOption struct {
 	Name    string                                    `json:"name"`
 	Value   string                                    `json:"value"`
@@ -81,14 +105,12 @@ type ApplicationCommandInteractionDataOption struct {
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response
-
 type InteractionResponse struct {
 	Type InteractionResponseType                    `json:"type"`
 	Data *InteractionApplicationCommandCallbackData `json:"data,omitempty"`
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response-interactionresponsetype
-
 type InteractionResponseType int
 
 const (
@@ -100,7 +122,6 @@ const (
 )
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response-interactionapplicationcommandcallbackdata
-
 type InteractionApplicationCommandCallbackData struct {
 	TTS     bool   `json:"tts"`
 	Content string `json:"content"`

@@ -45,10 +45,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/leaders", LeadersApi, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", RolesApi, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)
-	mux.HandleFunc("/api/v1/slash_commands", SlashCommand, login.RoleAnonymous)
-
-	mux.HandleFunc("/voting", VotingView, login.RoleVVGOLeader)
-	mux.HandleFunc("/voting/results", VotingResultsView, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/slash_commands", HandleSlashCommand, login.RoleAnonymous)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
@@ -59,6 +56,11 @@ func Routes() http.Handler {
 			io.Copy(w, file)
 		}, login.RoleVVGOMember)
 
+	mux.HandleFunc("/slash_commands", ViewSlashCommands, login.RoleVVGOTeams)
+	mux.HandleFunc("/slash_commands/create", CreateSlashCommands, login.RoleVVGOTeams)
+
+	mux.HandleFunc("/voting", VotingView, login.RoleVVGOLeader)
+	mux.HandleFunc("/voting/results", VotingResultsView, login.RoleVVGOLeader)
 	mux.HandleFunc("/parts", PartsView, login.RoleVVGOMember)
 	mux.HandleFunc("/projects", ProjectsView, login.RoleAnonymous)
 	mux.HandleFunc("/download", DownloadHandler, login.RoleVVGOMember)

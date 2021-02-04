@@ -137,13 +137,6 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 // Otherwise, 401 unauthorized.
 type DiscordLoginHandler struct{}
 
-type DiscordLoginConfig struct {
-	GuildID          string `redis:"guild_id"`
-	RoleVVGOMemberID string `redis:"role_vvgo_member"`
-	RoleVVGOTeamsID  string `redis:"role_vvgo_teams"`
-	RoleVVGOLeaderID string `redis:"role_vvgo_leader"`
-}
-
 var ErrNotAMember = errors.New("not a member")
 
 func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -156,18 +149,9 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		http.Redirect(w, r, discord.NewClient(ctx).LoginURL(state), http.StatusFound)
-	} else {
-		var config DiscordLoginConfig
-		if err := parse_config.ReadFromRedisHash(ctx, "discord_login", &config); err != nil {
-			logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-			internalServerError(w)
-		}
-		x.authorize(w, r, config)
+		return
 	}
-}
 
-func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request, config DiscordLoginConfig) {
-	ctx := r.Context()
 	discordClient := discord.NewClient(ctx)
 
 	handleError := func(err error) bool {
@@ -197,7 +181,7 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request, c
 	}
 
 	// check if this user is in our guild
-	guildMember, err := discordClient.QueryGuildMember(ctx, discord.GuildID(config.GuildID), discordUser.ID)
+	guildMember, err := discordClient.QueryGuildMember(ctx, discordUser.ID)
 	if ok := handleError(err); !ok {
 		return
 	}
@@ -208,11 +192,11 @@ func (x DiscordLoginHandler) authorize(w http.ResponseWriter, r *http.Request, c
 		switch discordRole {
 		case "": // ignore empty strings
 			continue
-		case config.RoleVVGOLeaderID:
+		case discord.VVGOExecutiveDirectorRoleID:
 			loginRoles = append(loginRoles, login.RoleVVGOLeader)
-		case config.RoleVVGOTeamsID:
+		case discord.VVGOProductionTeamRoleID:
 			loginRoles = append(loginRoles, login.RoleVVGOTeams)
-		case config.RoleVVGOMemberID:
+		case discord.VVGOVerifiedMemberRoleID:
 			loginRoles = append(loginRoles, login.RoleVVGOMember)
 		}
 	}

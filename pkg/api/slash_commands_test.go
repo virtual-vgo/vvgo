@@ -13,7 +13,7 @@ import (
 )
 
 func TestSlashCommand(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(SlashCommand))
+	ts := httptest.NewServer(http.HandlerFunc(HandleSlashCommand))
 	req, err := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader(`{"type":1}`))
 	require.NoError(t, err, "http.NewRequest() failed")
 	req.Header.Set("X-Signature-Ed25519", "acbd")
@@ -24,10 +24,18 @@ func TestSlashCommand(t *testing.T) {
 }
 
 func TestHandleBeepInteraction(t *testing.T) {
+	interaction := discord.Interaction{
+		Type: discord.InteractionTypeApplicationCommand,
+		Data: &discord.ApplicationCommandInteractionData{
+			Name: "beep",
+		},
+	}
+	response, ok := HandleInteraction(context.Background(), interaction)
+	assert.True(t, ok)
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{Content: "boop"},
-	}, HandleBeepInteraction())
+	}, response)
 }
 
 func TestHandlePartsInteraction(t *testing.T) {
@@ -38,17 +46,24 @@ func TestHandlePartsInteraction(t *testing.T) {
 	})
 
 	interaction := discord.Interaction{
+		Type: discord.InteractionTypeApplicationCommand,
 		Data: &discord.ApplicationCommandInteractionData{
+			Name: "parts",
 			Options: []discord.ApplicationCommandInteractionDataOption{
 				{Name: "project", Value: "10-hildas-healing"},
-			}}}
+			},
+		},
+	}
+
+	response, ok := HandleInteraction(ctx, interaction)
+	assert.True(t, ok)
 
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessage,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "[Parts for Hilda's Healing](https://vvgo.org/parts?project=10-hildas-healing)",
 		},
-	}, HandlePartsInteraction(interaction))
+	}, response)
 }
 
 func TestHandleSubmissionInteraction(t *testing.T) {
@@ -59,17 +74,24 @@ func TestHandleSubmissionInteraction(t *testing.T) {
 	})
 
 	interaction := discord.Interaction{
+		Type: discord.InteractionTypeApplicationCommand,
 		Data: &discord.ApplicationCommandInteractionData{
+			Name: "submit",
 			Options: []discord.ApplicationCommandInteractionDataOption{
 				{Name: "project", Value: "10-hildas-healing"},
-			}}}
+			},
+		},
+	}
+
+	response, ok := HandleInteraction(ctx, interaction)
+	assert.True(t, ok)
 
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessage,
 		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: "[Submit here for Hilda's Healing](https://bit.ly/vvgo10submit)",
+			Content: "[Submit here](https://bit.ly/vvgo10submit) for Hilda's Healing.",
 		},
-	}, HandleSubmissionInteraction(interaction))
+	}, response)
 }
 
 func assertEqualInteractionResponse(t *testing.T, want, got discord.InteractionResponse) {

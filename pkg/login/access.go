@@ -44,9 +44,9 @@ func Anonymous() Identity { return anonymous }
 // This _absolutely_ should not contain any personally identifiable information.
 // Numeric user id's are fine, but no emails, user names, addresses, etc.
 type Identity struct {
-	Kind      Kind           `json:"kind"`
-	Roles     []Role         `json:"roles"`
-	DiscordID discord.UserID `json:"discord_id"`
+	Kind      Kind              `json:"kind"`
+	Roles     []Role            `json:"roles"`
+	DiscordID discord.Snowflake `json:"discord_id"`
 }
 
 func (x Identity) Info() string {

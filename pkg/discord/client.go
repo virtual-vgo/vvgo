@@ -21,6 +21,12 @@ var ErrNon200Response = errors.New("non-200 response from discord")
 var ErrInvalidOAuthCode = errors.New("invalid oauth code")
 
 const ClientPublicKey = "a56a084a21829d02f272e4e3f4b67a846a831281849f6740f7bbf873840c4076"
+const ApplicationID = "700963768787795998"
+const OAuthClientID = ApplicationID
+const VVGOGuildID = "690626216637497425" // The VVGO discord server
+const VVGOVerifiedMemberRoleID = "690636730281230396"
+const VVGOProductionTeamRoleID = "746434659252174971"
+const VVGOExecutiveDirectorRoleID = "690626333062987866"
 
 // Client that makes discord requests.
 type Client struct {
@@ -33,16 +39,13 @@ func NewClient(ctx context.Context) *Client {
 
 // Config for discord requests.
 type Config struct {
-	// Api endpoint to query. Defaults to https://discordapp.com/api/v6.
-	Endpoint string `redis:"endpoint" default:"https://discordapp.com/api/v6"`
+	// Api endpoint to query. Defaults to https://discord.com/api/v8.
+	// This should only be overwritten for testing.
+	Endpoint string `redis:"endpoint" default:"https://discord.com/api/v8"`
 
-	// BotAuthToken is used for making queries about our discord guild.
+	// BotAuthenticationToken is used for making queries about our discord guild.
 	// This is found in the bot tab for the discord app.
-	BotAuthToken string `redis:"bot_authentication_token"`
-
-	// OAuthClientID is the client id used in oauth requests.
-	// This is found in the oauth2 tab for the discord app.
-	OAuthClientID string `redis:"oauth_client_id"`
+	BotAuthenticationToken string `redis:"bot_authentication_token"`
 
 	// OAuthClientSecret is the secret used in oauth requests.
 	// This is found in the oauth2 tab for the discord app.
@@ -64,51 +67,12 @@ func newConfig(ctx context.Context) Config {
 
 func (x Client) LoginURL(state string) string {
 	query := make(url.Values)
-	query.Set("client_id", x.Config.OAuthClientID)
+	query.Set("client_id", OAuthClientID)
 	query.Set("redirect_uri", x.Config.OAuthRedirectURI)
 	query.Set("response_type", "code")
 	query.Set("state", state)
 	query.Set("scope", "identify")
 	return "https://discord.com/api/oauth2/authorize?" + query.Encode()
-}
-
-// This is the oauth token returned by discord after a successful oauth request.
-// https://discordapp.com/developers/docs/topics/oauth2
-type OAuthToken struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
-}
-
-// A discord user id.
-// These are string encoded 64bit ints.
-// https://discordapp.com/developers/docs/reference#snowflakes
-type UserID string
-
-func (x UserID) String() string { return string(x) }
-
-// A discord guild id.
-// These are string encoded 64bit ints.
-// https://discordapp.com/developers/docs/reference#snowflakes
-type GuildID string
-
-func (x GuildID) String() string { return string(x) }
-
-// A discord user object.
-// We only care about the id.
-// https://discordapp.com/developers/docs/resources/user#user-object
-type User struct {
-	ID UserID `json:"id"`
-}
-
-// A discord guild member object.
-// We only care about the roles.
-// https://discordapp.com/developers/docs/resources/guild#guild-member-object
-type GuildMember struct {
-	Nick  string   `json:"nick"`
-	Roles []string `json:"roles"`
 }
 
 // Query oauth token from discord.
@@ -134,7 +98,7 @@ func (x Client) newOAuthRequest(ctx context.Context, code string) (*http.Request
 
 	// build the authorization request
 	form := make(url.Values)
-	form.Add("client_id", x.Config.OAuthClientID)
+	form.Add("client_id", OAuthClientID)
 	form.Add("client_secret", x.Config.OAuthClientSecret)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
@@ -143,7 +107,7 @@ func (x Client) newOAuthRequest(ctx context.Context, code string) (*http.Request
 
 	req, err := x.newRequest(ctx, http.MethodPost, "/oauth2/token", strings.NewReader(form.Encode()))
 	if err != nil {
-		return nil, fmt.Errorf("http.NewRequestWithContext() failed: %v", err)
+		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	return req, err
@@ -179,8 +143,8 @@ func (x Client) newTokenRequest(ctx context.Context, oauthToken *OAuthToken, pat
 // Query discord for the guild member object of the guild id and user id.
 // Here we use the the server's own auth token.
 // https://discordapp.com/developers/docs/resources/guild#get-guild-member
-func (x Client) QueryGuildMember(ctx context.Context, guildID GuildID, userID UserID) (*GuildMember, error) {
-	req, err := x.newBotRequest(ctx, x.Config.BotAuthToken, "/guilds/"+guildID.String()+"/members/"+userID.String())
+func (x Client) QueryGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, error) {
+	req, err := x.newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members/"+userID.String(), nil)
 	if err != nil {
 		logger.WithError(err).Error("http.NewRequestWithContext() failed")
 		return nil, err
@@ -194,31 +158,77 @@ func (x Client) QueryGuildMember(ctx context.Context, guildID GuildID, userID Us
 	return &guildMember, nil
 }
 
-// returns a request using a bot token for authentication
-func (x Client) newBotRequest(ctx context.Context, token string, path string) (*http.Request, error) {
-	req, err := x.newRequest(ctx, http.MethodGet, path, nil)
+func (x Client) GetApplicationCommands(ctx context.Context) ([]ApplicationCommand, error) {
+	req, err := x.newSlashCommandRequest(ctx, http.MethodGet, nil)
 	if err != nil {
-		logger.WithError(err).Error("http.NewRequestWithContext() failed")
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bot "+token)
+
+	var commands []ApplicationCommand
+	_, err = doDiscordRequest(req, &commands)
+	return commands, err
+}
+
+func (x Client) CreateApplicationCommand(ctx context.Context, params CreateApplicationCommandParams) (*ApplicationCommand, error) {
+	var paramsBytes bytes.Buffer
+	if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
+		return nil, fmt.Errorf("json.Encode() failed: %w", err)
+	}
+
+	req, err := x.newSlashCommandRequest(ctx, http.MethodPost, &paramsBytes)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	var command ApplicationCommand
+	_, err = doDiscordRequest(req, &command)
+	if err != nil {
+		return nil, err
+	}
+	return &command, nil
+}
+
+func (x Client) DeleteApplicationCommand(ctx context.Context, id Snowflake) error {
+	path := "/applications/" + ApplicationID + "/guilds/" + VVGOGuildID + "/commands/" + id.String()
+	req, err := x.newBotRequest(ctx, http.MethodPost, path, nil)
+	if err != nil {
+		return err
+	}
+	_, err = doDiscordRequest(req, nil)
+	return err
+}
+
+func (x Client) newSlashCommandRequest(ctx context.Context, method string, body io.Reader) (*http.Request, error) {
+	path := "/applications/" + ApplicationID + "/guilds/" + VVGOGuildID + "/commands"
+	return x.newBotRequest(ctx, method, path, body)
+}
+
+// returns a request using a bot token for authentication
+func (x Client) newBotRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
+	req, err := x.newRequest(ctx, method, path, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Bot "+x.Config.BotAuthenticationToken)
 	return req, err
 }
 
 func (x Client) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
 	endpoint := x.Config.Endpoint
-	if endpoint == "" {
-		endpoint = "https://discordapp.com/api/v6"
+	req, err := http.NewRequestWithContext(ctx, method, endpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("http.NewRequestWithContext() failed: %w", err)
 	}
-	return http.NewRequestWithContext(ctx, method, endpoint+path, body)
+	return req, err
 }
 
 // performs the http request and logs results
-func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, error) {
-	resp, err := http_wrappers.DoRequest(req)
+func doDiscordRequest(req *http.Request, dest interface{}) (resp *http.Response, err error) {
+	resp, err = http_wrappers.DoRequest(req)
 	switch {
 	case err != nil:
-		logger.WithError(err).Error("tracing.DoHttpRequest() failed")
+		logger.WithError(err).Error("http.Do() failed")
 
 	case resp.StatusCode != http.StatusOK:
 		err = ErrNon200Response
@@ -238,10 +248,9 @@ func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, erro
 			"status": resp.StatusCode,
 			"url":    req.URL.String(),
 		}).Info("discord api request complete")
-		err = json.NewDecoder(resp.Body).Decode(dest)
-		if err != nil {
-			logger.WithError(err).Error("json.Decode() failed")
+		if dest != nil {
+			err = json.NewDecoder(resp.Body).Decode(dest)
 		}
 	}
-	return resp, err
+	return
 }
