@@ -62,7 +62,14 @@ func TestHandlePartsInteraction(t *testing.T) {
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessage,
 		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: "[Parts for Hilda's Healing](https://vvgo.org/parts?project=10-hildas-healing)",
+			Embeds: []discord.Embed{{
+				Title:       "Hilda's Healing",
+				Type:        "rich",
+				Description: "· Parts are [here!](https://vvgo.org/parts?project=10-hildas-healing)\n· Submit files [here!]()\n· Submission Deadline: .",
+				Url:         "https://vvgo.org/parts?project=10-hildas-healing",
+				Color:       9181145,
+				Footer:      &discord.EmbedFooter{Text: "Bottom text."},
+			}},
 		},
 	}, response)
 }
@@ -129,5 +136,11 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 
 func assertEqualInteractionResponse(t *testing.T, want, got discord.InteractionResponse) {
 	assert.Equal(t, want.Type, got.Type, "interaction.Type")
-	assert.Equal(t, want.Data, got.Data, "interaction.Data")
+	assertEqualInteractionApplicationCommandCallbackData(t, want.Data, got.Data)
+}
+
+func assertEqualInteractionApplicationCommandCallbackData(t *testing.T, want, got *discord.InteractionApplicationCommandCallbackData) {
+	assert.Equal(t, want.Content, got.Content, "interaction.Data.Content")
+	assert.Equal(t, want.TTS, got.TTS, "interaction.Data.TTS")
+	assert.Equal(t, want.Embeds, got.Embeds, "interaction.Data.Embeds")
 }

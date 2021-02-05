@@ -124,6 +124,96 @@ const (
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response-interactionapplicationcommandcallbackdata
 type InteractionApplicationCommandCallbackData struct {
-	TTS     bool   `json:"tts"`
-	Content string `json:"content"`
+	TTS     bool    `json:"tts"`
+	Content string  `json:"content"`
+	Embeds  []Embed `json:"embeds,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/webhook#execute-webhook-jsonform-params
+type ExecuteWebhookParams struct {
+	Content   string  `json:"content,omitempty"`
+	Username  string  `json:"username,omitempty"`
+	AvatarUrl string  `json:"avatar_url,omitempty"`
+	TTS       bool    `json:"tts"`
+	Embeds    []Embed `json:"embeds,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-structure
+type Embed struct {
+	Title       string          `json:"title,omitempty"`
+	Type        EmbedType       `json:"type,omitempty"`
+	Description string          `json:"description,omitempty"`
+	Url         string          `json:"url,omitempty"`
+	Color       int             `json:"color,omitempty"`
+	Footer      *EmbedFooter    `json:"footer,omitempty"`
+	Image       *EmbedImage     `json:"image,omitempty"`
+	Thumbnail   *EmbedThumbnail `json:"thumbnail,omitempty"`
+	Video       *EmbedVideo     `json:"video,omitempty"`
+	Provider    *EmbedProvider  `json:"provider,omitempty"`
+	Author      *EmbedAuthor    `json:"author,omitempty"`
+	Fields      []EmbedField    `json:"fields,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-types
+type EmbedType string
+
+const (
+	EmbedTypeRich    EmbedType = "rich"
+	EmbedTypeImage   EmbedType = "image"
+	EmbedTypeVideo   EmbedType = "video"
+	EmbedTypeGifv    EmbedType = "gifv"
+	EmbedTypeArticle EmbedType = "article"
+	EmbedTypeLink    EmbedType = "link"
+)
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-thumbnail-structure
+type EmbedThumbnail struct {
+	Url      string `json:"url,omitempty"`
+	ProxyUrl string `json:"proxy_url,omitempty"`
+	Height   int    `json:"height,omitempty"`
+	Width    int    `json:"width,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-video-structure
+type EmbedVideo struct {
+	Url      string `json:"url,omitempty"`
+	ProxyUrl string `json:"proxy_url,omitempty"`
+	Height   int    `json:"height,omitempty"`
+	Width    int    `json:"width,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-image-structure
+type EmbedImage struct {
+	Url      string `json:"url,omitempty"`
+	ProxyUrl string `json:"proxy_url,omitempty"`
+	Height   int    `json:"height,omitempty"`
+	Width    int    `json:"width,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-provider-structure
+type EmbedProvider struct {
+	Name string `json:"name,omitempty"`
+	Url  string `json:"url,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-author-structure
+type EmbedAuthor struct {
+	Name         string `json:"name,omitempty"`
+	Url          string `json:"url,omitempty"`
+	IconUrl      string `json:"icon_url,omitempty"`
+	ProxyIconUrl string `json:"proxy_icon_url,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-footer-structure
+type EmbedFooter struct {
+	Text         string `json:"text,omitempty"`
+	IconUrl      string `json:"icon_url,omitempty"`
+	ProxyIconUrl string `json:"proxy_icon_url,omitempty"`
+}
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-field-structure
+type EmbedField struct {
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Inline bool   `json:"inline"`
 }

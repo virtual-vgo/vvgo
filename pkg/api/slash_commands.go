@@ -184,21 +184,36 @@ func partsInteractionHandler(ctx context.Context, interaction discord.Interactio
 		}
 	}
 
-	var content string
 	identity := login.Anonymous()
 	projects, err := sheets.ListProjects(ctx, &identity)
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListProjects() failed")
-	} else if project, ok := projects.Get(projectName); ok {
-		content = fmt.Sprintf("[Parts for %s](https://vvgo.org%s)", project.Title, project.PartsPage())
+		return InteractionResponseOof
 	}
 
-	if content == "" {
+	project, ok := projects.Get(projectName)
+	if !ok {
 		return InteractionResponseOof
+	}
+
+	description := fmt.Sprintf(`· Parts are [here!](https://vvgo.org%s)
+· Submit files [here!](%s)
+· Submission Deadline: %s.`,
+		project.PartsPage(), project.SubmissionLink, project.SubmissionDeadline)
+
+	embed := discord.Embed{
+		Title:       project.Title,
+		Type:        discord.EmbedTypeRich,
+		Description: description,
+		Url:         "https://vvgo.org" + project.PartsPage(),
+		Color:       0x8C17D9,
+		Footer:      &discord.EmbedFooter{Text: "Bottom text."},
 	}
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessage,
-		Data: &discord.InteractionApplicationCommandCallbackData{Content: content},
+		Data: &discord.InteractionApplicationCommandCallbackData{
+			Embeds: []discord.Embed{embed},
+		},
 	}
 }
 
@@ -241,7 +256,7 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListProjects() failed")
 	} else if project, ok := projects.Get(projectName); ok {
-		content = fmt.Sprintf("[Submit here](%s) for %s.", project.SubmissionLink, project.Title)
+		content = fmt.Sprintf(`[Submit here](%s) for %s. Submission Deadline is `, project.SubmissionLink, project.Title)
 	}
 
 	if content == "" {
