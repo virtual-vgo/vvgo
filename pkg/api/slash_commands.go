@@ -13,6 +13,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/foaas"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/when2meet"
 	"net/http"
 )
 
@@ -38,6 +39,12 @@ var SlashCommands = []SlashCommand{
 		Name:        "fuckoff",
 		Description: "A modern solution to the common problem of telling people to fuck off.",
 		Handler:     fuckoffInteractionHandler,
+	},
+	{
+		Name:        "when2meet",
+		Description: "Make a when2meet link.",
+		Options:     when2meetCommandOptions,
+		Handler:     when2meetInteractionHandler,
 	},
 }
 
@@ -187,7 +194,7 @@ func partsInteractionHandler(ctx context.Context, interaction discord.Interactio
 	}
 
 	if content == "" {
-		content = "oof please try again 😅"
+		return InteractionResponseOof
 	}
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessage,
@@ -238,7 +245,7 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	}
 
 	if content == "" {
-		content = "oof please try again 😅"
+		return InteractionResponseOof
 	}
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessage,
@@ -246,16 +253,75 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	}
 }
 
+var InteractionResponseOof = discord.InteractionResponse{
+	Type: discord.InteractionResponseTypeChannelMessageWithSource,
+	Data: &discord.InteractionApplicationCommandCallbackData{
+		Content: "oof please try again 😅",
+	},
+}
+
 func fuckoffInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	content, _ := foaas.FuckOff(fmt.Sprintf("<@%s>", interaction.Member.User.ID))
 	if content == "" {
-		content = "oof please try again 😅"
+		return InteractionResponseOof
 	}
 
 	return discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: content,
+		},
+	}
+}
+
+func when2meetCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
+	return []discord.ApplicationCommandOption{
+		{
+			Type:        discord.ApplicationCommandOptionTypeString,
+			Name:        "event_name",
+			Description: "A name for the event.",
+			Required:    true,
+		},
+		{
+			Type:        discord.ApplicationCommandOptionTypeString,
+			Name:        "start_date",
+			Description: "Start Date (ex 2021-02-04)",
+			Required:    true,
+		},
+		{
+			Type:        discord.ApplicationCommandOptionTypeString,
+			Name:        "end_date",
+			Description: "End Date (ex 2021-02-05)",
+			Required:    true,
+		},
+	}, nil
+}
+
+func when2meetInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+	var eventName, startDate, endDate string
+	for _, option := range interaction.Data.Options {
+		switch option.Name {
+		case "start_date":
+			startDate = option.Value
+		case "end_date":
+			endDate = option.Value
+		case "event_name":
+			eventName = option.Value
+		}
+	}
+	if eventName == "" || startDate == "" || endDate == "" {
+		return InteractionResponseOof
+	}
+
+	url, err := when2meet.CreateEvent(eventName, startDate, endDate)
+	if err != nil {
+		logger.WithError(err).Error("when2meet.CreateEvent() failed", err)
+		return InteractionResponseOof
+	}
+	return discord.InteractionResponse{
+		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{
+			Content: fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url),
 		},
 	}
 }
