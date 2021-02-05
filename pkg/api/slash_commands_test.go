@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/when2meet"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -90,6 +91,38 @@ func TestHandleSubmissionInteraction(t *testing.T) {
 		Type: discord.InteractionResponseTypeChannelMessage,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "[Submit here](https://bit.ly/vvgo10submit) for Hilda's Healing.",
+		},
+	}, response)
+}
+
+func TestHandleWhen2MeetInteraction(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<body onload="window.location='/?10947260-c2u6i'">`))
+	}))
+	defer ts.Close()
+	when2meet.Endpoint = ts.URL
+
+	ctx := context.Background()
+	interaction := discord.Interaction{
+		Type:   discord.InteractionTypeApplicationCommand,
+		Member: discord.GuildMember{User: discord.User{ID: "42069"}},
+		Data: &discord.ApplicationCommandInteractionData{
+			Name: "when2meet",
+			Options: []discord.ApplicationCommandInteractionDataOption{
+				{Name: "start_date", Value: "2030-02-01"},
+				{Name: "end_date", Value: "2030-02-02"},
+				{Name: "event_name", Value: "holy cheesus"},
+			},
+		},
+	}
+
+	response, ok := HandleInteraction(ctx, interaction)
+	assert.True(t, ok)
+
+	assertEqualInteractionResponse(t, discord.InteractionResponse{
+		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{
+			Content: "<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).",
 		},
 	}, response)
 }

@@ -7,6 +7,8 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -84,6 +86,15 @@ func Get(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	return DoRequest(req)
+}
+
+func PostForm(url string, data url.Values) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return DoRequest(req)
 }
 
