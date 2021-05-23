@@ -48,7 +48,7 @@ func updateIntentMessage(ctx context.Context) error {
 		sort.Strings(names)
 		message += fmt.Sprintf("> **%s (%d):** %s\n", part, len(names), strings.Join(names, ", "))
 	}
-	message += "\n_Last Updated: " + time.Now().Format(time.UnixDate)+"_"
+	message += "\n_Last Updated: " + time.Now().Format(time.UnixDate) + "_"
 	params := discord.EditMessageParams{Content: message}
 
 	return discord.
