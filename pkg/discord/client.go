@@ -199,6 +199,42 @@ func (x Client) DeleteApplicationCommand(ctx context.Context, id Snowflake) erro
 	return err
 }
 
+func (x Client) CreateMessage(ctx context.Context, channelId Snowflake, params CreateMessageParams) error {
+	path := "/channels/" + channelId.String() + "/messages"
+
+	var paramsBytes bytes.Buffer
+	if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
+		return fmt.Errorf("json.Encode() failed: %w", err)
+	}
+
+	req, err := x.newBotRequest(ctx, http.MethodPost, path, &paramsBytes)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	_, err = doDiscordRequest(req, nil)
+	return err
+}
+
+func (x Client) EditMessage(ctx context.Context, channelId Snowflake, messageId Snowflake, params EditMessageParams) error {
+	path := "/channels/" + channelId.String() + "/messages/" + messageId.String()
+
+	var paramsBytes bytes.Buffer
+	if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
+		return fmt.Errorf("json.Encode() failed: %w", err)
+	}
+
+	req, err := x.newBotRequest(ctx, http.MethodPatch, path, &paramsBytes)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	_, err = doDiscordRequest(req, nil)
+	return err
+}
+
 func (x Client) newSlashCommandRequest(ctx context.Context, method string, body io.Reader) (*http.Request, error) {
 	path := "/applications/" + ApplicationID + "/guilds/" + VVGOGuildID + "/commands"
 	return x.newBotRequest(ctx, method, path, body)

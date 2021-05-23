@@ -26,6 +26,14 @@ type GuildMember struct {
 	Roles []string `json:"roles"`
 }
 
+// https://discord.com/developers/docs/resources/channel#edit-message-jsonform-params
+type CreateMessageParams struct {
+	Content string `json:"content,omitempty"`
+	Embed   *Embed `json:"embed,omitempty"`
+}
+
+type EditMessageParams CreateMessageParams
+
 // https://discord.com/developers/docs/interactions/slash-commands#create-guild-application-command
 type CreateApplicationCommandParams struct {
 	Name        string                     `json:"name"`
