@@ -109,7 +109,8 @@ func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
 				badRequest(w, "unsupported interaction type")
 				return
 			}
-			fmt.Println("Response:", response)
+			responseJSON, _ := json.MarshalIndent(response, "", "  ")
+			fmt.Println("Response:", string(responseJSON))
 			handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
 		})
 }
