@@ -34,7 +34,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 	response, ok := HandleInteraction(context.Background(), interaction)
 	assert.True(t, ok)
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{Content: "boop"},
 	}, response)
 }
@@ -127,7 +127,7 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	assert.True(t, ok)
 
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).",
 		},

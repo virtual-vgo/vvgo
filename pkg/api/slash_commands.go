@@ -117,7 +117,7 @@ func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
 func HandleInteraction(ctx context.Context, interaction discord.Interaction) (discord.InteractionResponse, bool) {
 	switch interaction.Type {
 	case discord.InteractionTypePing:
-		return discord.InteractionResponse{Type: discord.InteractionResponseTypePong}, true
+		return discord.InteractionResponse{Type: discord.InteractionCallbackTypePong}, true
 	case discord.InteractionTypeApplicationCommand:
 		for _, command := range SlashCommands {
 			if interaction.Data.Name == command.Name {
@@ -125,7 +125,7 @@ func HandleInteraction(ctx context.Context, interaction discord.Interaction) (di
 			}
 		}
 		return discord.InteractionResponse{
-			Type: discord.InteractionResponseTypeChannelMessageWithSource,
+			Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 			Data: &discord.InteractionApplicationCommandCallbackData{
 				Content: "this interaction is too galaxy brain for me 😥"}}, true
 	default:
@@ -161,7 +161,7 @@ func (x SlashCommand) Create(ctx context.Context) (err error) {
 
 func beepInteractionHandler(context.Context, discord.Interaction) discord.InteractionResponse {
 	return discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "boop",
 		},
@@ -211,7 +211,7 @@ func partsInteractionHandler(ctx context.Context, interaction discord.Interactio
 		Footer:      &discord.EmbedFooter{Text: "Bottom text."},
 	}
 	return discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessage,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Embeds: []discord.Embed{embed},
 		},
@@ -264,13 +264,13 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 		return InteractionResponseOof
 	}
 	return discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessage,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{Content: content},
 	}
 }
 
 var InteractionResponseOof = discord.InteractionResponse{
-	Type: discord.InteractionResponseTypeChannelMessageWithSource,
+	Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 	Data: &discord.InteractionApplicationCommandCallbackData{
 		Content: "oof please try again 😅",
 	},
@@ -283,7 +283,7 @@ func fuckoffInteractionHandler(ctx context.Context, interaction discord.Interact
 	}
 
 	return discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: content,
 		},
@@ -335,7 +335,7 @@ func when2meetInteractionHandler(ctx context.Context, interaction discord.Intera
 		return InteractionResponseOof
 	}
 	return discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url),
 		},
