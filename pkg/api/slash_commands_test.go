@@ -60,7 +60,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 	assert.True(t, ok)
 
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessage,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Embeds: []discord.Embed{{
 				Title:       "Hilda's Healing",
@@ -95,7 +95,7 @@ func TestHandleSubmissionInteraction(t *testing.T) {
 	assert.True(t, ok)
 
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessage,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "[Submit here](https://bit.ly/vvgo10submit) for Hilda's Healing.",
 		},
