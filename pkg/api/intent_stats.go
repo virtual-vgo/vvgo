@@ -15,8 +15,24 @@ import (
 const SkywardSwordStatsChannelID = "844859046863044638"
 
 func SkywardSwordIntentHandler(w http.ResponseWriter, r *http.Request) {
-	err := updateIntentMessage(r.Context())
+	ctx := r.Context()
+	// set a rate-limit on this handler
+	var lockStatus string
+	err := redis.Do(ctx, redis.Cmd(&lockStatus, "SET", "intent_stats:skyward_sword:lock", "locked", "NX", "EX", "5"))
 	if err != nil {
+		logger.WithError(err).Error("redis.Do() failed")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	fmt.Println(lockStatus)
+	if lockStatus != "OK" {
+		w.WriteHeader(http.StatusTooManyRequests)
+		return
+	}
+
+	err = updateIntentMessage(ctx)
+	if err != nil {
+		logger.WithError(err).Error("discordClient.CreateMessage() failed")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
