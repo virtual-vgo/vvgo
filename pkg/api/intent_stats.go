@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const SkywardSwordStatsChannelID = "700792848253059142"
+const SkywardSwordStatsChannelID = "844859046863044638"
 
 func SkywardSwordIntentHandler(w http.ResponseWriter, r *http.Request) {
 	err := updateIntentMessage(r.Context())
