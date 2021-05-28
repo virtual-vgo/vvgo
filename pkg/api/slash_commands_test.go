@@ -97,7 +97,7 @@ func TestHandleSubmissionInteraction(t *testing.T) {
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionResponseTypeChannelMessage,
 		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: "[Submit here](https://bit.ly/vvgo10submit) for Hilda's Healing.",
+			Content: "[Submit here](https://bit.ly/vvgo10submit) for Hilda's Healing. Submission Deadline is ",
 		},
 	}, response)
 }
