@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"sort"
@@ -11,8 +12,7 @@ import (
 	"time"
 )
 
-const SkywardSwordIntentMessageID = "846092722481397771"
-const SkywardSwordStatsChannelID = "844859046863044638"
+const SkywardSwordStatsChannelID = "700792848253059142"
 
 func SkywardSwordIntentHandler(w http.ResponseWriter, r *http.Request) {
 	err := updateIntentMessage(r.Context())
@@ -42,16 +42,68 @@ func updateIntentMessage(ctx context.Context) error {
 	}
 	sort.Strings(parts)
 
-	var message = "*Here's what parts people say they intend to play!*\n"
+	// generate the message content
+	var content = "*Here's what parts people say they intend to play!*\n"
 	for _, part := range parts { // dont loop over map to preserve sorting
 		names := intentMap[part]
 		sort.Strings(names)
-		message += fmt.Sprintf("> **%s (%d):** %s\n", part, len(names), strings.Join(names, ", "))
+		content += fmt.Sprintf("> **%s (%d):** %s\n", part, len(names), strings.Join(names, ", "))
 	}
-	message += "\n_Last Updated: " + time.Now().Format(time.UnixDate) + "_"
-	params := discord.EditMessageParams{Content: message}
+	content += "\nClick here to update: https://vvgo.org/api/v1/update_stats" +
+		"\n_Last Updated: " + time.Now().Format(time.UnixDate) + "_"
 
-	return discord.
-		NewClient(ctx).
-		EditMessage(ctx, SkywardSwordStatsChannelID, SkywardSwordIntentMessageID, params)
+	// batch the content into separate messages
+	discordClient := discord.NewClient(ctx)
+	lines := strings.Split(content, "\n")
+	var nextContent string
+	var messageIds []string
+	for _, line := range lines {
+		if len(nextContent)+len(line) > 1500 {
+			message, err := discordClient.CreateMessage(ctx, SkywardSwordStatsChannelID,
+				discord.CreateMessageParams{Content: nextContent})
+			if err != nil {
+				return err
+			}
+			messageIds = append(messageIds, message.Id)
+			nextContent = ""
+		}
+		nextContent += line + "\n"
+	}
+	message, err := discordClient.CreateMessage(ctx, SkywardSwordStatsChannelID,
+		discord.CreateMessageParams{Content: nextContent})
+	if err != nil {
+		return err
+	}
+	messageIds = append(messageIds, message.Id)
+
+	// post the final message
+	finalContent := `
+**Intent Form:** https://docs.google.com/forms/d/e/1FAIpQLSchQa04TaiVWWvYGYAkCfCFqMvrxBy-h2DN1IjdoQ9qpRtuAQ/viewform
+Please use this form to indicate what part you intend to record. The above post will be kept as up-to-date as Section Leader Chicken receives your responses.
+`
+	message, err = discordClient.CreateMessage(ctx, SkywardSwordStatsChannelID,
+		discord.CreateMessageParams{Content: finalContent})
+	if err != nil {
+		return err
+	}
+	messageIds = append(messageIds, message.Id)
+
+	// delete the old messages
+	var oldMessageIdsRaw string
+	if err := redis.Do(ctx, redis.Cmd(&oldMessageIdsRaw, "GET", "intent_stats:skyward_sword:message_ids")); err != nil {
+		logger.WithError(err).Error("redis.Do() failed")
+	}
+	if len(oldMessageIdsRaw) > 0 {
+		err := discordClient.BulkDeleteMessages(ctx, SkywardSwordStatsChannelID,
+			discord.BulkDeleteMessagesParams{Messages: strings.Split(oldMessageIdsRaw, ",")})
+		if err != nil {
+			logger.WithError(err).Info("discordClient.BulkDeleteMessages failed")
+		}
+	}
+
+	// store the new ids in redis
+	if err := redis.Do(ctx, redis.Cmd(nil, "SET", "intent_stats:skyward_sword:message_ids", strings.Join(messageIds, ","))); err != nil {
+		logger.WithError(err).Error("redis.Do() failed")
+	}
+	return nil
 }

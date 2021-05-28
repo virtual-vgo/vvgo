@@ -199,45 +199,46 @@ func (x Client) DeleteApplicationCommand(ctx context.Context, id Snowflake) erro
 	return err
 }
 
-func (x Client) CreateMessage(ctx context.Context, channelId Snowflake, params CreateMessageParams) error {
+func (x Client) CreateMessage(ctx context.Context, channelId Snowflake, params CreateMessageParams) (*Message, error) {
 	path := "/channels/" + channelId.String() + "/messages"
 
-	var paramsBytes bytes.Buffer
-	if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
-		return fmt.Errorf("json.Encode() failed: %w", err)
-	}
-
-	req, err := x.newBotRequest(ctx, http.MethodPost, path, &paramsBytes)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	_, err = doDiscordRequest(req, nil)
-	return err
+	var message Message
+	err := x.doDiscordBotRequestWithJsonParams(ctx, path, http.MethodPost, &params, &message)
+	return &message, err
 }
 
-func (x Client) EditMessage(ctx context.Context, channelId Snowflake, messageId Snowflake, params EditMessageParams) error {
+func (x Client) EditMessage(ctx context.Context, channelId Snowflake, messageId Snowflake, params EditMessageParams) (*Message, error) {
 	path := "/channels/" + channelId.String() + "/messages/" + messageId.String()
 
-	var paramsBytes bytes.Buffer
-	if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
-		return fmt.Errorf("json.Encode() failed: %w", err)
-	}
+	var message Message
+	err := x.doDiscordBotRequestWithJsonParams(ctx, path, http.MethodPatch, &params, &message)
+	return &message, err
+}
 
-	req, err := x.newBotRequest(ctx, http.MethodPatch, path, &paramsBytes)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	_, err = doDiscordRequest(req, nil)
-	return err
+func (x Client) BulkDeleteMessages(ctx context.Context, channelId Snowflake, params BulkDeleteMessagesParams) error {
+	path := "/channels/" + channelId.String() + "/messages/bulk-delete"
+	return x.doDiscordBotRequestWithJsonParams(ctx, path, http.MethodPost, &params, nil)
 }
 
 func (x Client) newSlashCommandRequest(ctx context.Context, method string, body io.Reader) (*http.Request, error) {
 	path := "/applications/" + ApplicationID + "/guilds/" + VVGOGuildID + "/commands"
 	return x.newBotRequest(ctx, method, path, body)
+}
+
+func (x Client) doDiscordBotRequestWithJsonParams(ctx context.Context, path, method string, params interface{}, dest interface{}) error {
+	var paramsBytes bytes.Buffer
+	if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
+		return fmt.Errorf("json.Encode() failed: %w", err)
+	}
+
+	req, err := x.newBotRequest(ctx, method, path, &paramsBytes)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	_, err = doDiscordRequest(req, dest)
+	return err
 }
 
 // returns a request using a bot token for authentication
@@ -266,7 +267,7 @@ func doDiscordRequest(req *http.Request, dest interface{}) (resp *http.Response,
 	case err != nil:
 		logger.WithError(err).Error("http.Do() failed")
 
-	case resp.StatusCode != http.StatusOK:
+	case resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent:
 		err = ErrNon200Response
 		var buf bytes.Buffer
 		_, _ = buf.ReadFrom(resp.Body)
