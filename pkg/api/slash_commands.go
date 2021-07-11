@@ -136,10 +136,7 @@ func HandleInteraction(ctx context.Context, interaction discord.Interaction) (di
 				return command.Handler(ctx, interaction), true
 			}
 		}
-		return discord.InteractionResponse{
-			Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-			Data: &discord.InteractionApplicationCommandCallbackData{
-				Content: "this interaction is too galaxy brain for me 😥"}}, true
+		return interactionResponseMessage("this interaction is too galaxy brain for me 😥"), true
 	default:
 		return discord.InteractionResponse{}, false
 	}
@@ -172,12 +169,7 @@ func (x SlashCommand) Create(ctx context.Context) (err error) {
 }
 
 func beepInteractionHandler(context.Context, discord.Interaction) discord.InteractionResponse {
-	return discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: "boop",
-		},
-	}
+	return interactionResponseMessage("boop")
 }
 
 func partsCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
@@ -275,31 +267,17 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	if content == "" {
 		return InteractionResponseOof
 	}
-	return discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{Content: content},
-	}
+	return interactionResponseMessage(content)
 }
 
-var InteractionResponseOof = discord.InteractionResponse{
-	Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-	Data: &discord.InteractionApplicationCommandCallbackData{
-		Content: "oof please try again 😅",
-	},
-}
+var InteractionResponseOof = interactionResponseMessage("oof please try again 😅")
 
 func fuckoffInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	content, _ := foaas.FuckOff(fmt.Sprintf("<@%s>", interaction.Member.User.ID))
 	if content == "" {
 		return InteractionResponseOof
 	}
-
-	return discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: content,
-		},
-	}
+	return interactionResponseMessage(content)
 }
 
 func when2meetCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
@@ -346,16 +324,66 @@ func when2meetInteractionHandler(ctx context.Context, interaction discord.Intera
 		logger.WithError(err).Error("when2meet.CreateEvent() failed", err)
 		return InteractionResponseOof
 	}
+	return interactionResponseMessage(
+		fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url))
+}
+
+func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+	userId := interaction.Member.User.ID.String()
+	for _, option := range interaction.Data.Options {
+		switch option.Name {
+		case "show":
+			return showAboutme(ctx, userId)
+		case "hide":
+			return hideAboutme(ctx, userId)
+		}
+	}
+	return InteractionResponseOof
+}
+
+func hideAboutme(ctx context.Context, userId string) discord.InteractionResponse {
+	leaders, err := sheets.ListLeaders(ctx)
+	if err != nil {
+		logger.WithError(err).Error("sheets.ListLeaders() failed")
+		return InteractionResponseOof
+	}
+	if i, ok := leaders.GetIndex(userId); ok {
+		leaders[i].Hide = true
+		if err := sheets.WriteLeaders(ctx, leaders); err != nil {
+			logger.WithError(err).Error("sheets.WriteLeaders() failed")
+			return InteractionResponseOof
+		}
+		return interactionResponseMessage(":person-guesturing-ok: You are hidden.")
+	}
+	return interactionResponseMessage("You dont have a blurb! :mouth-open:")
+}
+
+func interactionResponseMessage(text string) discord.InteractionResponse {
 	return discord.InteractionResponse{
 		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url),
+			Content: text,
 		},
 	}
 }
 
-func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
-	return InteractionResponseOof
+func showAboutme(ctx context.Context, userId string) discord.InteractionResponse {
+	leaders, err := sheets.ListLeaders(ctx)
+	if err != nil {
+		logger.WithError(err).Error("sheets.ListLeaders() failed")
+		return InteractionResponseOof
+	}
+
+	if i, ok := leaders.GetIndex(userId); ok {
+		leaders[i].Hide = false
+		if err := sheets.WriteLeaders(ctx, leaders); err != nil {
+			logger.WithError(err).Error("sheets.WriteLeaders() failed")
+			return InteractionResponseOof
+		}
+		return interactionResponseMessage(":person-guestering-ok: You are visible.")
+	}
+
+	return interactionResponseMessage("You dont have a blurb! :mouth-open:")
 }
 
 func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
