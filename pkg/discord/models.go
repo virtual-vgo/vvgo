@@ -115,19 +115,17 @@ type ApplicationCommandInteractionDataOption struct {
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response
 type InteractionResponse struct {
-	Type InteractionResponseType                    `json:"type"`
+	Type InteractionCallbackType                    `json:"type"`
 	Data *InteractionApplicationCommandCallbackData `json:"data,omitempty"`
 }
 
-// https://discord.com/developers/docs/interactions/slash-commands#interaction-response-interactionresponsetype
-type InteractionResponseType int
+// https://discord.com/developers/docs/interactions/slash-commands#interaction-response-interactioncallbacktype
+type InteractionCallbackType int
 
 const (
-	InteractionResponseTypePong                     InteractionResponseType = 1
-	InteractionResponseTypeAcknowledge              InteractionResponseType = 2
-	InteractionResponseTypeChannelMessage           InteractionResponseType = 3
-	InteractionResponseTypeChannelMessageWithSource InteractionResponseType = 4
-	InteractionResponseTypeAcknowledgeWithSource    InteractionResponseType = 5
+	InteractionCallbackTypePong                     InteractionCallbackType = 1
+	InteractionCallbackTypeChannelMessageWithSource InteractionCallbackType = 4
+	InteractionCallbackTypeAcknowledgeWithSource    InteractionCallbackType = 5
 )
 
 // https://discord.com/developers/docs/interactions/slash-commands#interaction-response-interactionapplicationcommandcallbackdata

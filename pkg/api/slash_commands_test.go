@@ -34,7 +34,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 	response, ok := HandleInteraction(context.Background(), interaction)
 	assert.True(t, ok)
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{Content: "boop"},
 	}, response)
 }
@@ -60,7 +60,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 	assert.True(t, ok)
 
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessage,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Embeds: []discord.Embed{{
 				Title:       "Hilda's Healing",
@@ -95,7 +95,7 @@ func TestHandleSubmissionInteraction(t *testing.T) {
 	assert.True(t, ok)
 
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessage,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "[Submit here](https://bit.ly/vvgo10submit) for Hilda's Healing. Submission Deadline is ",
 		},
@@ -127,7 +127,7 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	assert.True(t, ok)
 
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionResponseTypeChannelMessageWithSource,
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
 		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).",
 		},
