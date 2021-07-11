@@ -46,15 +46,22 @@ var SlashCommands = []SlashCommand{
 		Options:     when2meetCommandOptions,
 		Handler:     when2meetInteractionHandler,
 	},
+	{
+		Name:        "aboutme",
+		Description: "Manage your about me blurb on the vvgo website.",
+		Options:     aboutmeCommandOptions,
+		Handler:     aboutmeInteractionHandler,
+	},
 }
 
 func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	for _, command := range SlashCommands {
-		handleError(command.Create(ctx)).
-			logError("SlashCommand.Create() failed").
-			logSuccess(command.Name + " command created")
-	}
+	//for _, command := range SlashCommands {
+	//	handleError(command.Create(ctx)).
+	//		logError("SlashCommand.Create() failed").
+	//		logSuccess(command.Name + " command created")
+	//}
+	SlashCommands[5].Create(ctx)
 	http.Redirect(w, r, "/slash_commands", http.StatusFound)
 }
 
@@ -345,4 +352,23 @@ func when2meetInteractionHandler(ctx context.Context, interaction discord.Intera
 			Content: fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url),
 		},
 	}
+}
+
+func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+	return InteractionResponseOof
+}
+
+func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
+	return []discord.ApplicationCommandOption{
+		{
+			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Name:        "show",
+			Description: "Show your information on the vvgo about us page.",
+		},
+		{
+			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Name:        "hide",
+			Description: "Hide your information on the vvgo about us page.",
+		},
+	}, nil
 }

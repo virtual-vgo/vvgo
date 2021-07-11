@@ -72,6 +72,21 @@ func readValuesFromSheets(ctx context.Context, spreadsheetID string, readRange s
 	return resp.Values, nil
 }
 
+func WriteValuesToSheets(ctx context.Context, spreadsheetID string, readRange string, values [][]interface{}) error {
+	srv, err := sheets.NewService(ctx)
+	if err != nil {
+		return fmt.Errorf("sheets.NewService(): %w", err)
+	}
+	_, err = srv.Spreadsheets.Values.Update(spreadsheetID, readRange,
+		&sheets.ValueRange{Values: values, MajorDimension: "ROWS"}).
+		ValueInputOption("USER_ENTERED").
+		Do()
+	if err != nil {
+		return fmt.Errorf("sheets.Values.Update() failed: %w", err)
+	}
+	return nil
+}
+
 func WriteValuesToRedis(ctx context.Context, spreadsheetID string, readRange string, values [][]interface{}) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(&values); err != nil {

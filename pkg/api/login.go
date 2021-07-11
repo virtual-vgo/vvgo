@@ -208,7 +208,7 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	loginSuccess(w, r, ctx, &login.Identity{
 		Kind:      login.KindDiscord,
 		Roles:     loginRoles,
-		DiscordID: discordUser.ID,
+		DiscordID: discordUser.ID.String(),
 	})
 }
 

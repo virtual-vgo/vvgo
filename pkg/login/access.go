@@ -2,7 +2,6 @@ package login
 
 import (
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"strings"
 )
 
@@ -46,7 +45,7 @@ func Anonymous() Identity { return anonymous }
 type Identity struct {
 	Kind      Kind              `json:"kind"`
 	Roles     []Role            `json:"roles"`
-	DiscordID discord.Snowflake `json:"discord_id"`
+	DiscordID string `json:"discord_id"`
 }
 
 func (x Identity) Info() string {
