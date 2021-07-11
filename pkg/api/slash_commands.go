@@ -100,20 +100,21 @@ func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var interaction discord.Interaction
-	handleError(json.NewDecoder(&body).Decode(&interaction)).
-		logError("json.Decode() failed").
-		ifError(func(err error) { badRequest(w, "invalid request body: "+err.Error()) }).
-		ifSuccess(func() {
-			response, ok := HandleInteraction(ctx, interaction)
-			if !ok {
-				badRequest(w, "unsupported interaction type")
-				return
-			}
-			responseJSON, _ := json.MarshalIndent(response, "", "  ")
-			fmt.Println("Response:", string(responseJSON))
-			w.Header().Set("Content-Type", "application/json")
-			handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
-		})
+	if err := json.NewDecoder(&body).Decode(&interaction); err != nil {
+		logger.WithError(err).Error("json.Decode() failed")
+		badRequest(w, "invalid request body: "+err.Error())
+		return
+	}
+
+	response, ok := HandleInteraction(ctx, interaction)
+	if !ok {
+		badRequest(w, "unsupported interaction type")
+		return
+	}
+	responseJSON, _ := json.MarshalIndent(response, "", "  ")
+	fmt.Println("Response:", string(responseJSON))
+	w.Header().Set("Content-Type", "application/json")
+	handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
 }
 
 func HandleInteraction(ctx context.Context, interaction discord.Interaction) (discord.InteractionResponse, bool) {
