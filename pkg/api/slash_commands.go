@@ -111,10 +111,12 @@ func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
 		badRequest(w, "unsupported interaction type")
 		return
 	}
-	responseJSON, _ := json.MarshalIndent(response, "", "  ")
-	fmt.Println("Response:", string(responseJSON))
+
 	w.Header().Set("Content-Type", "application/json")
-	handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		logger.WithError(err).Error("json.Encode() failed")
+		internalServerError(w)
+	}
 }
 
 func HandleInteraction(ctx context.Context, interaction discord.Interaction) (discord.InteractionResponse, bool) {
