@@ -111,7 +111,7 @@ func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
 			}
 			responseJSON, _ := json.MarshalIndent(response, "", "  ")
 			fmt.Println("Response:", string(responseJSON))
-			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Content-Type", "application/json")
 			handleError(json.NewEncoder(w).Encode(response)).logError("json.Encode() failed")
 		})
 }
