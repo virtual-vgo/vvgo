@@ -223,3 +223,14 @@ type EmbedField struct {
 	Value  string `json:"value"`
 	Inline bool   `json:"inline"`
 }
+
+// https://discord.com/developers/docs/resources/channel#message-object
+type Message struct {
+	Id        string `json:"id"`
+	ChannelId string `json:"channel_id"`
+	Content   string `json:"content"`
+}
+
+type BulkDeleteMessagesParams struct {
+	Messages []string `json:"messages"`
+}

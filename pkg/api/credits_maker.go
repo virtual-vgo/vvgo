@@ -47,13 +47,13 @@ var CreditsMaker = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 	// set defaults
 	if data.SpreadsheetID == "" {
-		data.SpreadsheetID = "1BP3fGC2C6mKe3ZuVhby4eCxidlHL768bDdHsJ5mQleo"
+		data.SpreadsheetID = "1a-2u726Hg-Wp5GMWfLnYwSi2DvTMym85gQqpRviafJk"
 	}
 	if data.ReadRange == "" {
-		data.ReadRange = "06 Aurene!A3:I39"
+		data.ReadRange = "Project 11: Prologue (Book One)!A3:I270"
 	}
 	if data.Project == "" {
-		data.Project = "06-aurene-dragon-full-of-light"
+		data.Project = "11-prologue-book-one"
 	}
 	ParseAndExecute(ctx, w, r, &data, "credits-maker.gohtml")
 })
