@@ -135,7 +135,7 @@ func TestAboutmeHandler(t *testing.T) {
 	aboutMeInteraction := func(cmd string, options []discord.ApplicationCommandInteractionDataOption) discord.Interaction {
 		return discord.Interaction{
 			Type:   discord.InteractionTypeApplicationCommand,
-			Member: discord.GuildMember{User: discord.User{ID: "42069"}},
+			Member: discord.GuildMember{User: discord.User{ID: "42069"}, Roles: []string{discord.VVGOProductionTeamRoleID}},
 			Data: &discord.ApplicationCommandInteractionData{
 				Name: "aboutme",
 				Options: []discord.ApplicationCommandInteractionDataOption{
@@ -145,7 +145,26 @@ func TestAboutmeHandler(t *testing.T) {
 		}
 	}
 
+	testNotOnProductionTeam := func(t *testing.T, cmd string) {
+		t.Run("not on production team", func(t *testing.T) {
+			sheets.WriteLeaders(ctx, sheets.Leaders{})
+
+			interaction := aboutMeInteraction(cmd, nil)
+			interaction.Member.Roles = nil
+			response, ok := HandleInteraction(ctx, interaction)
+			assert.True(t, ok)
+
+			want := interactionResponseMessage("Sorry, this tool is only for production teams. :bow:")
+			assertEqualInteractionResponse(t, want, response)
+
+			got, _ := sheets.ListLeaders(ctx)
+			assert.Equal(t, sheets.Leaders{}, got)
+		})
+	}
+
 	t.Run("hide", func(t *testing.T) {
+		testNotOnProductionTeam(t, "hide")
+
 		t.Run("ok", func(t *testing.T) {
 			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069", Show: true}})
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
@@ -170,6 +189,8 @@ func TestAboutmeHandler(t *testing.T) {
 	})
 
 	t.Run("show", func(t *testing.T) {
+		testNotOnProductionTeam(t, "show")
+
 		t.Run("ok", func(t *testing.T) {
 			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069", Show: false}})
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
@@ -193,6 +214,8 @@ func TestAboutmeHandler(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
+		testNotOnProductionTeam(t, "update")
+
 		t.Run("exists", func(t *testing.T) {
 			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069"}})
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{

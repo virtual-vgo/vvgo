@@ -363,6 +363,17 @@ func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption,
 func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	userId := interaction.Member.User.ID.String()
 
+	isProduction := false
+	for _, role := range interaction.Member.Roles {
+		if role == discord.VVGOProductionTeamRoleID {
+			isProduction = true
+		}
+	}
+
+	if !isProduction {
+		return interactionResponseMessage("Sorry, this tool is only for production teams. :bow:")
+	}
+
 	leaders, err := sheets.ListLeaders(ctx)
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListLeaders() failed")
