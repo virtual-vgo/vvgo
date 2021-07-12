@@ -348,14 +348,14 @@ func hideAboutme(ctx context.Context, userId string) discord.InteractionResponse
 		return InteractionResponseOof
 	}
 	if i, ok := leaders.GetIndex(userId); ok {
-		leaders[i].Hide = true
+		leaders[i].Show = false
 		if err := sheets.WriteLeaders(ctx, leaders); err != nil {
 			logger.WithError(err).Error("sheets.WriteLeaders() failed")
 			return InteractionResponseOof
 		}
-		return interactionResponseMessage(":person-guesturing-ok: You are hidden.")
+		return interactionResponseMessage(":person_gesturing_ok: You are hidden.")
 	}
-	return interactionResponseMessage("You dont have a blurb! :mouth-open:")
+	return interactionResponseMessage("You dont have a blurb! :open_mouth:")
 }
 
 func interactionResponseMessage(text string) discord.InteractionResponse {
@@ -375,15 +375,15 @@ func showAboutme(ctx context.Context, userId string) discord.InteractionResponse
 	}
 
 	if i, ok := leaders.GetIndex(userId); ok {
-		leaders[i].Hide = false
+		leaders[i].Show = true
 		if err := sheets.WriteLeaders(ctx, leaders); err != nil {
 			logger.WithError(err).Error("sheets.WriteLeaders() failed")
 			return InteractionResponseOof
 		}
-		return interactionResponseMessage(":person-guestering-ok: You are visible.")
+		return interactionResponseMessage(":person_gesturing_ok: You are visible.")
 	}
 
-	return interactionResponseMessage("You dont have a blurb! :mouth-open:")
+	return interactionResponseMessage("You dont have a blurb! :open_mouth:")
 }
 
 func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {

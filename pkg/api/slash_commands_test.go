@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
@@ -31,7 +30,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 			Name: "beep",
 		},
 	}
-	response, ok := HandleInteraction(context.Background(), interaction)
+	response, ok := HandleInteraction(backgroundContext(), interaction)
 	assert.True(t, ok)
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
@@ -40,7 +39,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 }
 
 func TestHandlePartsInteraction(t *testing.T) {
-	ctx := context.Background()
+	ctx := backgroundContext()
 	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID(ctx), "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released"},
 		{"10-hildas-healing", "Hilda's Healing", true},
@@ -75,7 +74,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 }
 
 func TestHandleSubmissionInteraction(t *testing.T) {
-	ctx := context.Background()
+	ctx := backgroundContext()
 	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID(ctx), "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released", "Submission Link"},
 		{"10-hildas-healing", "Hilda's Healing", true, "https://bit.ly/vvgo10submit"},
@@ -109,7 +108,7 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	defer ts.Close()
 	when2meet.Endpoint = ts.URL
 
-	ctx := context.Background()
+	ctx := backgroundContext()
 	interaction := discord.Interaction{
 		Type:   discord.InteractionTypeApplicationCommand,
 		Member: discord.GuildMember{User: discord.User{ID: "42069"}},
@@ -126,12 +125,72 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	response, ok := HandleInteraction(ctx, interaction)
 	assert.True(t, ok)
 
-	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: "<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).",
-		},
-	}, response)
+	want := interactionResponseMessage("<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).")
+	assertEqualInteractionResponse(t, want, response)
+}
+
+func TestAboutmeHandler(t *testing.T) {
+	ctx := backgroundContext()
+
+	aboutMeInteraction := func(cmd string) discord.Interaction {
+		return discord.Interaction{
+			Type:   discord.InteractionTypeApplicationCommand,
+			Member: discord.GuildMember{User: discord.User{ID: "42069"}},
+			Data: &discord.ApplicationCommandInteractionData{
+				Name: "aboutme",
+				Options: []discord.ApplicationCommandInteractionDataOption{
+					{Name: cmd},
+				},
+			},
+		}
+	}
+
+	t.Run("hide", func(t *testing.T) {
+		t.Run("write ok", func(t *testing.T) {
+			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069", Show: true}})
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide"))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage(":person_gesturing_ok: You are hidden.")
+			assertEqualInteractionResponse(t, want, response)
+
+			got, _ := sheets.ListLeaders(ctx)
+			assert.Equal(t, sheets.Leaders{{DiscordID: "42069", Show: false}}, got)
+		})
+
+		t.Run("no blurb", func(t *testing.T) {
+			sheets.WriteLeaders(ctx, sheets.Leaders{})
+
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide"))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage("You dont have a blurb! :open_mouth:")
+			assertEqualInteractionResponse(t, want, response)
+		})
+	})
+
+	t.Run("show", func(t *testing.T) {
+		t.Run("write ok", func(t *testing.T) {
+			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069", Show: false}})
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("show"))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage(":person_gesturing_ok: You are visible.")
+			assertEqualInteractionResponse(t, want, response)
+
+			got, _ := sheets.ListLeaders(ctx)
+			assert.Equal(t, sheets.Leaders{{DiscordID: "42069", Show: true}}, got)
+		})
+
+		t.Run("no blurb", func(t *testing.T) {
+			sheets.WriteLeaders(ctx, sheets.Leaders{})
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("show"))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage("You dont have a blurb! :open_mouth:")
+			assertEqualInteractionResponse(t, want, response)
+		})
+	})
 }
 
 func assertEqualInteractionResponse(t *testing.T, want, got discord.InteractionResponse) {

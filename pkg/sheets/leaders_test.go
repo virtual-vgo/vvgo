@@ -21,7 +21,6 @@ func Test_valuesToLeaders(t *testing.T) {
 			Epithet:      "Keeper of Smol Horn™",
 			Affiliations: "Reno Video Game Symphony, The Intermission Orchestra at Berkeley",
 			Icon:         "images/leaders/brandon-128x128.jpg",
-			Email:        "brandon@vvgo.org",
 		},
 		{
 			Name:         "Jackson",
@@ -29,7 +28,6 @@ func Test_valuesToLeaders(t *testing.T) {
 			Affiliations: "SACWE, TIO @ Berkeley",
 			Blurb:        "I like to make music and code things.",
 			Icon:         "images/leaders/jackson-128x128.jpg",
-			Email:        "jackson@vvgo.org",
 		},
 		{
 			Name:         "Jacob",
@@ -37,7 +35,6 @@ func Test_valuesToLeaders(t *testing.T) {
 			Affiliations: "Zelda Universe",
 			Blurb:        "Making music, having fun, and making more music.",
 			Icon:         "images/leaders/jacob-128x128.jpg",
-			Email:        "jacob@vvgo.org",
 		},
 		{
 			Name:         "Jerome",
@@ -45,7 +42,6 @@ func Test_valuesToLeaders(t *testing.T) {
 			Affiliations: "Awesome Orchestra Collective, Game Music Ensemble @ UCLA, The Giggling Donkey, Golden State Gamer Symphony Orchestra, Hitbox Music Ensemble, Video Games Live",
 			Blurb:        "https://youtu.be/HNK_KB6m6H0",
 			Icon:         "images/leaders/jerome-128x128.jpg",
-			Email:        "jerome@vvgo.org",
 		},
 		{
 			Name: "Jose",

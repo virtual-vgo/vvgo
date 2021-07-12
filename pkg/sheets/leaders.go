@@ -14,7 +14,7 @@ type Leader struct {
 	Affiliations string
 	Blurb        string
 	Icon         string
-	Hide         bool
+	Show         bool
 }
 
 var LeadersSpreadsheetID = "1Ug5MogFlTRjC70n9xirORSB7g2PLHiueyaVEf-kmiiA"

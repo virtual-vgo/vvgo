@@ -17,6 +17,10 @@ const CacheTTL = "5"
 
 var logger = log.Logger()
 
+func NoOpSheets(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "no_op_sheets", true)
+}
+
 func WebsiteDataSpreadsheetID(ctx context.Context) string {
 	var spreadsheetID string
 	_ = parse_config.ReadRedisHashValue(ctx, "sheets", "website_data_spreadsheet_id", &spreadsheetID)
@@ -24,8 +28,8 @@ func WebsiteDataSpreadsheetID(ctx context.Context) string {
 }
 
 func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
-	values := readValuesFromRedis(ctx, spreadsheetID, readRange)
-	if len(values) != 0 {
+	values := ReadValuesFromRedis(ctx, spreadsheetID, readRange)
+	if len(values) != 0 || ctx.Value("no_op_sheets") == true {
 		return values, nil
 	}
 
@@ -40,7 +44,7 @@ func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][
 	return nil, fmt.Errorf("no data")
 }
 
-func readValuesFromRedis(ctx context.Context, spreadsheetID string, readRange string) [][]interface{} {
+func ReadValuesFromRedis(ctx context.Context, spreadsheetID string, readRange string) [][]interface{} {
 	var buf bytes.Buffer
 	key := "sheets:" + spreadsheetID + ":" + readRange
 	if err := redis.Do(ctx, redis.Cmd(&buf, "GET", key)); err != nil {
@@ -73,12 +77,18 @@ func readValuesFromSheets(ctx context.Context, spreadsheetID string, readRange s
 }
 
 func WriteValuesToSheets(ctx context.Context, spreadsheetID string, readRange string, values [][]interface{}) error {
+	WriteValuesToRedis(ctx, spreadsheetID, readRange, values)
+
+	if ctx.Value("no_op_sheets") == true {
+		return nil
+	}
+
 	srv, err := sheets.NewService(ctx)
 	if err != nil {
 		return fmt.Errorf("sheets.NewService(): %w", err)
 	}
-	_, err = srv.Spreadsheets.Values.Update(spreadsheetID, readRange,
-		&sheets.ValueRange{Values: values, MajorDimension: "ROWS"}).
+	_, err = srv.Spreadsheets.Values.
+		Update(spreadsheetID, readRange, &sheets.ValueRange{Values: values, MajorDimension: "ROWS"}).
 		ValueInputOption("USER_ENTERED").
 		Do()
 	if err != nil {
