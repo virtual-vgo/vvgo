@@ -54,6 +54,9 @@ var SlashCommands = []SlashCommand{
 	},
 }
 
+var InteractionResponseOof = interactionResponseMessage("oof please try again 😅")
+var InteractionResponseGalaxyBrain = interactionResponseMessage("this interaction is too galaxy brain for me 😥")
+
 func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	//for _, command := range SlashCommands {
@@ -136,7 +139,7 @@ func HandleInteraction(ctx context.Context, interaction discord.Interaction) (di
 				return command.Handler(ctx, interaction), true
 			}
 		}
-		return interactionResponseMessage("this interaction is too galaxy brain for me 😥"), true
+		return InteractionResponseGalaxyBrain, true
 	default:
 		return discord.InteractionResponse{}, false
 	}
@@ -270,8 +273,6 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	return interactionResponseMessage(content)
 }
 
-var InteractionResponseOof = interactionResponseMessage("oof please try again 😅")
-
 func fuckoffInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	content, _ := foaas.FuckOff(fmt.Sprintf("<@%s>", interaction.Member.User.ID))
 	if content == "" {
@@ -332,6 +333,11 @@ func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption,
 	return []discord.ApplicationCommandOption{
 		{
 			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Name:        "summary",
+			Description: "Get a summary of your name and blurb on the vvgo website.",
+		},
+		{
+			Type:        discord.ApplicationCommandOptionTypeSubCommand,
 			Name:        "show",
 			Description: "Show your name and blurb on the vvgo website.",
 		},
@@ -343,7 +349,7 @@ func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption,
 		{
 			Type:        discord.ApplicationCommandOptionTypeSubCommand,
 			Name:        "update",
-			Description: "Update your name and blurb",
+			Description: "Update your name and blurb.",
 			Options: []discord.ApplicationCommandOption{
 				{
 					Type:        discord.ApplicationCommandOptionTypeString,
@@ -388,6 +394,15 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 			return hideAboutme(ctx, leaders, userId)
 		case "update":
 			return updateAboutme(ctx, leaders, userId, option)
+		case "summary":
+			if i, ok := leaders.GetIndex(userId); ok {
+				message := "This is your about me information:\n"
+				message += "Your name: " + leaders[i].Name + "\n"
+				message += "Your blurb: " + leaders[i].Blurb + "\n"
+				message += "See it on the website: https://vvgo.org/about"
+				return interactionResponseMessage(message)
+			}
+			return interactionResponseMessage("You dont have a blurb! :open_mouth:")
 		}
 	}
 	return InteractionResponseOof
