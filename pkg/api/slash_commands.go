@@ -396,8 +396,8 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 			return updateAboutme(ctx, leaders, userId, option)
 		case "summary":
 			if i, ok := leaders.GetIndex(userId); ok {
-				message := "This is your about me information:\n"
-				message += fmt.Sprintf("**%s** ~ %s ~\n", leaders[i].Name, leaders[i].Blurb)
+				message := fmt.Sprintf("**%s** ~ %s ~\n", leaders[i].Name, leaders[i].Blurb)
+				message += "Use `/aboutme update` to make changes.\n"
 				if leaders[i].Show {
 					message += "Your name and blurb are visible on https://vvgo.org/about. Use `/aboutme hide` to hide it."
 				} else {
