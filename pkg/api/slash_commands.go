@@ -397,9 +397,13 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 		case "summary":
 			if i, ok := leaders.GetIndex(userId); ok {
 				message := "This is your about me information:\n"
-				message += "Your name: " + leaders[i].Name + "\n"
-				message += "Your blurb: " + leaders[i].Blurb + "\n"
-				message += "See it on the website: https://vvgo.org/about"
+				message += fmt.Sprintf("**%s** ~ %s ~\n", leaders[i].Name, leaders[i].Blurb)
+				if leaders[i].Show {
+					message += "Your name and blurb are visible on https://vvgo.org/about. Use `/aboutme hide` to hide it."
+				} else {
+					message += "Your name and blurb are not visible on https://vvgo.org/about."
+				}
+
 				return interactionResponseMessage(message)
 			}
 			return interactionResponseMessage("You dont have a blurb! :open_mouth:")
