@@ -328,25 +328,61 @@ func when2meetInteractionHandler(ctx context.Context, interaction discord.Intera
 		fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url))
 }
 
-func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
-	userId := interaction.Member.User.ID.String()
-	for _, option := range interaction.Data.Options {
-		switch option.Name {
-		case "show":
-			return showAboutme(ctx, userId)
-		case "hide":
-			return hideAboutme(ctx, userId)
-		}
-	}
-	return InteractionResponseOof
+func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
+	return []discord.ApplicationCommandOption{
+		{
+			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Name:        "show",
+			Description: "Show your name and blurb on the vvgo website.",
+		},
+		{
+			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Name:        "hide",
+			Description: "Hide your name and blurb from the vvgo website.",
+		},
+		{
+			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Name:        "update",
+			Description: "Update your name and blurb",
+			Options: []discord.ApplicationCommandOption{
+				{
+					Type:        discord.ApplicationCommandOptionTypeString,
+					Name:        "name",
+					Description: "Your name.",
+				},
+				{
+					Type:        discord.ApplicationCommandOptionTypeString,
+					Name:        "blurb",
+					Description: "A blurb about yourself.",
+				},
+			},
+		},
+	}, nil
 }
 
-func hideAboutme(ctx context.Context, userId string) discord.InteractionResponse {
+func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+	userId := interaction.Member.User.ID.String()
+
 	leaders, err := sheets.ListLeaders(ctx)
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListLeaders() failed")
 		return InteractionResponseOof
 	}
+
+	for _, option := range interaction.Data.Options {
+		switch option.Name {
+		case "show":
+			return showAboutme(ctx, leaders, userId)
+		case "hide":
+			return hideAboutme(ctx, leaders, userId)
+		case "update":
+			return updateAboutme(ctx, leaders, userId, option)
+		}
+	}
+	return InteractionResponseOof
+}
+
+func hideAboutme(ctx context.Context, leaders sheets.Leaders, userId string) discord.InteractionResponse {
 	if i, ok := leaders.GetIndex(userId); ok {
 		leaders[i].Show = false
 		if err := sheets.WriteLeaders(ctx, leaders); err != nil {
@@ -358,22 +394,7 @@ func hideAboutme(ctx context.Context, userId string) discord.InteractionResponse
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:")
 }
 
-func interactionResponseMessage(text string) discord.InteractionResponse {
-	return discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: text,
-		},
-	}
-}
-
-func showAboutme(ctx context.Context, userId string) discord.InteractionResponse {
-	leaders, err := sheets.ListLeaders(ctx)
-	if err != nil {
-		logger.WithError(err).Error("sheets.ListLeaders() failed")
-		return InteractionResponseOof
-	}
-
+func showAboutme(ctx context.Context, leaders sheets.Leaders, userId string) discord.InteractionResponse {
 	if i, ok := leaders.GetIndex(userId); ok {
 		leaders[i].Show = true
 		if err := sheets.WriteLeaders(ctx, leaders); err != nil {
@@ -382,21 +403,41 @@ func showAboutme(ctx context.Context, userId string) discord.InteractionResponse
 		}
 		return interactionResponseMessage(":person_gesturing_ok: You are visible.")
 	}
-
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:")
 }
 
-func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
-	return []discord.ApplicationCommandOption{
-		{
-			Type:        discord.ApplicationCommandOptionTypeSubCommand,
-			Name:        "show",
-			Description: "Show your information on the vvgo about us page.",
+func updateAboutme(ctx context.Context, leaders sheets.Leaders, userId string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
+	updateLeader := func(leader *sheets.Leader) {
+		for _, option := range option.Options {
+			switch option.Name {
+			case "name":
+				leader.Name = option.Value
+			case "blurb":
+				leader.Blurb = option.Value
+			}
+		}
+	}
+
+	if i, ok := leaders.GetIndex(userId); ok {
+		updateLeader(&leaders[i])
+	} else {
+		leader := sheets.Leader{DiscordID: userId}
+		updateLeader(&leader)
+		leaders = append(leaders, leader)
+	}
+
+	if err := sheets.WriteLeaders(ctx, leaders); err != nil {
+		logger.WithError(err).Error("sheets.WriteLeaders() failed")
+		return InteractionResponseOof
+	}
+	return interactionResponseMessage(":person_gesturing_ok: It is written.")
+}
+
+func interactionResponseMessage(text string) discord.InteractionResponse {
+	return discord.InteractionResponse{
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{
+			Content: text,
 		},
-		{
-			Type:        discord.ApplicationCommandOptionTypeSubCommand,
-			Name:        "hide",
-			Description: "Hide your information on the vvgo about us page.",
-		},
-	}, nil
+	}
 }

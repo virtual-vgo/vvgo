@@ -132,23 +132,23 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 func TestAboutmeHandler(t *testing.T) {
 	ctx := backgroundContext()
 
-	aboutMeInteraction := func(cmd string) discord.Interaction {
+	aboutMeInteraction := func(cmd string, options []discord.ApplicationCommandInteractionDataOption) discord.Interaction {
 		return discord.Interaction{
 			Type:   discord.InteractionTypeApplicationCommand,
 			Member: discord.GuildMember{User: discord.User{ID: "42069"}},
 			Data: &discord.ApplicationCommandInteractionData{
 				Name: "aboutme",
 				Options: []discord.ApplicationCommandInteractionDataOption{
-					{Name: cmd},
+					{Name: cmd, Options: options},
 				},
 			},
 		}
 	}
 
 	t.Run("hide", func(t *testing.T) {
-		t.Run("write ok", func(t *testing.T) {
+		t.Run("ok", func(t *testing.T) {
 			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069", Show: true}})
-			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide"))
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
 
 			want := interactionResponseMessage(":person_gesturing_ok: You are hidden.")
@@ -161,7 +161,7 @@ func TestAboutmeHandler(t *testing.T) {
 		t.Run("no blurb", func(t *testing.T) {
 			sheets.WriteLeaders(ctx, sheets.Leaders{})
 
-			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide"))
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
 
 			want := interactionResponseMessage("You dont have a blurb! :open_mouth:")
@@ -170,9 +170,9 @@ func TestAboutmeHandler(t *testing.T) {
 	})
 
 	t.Run("show", func(t *testing.T) {
-		t.Run("write ok", func(t *testing.T) {
+		t.Run("ok", func(t *testing.T) {
 			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069", Show: false}})
-			response, ok := HandleInteraction(ctx, aboutMeInteraction("show"))
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
 			want := interactionResponseMessage(":person_gesturing_ok: You are visible.")
@@ -184,11 +184,47 @@ func TestAboutmeHandler(t *testing.T) {
 
 		t.Run("no blurb", func(t *testing.T) {
 			sheets.WriteLeaders(ctx, sheets.Leaders{})
-			response, ok := HandleInteraction(ctx, aboutMeInteraction("show"))
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
 			want := interactionResponseMessage("You dont have a blurb! :open_mouth:")
 			assertEqualInteractionResponse(t, want, response)
+		})
+	})
+
+	t.Run("update", func(t *testing.T) {
+		t.Run("exists", func(t *testing.T) {
+			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069"}})
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
+				{Name: "name", Value: "chester cheeta"},
+				{Name: "blurb", Value: "dangerously cheesy"},
+			}))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage(":person_gesturing_ok: It is written.")
+			assertEqualInteractionResponse(t, want, response)
+
+			got, _ := sheets.ListLeaders(ctx)
+			assert.Equal(t, sheets.Leaders{
+				{DiscordID: "42069", Name: "chester cheeta", Blurb: "dangerously cheesy"},
+			}, got)
+		})
+
+		t.Run("doesnt exist", func(t *testing.T) {
+			sheets.WriteLeaders(ctx, sheets.Leaders{})
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
+				{Name: "name", Value: "chester cheeta"},
+				{Name: "blurb", Value: "dangerously cheesy"},
+			}))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage(":person_gesturing_ok: It is written.")
+			assertEqualInteractionResponse(t, want, response)
+
+			got, _ := sheets.ListLeaders(ctx)
+			assert.Equal(t, sheets.Leaders{
+				{DiscordID: "42069", Name: "chester cheeta", Blurb: "dangerously cheesy"},
+			}, got)
 		})
 	})
 }
