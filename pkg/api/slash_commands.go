@@ -418,7 +418,7 @@ func hideAboutme(ctx context.Context, leaders sheets.Leaders, userId string) dis
 			logger.WithError(err).Error("sheets.WriteLeaders() failed")
 			return InteractionResponseOof
 		}
-		return interactionResponseMessage(":person_gesturing_ok: You are hidden.", true)
+		return interactionResponseMessage(":person_gesturing_ok: You are hidden from https://vvgo.org/about.", true)
 	}
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
@@ -430,7 +430,7 @@ func showAboutme(ctx context.Context, leaders sheets.Leaders, userId string) dis
 			logger.WithError(err).Error("sheets.WriteLeaders() failed")
 			return InteractionResponseOof
 		}
-		return interactionResponseMessage(":person_gesturing_ok: You are visible.", true)
+		return interactionResponseMessage(":person_gesturing_ok: You are visible on https://vvgo.org/about.", true)
 	}
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
