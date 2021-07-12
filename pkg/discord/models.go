@@ -133,7 +133,10 @@ type InteractionApplicationCommandCallbackData struct {
 	TTS     bool    `json:"tts"`
 	Content string  `json:"content"`
 	Embeds  []Embed `json:"embeds,omitempty"`
+	Flags   int     `json:"flags,omitempty"`
 }
+
+const InteractionApplicationCommandCallbackDataFlagEphemeral = 1 << 6
 
 // https://discord.com/developers/docs/resources/webhook#execute-webhook-jsonform-params
 type ExecuteWebhookParams struct {

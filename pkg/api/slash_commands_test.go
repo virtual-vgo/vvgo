@@ -125,7 +125,7 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	response, ok := HandleInteraction(ctx, interaction)
 	assert.True(t, ok)
 
-	want := interactionResponseMessage("<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).")
+	want := interactionResponseMessage("<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).", true)
 	assertEqualInteractionResponse(t, want, response)
 }
 
@@ -154,7 +154,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, interaction)
 			assert.True(t, ok)
 
-			want := interactionResponseMessage("Sorry, this tool is only for production teams. :bow:")
+			want := interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, _ := sheets.ListLeaders(ctx)
@@ -170,7 +170,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: You are hidden.")
+			want := interactionResponseMessage(":person_gesturing_ok: You are hidden.", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, _ := sheets.ListLeaders(ctx)
@@ -183,7 +183,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage("You dont have a blurb! :open_mouth:")
+			want := interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 			assertEqualInteractionResponse(t, want, response)
 		})
 	})
@@ -196,7 +196,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: You are visible.")
+			want := interactionResponseMessage(":person_gesturing_ok: You are visible.", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, _ := sheets.ListLeaders(ctx)
@@ -208,7 +208,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage("You dont have a blurb! :open_mouth:")
+			want := interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 			assertEqualInteractionResponse(t, want, response)
 		})
 	})
@@ -224,7 +224,7 @@ func TestAboutmeHandler(t *testing.T) {
 			}))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: It is written.")
+			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, _ := sheets.ListLeaders(ctx)
@@ -241,7 +241,7 @@ func TestAboutmeHandler(t *testing.T) {
 			}))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: It is written.")
+			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, _ := sheets.ListLeaders(ctx)
