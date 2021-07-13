@@ -147,7 +147,7 @@ func TestAboutmeHandler(t *testing.T) {
 
 	testNotOnProductionTeam := func(t *testing.T, cmd string) {
 		t.Run("not on production team", func(t *testing.T) {
-			sheets.WriteLeaders(ctx, sheets.Leaders{})
+			require.NoError(t, writeAboutMeEntries(ctx, nil))
 
 			interaction := aboutMeInteraction(cmd, nil)
 			interaction.Member.Roles = nil
@@ -157,8 +157,9 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, _ := sheets.ListLeaders(ctx)
-			assert.Equal(t, sheets.Leaders{}, got)
+			got, err := readAboutMeEntries(ctx)
+			assert.NoError(t, err)
+			assert.Nil(t, got)
 		})
 	}
 
@@ -166,19 +167,22 @@ func TestAboutmeHandler(t *testing.T) {
 		testNotOnProductionTeam(t, "hide")
 
 		t.Run("ok", func(t *testing.T) {
-			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069", Show: true}})
+			require.NoError(t, writeAboutMeEntries(ctx,
+				map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: true}}))
+
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: You are hidden.", true)
+			want := interactionResponseMessage(":person_gesturing_ok: You are hidden from https://vvgo.org/about.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, _ := sheets.ListLeaders(ctx)
-			assert.Equal(t, sheets.Leaders{{DiscordID: "42069", Show: false}}, got)
+			got, err := readAboutMeEntries(ctx)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: false}}, got)
 		})
 
 		t.Run("no blurb", func(t *testing.T) {
-			sheets.WriteLeaders(ctx, sheets.Leaders{})
+			require.NoError(t, writeAboutMeEntries(ctx, nil))
 
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
@@ -192,19 +196,22 @@ func TestAboutmeHandler(t *testing.T) {
 		testNotOnProductionTeam(t, "show")
 
 		t.Run("ok", func(t *testing.T) {
-			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069", Show: false}})
+			require.NoError(t, writeAboutMeEntries(ctx,
+				map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: false}}))
+
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: You are visible.", true)
+			want := interactionResponseMessage(":person_gesturing_ok: You are visible on https://vvgo.org/about.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, _ := sheets.ListLeaders(ctx)
-			assert.Equal(t, sheets.Leaders{{DiscordID: "42069", Show: true}}, got)
+			got, err := readAboutMeEntries(ctx)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: true}}, got)
 		})
 
 		t.Run("no blurb", func(t *testing.T) {
-			sheets.WriteLeaders(ctx, sheets.Leaders{})
+			require.NoError(t, writeAboutMeEntries(ctx, nil))
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
@@ -217,7 +224,7 @@ func TestAboutmeHandler(t *testing.T) {
 		testNotOnProductionTeam(t, "update")
 
 		t.Run("exists", func(t *testing.T) {
-			sheets.WriteLeaders(ctx, sheets.Leaders{{DiscordID: "42069"}})
+			require.NoError(t, writeAboutMeEntries(ctx, map[string]AboutMeEntry{"42069": {DiscordID: "42069"}}))
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
 				{Name: "name", Value: "chester cheeta"},
 				{Name: "blurb", Value: "dangerously cheesy"},
@@ -227,14 +234,15 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, _ := sheets.ListLeaders(ctx)
-			assert.Equal(t, sheets.Leaders{
-				{DiscordID: "42069", Name: "chester cheeta", Blurb: "dangerously cheesy"},
+			got, err := readAboutMeEntries(ctx)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]AboutMeEntry{
+				"42069": {DiscordID: "42069", Name: "chester cheeta", Blurb: "dangerously cheesy"},
 			}, got)
 		})
 
 		t.Run("doesnt exist", func(t *testing.T) {
-			sheets.WriteLeaders(ctx, sheets.Leaders{})
+			require.NoError(t, writeAboutMeEntries(ctx, nil))
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
 				{Name: "name", Value: "chester cheeta"},
 				{Name: "blurb", Value: "dangerously cheesy"},
@@ -244,9 +252,10 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, _ := sheets.ListLeaders(ctx)
-			assert.Equal(t, sheets.Leaders{
-				{DiscordID: "42069", Name: "chester cheeta", Blurb: "dangerously cheesy"},
+			got, err := readAboutMeEntries(ctx)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]AboutMeEntry{
+				"42069": {DiscordID: "42069", Name: "chester cheeta", Blurb: "dangerously cheesy"},
 			}, got)
 		})
 	})

@@ -12,6 +12,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/foaas"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/when2meet"
 	"net/http"
@@ -329,6 +330,49 @@ func when2meetInteractionHandler(ctx context.Context, interaction discord.Intera
 		fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url), true)
 }
 
+type AboutMeEntry struct {
+	DiscordID string
+	Name      string
+	Blurb     string
+	Show      bool
+}
+
+func readAboutMeEntries(ctx context.Context) (map[string]AboutMeEntry, error) {
+	var buf bytes.Buffer
+	if err := redis.Do(ctx, redis.Cmd(&buf, "GET", "about_me:entries")); err != nil {
+		return nil, fmt.Errorf("redis.Do() failed: %w", err)
+	}
+
+	var dest map[string]AboutMeEntry
+	if err := json.NewDecoder(&buf).Decode(&dest); err != nil {
+		return nil, errJsonDecodeFailed(err)
+	}
+	return dest, nil
+}
+
+func errJsonDecodeFailed(err error) error {
+	return fmt.Errorf("json.Decode() failed: %w", err)
+}
+
+func errJsonEncodeFailed(err error) error {
+	return fmt.Errorf("json.Encode() failed: %w", err)
+}
+
+func errRedisDoFailed(err error) error {
+	return fmt.Errorf("redis.Do() failed: %w", err)
+}
+
+func writeAboutMeEntries(ctx context.Context, src map[string]AboutMeEntry) error {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(src); err != nil {
+		return errJsonEncodeFailed(err)
+	}
+	if err := redis.Do(ctx, redis.Cmd(nil, "SET", "about_me:entries", buf.String())); err != nil {
+		return errRedisDoFailed(err)
+	}
+	return nil
+}
+
 func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
 	return []discord.ApplicationCommandOption{
 		{
@@ -380,42 +424,47 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 		return interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 	}
 
-	leaders, err := sheets.ListLeaders(ctx)
+	entries, err := readAboutMeEntries(ctx)
 	if err != nil {
-		logger.WithError(err).Error("sheets.ListLeaders() failed")
+		logger.WithError(err).Error("readAboutMeEntries() failed")
 		return InteractionResponseOof
 	}
 
 	for _, option := range interaction.Data.Options {
 		switch option.Name {
 		case "show":
-			return showAboutme(ctx, leaders, userId)
+			return showAboutme(ctx, entries, userId)
 		case "hide":
-			return hideAboutme(ctx, leaders, userId)
+			return hideAboutme(ctx, entries, userId)
 		case "update":
-			return updateAboutme(ctx, leaders, userId, option)
+			return updateAboutme(ctx, entries, userId, option)
 		case "summary":
-			if i, ok := leaders.GetIndex(userId); ok {
-				message := fmt.Sprintf("**%s** ~ %s ~\n", leaders[i].Name, leaders[i].Blurb)
-				message += "Use `/aboutme update` to make changes.\n"
-				if leaders[i].Show {
-					message += "Your name and blurb are visible on https://vvgo.org/about. Use `/aboutme hide` to hide it."
-				} else {
-					message += "Your name and blurb are not visible on https://vvgo.org/about."
-				}
-				return interactionResponseMessage(message, true)
-			}
-			return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
+			return summaryAboutMe(entries, userId)
 		}
 	}
 	return InteractionResponseOof
 }
 
-func hideAboutme(ctx context.Context, leaders sheets.Leaders, userId string) discord.InteractionResponse {
-	if i, ok := leaders.GetIndex(userId); ok {
-		leaders[i].Show = false
-		if err := sheets.WriteLeaders(ctx, leaders); err != nil {
-			logger.WithError(err).Error("sheets.WriteLeaders() failed")
+func summaryAboutMe(entries map[string]AboutMeEntry, userId string) discord.InteractionResponse {
+	if entry, ok := entries[userId]; ok {
+		message := fmt.Sprintf("**%s** ~ %s ~\n", entry.Name, entry.Blurb)
+		message += "Use `/aboutme update` to make changes.\n"
+		if entry.Show {
+			message += "Your name and blurb are visible on https://vvgo.org/about. Use `/aboutme hide` to hide it."
+		} else {
+			message += "Your name and blurb are not visible on https://vvgo.org/about."
+		}
+		return interactionResponseMessage(message, true)
+	}
+	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
+}
+
+func hideAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId string) discord.InteractionResponse {
+	if entry, ok := entries[userId]; ok {
+		entry.Show = false
+		entries[userId] = entry
+		if err := writeAboutMeEntries(ctx, entries); err != nil {
+			logger.WithError(err).Error("writeAboutMeEntries() failed")
 			return InteractionResponseOof
 		}
 		return interactionResponseMessage(":person_gesturing_ok: You are hidden from https://vvgo.org/about.", true)
@@ -423,11 +472,12 @@ func hideAboutme(ctx context.Context, leaders sheets.Leaders, userId string) dis
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func showAboutme(ctx context.Context, leaders sheets.Leaders, userId string) discord.InteractionResponse {
-	if i, ok := leaders.GetIndex(userId); ok {
-		leaders[i].Show = true
-		if err := sheets.WriteLeaders(ctx, leaders); err != nil {
-			logger.WithError(err).Error("sheets.WriteLeaders() failed")
+func showAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId string) discord.InteractionResponse {
+	if entry, ok := entries[userId]; ok {
+		entry.Show = true
+		entries[userId] = entry
+		if err := writeAboutMeEntries(ctx, entries); err != nil {
+			logger.WithError(err).Error("writeAboutMeEntries() failed")
 			return InteractionResponseOof
 		}
 		return interactionResponseMessage(":person_gesturing_ok: You are visible on https://vvgo.org/about.", true)
@@ -435,28 +485,30 @@ func showAboutme(ctx context.Context, leaders sheets.Leaders, userId string) dis
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func updateAboutme(ctx context.Context, leaders sheets.Leaders, userId string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
-	updateLeader := func(leader *sheets.Leader) {
+func updateAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
+	updateEntry := func(entry AboutMeEntry) AboutMeEntry {
 		for _, option := range option.Options {
 			switch option.Name {
 			case "name":
-				leader.Name = option.Value
+				entry.Name = option.Value
 			case "blurb":
-				leader.Blurb = option.Value
+				entry.Blurb = option.Value
 			}
 		}
+		return entry
 	}
 
-	if i, ok := leaders.GetIndex(userId); ok {
-		updateLeader(&leaders[i])
+	if entries == nil {
+		entries = make(map[string]AboutMeEntry)
+	}
+	if entry, ok := entries[userId]; ok {
+		entries[userId] = updateEntry(entry)
 	} else {
-		leader := sheets.Leader{DiscordID: userId}
-		updateLeader(&leader)
-		leaders = append(leaders, leader)
+		entries[userId] = updateEntry(AboutMeEntry{DiscordID: userId})
 	}
 
-	if err := sheets.WriteLeaders(ctx, leaders); err != nil {
-		logger.WithError(err).Error("sheets.WriteLeaders() failed")
+	if err := writeAboutMeEntries(ctx, entries); err != nil {
+		logger.WithError(err).Error("writeAboutMeEntries() failed")
 		return InteractionResponseOof
 	}
 	return interactionResponseMessage(":person_gesturing_ok: It is written.", true)
