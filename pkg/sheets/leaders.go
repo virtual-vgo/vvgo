@@ -17,10 +17,8 @@ type Leader struct {
 	Show         bool
 }
 
-var LeadersSpreadsheetID = "1Ug5MogFlTRjC70n9xirORSB7g2PLHiueyaVEf-kmiiA"
-
 func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := ReadSheet(ctx, LeadersSpreadsheetID, "Leaders")
+	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Leaders")
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +55,6 @@ func valuesToLeaders(values [][]interface{}) Leaders {
 	return leaders
 }
 
-func WriteLeaders(ctx context.Context, leaders Leaders) error {
-	values := leadersToValues(leaders)
-	return WriteValuesToSheets(ctx, LeadersSpreadsheetID, "Leaders", values)
-}
 
 func leadersToValues(leaders Leaders) [][]interface{} {
 	values := make([][]interface{}, 1, len(leaders)+1)
