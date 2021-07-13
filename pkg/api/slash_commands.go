@@ -380,22 +380,22 @@ func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption,
 		{
 			Type:        discord.ApplicationCommandOptionTypeSubCommand,
 			Name:        "summary",
-			Description: "Get a summary of your name and blurb on the vvgo website.",
+			Description: "Get a summary of your aboutme information on the vvgo website.",
 		},
 		{
 			Type:        discord.ApplicationCommandOptionTypeSubCommand,
 			Name:        "show",
-			Description: "Show your name and blurb on the vvgo website.",
+			Description: "Show your aboutme information on the vvgo website.",
 		},
 		{
 			Type:        discord.ApplicationCommandOptionTypeSubCommand,
 			Name:        "hide",
-			Description: "Hide your name and blurb from the vvgo website.",
+			Description: "Hide your aboutme information from the vvgo website.",
 		},
 		{
 			Type:        discord.ApplicationCommandOptionTypeSubCommand,
 			Name:        "update",
-			Description: "Update your name and blurb.",
+			Description: "Update your aboutme information.",
 			Options: []discord.ApplicationCommandOption{
 				{
 					Type:        discord.ApplicationCommandOptionTypeString,
