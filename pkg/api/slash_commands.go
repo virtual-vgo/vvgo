@@ -276,7 +276,7 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	return interactionResponseMessage(content, true)
 }
 
-func fuckoffInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func fuckoffInteractionHandler(_ context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	content, _ := foaas.FuckOff(fmt.Sprintf("<@%s>", interaction.Member.User.ID))
 	if content == "" {
 		return InteractionResponseOof
@@ -307,7 +307,7 @@ func when2meetCommandOptions(context.Context) ([]discord.ApplicationCommandOptio
 	}, nil
 }
 
-func when2meetInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func when2meetInteractionHandler(_ context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	var eventName, startDate, endDate string
 	for _, option := range interaction.Data.Options {
 		switch option.Name {
@@ -333,10 +333,11 @@ func when2meetInteractionHandler(ctx context.Context, interaction discord.Intera
 }
 
 type AboutMeEntry struct {
-	DiscordID string
-	Name      string
-	Blurb     string
-	Show      bool
+	DiscordID string `json:"discord_id,omitempty"`
+	Name      string `json:"name"`
+	Title     string `json:"title"`
+	Blurb     string `json:"blurb"`
+	Show      bool   `json:"show"`
 }
 
 func readAboutMeEntries(ctx context.Context) (map[string]AboutMeEntry, error) {
@@ -412,8 +413,30 @@ func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption,
 	}, nil
 }
 
+func getAboutMeTitleFromRoles(roles []string) string {
+	hasRole := func(want string) bool {
+		for _, role := range roles {
+			if role == want {
+				return true
+			}
+		}
+		return false
+	}
+
+	if hasRole(discord.VVGOExecutiveDirectorRoleID) {
+		return "Executive Director"
+	} else if hasRole(discord.VVGOProductionDirectorRoleID) {
+		return "Production Director"
+	} else if hasRole(discord.VVGOProductionTeamRoleID) {
+		return "Production Team"
+	} else {
+		return ""
+	}
+}
+
 func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	userId := interaction.Member.User.ID.String()
+	title := getAboutMeTitleFromRoles(interaction.Member.Roles)
 
 	isProduction := false
 	for _, role := range interaction.Member.Roles {
@@ -443,7 +466,7 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 		case "hide":
 			return hideAboutme(ctx, entries, userId)
 		case "update":
-			return updateAboutme(ctx, entries, userId, option)
+			return updateAboutme(ctx, entries, userId, title, option)
 		case "summary":
 			return summaryAboutMe(entries, userId)
 		}
@@ -491,8 +514,9 @@ func showAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId st
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func updateAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
+func updateAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId string, title string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
 	updateEntry := func(entry AboutMeEntry) AboutMeEntry {
+		entry.Title = title
 		for _, option := range option.Options {
 			switch option.Name {
 			case "name":

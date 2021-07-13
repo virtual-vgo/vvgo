@@ -71,7 +71,17 @@ function createLeadersTbody() {
 function createAboutmeTBody() {
     const createName = (entry) => {
         const p = document.createElement("p")
-        p.append(entry['Name'])
+        p.append(entry['name'])
+        p.classList.add("text-light")
+
+        const td = document.createElement("td")
+        td.append(p)
+        return td
+    }
+
+    const createTitle = (entry) => {
+        const p = document.createElement("p")
+        p.append(entry['title'])
         p.classList.add("text-light")
 
         const td = document.createElement("td")
@@ -81,7 +91,7 @@ function createAboutmeTBody() {
 
     const createBlurb = (entry) => {
         const p = document.createElement("p")
-        p.append(entry['Blurb'])
+        p.append(entry['blurb'])
 
         const td = document.createElement("td")
         td.append(p)
@@ -92,7 +102,7 @@ function createAboutmeTBody() {
         const tr = document.createElement("tr")
         if (isFirst === false) tr.classList.add("border-top")
         if (isLast === false) tr.classList.add("border-bottom")
-        tr.append(createName(entry), createBlurb(entry))
+        tr.append(createName(entry), createTitle(entry), createBlurb(entry))
         return tr
     }
 
@@ -106,3 +116,4 @@ function createAboutmeTBody() {
             document.getElementById("aboutme-table").append(element)
         })
 }
+

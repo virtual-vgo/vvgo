@@ -27,6 +27,7 @@ const VVGOGuildID = "690626216637497425" // The VVGO discord server
 const VVGOVerifiedMemberRoleID = "690636730281230396"
 const VVGOProductionTeamRoleID = "746434659252174971"
 const VVGOExecutiveDirectorRoleID = "690626333062987866"
+const VVGOProductionDirectorRoleID = "805504313072943155"
 
 // Client that makes discord requests.
 type Client struct {
