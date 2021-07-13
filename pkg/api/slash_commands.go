@@ -8,6 +8,7 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/foaas"
@@ -15,6 +16,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/when2meet"
+	"io"
 	"net/http"
 )
 
@@ -425,9 +427,13 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 	}
 
 	entries, err := readAboutMeEntries(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		logger.WithError(err).Error("readAboutMeEntries() failed")
 		return InteractionResponseOof
+	}
+
+	if entries == nil {
+		entries = make(map[string]AboutMeEntry)
 	}
 
 	for _, option := range interaction.Data.Options {
@@ -498,9 +504,6 @@ func updateAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId 
 		return entry
 	}
 
-	if entries == nil {
-		entries = make(map[string]AboutMeEntry)
-	}
 	if entry, ok := entries[userId]; ok {
 		entries[userId] = updateEntry(entry)
 	} else {
