@@ -55,7 +55,6 @@ func valuesToLeaders(values [][]interface{}) Leaders {
 	return leaders
 }
 
-
 func leadersToValues(leaders Leaders) [][]interface{} {
 	values := make([][]interface{}, 1, len(leaders)+1)
 	values[0] = structToColNames(Leader{})
