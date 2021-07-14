@@ -16,3 +16,15 @@ func HTTPDoFailed(err error) error {
 func Non200StatusCode() error {
 	return errors.New("non-200 status code")
 }
+
+func JsonDecodeFailed(err error) error {
+	return fmt.Errorf("json.Decode() failed: %w", err)
+}
+
+func JsonEncodeFailed(err error) error {
+	return fmt.Errorf("json.Encode() failed: %w", err)
+}
+
+func RedisDoFailed(err error) error {
+	return fmt.Errorf("redis.Do() failed: %w", err)
+}

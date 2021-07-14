@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/error_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/foaas"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
@@ -62,12 +63,11 @@ var InteractionResponseGalaxyBrain = interactionResponseMessage("this interactio
 
 func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	//for _, command := range SlashCommands {
-	//	handleError(command.Create(ctx)).
-	//		logError("SlashCommand.Create() failed").
-	//		logSuccess(command.Name + " command created")
-	//}
-	SlashCommands[5].Create(ctx)
+	for _, command := range SlashCommands {
+		handleError(command.Create(ctx)).
+			logError("SlashCommand.Create() failed").
+			logSuccess(command.Name + " command created")
+	}
 	http.Redirect(w, r, "/slash_commands", http.StatusFound)
 }
 
@@ -343,35 +343,23 @@ type AboutMeEntry struct {
 func readAboutMeEntries(ctx context.Context) (map[string]AboutMeEntry, error) {
 	var buf bytes.Buffer
 	if err := redis.Do(ctx, redis.Cmd(&buf, "GET", "about_me:entries")); err != nil {
-		return nil, fmt.Errorf("redis.Do() failed: %w", err)
+		return nil, error_wrappers.RedisDoFailed(err)
 	}
 
 	var dest map[string]AboutMeEntry
 	if err := json.NewDecoder(&buf).Decode(&dest); err != nil {
-		return nil, errJsonDecodeFailed(err)
+		return nil, error_wrappers.JsonDecodeFailed(err)
 	}
 	return dest, nil
-}
-
-func errJsonDecodeFailed(err error) error {
-	return fmt.Errorf("json.Decode() failed: %w", err)
-}
-
-func errJsonEncodeFailed(err error) error {
-	return fmt.Errorf("json.Encode() failed: %w", err)
-}
-
-func errRedisDoFailed(err error) error {
-	return fmt.Errorf("redis.Do() failed: %w", err)
 }
 
 func writeAboutMeEntries(ctx context.Context, src map[string]AboutMeEntry) error {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(src); err != nil {
-		return errJsonEncodeFailed(err)
+		return error_wrappers.JsonEncodeFailed(err)
 	}
 	if err := redis.Do(ctx, redis.Cmd(nil, "SET", "about_me:entries", buf.String())); err != nil {
-		return errRedisDoFailed(err)
+		return error_wrappers.RedisDoFailed(err)
 	}
 	return nil
 }
