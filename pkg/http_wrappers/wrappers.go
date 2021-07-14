@@ -98,7 +98,7 @@ func PostForm(url string, data url.Values) (*http.Response, error) {
 	return DoRequest(req)
 }
 
-var DebugHTTP = false
+var DebugHTTP = true
 
 func debugRequestOut(r *http.Request) {
 	if DebugHTTP {

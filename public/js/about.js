@@ -98,20 +98,46 @@ function createAboutmeTBody() {
         return td
     }
 
+    const createDelete = (entry) => {
+        const a = document.createElement("a")
+        a.classList.add("text-light")
+        a.append("delete")
+        a.addEventListener("click", (e) => {
+            fetch('/api/v1/aboutme', {method: 'DELETE', body: JSON.stringify([entry])})
+                .then(resp => resp.json())
+                .then(data => createAboutmeTbody(data))
+        })
+        const td = document.createElement("td")
+        td.append(a)
+        return td
+    }
+
     const createAboutmeRow = (entry, isFirst, isLast) => {
         const tr = document.createElement("tr")
         if (isFirst === false) tr.classList.add("border-top")
         if (isLast === false) tr.classList.add("border-bottom")
         tr.append(createName(entry), createTitle(entry), createBlurb(entry))
+        if (entry['discord_id'] != null && entry['discord_id'] !== "") {
+            tr.append(createDelete(entry))
+        }
         return tr
     }
 
     const createAboutmeTbody = (entries) => {
-        const element = document.createElement("tbody")
-        element.append(...entries.map(
+        const table = document.getElementById("aboutme-table")
+        while (table.firstChild) {
+            table.removeChild(table.firstChild);
+        }
+
+        if (entries == null) {
+            return
+        }
+        const tbody = document.createElement("tbody")
+        tbody.append(...entries.map(
             entry => createAboutmeRow(entry, entry === entries[0], entry === entries[entries.length - 1])
         ))
-        document.getElementById("aboutme-table").append(element)
+
+        table.append(tbody)
     }
 
     fetch('/api/v1/roles')
