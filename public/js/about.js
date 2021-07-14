@@ -106,14 +106,22 @@ function createAboutmeTBody() {
         return tr
     }
 
-    fetch('/api/v1/aboutme')
+    const createAboutmeTbody = (entries) => {
+        const element = document.createElement("tbody")
+        element.append(...entries.map(
+            entry => createAboutmeRow(entry, entry === entries[0], entry === entries[entries.length - 1])
+        ))
+        document.getElementById("aboutme-table").append(element)
+    }
+
+    fetch('/api/v1/roles')
         .then(resp => resp.json())
-        .then(data => {
-            const element = document.createElement("tbody")
-            element.append(...data.map(
-                entry => createAboutmeRow(entry, entry === data[0], entry === data[data.length - 1])
-            ))
-            document.getElementById("aboutme-table").append(element)
+        .then(roles => {
+            if (roles.includes("vvgo-leader")) {
+                fetch('/api/v1/aboutme')
+                    .then(resp => resp.json())
+                    .then(data => createAboutmeTbody(data))
+            }
         })
 }
 
