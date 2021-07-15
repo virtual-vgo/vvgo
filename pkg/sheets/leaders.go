@@ -23,24 +23,6 @@ func ListLeaders(ctx context.Context) (Leaders, error) {
 	return valuesToLeaders(values), nil
 }
 
-func (x Leaders) Get(discordId string) (Leader, bool) {
-	for _, leader := range x {
-		if leader.DiscordID == discordId {
-			return leader, true
-		}
-	}
-	return Leader{DiscordID: discordId}, false
-}
-
-func (x Leaders) GetIndex(discordId string) (int, bool) {
-	for i := range x {
-		if x[i].DiscordID == discordId {
-			return i, true
-		}
-	}
-	return -1, false
-}
-
 func valuesToLeaders(values [][]interface{}) Leaders {
 	if len(values) < 1 {
 		return nil
