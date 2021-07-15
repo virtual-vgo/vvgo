@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/when2meet"
 	"net/http"
@@ -132,6 +133,10 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 func TestAboutmeHandler(t *testing.T) {
 	ctx := backgroundContext()
 
+	resetAboutMeEntries := func(t *testing.T) {
+		require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "DEL", "about_me:entries")))
+	}
+
 	aboutMeInteraction := func(cmd string, options []discord.ApplicationCommandInteractionDataOption) discord.Interaction {
 		return discord.Interaction{
 			Type:   discord.InteractionTypeApplicationCommand,
@@ -147,7 +152,7 @@ func TestAboutmeHandler(t *testing.T) {
 
 	testNotOnProductionTeam := func(t *testing.T, cmd string) {
 		t.Run("not on production team", func(t *testing.T) {
-			require.NoError(t, writeAboutMeEntries(ctx, nil))
+			resetAboutMeEntries(t)
 
 			interaction := aboutMeInteraction(cmd, nil)
 			interaction.Member.Roles = nil
@@ -157,9 +162,9 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx)
+			got, err := readAboutMeEntries(ctx, nil)
 			assert.NoError(t, err)
-			assert.Nil(t, got)
+			assert.Empty(t, got)
 		})
 	}
 
@@ -167,6 +172,7 @@ func TestAboutmeHandler(t *testing.T) {
 		testNotOnProductionTeam(t, "hide")
 
 		t.Run("ok", func(t *testing.T) {
+			resetAboutMeEntries(t)
 			require.NoError(t, writeAboutMeEntries(ctx,
 				map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: true}}))
 
@@ -176,13 +182,13 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: You are hidden from https://vvgo.org/about.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx)
+			got, err := readAboutMeEntries(ctx, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: false}}, got)
 		})
 
 		t.Run("no blurb", func(t *testing.T) {
-			require.NoError(t, writeAboutMeEntries(ctx, nil))
+			resetAboutMeEntries(t)
 
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
@@ -196,6 +202,7 @@ func TestAboutmeHandler(t *testing.T) {
 		testNotOnProductionTeam(t, "show")
 
 		t.Run("ok", func(t *testing.T) {
+			resetAboutMeEntries(t)
 			require.NoError(t, writeAboutMeEntries(ctx,
 				map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: false}}))
 
@@ -205,13 +212,13 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: You are visible on https://vvgo.org/about.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx)
+			got, err := readAboutMeEntries(ctx, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: true}}, got)
 		})
 
 		t.Run("no blurb", func(t *testing.T) {
-			require.NoError(t, writeAboutMeEntries(ctx, nil))
+			resetAboutMeEntries(t)
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
@@ -224,6 +231,7 @@ func TestAboutmeHandler(t *testing.T) {
 		testNotOnProductionTeam(t, "update")
 
 		t.Run("exists", func(t *testing.T) {
+			resetAboutMeEntries(t)
 			require.NoError(t, writeAboutMeEntries(ctx, map[string]AboutMeEntry{"42069": {DiscordID: "42069"}}))
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
 				{Name: "name", Value: "chester cheeta"},
@@ -234,15 +242,15 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx)
+			got, err := readAboutMeEntries(ctx, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, map[string]AboutMeEntry{
-				"42069": {DiscordID: "42069", Name: "chester cheeta", Blurb: "dangerously cheesy"},
+				"42069": {DiscordID: "42069", Name: "chester cheeta", Title: "Production Team", Blurb: "dangerously cheesy"},
 			}, got)
 		})
 
 		t.Run("doesnt exist", func(t *testing.T) {
-			require.NoError(t, writeAboutMeEntries(ctx, nil))
+			resetAboutMeEntries(t)
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
 				{Name: "name", Value: "chester cheeta"},
 				{Name: "blurb", Value: "dangerously cheesy"},
@@ -252,10 +260,10 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx)
+			got, err := readAboutMeEntries(ctx, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, map[string]AboutMeEntry{
-				"42069": {DiscordID: "42069", Name: "chester cheeta", Blurb: "dangerously cheesy"},
+				"42069": {DiscordID: "42069", Name: "chester cheeta", Title: "Production Team", Blurb: "dangerously cheesy"},
 			}, got)
 		})
 	})

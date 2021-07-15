@@ -342,25 +342,39 @@ type AboutMeEntry struct {
 }
 
 func readAboutMeEntries(ctx context.Context, keys []string) (map[string]AboutMeEntry, error) {
-	buf := make(map[string]string)
-	cmd := "HMGET"
 	if keys == nil {
-		cmd = "HGETALL"
-	}
-	args := append([]string{"about_me:entries"}, keys...)
-	if err := redis.Do(ctx, redis.Cmd(&buf, cmd, args...)); err != nil {
-		return nil, error_wrappers.RedisDoFailed(err)
-	}
-
-	dest := make(map[string]AboutMeEntry)
-	for _, entryJson := range buf {
-		var entry AboutMeEntry
-		if err := json.NewDecoder(strings.NewReader(entryJson)).Decode(&entry); err != nil {
-			return nil, error_wrappers.JsonDecodeFailed(err)
+		buf := make(map[string]string)
+		cmd := "HGETALL"
+		args := []string{"about_me:entries"}
+		if err := redis.Do(ctx, redis.Cmd(&buf, cmd, args...)); err != nil {
+			return nil, error_wrappers.RedisDoFailed(err)
 		}
-		dest[entry.DiscordID] = entry
+		dest := make(map[string]AboutMeEntry)
+		for _, entryJson := range buf {
+			var entry AboutMeEntry
+			if err := json.NewDecoder(strings.NewReader(entryJson)).Decode(&entry); err != nil {
+				return nil, error_wrappers.JsonDecodeFailed(err)
+			}
+			dest[entry.DiscordID] = entry
+		}
+		return dest, nil
+	} else {
+		var buf []string
+		cmd := "HMGET"
+		args := append([]string{"about_me:entries"}, keys...)
+		if err := redis.Do(ctx, redis.Cmd(&buf, cmd, args...)); err != nil {
+			return nil, error_wrappers.RedisDoFailed(err)
+		}
+		dest := make(map[string]AboutMeEntry)
+		for _, entryJson := range buf {
+			var entry AboutMeEntry
+			if err := json.NewDecoder(strings.NewReader(entryJson)).Decode(&entry); err != nil {
+				return nil, error_wrappers.JsonDecodeFailed(err)
+			}
+			dest[entry.DiscordID] = entry
+		}
+		return dest, nil
 	}
-	return dest, nil
 }
 
 func writeAboutMeEntries(ctx context.Context, src map[string]AboutMeEntry) error {
