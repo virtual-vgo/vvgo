@@ -8,13 +8,11 @@ import (
 type Leaders []Leader
 
 type Leader struct {
-	DiscordID    string
 	Name         string
 	Epithet      string
 	Affiliations string
 	Blurb        string
 	Icon         string
-	Show         bool
 }
 
 func ListLeaders(ctx context.Context) (Leaders, error) {
