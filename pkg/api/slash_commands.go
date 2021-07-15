@@ -19,6 +19,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/when2meet"
 	"io"
 	"net/http"
+	"strings"
 )
 
 var SlashCommands = []SlashCommand{
@@ -74,12 +75,12 @@ func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
 func ViewSlashCommands(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	commands, err := discord.NewClient(ctx).GetApplicationCommands(ctx)
-	handleError(err).logError("discord.GetApplicationCommands failed").
-		ifError(func(err error) { internalServerError(w) }).
-		ifSuccess(func() {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(commands)
-		})
+	if err != nil {
+		logger.WithError(err).Error("discord.GetApplicationCommands() failed")
+		internalServerError(w)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(commands)
 }
 
 func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
@@ -340,25 +341,55 @@ type AboutMeEntry struct {
 	Show      bool   `json:"show"`
 }
 
-func readAboutMeEntries(ctx context.Context) (map[string]AboutMeEntry, error) {
-	var buf bytes.Buffer
-	if err := redis.Do(ctx, redis.Cmd(&buf, "GET", "about_me:entries")); err != nil {
+func readAboutMeEntries(ctx context.Context, keys []string) (map[string]AboutMeEntry, error) {
+	buf := make(map[string]string)
+	cmd := "HMGET"
+	if keys == nil {
+		cmd = "HGETALL"
+	}
+	args := append([]string{"about_me:entries"}, keys...)
+	if err := redis.Do(ctx, redis.Cmd(&buf, cmd, args...)); err != nil {
 		return nil, error_wrappers.RedisDoFailed(err)
 	}
 
-	var dest map[string]AboutMeEntry
-	if err := json.NewDecoder(&buf).Decode(&dest); err != nil {
-		return nil, error_wrappers.JsonDecodeFailed(err)
+	dest := make(map[string]AboutMeEntry)
+	for _, entryJson := range buf {
+		var entry AboutMeEntry
+		if err := json.NewDecoder(strings.NewReader(entryJson)).Decode(&entry); err != nil {
+			return nil, error_wrappers.JsonDecodeFailed(err)
+		}
+		dest[entry.DiscordID] = entry
 	}
 	return dest, nil
 }
 
 func writeAboutMeEntries(ctx context.Context, src map[string]AboutMeEntry) error {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(src); err != nil {
-		return error_wrappers.JsonEncodeFailed(err)
+	if len(src) == 0 {
+		logger.Warnf("writeAboutMeEntries: there's nothing to write!")
+		return nil
 	}
-	if err := redis.Do(ctx, redis.Cmd(nil, "SET", "about_me:entries", buf.String())); err != nil {
+
+	args := []string{"about_me:entries"}
+	for id, entry := range src {
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(entry); err != nil {
+			return error_wrappers.JsonEncodeFailed(err)
+		}
+		args = append(args, id, buf.String())
+	}
+
+	if err := redis.Do(ctx, redis.Cmd(nil, "HMSET", args...)); err != nil {
+		return error_wrappers.RedisDoFailed(err)
+	}
+	return nil
+}
+
+func deleteAboutmeEntries(ctx context.Context, keys []string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+	args := append([]string{"about_me:entries"}, keys...)
+	if err := redis.Do(ctx, redis.Cmd(nil, "HDEL", args...)); err != nil {
 		return error_wrappers.RedisDoFailed(err)
 	}
 	return nil
@@ -437,7 +468,7 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 		return interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 	}
 
-	entries, err := readAboutMeEntries(ctx)
+	entries, err := readAboutMeEntries(ctx, []string{userId})
 	if err != nil && !errors.Is(err, io.EOF) {
 		logger.WithError(err).Error("readAboutMeEntries() failed")
 		return InteractionResponseOof
@@ -449,14 +480,14 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 
 	for _, option := range interaction.Data.Options {
 		switch option.Name {
-		case "show":
-			return showAboutme(ctx, entries, userId)
-		case "hide":
-			return hideAboutme(ctx, entries, userId)
-		case "update":
-			return updateAboutme(ctx, entries, userId, title, option)
 		case "summary":
 			return summaryAboutMe(entries, userId)
+		case "hide":
+			return hideAboutme(ctx, entries, userId)
+		case "show":
+			return showAboutme(ctx, entries, userId)
+		case "update":
+			return updateAboutme(ctx, entries, userId, title, option)
 		}
 	}
 	return InteractionResponseOof

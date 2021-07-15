@@ -74,6 +74,11 @@ function createAboutmeTBody() {
         p.append(entry['name'])
         p.classList.add("text-light")
 
+        if (entry['discord_id'] != null && entry['discord_id'] !== "") {
+            p.append(document.createElement("br"))
+            p.append(createDeleteLink(entry))
+        }
+
         const td = document.createElement("td")
         td.append(p)
         return td
@@ -92,24 +97,21 @@ function createAboutmeTBody() {
     const createBlurb = (entry) => {
         const p = document.createElement("p")
         p.append(entry['blurb'])
-
         const td = document.createElement("td")
         td.append(p)
         return td
     }
 
-    const createDelete = (entry) => {
+    const createDeleteLink = (entry) => {
         const a = document.createElement("a")
-        a.classList.add("text-light")
-        a.append("delete")
+        a.classList.add("text-light", "text-sm")
+        a.append("(delete)")
         a.addEventListener("click", (e) => {
-            fetch('/api/v1/aboutme', {method: 'DELETE', body: JSON.stringify([entry])})
-                .then(resp => resp.json())
-                .then(data => createAboutmeTbody(data))
+            fetch('/api/v1/aboutme', {method: 'DELETE', body: JSON.stringify([entry['discord_id']])})
+                .then(createAboutMe)
         })
-        const td = document.createElement("td")
-        td.append(a)
-        return td
+        a.style.cursor = 'pointer'
+        return a
     }
 
     const createAboutmeRow = (entry, isFirst, isLast) => {
@@ -117,9 +119,6 @@ function createAboutmeTBody() {
         if (isFirst === false) tr.classList.add("border-top")
         if (isLast === false) tr.classList.add("border-bottom")
         tr.append(createName(entry), createTitle(entry), createBlurb(entry))
-        if (entry['discord_id'] != null && entry['discord_id'] !== "") {
-            tr.append(createDelete(entry))
-        }
         return tr
     }
 
@@ -140,14 +139,18 @@ function createAboutmeTBody() {
         table.append(tbody)
     }
 
-    fetch('/api/v1/roles')
-        .then(resp => resp.json())
-        .then(roles => {
-            if (roles.includes("vvgo-leader")) {
-                fetch('/api/v1/aboutme')
-                    .then(resp => resp.json())
-                    .then(data => createAboutmeTbody(data))
-            }
-        })
+    const createAboutMe = () => {
+        fetch('/api/v1/roles')
+            .then(resp => resp.json())
+            .then(roles => {
+                if (roles.includes("vvgo-leader")) {
+                    fetch('/api/v1/aboutme')
+                        .then(resp => resp.json())
+                        .then(data => createAboutmeTbody(data))
+                }
+            })
+    }
+
+    createAboutMe()
 }
 

@@ -22,7 +22,14 @@ func LeadersApi(w http.ResponseWriter, r *http.Request) {
 func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	writeEntriesToResponse := func(entries map[string]AboutMeEntry) {
+	switch r.Method {
+	case http.MethodGet:
+		entries, err := readAboutMeEntries(ctx, nil)
+		if err != nil {
+			logger.WithError(err).Error("readAboutMeEntries() failed")
+			internalServerError(w)
+			return
+		}
 		var showEntries []AboutMeEntry
 		isLeader := IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader)
 		for _, entry := range entries {
@@ -34,17 +41,6 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		jsonEncode(w, showEntries)
-	}
-
-	switch r.Method {
-	case http.MethodGet:
-		entries, err := readAboutMeEntries(ctx)
-		if err != nil {
-			logger.WithError(err).Error("readAboutMeEntries() failed")
-			internalServerError(w)
-			return
-		}
-		writeEntriesToResponse(entries)
 
 	case http.MethodPost:
 		if IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
@@ -62,13 +58,7 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		entriesMap, err := readAboutMeEntries(ctx)
-		if err != nil {
-			logger.WithError(err).Error("readAboutMeEntries() failed")
-			internalServerError(w)
-			return
-		}
-
+		entriesMap := make(map[string]AboutMeEntry)
 		for _, entry := range newEntries {
 			if entry.DiscordID != "" {
 				entriesMap[entry.DiscordID] = entry
@@ -80,7 +70,6 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 			internalServerError(w)
 			return
 		}
-		writeEntriesToResponse(entriesMap)
 
 	case http.MethodDelete:
 		if IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
@@ -88,35 +77,21 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var delEntries []AboutMeEntry
-		if err := json.NewDecoder(r.Body).Decode(&delEntries); err != nil {
+		var keys []string
+		if err := json.NewDecoder(r.Body).Decode(&keys); err != nil {
 			logJsonDecodeErr(err)
 			badRequest(w, "invalid json")
 			return
 		}
-		if len(delEntries) == 0 {
+		if len(keys) == 0 {
 			return
 		}
 
-		entriesMap, err := readAboutMeEntries(ctx)
-		if err != nil {
-			logger.WithError(err).Error("readAboutMeEntries() failed")
+		if err := deleteAboutmeEntries(ctx, keys); err != nil {
+			logger.WithError(err).Error("deleteAboutMeEntries() failed")
 			internalServerError(w)
 			return
 		}
-
-		for _, entry := range delEntries {
-			if entry.DiscordID != "" {
-				delete(entriesMap, entry.DiscordID)
-			}
-		}
-
-		if err := writeAboutMeEntries(ctx, entriesMap); err != nil {
-			logger.WithError(err).Error("writeAboutMeEntries() failed")
-			internalServerError(w)
-			return
-		}
-		writeEntriesToResponse(entriesMap)
 	}
 }
 
