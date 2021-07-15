@@ -1,10 +1,10 @@
 package api
 
 import (
-	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/when2meet"
 	"net/http"
@@ -31,7 +31,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 			Name: "beep",
 		},
 	}
-	response, ok := HandleInteraction(context.Background(), interaction)
+	response, ok := HandleInteraction(backgroundContext(), interaction)
 	assert.True(t, ok)
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
@@ -40,7 +40,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 }
 
 func TestHandlePartsInteraction(t *testing.T) {
-	ctx := context.Background()
+	ctx := backgroundContext()
 	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID(ctx), "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released"},
 		{"10-hildas-healing", "Hilda's Healing", true},
@@ -75,7 +75,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 }
 
 func TestHandleSubmissionInteraction(t *testing.T) {
-	ctx := context.Background()
+	ctx := backgroundContext()
 	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID(ctx), "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released", "Submission Link"},
 		{"10-hildas-healing", "Hilda's Healing", true, "https://bit.ly/vvgo10submit"},
@@ -109,7 +109,7 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	defer ts.Close()
 	when2meet.Endpoint = ts.URL
 
-	ctx := context.Background()
+	ctx := backgroundContext()
 	interaction := discord.Interaction{
 		Type:   discord.InteractionTypeApplicationCommand,
 		Member: discord.GuildMember{User: discord.User{ID: "42069"}},
@@ -126,12 +126,147 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	response, ok := HandleInteraction(ctx, interaction)
 	assert.True(t, ok)
 
-	assertEqualInteractionResponse(t, discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{
-			Content: "<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).",
-		},
-	}, response)
+	want := interactionResponseMessage("<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).", true)
+	assertEqualInteractionResponse(t, want, response)
+}
+
+func TestAboutmeHandler(t *testing.T) {
+	ctx := backgroundContext()
+
+	resetAboutMeEntries := func(t *testing.T) {
+		require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "DEL", "about_me:entries")))
+	}
+
+	aboutMeInteraction := func(cmd string, options []discord.ApplicationCommandInteractionDataOption) discord.Interaction {
+		return discord.Interaction{
+			Type:   discord.InteractionTypeApplicationCommand,
+			Member: discord.GuildMember{User: discord.User{ID: "42069"}, Roles: []string{discord.VVGOProductionTeamRoleID}},
+			Data: &discord.ApplicationCommandInteractionData{
+				Name: "aboutme",
+				Options: []discord.ApplicationCommandInteractionDataOption{
+					{Name: cmd, Options: options},
+				},
+			},
+		}
+	}
+
+	testNotOnProductionTeam := func(t *testing.T, cmd string) {
+		t.Run("not on production team", func(t *testing.T) {
+			resetAboutMeEntries(t)
+
+			interaction := aboutMeInteraction(cmd, nil)
+			interaction.Member.Roles = nil
+			response, ok := HandleInteraction(ctx, interaction)
+			assert.True(t, ok)
+
+			want := interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
+			assertEqualInteractionResponse(t, want, response)
+
+			got, err := readAboutMeEntries(ctx, nil)
+			assert.NoError(t, err)
+			assert.Empty(t, got)
+		})
+	}
+
+	t.Run("hide", func(t *testing.T) {
+		testNotOnProductionTeam(t, "hide")
+
+		t.Run("ok", func(t *testing.T) {
+			resetAboutMeEntries(t)
+			require.NoError(t, writeAboutMeEntries(ctx,
+				map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: true}}))
+
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage(":person_gesturing_ok: You are hidden from https://vvgo.org/about.", true)
+			assertEqualInteractionResponse(t, want, response)
+
+			got, err := readAboutMeEntries(ctx, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: false}}, got)
+		})
+
+		t.Run("no blurb", func(t *testing.T) {
+			resetAboutMeEntries(t)
+
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
+			assertEqualInteractionResponse(t, want, response)
+		})
+	})
+
+	t.Run("show", func(t *testing.T) {
+		testNotOnProductionTeam(t, "show")
+
+		t.Run("ok", func(t *testing.T) {
+			resetAboutMeEntries(t)
+			require.NoError(t, writeAboutMeEntries(ctx,
+				map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: false}}))
+
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage(":person_gesturing_ok: You are visible on https://vvgo.org/about.", true)
+			assertEqualInteractionResponse(t, want, response)
+
+			got, err := readAboutMeEntries(ctx, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: true}}, got)
+		})
+
+		t.Run("no blurb", func(t *testing.T) {
+			resetAboutMeEntries(t)
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
+			assertEqualInteractionResponse(t, want, response)
+		})
+	})
+
+	t.Run("update", func(t *testing.T) {
+		testNotOnProductionTeam(t, "update")
+
+		t.Run("exists", func(t *testing.T) {
+			resetAboutMeEntries(t)
+			require.NoError(t, writeAboutMeEntries(ctx, map[string]AboutMeEntry{"42069": {DiscordID: "42069"}}))
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
+				{Name: "name", Value: "chester cheeta"},
+				{Name: "blurb", Value: "dangerously cheesy"},
+			}))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
+			assertEqualInteractionResponse(t, want, response)
+
+			got, err := readAboutMeEntries(ctx, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]AboutMeEntry{
+				"42069": {DiscordID: "42069", Name: "chester cheeta", Title: "Production Team", Blurb: "dangerously cheesy"},
+			}, got)
+		})
+
+		t.Run("doesnt exist", func(t *testing.T) {
+			resetAboutMeEntries(t)
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
+				{Name: "name", Value: "chester cheeta"},
+				{Name: "blurb", Value: "dangerously cheesy"},
+			}))
+			assert.True(t, ok)
+
+			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
+			assertEqualInteractionResponse(t, want, response)
+
+			got, err := readAboutMeEntries(ctx, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]AboutMeEntry{
+				"42069": {DiscordID: "42069", Name: "chester cheeta", Title: "Production Team", Blurb: "dangerously cheesy"},
+			}, got)
+		})
+	})
 }
 
 func assertEqualInteractionResponse(t *testing.T, want, got discord.InteractionResponse) {

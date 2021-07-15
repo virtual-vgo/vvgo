@@ -47,6 +47,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/slash_commands", HandleSlashCommand, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/update_stats", SkywardSwordIntentHandler, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/aboutme", AboutMeApi, login.RoleVVGOLeader)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),

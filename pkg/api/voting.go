@@ -25,7 +25,7 @@ var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http
 
 		var ballotJSON string
 		handleError(redis.Do(ctx, redis.Cmd(&ballotJSON, "HGET",
-			"arrangements:"+season+":ballots", identity.DiscordID.String()))).
+			"arrangements:"+season+":ballots", identity.DiscordID))).
 			logError("redis.Do() failed")
 		if ballotJSON != "" {
 			handleError(json.NewEncoder(w).Encode(json.RawMessage(ballotJSON))).
@@ -53,7 +53,7 @@ var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http
 
 		ballotJSON, _ := json.Marshal(ballot)
 		handleError(redis.Do(ctx, redis.Cmd(nil, "HSET",
-			"arrangements:"+season+":ballots", identity.DiscordID.String(), string(ballotJSON)))).
+			"arrangements:"+season+":ballots", identity.DiscordID, string(ballotJSON)))).
 			logError("redis.Do() failed")
 	}
 })

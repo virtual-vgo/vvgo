@@ -38,7 +38,7 @@
                 </p>
             </div>
         </div>
-        <div class="row mt-3">
+        <div class="row mt-3 border-bottom border-light">
             <div class="col col-lg-3 col-12 text-center">
                 <h2>VVGO Leadership</h2>
             </div>
@@ -48,6 +48,31 @@
                 </table>
             </div>
         </div>
+        {{ $wantTeams := form_value "teams" }}
+        {{ if eq $wantTeams "1"  }}
+            {{ if user_is_leader }}
+                <div class="row mt-3 border-bottom border-light">
+                    <div class="col col-lg-3 col-12 text-center">
+                        <h2>VVGO Production Team</h2>
+                    </div>
+                    <div class="col col-lg-9 col-12 text-center mt-2">
+                        <table id="aboutme-table" class="table table-borderless text-light fs-6">
+                            <!--- javascript --->
+                        </table>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col col-lg-3 col-12 text-center">
+                        <h2>Affiliations</h2>
+                    </div>
+                    <div class="col col-lg-9 col-12 text-center mt-2">
+                        <ul id="affiliations-ul">
+                            <!--- javascript --->
+                        </ul>
+                    </div>
+                </div>
+            {{ end }}
+        {{ end }}
     </div>
 </main>
 {{ template "footer.gohtml" }}
