@@ -1,5 +1,11 @@
 pipeline {
     agent any
+
+    environment {
+        SSH_CREDS = credentials('jenkins_ssh_key')
+        DEPLOY_TARGET = 'jenkins@vvgo-2.infra.vvgo.org'
+    }
+
     stages {
         stage('Run Unit Tests') {
             when { changeset "**/*.go" }
@@ -42,15 +48,20 @@ pipeline {
 
         stage('Deploy Staging') {
             when { not { branch 'master' } }
-            steps { sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_staging' }
+
+            stages {
+                stage('Run Chef') {
+                    steps { sh 'ssh -i ${SSH_CREDS} jenkins@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_staging' }
+                }
+            }
         }
 
         stage('Deploy Production') {
             when { branch 'master' }
 
             stages {
-                stage('Deploy Container') {
-                    steps { sh '/usr/bin/sudo /usr/bin/chef-solo -o vvgo::vvgo_prod' }
+                stage('Run Chef') {
+                    steps { sh 'ssh -i ${SSH_CREDS} jenkins@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_prod' }
                 }
 
                 stage('Purge Cloudflare Cache') {
