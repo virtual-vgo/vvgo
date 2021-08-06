@@ -48,14 +48,19 @@ pipeline {
 
         stage('Deploy Staging') {
             when { not { branch 'master' } }
-            steps { sh 'ssh -i ${SSH_CREDS} jenkins@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_staging' }
+
+            stages {
+                stage('Run Chef') {
+                    steps { sh 'ssh -i ${SSH_CREDS} jenkins@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_staging' }
+                }
+            }
         }
 
         stage('Deploy Production') {
             when { branch 'master' }
 
             stages {
-                stage('Deploy Container') {
+                stage('Run Chef') {
                     steps { sh 'ssh -i ${SSH_CREDS} jenkins@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_prod' }
                 }
 
