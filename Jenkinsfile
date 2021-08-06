@@ -48,7 +48,7 @@ pipeline {
 
         stage('Deploy Staging') {
             when { not { branch 'master' } }
-            steps { sh 'ssh -i ${SSH_CREDS} root@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_staging' }
+            steps { sh 'ssh -i ${SSH_CREDS} jenkins@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_staging' }
         }
 
         stage('Deploy Production') {
@@ -56,7 +56,7 @@ pipeline {
 
             stages {
                 stage('Deploy Container') {
-                    steps { sh 'ssh -i ${SSH_CREDS} root@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_prod' }
+                    steps { sh 'ssh -i ${SSH_CREDS} jenkins@vvgo-2.infra.vvgo.org sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_prod' }
                 }
 
                 stage('Purge Cloudflare Cache') {
