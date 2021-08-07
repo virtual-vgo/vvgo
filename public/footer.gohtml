@@ -1,6 +1,6 @@
 <footer class="footer">
     <div class="container mt-3 text-center">
-        <div class="row">
+        <div class="row mb-3">
             <div class="col">
                 <a class="text-light"
                    href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
@@ -28,14 +28,8 @@
                 </a>
             </div>
         </div>
-        <div class="row mb-2">
-            <div class="col">
-                <a class="text-light text-lowercase" href="https://vvgo.org/privacy">privacy policy</a>
-                <a class="text-light" href="https://vvgo.org/cookie-policy">cookie policy</a>
-            </div>
-        </div>
         {{ if or user_on_teams user_is_leader }}
-            <div class="row alert-warning text-muted">
+            <div class="row mb-3 text-muted">
                 <div class="col">
                     <a href="{{ link_to_template }}">View Template on Github</a>
                 </div>
@@ -65,17 +59,3 @@
         {{ end }}
     </div>
 </footer>
-
-<link rel="stylesheet" type="text/css" href="//wpcc.io/lib/1.0.2/cookieconsent.min.css"/>
-<script src="//wpcc.io/lib/1.0.2/cookieconsent.min.js"></script>
-<script>window.addEventListener("load", function () {
-        window.wpcc.init({
-            "border": "thin",
-            "corners": "small",
-            "colors": {
-                "popup": {"background": "#222222", "text": "#ffffff", "border": "#d9baea"},
-                "button": {"background": "#d9baea", "text": "#000000"}
-            },
-            "content": {"href": "https://vvgo.org/cookie-policy"}
-        })
-    });</script>
