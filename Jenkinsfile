@@ -27,30 +27,32 @@ pipeline {
                 DEPLOY_TARGET = 'jenkins@vvgo-2.infra.vvgo.org'
             }
 
-            stage('Deploy Staging') {
-                when { not { branch 'master' } }
-                steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_staging' }
-            }
+            steps {
+                stage('Deploy Staging') {
+                    when { not { branch 'master' } }
+                    steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_staging' }
+                }
 
-            stage('Deploy Production') {
-                when { branch 'master' }
-                steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_prod' }
-                post {
-                    success {
-                        withCredentials(bindings: [string(credentialsId: 'web_and_coding_team_webhook', variable: 'WEBHOOK_URL')]) {
-                            discordSend(link: env.BUILD_URL,
-                                    result: currentBuild.currentResult,
-                                    title: "vvgo build ${BUILD_NUMBER} deployed",
-                                    webhookURL: "${WEBHOOK_URL}")
+                stage('Deploy Production') {
+                    when { branch 'master' }
+                    steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_prod' }
+                    post {
+                        success {
+                            withCredentials(bindings: [string(credentialsId: 'web_and_coding_team_webhook', variable: 'WEBHOOK_URL')]) {
+                                discordSend(link: env.BUILD_URL,
+                                        result: currentBuild.currentResult,
+                                        title: "vvgo build ${BUILD_NUMBER} deployed",
+                                        webhookURL: "${WEBHOOK_URL}")
+                            }
                         }
-                    }
 
-                    unsuccessful {
-                        withCredentials(bindings: [string(credentialsId: 'web_and_coding_team_webhook', variable: 'WEBHOOK_URL')]) {
-                            discordSend(link: env.BUILD_URL,
-                                    result: currentBuild.currentResult,
-                                    title: "vvgo build ${BUILD_NUMBER} has failures",
-                                    webhookURL: "${WEBHOOK_URL}")
+                        unsuccessful {
+                            withCredentials(bindings: [string(credentialsId: 'web_and_coding_team_webhook', variable: 'WEBHOOK_URL')]) {
+                                discordSend(link: env.BUILD_URL,
+                                        result: currentBuild.currentResult,
+                                        title: "vvgo build ${BUILD_NUMBER} has failures",
+                                        webhookURL: "${WEBHOOK_URL}")
+                            }
                         }
                     }
                 }
