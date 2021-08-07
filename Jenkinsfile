@@ -33,7 +33,7 @@ pipeline {
             }
 
             stage('Deploy Production') {
-                when { { branch 'master' } }
+                when { branch 'master' }
                 steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_prod' }
                 post {
                     success {
