@@ -18,7 +18,7 @@ import (
 
 var ErrSessionNotFound = errors.New("session not found")
 
-var logger = log.Logger()
+var logger = log.New()
 
 // Store provides access to the map of session id's to access roles.
 // It can read and validate session cookies from incoming requests,
@@ -40,10 +40,7 @@ type Config struct {
 
 func newConfig(ctx context.Context) Config {
 	var dest Config
-	parse_config.SetDefaults(&dest)
-	if err := parse_config.ReadFromRedisHash(ctx, "login", &dest); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-	}
+	parse_config.ReadModuleConfig(ctx, "login", &dest)
 	return dest
 }
 

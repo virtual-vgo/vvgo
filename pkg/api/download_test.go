@@ -25,7 +25,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 
 	downloadHandler := DownloadHandler
 	config := DownloadConfig{DistroBucket: bucketName}
-	require.NoError(t, parse_config.WriteToRedisHash(ctx, "download", &config), "redis.Do() failed")
+	ctx = parse_config.SetModuleConfig(ctx, "download", &config)
 
 	for _, tt := range []struct {
 		name    string

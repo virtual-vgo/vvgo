@@ -112,7 +112,7 @@ func nameBallots(ctx context.Context, data map[string]string) []namedBallot {
 	ballots := make([]namedBallot, 0, len(data))
 	for userID, ballotJSON := range data {
 		var nick string
-		guildMember, err := discord.NewClient(ctx).QueryGuildMember(ctx, discord.Snowflake(userID))
+		guildMember, err := discord.QueryGuildMember(ctx, discord.Snowflake(userID))
 		if err != nil {
 			logger.WithError(err).Error("discord.QueryGuildMember() failed")
 		} else {

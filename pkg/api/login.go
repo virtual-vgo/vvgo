@@ -102,11 +102,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	passwords := make(map[string]string)
-	if err := parse_config.ReadFromRedisHash(ctx, "password_login", &passwords); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-		internalServerError(w)
-		return
-	}
+	ctx = parse_config.ReadModuleConfig(ctx, "password_login", &passwords)
 
 	var identity login.Identity
 	if err := login.NewStore(ctx).ReadSessionFromRequest(ctx, r, &identity); err == nil {
@@ -148,11 +144,9 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			internalServerError(w)
 			return
 		}
-		http.Redirect(w, r, discord.NewClient(ctx).LoginURL(state), http.StatusFound)
+		http.Redirect(w, r, discord.LoginURL(ctx, state), http.StatusFound)
 		return
 	}
-
-	discordClient := discord.NewClient(ctx)
 
 	handleError := func(err error) bool {
 		if err != nil {
@@ -169,19 +163,19 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// get an oauth token from discord
 	code := r.FormValue("code")
-	oauthToken, err := discordClient.QueryOAuth(ctx, code)
+	oauthToken, err := discord.QueryOAuth(ctx, code)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// get the user id
-	discordUser, err := discordClient.QueryIdentity(ctx, oauthToken)
+	discordUser, err := discord.QueryIdentity(ctx, oauthToken)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// check if this user is in our guild
-	guildMember, err := discordClient.QueryGuildMember(ctx, discordUser.ID)
+	guildMember, err := discord.QueryGuildMember(ctx, discordUser.ID)
 	if ok := handleError(err); !ok {
 		return
 	}

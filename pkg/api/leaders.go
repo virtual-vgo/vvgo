@@ -50,7 +50,7 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 
 		var newEntries []AboutMeEntry
 		if err := json.NewDecoder(r.Body).Decode(&newEntries); err != nil {
-			logJsonDecodeErr(err)
+			logger.JsonDecodeFailure(ctx, err)
 			badRequest(w, "invalid json")
 			return
 		}
@@ -79,7 +79,7 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 
 		var keys []string
 		if err := json.NewDecoder(r.Body).Decode(&keys); err != nil {
-			logJsonDecodeErr(err)
+			logger.JsonDecodeFailure(ctx, err)
 			badRequest(w, "invalid json")
 			return
 		}
@@ -93,8 +93,4 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-}
-
-func logJsonDecodeErr(err error) {
-	logger.WithError(err).Error("json.Decode() failed")
 }

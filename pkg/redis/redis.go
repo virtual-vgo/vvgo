@@ -51,7 +51,7 @@ func NewClient(config Config) (*Client, error) {
 	return &Client{pool: radixPool, config: config}, nil
 }
 
-var logger = log.Logger()
+var logger = log.New()
 
 func NewClientMust(config Config) *Client {
 	client, err := NewClient(config)

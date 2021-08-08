@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var logger = log.Logger()
+var logger = log.New()
 
 type Flags struct {
 	ShowVersion   bool

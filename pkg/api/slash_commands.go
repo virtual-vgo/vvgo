@@ -74,7 +74,7 @@ func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
 
 func ViewSlashCommands(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	commands, err := discord.NewClient(ctx).GetApplicationCommands(ctx)
+	commands, err := discord.GetApplicationCommands(ctx)
 	if err != nil {
 		logger.WithError(err).Error("discord.GetApplicationCommands() failed")
 		internalServerError(w)
@@ -171,7 +171,7 @@ func (x SlashCommand) Create(ctx context.Context) (err error) {
 		Description: x.Description,
 		Options:     options,
 	}
-	_, err = discord.NewClient(ctx).CreateApplicationCommand(ctx, params)
+	_, err = discord.CreateApplicationCommand(ctx, params)
 	return err
 }
 

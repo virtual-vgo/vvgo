@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var logger = log.Logger()
+var logger = log.New()
 
 // middleware response writer that captures the http response code and other metrics
 type responseWriter struct {

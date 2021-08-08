@@ -52,9 +52,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	loginHandler := PasswordLoginHandler{}
 
-	require.NoError(t,
-		parse_config.WriteToRedisHash(ctx, "password_login", map[string]string{"vvgo-user": "vvgo-pass"}),
-		"redis.Do() failed")
+	ctx = parse_config.SetModuleConfig(ctx, "password_login", map[string]string{"vvgo-user": "vvgo-pass"})
 
 	t.Run("post/failure", func(t *testing.T) {
 		ts := httptest.NewServer(&loginHandler)
@@ -177,6 +175,11 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		"scope":         "identify"
 	}`)
 
+	ctx = parse_config.SetModuleConfig(ctx, "discord", discord.Config{
+		Endpoint:               ts.URL,
+		BotAuthenticationToken: "test-bot-auth-token",
+	})
+
 	newDiscordServer := func(pre func(w http.ResponseWriter, r *http.Request)) *httptest.Server {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if pre != nil {
@@ -203,12 +206,6 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 				}
 			}
 		}))
-
-		discordConfig := discord.Config{
-			Endpoint:               ts.URL,
-			BotAuthenticationToken: "test-bot-auth-token",
-		}
-		require.NoError(t, parse_config.WriteToRedisHash(ctx, "discord", &discordConfig), "redis.Do() failed")
 		return ts
 	}
 
