@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
@@ -18,20 +17,18 @@ import (
 
 var ErrSessionNotFound = errors.New("session not found")
 
-var logger = log.New()
-
 const ConfigModule = "login"
 
 type Config struct {
 	// CookieName is the name of the cookies created by the store.
-	CookieName string `redis:"cookie_name" default:"vvgo-sessions"`
+	CookieName string `json:"cookie_name" default:"vvgo-sessions"`
 
 	// CookieDomain is the domain where the cookies can be used.
 	// This should be the domain that users visit in their browser.
-	CookieDomain string `redis:"cookie_domain" default:""`
+	CookieDomain string `json:"cookie_domain" default:""`
 
 	// CookiePath is the url path where the cookies can be used.
-	CookiePath string `redis:"cookie_path" default:"/"`
+	CookiePath string `json:"cookie_path" default:"/"`
 }
 
 func readConfig(ctx context.Context) Config {
@@ -86,7 +83,7 @@ func NewCookieValue() string {
 	buf := make([]byte, 8)
 	result := "V-i-r-t-u-a-l--V-G-O--"
 	for i := 0; i < 4; i++ {
-		rand.Reader.Read(buf)
+		_, _ = rand.Reader.Read(buf)
 		result += fmt.Sprintf("%013s", strconv.FormatUint(binary.BigEndian.Uint64(buf), 36))
 	}
 	return result

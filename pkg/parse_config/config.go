@@ -11,14 +11,14 @@ import (
 
 var logger = log.New()
 
-type CtxKey string
-
 const DefaultConfigFile = "/etc/vvgo/vvgo.json"
 
-const CtxKeyVVGOConfigFile CtxKey = "vvgo_config_file"
+type CtxKey string
+
 const CtxKeyVVGOConfig CtxKey = "vvgo_config"
 
 func (x CtxKey) Module(module string) CtxKey { return x + CtxKey("_"+module) }
+
 
 func SetModuleConfig(ctx context.Context, module string, src interface{}) context.Context {
 	return context.WithValue(ctx, CtxKeyVVGOConfig.Module(module), src)
@@ -31,12 +31,12 @@ func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
 		return
 	}
 
-	configJSON := make(map[string]json.RawMessage)
-	configFile, ok := ctx.Value(CtxKeyVVGOConfigFile).(string)
-	if configFile == "" || ok == false {
+	configFile := os.Getenv("VVGO_CONFIGURATION_FILE")
+	if configFile == "" {
 		configFile = DefaultConfigFile
 	}
 
+	configJSON := make(map[string]json.RawMessage)
 	file, err := os.Open(configFile)
 	if err != nil {
 		logger.SomeMethodFailure(ctx, "os.Open", err)
@@ -45,8 +45,11 @@ func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
 		if err := json.NewDecoder(file).Decode(&configJSON); err != nil {
 			logger.JsonDecodeFailure(ctx, err)
 		} else if moduleJSON, ok := configJSON[module]; ok {
+			print(string(moduleJSON))
 			if err := json.Unmarshal(moduleJSON, dest); err != nil {
 				logger.JsonDecodeFailure(ctx, err)
+			} else {
+				return
 			}
 		}
 	}

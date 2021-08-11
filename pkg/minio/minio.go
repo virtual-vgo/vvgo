@@ -3,35 +3,37 @@ package minio
 import (
 	"context"
 	"fmt"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/minio/minio-go/v6"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"math/rand"
 	"strconv"
 	"time"
 )
 
-var logger = log.New()
-
 type Config struct {
-	Endpoint  string `default:"localhost:9000"`
-	Region    string `default:"sfo2"`
-	AccessKey string `default:"minioadmin"`
-	SecretKey string `default:"minioadmin"`
-	UseSSL    bool   `default:"false"`
+	Endpoint  string `json:"endpoint" default:"localhost:9000"`
+	Region    string `json:"region" default:"sfo2"`
+	AccessKey string `json:"access_key" default:"minioadmin"`
+	SecretKey string `json:"secret_key" default:"minioadmin"`
+	UseSSL    bool   `json:"use_ssl" default:"false"`
 }
+
+const ConfigModule = "minio"
 
 type Client struct{ minio.Client }
 
 func NewClient(ctx context.Context) (*Client, error) {
 	var config Config
-	envconfig.MustProcess("MINIO", &config)
+	parse_config.ReadConfigModule(ctx, ConfigModule, &config)
+	parse_config.SetDefaults(&config)
 	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
 	if err != nil {
 		return nil, fmt.Errorf("minio.New() failed: %w", err)
 	}
 	return &Client{*minioClient}, nil
 }
+
+// Testing only!
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
