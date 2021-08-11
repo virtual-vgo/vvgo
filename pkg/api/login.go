@@ -33,7 +33,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Name:     CookieLoginRedirect,
 				Value:    value,
 				Expires:  time.Now().Add(3600 * time.Second),
-				Domain:   login.NewStore(ctx).Config().CookieDomain,
+				Domain:   login.CookieDomain(ctx),
 				SameSite: http.SameSiteStrictMode,
 				HttpOnly: true,
 			})
@@ -72,8 +72,9 @@ func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirect, http.StatusFound)
 }
 
-func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, identity *login.Identity) {
-	cookie, err := login.NewStore(ctx).NewCookie(ctx, identity, LoginCookieDuration)
+func loginSuccess(w http.ResponseWriter, r *http.Request, identity *login.Identity) {
+	ctx := r.Context()
+	cookie, err := login.NewCookie(ctx, identity, LoginCookieDuration)
 	if err != nil {
 		logger.WithError(err).Error("store.NewCookie() failed")
 		internalServerError(w)
@@ -102,10 +103,10 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	passwords := make(map[string]string)
-	ctx = parse_config.ReadModuleConfig(ctx, "password_login", &passwords)
+	parse_config.ReadConfigModule(ctx, "password_login", &passwords)
 
 	var identity login.Identity
-	if err := login.NewStore(ctx).ReadSessionFromRequest(ctx, r, &identity); err == nil {
+	if err := login.ReadSessionFromRequest(ctx, r, &identity); err == nil {
 		http.Redirect(w, r, "/parts", http.StatusFound)
 		return
 	}
@@ -121,7 +122,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	loginSuccess(w, r, ctx, &login.Identity{
+	loginSuccess(w, r.WithContext(ctx), &login.Identity{
 		Kind:  login.KindPassword,
 		Roles: []login.Role{login.RoleVVGOMember},
 	})
@@ -199,7 +200,7 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginSuccess(w, r, ctx, &login.Identity{
+	loginSuccess(w, r, &login.Identity{
 		Kind:      login.KindDiscord,
 		Roles:     loginRoles,
 		DiscordID: discordUser.ID.String(),
@@ -262,7 +263,7 @@ type LogoutHandler struct{}
 func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if err := login.NewStore(ctx).DeleteSessionFromRequest(ctx, r); err != nil {
+	if err := login.DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.WithError(err).Error("x.Sessions.DeleteSessionFromRequest failed")
 		internalServerError(w)
 	} else {

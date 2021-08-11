@@ -29,9 +29,6 @@ const VVGOProductionTeamRoleID = "746434659252174971"
 const VVGOExecutiveDirectorRoleID = "690626333062987866"
 const VVGOProductionDirectorRoleID = "805504313072943155"
 
-// Client that makes discord requests.
-type Client struct{}
-
 // Config for discord requests.
 type Config struct {
 	// Api endpoint to query. Defaults to https://discord.com/api/v8.
@@ -51,9 +48,17 @@ type Config struct {
 	OAuthRedirectURI string `json:"oauth_redirect_uri"`
 }
 
-func LoginURL(ctx context.Context, state string) string {
+const ConfigModule = "discord"
+
+func readConfig(ctx context.Context) Config {
 	var config Config
-	ctx = parse_config.ReadModuleConfig(ctx, "discord", &config)
+	parse_config.ReadConfigModule(ctx, ConfigModule, &config)
+	parse_config.SetDefaults(&config)
+	return config
+}
+
+func LoginURL(ctx context.Context, state string) string {
+	config := readConfig(ctx)
 
 	query := make(url.Values)
 	query.Set("client_id", OAuthClientID)
@@ -64,7 +69,7 @@ func LoginURL(ctx context.Context, state string) string {
 	return "https://discord.com/api/oauth2/authorize?" + query.Encode()
 }
 
-// Query oauth token from discord.
+// QueryOAuth Query oauth token from discord.
 // We use the authorization code grant.
 func QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
 	req, err := newOAuthRequest(ctx, code)
@@ -79,18 +84,9 @@ func QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
 	return &oauthToken, nil
 }
 
-const ConfigModule = "discord"
-
-func readConfig(ctx context.Context) Config {
-	var config Config
-	ctx = parse_config.ReadModuleConfig(ctx, ConfigModule, &config)
-	return config
-}
-
 // build the oauth request
 func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
-	var config Config
-	ctx = parse_config.ReadModuleConfig(ctx, ConfigModule, &config)
+	config := readConfig(ctx)
 
 	if code == "" {
 		return nil, ErrInvalidOAuthCode
@@ -113,7 +109,7 @@ func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
 	return req, nil
 }
 
-// Query discord for the token's identity.
+// QueryIdentity Query discord for the token's identity.
 // This requires an oauth token with identity scope.
 // https://discordapp.com/developers/docs/resources/user#get-current-user
 func QueryIdentity(ctx context.Context, oauthToken *OAuthToken) (*User, error) {
@@ -140,7 +136,7 @@ func newTokenRequest(ctx context.Context, oauthToken *OAuthToken, path string) (
 	return req, err
 }
 
-// Query discord for the guild member object of the guild id and user id.
+// QueryGuildMember Query discord for the guild member object of the guild id and user id.
 // Here we use the the server's own auth token.
 // https://discordapp.com/developers/docs/resources/guild#get-guild-member
 func QueryGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, error) {
@@ -243,8 +239,7 @@ func doDiscordBotRequestWithJsonParams(ctx context.Context, path, method string,
 
 // returns a request using a bot token for authentication
 func newBotRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
-	var config Config
-	ctx = parse_config.ReadModuleConfig(ctx, "discord", &config)
+	config := readConfig(ctx)
 	req, err := newRequest(ctx, method, path, body)
 	if err != nil {
 		return nil, err
@@ -254,8 +249,7 @@ func newBotRequest(ctx context.Context, method, path string, body io.Reader) (*h
 }
 
 func newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
-	var config Config
-	ctx = parse_config.ReadModuleConfig(ctx, "discord", &config)
+	config := readConfig(ctx)
 
 	req, err := http.NewRequestWithContext(ctx, method, config.Endpoint+path, body)
 	if err != nil {

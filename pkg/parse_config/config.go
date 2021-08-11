@@ -24,20 +24,19 @@ func SetModuleConfig(ctx context.Context, module string, src interface{}) contex
 	return context.WithValue(ctx, CtxKeyVVGOConfig.Module(module), src)
 }
 
-func ReadModuleConfig(ctx context.Context, module string, dest interface{}) context.Context {
-	// Check if we already have this unmarshalled
+func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
 	moduleData := ctx.Value(CtxKeyVVGOConfig.Module(module))
 	if moduleData != nil {
 		reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(moduleData))
-		return ctx
+		return
 	}
 
-	// Read from file
-	var configJSON = make(map[string]json.RawMessage)
+	configJSON := make(map[string]json.RawMessage)
 	configFile, ok := ctx.Value(CtxKeyVVGOConfigFile).(string)
-	if configFile == "" || !ok {
+	if configFile == "" || ok == false {
 		configFile = DefaultConfigFile
 	}
+
 	file, err := os.Open(configFile)
 	if err != nil {
 		logger.SomeMethodFailure(ctx, "os.Open", err)
@@ -48,22 +47,11 @@ func ReadModuleConfig(ctx context.Context, module string, dest interface{}) cont
 		} else if moduleJSON, ok := configJSON[module]; ok {
 			if err := json.Unmarshal(moduleJSON, dest); err != nil {
 				logger.JsonDecodeFailure(ctx, err)
-			} else {
-				return context.WithValue(ctx, CtxKeyVVGOConfig.Module(module), reflect.ValueOf(dest).Elem())
 			}
 		}
 	}
 
-	if moduleJSON, ok := configJSON[module]; ok {
-		if err := json.Unmarshal(moduleJSON, dest); err != nil {
-			logger.JsonDecodeFailure(ctx, err)
-		} else {
-			return context.WithValue(ctx, CtxKeyVVGOConfig.Module(module), reflect.ValueOf(dest).Elem())
-		}
-	}
-
-	logger.WithField("module", module).Errorf("module not found")
-	return ctx
+	logger.WithField("config_module", module).Errorf("config module `%s` not found", module)
 }
 
 func SetDefaults(dest interface{}) {

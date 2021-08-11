@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// The kind of login
+// Kind The kind of login.
 // This can be used to access additional metadata fields we might add for a particular login.
 type Kind string
 
@@ -18,7 +18,7 @@ const (
 	KindDiscord  Kind = "discord"
 )
 
-// A user role.
+// Role A user role.
 // Users can have multiple roles.
 // These provide different levels of access to the api.
 type Role string
@@ -39,9 +39,9 @@ var anonymous = Identity{
 
 func Anonymous() Identity { return anonymous }
 
-// A user identity.
+// Identity A user identity.
 // This _absolutely_ should not contain any personally identifiable information.
-// Numeric user id's are fine, but no emails, user names, addresses, etc.
+// Numeric user ids are fine, but no emails, usernames, addresses, etc.
 type Identity struct {
 	Kind      Kind   `json:"kind"`
 	Roles     []Role `json:"roles"`

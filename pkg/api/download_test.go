@@ -25,7 +25,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 
 	downloadHandler := DownloadHandler
 	config := DownloadConfig{DistroBucket: bucketName}
-	ctx = parse_config.SetModuleConfig(ctx, "download", &config)
+	ctx = parse_config.SetModuleConfig(ctx, "download", config)
 
 	for _, tt := range []struct {
 		name    string
@@ -45,7 +45,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			downloadHandler.ServeHTTP(recorder, tt.request)
+			downloadHandler.ServeHTTP(recorder, tt.request.WithContext(ctx))
 			gotResp := recorder.Result()
 			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)

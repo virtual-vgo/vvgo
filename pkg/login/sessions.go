@@ -20,11 +20,7 @@ var ErrSessionNotFound = errors.New("session not found")
 
 var logger = log.New()
 
-// Store provides access to the map of session id's to access roles.
-// It can read and validate session cookies from incoming requests,
-type Store struct {
-	config Config
-}
+const ConfigModule = "login"
 
 type Config struct {
 	// CookieName is the name of the cookies created by the store.
@@ -32,52 +28,55 @@ type Config struct {
 
 	// CookieDomain is the domain where the cookies can be used.
 	// This should be the domain that users visit in their browser.
-	CookieDomain string `redis:"cookie_domain" default:"localhost"`
+	CookieDomain string `redis:"cookie_domain" default:""`
 
 	// CookiePath is the url path where the cookies can be used.
 	CookiePath string `redis:"cookie_path" default:"/"`
 }
 
-func newConfig(ctx context.Context) Config {
-	var dest Config
-	parse_config.ReadModuleConfig(ctx, "login", &dest)
-	return dest
+func readConfig(ctx context.Context) Config {
+	var config Config
+	parse_config.ReadConfigModule(ctx, ConfigModule, &config)
+	parse_config.SetDefaults(&config)
+	return config
 }
 
-// NewStore returns a new sessions client.
-func NewStore(ctx context.Context) *Store { return &Store{config: newConfig(ctx)} }
-
-func (x *Store) Config() Config { return x.config }
+func CookieDomain(ctx context.Context) string {
+	return readConfig(ctx).CookieDomain
+}
 
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
-func (x *Store) ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
-	cookie, err := r.Cookie(x.config.CookieName)
+func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
+	config := readConfig(ctx)
+	cookie, err := r.Cookie(config.CookieName)
 	if err != nil {
 		return err
 	}
-	return x.GetSession(ctx, cookie.Value, dest)
+	return GetSession(ctx, cookie.Value, dest)
 }
 
-func (x *Store) DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
-	cookie, err := r.Cookie(x.config.CookieName)
+func DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
+	config := readConfig(ctx)
+	cookie, err := r.Cookie(config.CookieName)
 	if err != nil {
 		return nil
 	}
-	return x.DeleteSession(ctx, cookie.Value)
+	return DeleteSession(ctx, cookie.Value)
 }
 
 // NewCookie returns cookie with a crypto-rand session id.
-func (x *Store) NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http.Cookie, error) {
-	session, err := x.NewSession(ctx, src, expires)
+func NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http.Cookie, error) {
+	config := readConfig(ctx)
+	session, err := NewSession(ctx, src, expires)
 	if err != nil {
 		return nil, err
 	}
 	return &http.Cookie{
-		Name:     x.config.CookieName,
+		Name:     config.CookieName,
 		Value:    session,
 		Expires:  time.Now().Add(expires),
-		Domain:   x.config.CookieDomain,
-		Path:     x.config.CookiePath,
+		Domain:   config.CookieDomain,
+		Path:     config.CookiePath,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
 	}, nil
@@ -94,7 +93,7 @@ func NewCookieValue() string {
 }
 
 // NewSession returns a new session with a crypto-rand session id.
-func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Duration) (string, error) {
+func NewSession(ctx context.Context, src *Identity, expires time.Duration) (string, error) {
 	value := NewCookieValue()
 	key := "sessions:" + value
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
@@ -106,7 +105,7 @@ func (x *Store) NewSession(ctx context.Context, src *Identity, expires time.Dura
 }
 
 // GetSession reads the login identity for the given session ID.
-func (x *Store) GetSession(ctx context.Context, id string, dest *Identity) error {
+func GetSession(ctx context.Context, id string, dest *Identity) error {
 	var gotBytes []byte
 	err := redis.Do(ctx, redis.Cmd(&gotBytes, "GET", "sessions:"+id))
 	switch {
@@ -120,6 +119,6 @@ func (x *Store) GetSession(ctx context.Context, id string, dest *Identity) error
 }
 
 // DeleteSession deletes the sessionID key from redis.
-func (x *Store) DeleteSession(ctx context.Context, id string) error {
+func DeleteSession(ctx context.Context, id string) error {
 	return redis.Do(ctx, redis.Cmd(nil, "DEL", "sessions:"+id))
 }

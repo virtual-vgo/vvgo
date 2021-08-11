@@ -25,7 +25,7 @@ func WebsiteDataSpreadsheetID(ctx context.Context) string {
 	var spreadsheetID struct {
 		WebsiteDataSpreadsheetID string `json:"website_data_spreadsheet_id"`
 	}
-	_ = parse_config.ReadModuleConfig(ctx, "sheets", &spreadsheetID)
+	parse_config.ReadConfigModule(ctx, "sheets", &spreadsheetID)
 	return spreadsheetID.WebsiteDataSpreadsheetID
 }
 
