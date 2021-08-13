@@ -46,24 +46,24 @@ func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
 	}
 }
 
-func readFromFile(ctx context.Context, fileName string, module string, dest interface{}) bool {
+func readFromFile(ctx context.Context, fileName string, module string, dest interface{}) {
 	logger.Infof("reading config from %s", fileName)
 
 	file, err := os.Open(FileName)
 	if err != nil {
 		logger.MethodFailure(ctx, "os.Open", err)
-		return false
+		return
 	}
 	defer file.Close()
-	return readFrom(ctx, file, module, dest)
+	readFrom(ctx, file, module, dest)
 }
 
-func readFromEndpoint(ctx context.Context, endpoint string, session string, module string, dest interface{}) bool {
+func readFromEndpoint(ctx context.Context, endpoint string, session string, module string, dest interface{}) {
 	logger.Infof("fetching remote config from %s", endpoint)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		logger.MethodFailure(ctx, "http.NewRequest", err)
-		return false
+		return
 	}
 
 	req.Header.Add("Authorization", "Bearer "+session)
@@ -72,36 +72,34 @@ func readFromEndpoint(ctx context.Context, endpoint string, session string, modu
 
 	if err != nil {
 		logger.MethodFailure(ctx, "http.Do", err)
-		return false
+		return
 	}
 
 	var buf bytes.Buffer
 	if _, err := buf.ReadFrom(resp.Body); err != nil {
 		logger.MethodFailure(ctx, "body.Read", err)
-		return false
+		return
 	}
-
-	return readFrom(ctx, &buf, module, dest)
+	readFrom(ctx, &buf, module, dest)
 }
 
-func readFrom(ctx context.Context, reader io.Reader, module string, dest interface{}) bool {
+func readFrom(ctx context.Context, reader io.Reader, module string, dest interface{}) {
 	configJSON := make(map[string]json.RawMessage)
 	if err := json.NewDecoder(reader).Decode(&configJSON); err != nil {
 		logger.JsonDecodeFailure(ctx, err)
-		return false
+		return
 	}
 
 	moduleJSON, ok := configJSON[module]
 	if !ok {
 		logger.WithField("config_module", module).Errorf("config module `%s` not found", module)
-		return false
+		return
 	}
 
 	if err := json.Unmarshal(moduleJSON, dest); err != nil {
 		logger.JsonDecodeFailure(ctx, err)
-		return false
+		return
 	}
-	return true
 }
 
 func SetDefaults(dest interface{}) {
