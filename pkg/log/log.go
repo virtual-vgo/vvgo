@@ -42,7 +42,7 @@ func (x Logger) JsonDecodeFailure(ctx context.Context, err error) {
 	x.WithContext(ctx).SomeMethodFailure(ctx, "json.Decode", err)
 }
 
-func (x Logger) SomeMethodFailure(ctx context.Context, method string, err error) {
+func (x Logger) MethodFailure(ctx context.Context, method string, err error) {
 	x.WithContext(ctx).SomeMethodFailure(ctx, method, err)
 }
 
