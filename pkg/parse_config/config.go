@@ -30,15 +30,10 @@ func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
 		return
 	}
 
-	configFile := os.Getenv("VVGO_CONFIGURATION_FILE")
-	if configFile == "" {
-		configFile = DefaultConfigFile
-	}
-
 	configJSON := make(map[string]json.RawMessage)
-	file, err := os.Open(configFile)
+	file, err := os.Open(ConfigFileName())
 	if err != nil {
-		logger.SomeMethodFailure(ctx, "os.Open", err)
+		logger.MethodFailure(ctx, "os.Open", err)
 	} else {
 		defer file.Close()
 		if err := json.NewDecoder(file).Decode(&configJSON); err != nil {
@@ -53,6 +48,14 @@ func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
 	}
 
 	logger.WithField("config_module", module).Errorf("config module `%s` not found", module)
+}
+
+func ConfigFileName() string {
+	configFile := os.Getenv("VVGO_CONFIGURATION_FILE")
+	if configFile == "" {
+		configFile = DefaultConfigFile
+	}
+	return configFile
 }
 
 func SetDefaults(dest interface{}) {
