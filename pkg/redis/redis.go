@@ -5,7 +5,11 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"strings"
 )
+
+var logger = log.New()
+var client *Client
 
 type Client struct {
 	config Config
@@ -17,8 +21,6 @@ type Config struct {
 	Address  string `default:"localhost:6379"`
 	PoolSize int    `default:"10"`
 }
-
-var client *Client
 
 func Initialize(config Config) {
 	client = NewClientMust(config)
@@ -51,8 +53,6 @@ func NewClient(config Config) (*Client, error) {
 	return &Client{pool: radixPool, config: config}, nil
 }
 
-var logger = log.New()
-
 func NewClientMust(config Config) *Client {
 	client, err := NewClient(config)
 	if err != nil {
@@ -76,5 +76,6 @@ func Cmd(rcv interface{}, cmd string, args ...string) Action {
 }
 
 func (x *Client) Do(_ context.Context, a Action) error {
+	logger.Infof("redis query: %s %s", a.cmd, strings.Join(a.args, " "))
 	return x.pool.Do(a.radixAction)
 }
