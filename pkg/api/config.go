@@ -9,6 +9,7 @@ import (
 const ConfigFile = "/etc/vvgo/vvgo.json"
 
 var ConfigApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	file, err := os.Open(ConfigFile)
 	if err != nil {
 		logger.Errorf("os.Open() failed: %v", err)
