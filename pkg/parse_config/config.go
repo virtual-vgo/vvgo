@@ -2,97 +2,58 @@ package parse_config
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
-	"math/rand"
+	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/log"
+	"os"
 	"reflect"
 	"strconv"
-	"time"
 )
 
-var Namespace = "config"
+var logger = log.New()
 
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+const DefaultConfigFile = "/etc/vvgo/vvgo.json"
 
-func UseTestNamespace() {
-	Namespace = "test:config:" + strconv.Itoa(seededRand.Int())
+type CtxKey string
+
+const CtxKeyVVGOConfig CtxKey = "vvgo_config"
+
+func (x CtxKey) Module(module string) CtxKey { return x + CtxKey("_"+module) }
+
+func SetModuleConfig(ctx context.Context, module string, src interface{}) context.Context {
+	return context.WithValue(ctx, CtxKeyVVGOConfig.Module(module), src)
 }
 
-func WriteRedisHashValue(ctx context.Context, redisKey, hashKey, val string) error {
-	return redis.Do(ctx, redis.Cmd(nil, "HSET", Namespace+":"+redisKey, hashKey, val))
-}
-
-func WriteToRedisHash(ctx context.Context, redisKey string, src interface{}) error {
-	var hashVals map[string]string
-
-	switch val := src.(type) {
-	case *map[string]string:
-		hashVals = *val
-	case map[string]string:
-		hashVals = val
-	default:
-		hashVals = make(map[string]string)
-		reflectType := reflect.TypeOf(src).Elem()
-		for i := 0; i < reflectType.NumField(); i++ {
-			field := reflectType.Field(i)
-			hashKey := field.Tag.Get("redis")
-			if hashKey == "" {
-				continue
-			}
-			hashVals[hashKey] = getField(src, field.Type.Kind(), i)
-		}
+func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
+	moduleData := ctx.Value(CtxKeyVVGOConfig.Module(module))
+	if moduleData != nil {
+		reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(moduleData))
+		return
 	}
-	args := make([]string, 1, 1+2*len(hashVals))
-	args[0] = Namespace + ":" + redisKey
-	for k, v := range hashVals {
-		args = append(args, k, v)
+
+	configFile := os.Getenv("VVGO_CONFIGURATION_FILE")
+	if configFile == "" {
+		configFile = DefaultConfigFile
 	}
-	return redis.Do(ctx, redis.Cmd(nil, "HMSET", args...))
-}
 
-func getField(src interface{}, kind reflect.Kind, i int) string {
-	switch kind {
-	case reflect.String:
-		return reflect.ValueOf(src).Elem().Field(i).String()
-	case reflect.Bool:
-		val := reflect.ValueOf(src).Elem().Field(i).Bool()
-		return strconv.FormatBool(val)
-	case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-		val := reflect.ValueOf(src).Elem().Field(i).Int()
-		return strconv.FormatInt(val, 10)
-	default:
-		return ""
-	}
-}
-
-func ReadRedisHashValue(ctx context.Context, redisKey string, hashKey string, dest *string) error {
-	return redis.Do(ctx, redis.Cmd(dest, "HGET", Namespace+":"+redisKey, hashKey))
-}
-
-func ReadFromRedisHash(ctx context.Context, redisKey string, dest interface{}) error {
-	redisVals := make(map[string]string)
-	err := redis.Do(ctx, redis.Cmd(&redisVals, "HGETALL", Namespace+":"+redisKey))
+	configJSON := make(map[string]json.RawMessage)
+	file, err := os.Open(configFile)
 	if err != nil {
-		return err
-	}
-
-	switch dest.(type) {
-	case *map[string]string:
-		*dest.(*map[string]string) = redisVals
-	default:
-		reflectType := reflect.TypeOf(dest).Elem()
-		for i := 0; i < reflectType.NumField(); i++ {
-			field := reflectType.Field(i)
-			redisKey := field.Tag.Get("redis")
-			if redisKey == "" {
-				continue
+		logger.SomeMethodFailure(ctx, "os.Open", err)
+	} else {
+		defer file.Close()
+		if err := json.NewDecoder(file).Decode(&configJSON); err != nil {
+			logger.JsonDecodeFailure(ctx, err)
+		} else if moduleJSON, ok := configJSON[module]; ok {
+			print(string(moduleJSON))
+			if err := json.Unmarshal(moduleJSON, dest); err != nil {
+				logger.JsonDecodeFailure(ctx, err)
+			} else {
+				return
 			}
-			if _, ok := redisVals[redisKey]; !ok {
-				continue
-			}
-			setField(dest, field.Type.Kind(), i, redisVals[redisKey])
 		}
 	}
-	return nil
+
+	logger.WithField("config_module", module).Errorf("config module `%s` not found", module)
 }
 
 func SetDefaults(dest interface{}) {

@@ -14,6 +14,7 @@ import (
 
 func TestServer(t *testing.T) {
 	ctx := context.Background()
+	_ = ctx
 	server := NewServer("0.0.0.0:8080")
 	ts := httptest.NewServer(http.HandlerFunc(server.Server.Handler.ServeHTTP))
 	defer ts.Close()
@@ -22,7 +23,7 @@ func TestServer(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err, "http.NewRequest")
 		if len(roles) != 0 {
-			cookie, err := login.NewStore(ctx).NewCookie(context.Background(), &login.Identity{
+			cookie, err := login.NewCookie(context.Background(), &login.Identity{
 				Roles: roles,
 			}, 3600*time.Second)
 			require.NoError(t, err, "sessions.NewCookie")

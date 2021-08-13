@@ -1,16 +1,9 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
-
-type CreditsMakerConfig struct {
-	DefaultSpreadsheetID string `redis:"default_spreadsheet_id"`
-	DefaultReadRange     string `redis:"default_read_range"`
-	DefaultProject       string `redis:"default_project"`
-}
 
 var CreditsMaker = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -42,18 +35,5 @@ var CreditsMaker = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	var config CreditsMakerConfig
-	_ = parse_config.ReadFromRedisHash(ctx, "credits_maker", &config)
-
-	// set defaults
-	if data.SpreadsheetID == "" {
-		data.SpreadsheetID = "1a-2u726Hg-Wp5GMWfLnYwSi2DvTMym85gQqpRviafJk"
-	}
-	if data.ReadRange == "" {
-		data.ReadRange = "Project 11: Prologue (Book One)!A3:I270"
-	}
-	if data.Project == "" {
-		data.Project = "11-prologue-book-one"
-	}
-	ParseAndExecute(ctx, w, r, &data, "credits-maker.gohtml")
+	ParseAndExecute(ctx, w, r, nil, "credits-maker.gohtml")
 })

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-var logger = log.Logger()
+var logger = log.New()
 
 type Server struct {
 	*http.Server

@@ -23,7 +23,7 @@ func main() {
 	}); err != nil {
 		panic(err)
 	}
-	log.Logger().WithField("path", version.VersionFile).Info("wrote version.json")
+	log.New().WithField("path", version.VersionFile).Info("wrote version.json")
 	os.Exit(0)
 }
 
@@ -38,7 +38,7 @@ func hostname() string {
 func gitSha() string {
 	output, err := exec.Command("git", "rev-parse", "HEAD").Output()
 	if err != nil {
-		log.Logger().Fatalf("command `git rev-parse HEAD` failed!: %v\n", err)
+		log.New().Fatalf("command `git rev-parse HEAD` failed!: %v\n", err)
 	}
 	return strings.TrimSpace(string(output))
 }
@@ -46,7 +46,7 @@ func gitSha() string {
 func gitBranch() string {
 	output, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 	if err != nil {
-		log.Logger().Fatalf("command `git rev-parse --abbrev-ref HEAD` failed!%v\n", err)
+		log.New().Fatalf("command `git rev-parse --abbrev-ref HEAD` failed!%v\n", err)
 	}
 	return strings.TrimSpace(string(output))
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,12 +14,10 @@ import (
 
 func TestClient_QueryOAuth(t *testing.T) {
 	ctx := context.Background()
-	client := Client{
-		Config: Config{
-			BotAuthenticationToken: "test-bot-auth-token",
-			OAuthClientSecret:      "test-oauth-client-secret",
-			OAuthRedirectURI:       "https://localhost/test-oauth-redirect-uri",
-		},
+	config := Config{
+		BotAuthenticationToken: "test-bot-auth-token",
+		OAuthClientSecret:      "test-oauth-client-secret",
+		OAuthRedirectURI:       "https://localhost/test-oauth-redirect-uri",
 	}
 
 	var gotRequest *http.Request
@@ -42,8 +41,9 @@ func TestClient_QueryOAuth(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	client.Config.Endpoint = ts.URL
-	gotToken, gotError := client.QueryOAuth(ctx, "test-code")
+	config.Endpoint = ts.URL
+	ctx = parse_config.SetModuleConfig(ctx, "discord", config)
+	gotToken, gotError := QueryOAuth(ctx, "test-code")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodPost, gotRequest.Method)
 	assert.Equal(t, "/oauth2/token", gotRequest.URL.String())
@@ -70,10 +70,8 @@ func TestClient_QueryOAuth(t *testing.T) {
 
 func TestClient_QueryIdentity(t *testing.T) {
 	ctx := context.Background()
-	client := Client{
-		Config: Config{
-			BotAuthenticationToken: "test-bot-auth-token",
-		},
+	config := Config{
+		BotAuthenticationToken: "test-bot-auth-token",
 	}
 	//goland:noinspection SpellCheckingInspection
 	token := &OAuthToken{
@@ -101,8 +99,9 @@ func TestClient_QueryIdentity(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	client.Config.Endpoint = ts.URL
-	gotUser, gotError := client.QueryIdentity(ctx, token)
+	config.Endpoint = ts.URL
+	ctx = parse_config.SetModuleConfig(context.Background(), "discord", config)
+	gotUser, gotError := QueryIdentity(ctx, token)
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
 	assert.Equal(t, "/users/@me", gotRequest.URL.String())
@@ -113,10 +112,8 @@ func TestClient_QueryIdentity(t *testing.T) {
 
 func TestClient_QueryGuildMember(t *testing.T) {
 	ctx := context.Background()
-	client := Client{
-		Config: Config{
-			BotAuthenticationToken: "test-bot-auth-token",
-		},
+	config := Config{
+		BotAuthenticationToken: "test-bot-auth-token",
 	}
 
 	var gotRequest *http.Request
@@ -133,8 +130,9 @@ func TestClient_QueryGuildMember(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	client.Config.Endpoint = ts.URL
-	gotMember, gotError := client.QueryGuildMember(ctx, "test-user-id")
+	config.Endpoint = ts.URL
+	ctx = parse_config.SetModuleConfig(context.Background(), "discord", config)
+	gotMember, gotError := QueryGuildMember(ctx, "test-user-id")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
 	assert.Equal(t, "/guilds/690626216637497425/members/test-user-id", gotRequest.URL.String())

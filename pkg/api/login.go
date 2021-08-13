@@ -33,7 +33,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Name:     CookieLoginRedirect,
 				Value:    value,
 				Expires:  time.Now().Add(3600 * time.Second),
-				Domain:   login.NewStore(ctx).Config().CookieDomain,
+				Domain:   login.CookieDomain(ctx),
 				SameSite: http.SameSiteStrictMode,
 				HttpOnly: true,
 			})
@@ -72,8 +72,9 @@ func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirect, http.StatusFound)
 }
 
-func loginSuccess(w http.ResponseWriter, r *http.Request, ctx context.Context, identity *login.Identity) {
-	cookie, err := login.NewStore(ctx).NewCookie(ctx, identity, LoginCookieDuration)
+func loginSuccess(w http.ResponseWriter, r *http.Request, identity *login.Identity) {
+	ctx := r.Context()
+	cookie, err := login.NewCookie(ctx, identity, LoginCookieDuration)
 	if err != nil {
 		logger.WithError(err).Error("store.NewCookie() failed")
 		internalServerError(w)
@@ -102,14 +103,10 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	passwords := make(map[string]string)
-	if err := parse_config.ReadFromRedisHash(ctx, "password_login", &passwords); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-		internalServerError(w)
-		return
-	}
+	parse_config.ReadConfigModule(ctx, "password_login", &passwords)
 
 	var identity login.Identity
-	if err := login.NewStore(ctx).ReadSessionFromRequest(ctx, r, &identity); err == nil {
+	if err := login.ReadSessionFromRequest(ctx, r, &identity); err == nil {
 		http.Redirect(w, r, "/parts", http.StatusFound)
 		return
 	}
@@ -125,7 +122,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	loginSuccess(w, r, ctx, &login.Identity{
+	loginSuccess(w, r.WithContext(ctx), &login.Identity{
 		Kind:  login.KindPassword,
 		Roles: []login.Role{login.RoleVVGOMember},
 	})
@@ -148,11 +145,9 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			internalServerError(w)
 			return
 		}
-		http.Redirect(w, r, discord.NewClient(ctx).LoginURL(state), http.StatusFound)
+		http.Redirect(w, r, discord.LoginURL(ctx, state), http.StatusFound)
 		return
 	}
-
-	discordClient := discord.NewClient(ctx)
 
 	handleError := func(err error) bool {
 		if err != nil {
@@ -169,19 +164,19 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// get an oauth token from discord
 	code := r.FormValue("code")
-	oauthToken, err := discordClient.QueryOAuth(ctx, code)
+	oauthToken, err := discord.QueryOAuth(ctx, code)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// get the user id
-	discordUser, err := discordClient.QueryIdentity(ctx, oauthToken)
+	discordUser, err := discord.QueryIdentity(ctx, oauthToken)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// check if this user is in our guild
-	guildMember, err := discordClient.QueryGuildMember(ctx, discordUser.ID)
+	guildMember, err := discord.QueryGuildMember(ctx, discordUser.ID)
 	if ok := handleError(err); !ok {
 		return
 	}
@@ -205,7 +200,7 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginSuccess(w, r, ctx, &login.Identity{
+	loginSuccess(w, r, &login.Identity{
 		Kind:      login.KindDiscord,
 		Roles:     loginRoles,
 		DiscordID: discordUser.ID.String(),
@@ -268,7 +263,7 @@ type LogoutHandler struct{}
 func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if err := login.NewStore(ctx).DeleteSessionFromRequest(ctx, r); err != nil {
+	if err := login.DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.WithError(err).Error("x.Sessions.DeleteSessionFromRequest failed")
 		internalServerError(w)
 	} else {

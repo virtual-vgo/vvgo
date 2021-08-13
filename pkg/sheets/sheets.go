@@ -15,16 +15,18 @@ import (
 
 const CacheTTL = "5"
 
-var logger = log.Logger()
+var logger = log.New()
 
 func NoOpSheets(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "no_op_sheets", true)
 }
 
 func WebsiteDataSpreadsheetID(ctx context.Context) string {
-	var spreadsheetID string
-	_ = parse_config.ReadRedisHashValue(ctx, "sheets", "website_data_spreadsheet_id", &spreadsheetID)
-	return spreadsheetID
+	var spreadsheetID struct {
+		WebsiteDataSpreadsheetID string `json:"website_data_spreadsheet_id"`
+	}
+	parse_config.ReadConfigModule(ctx, "sheets", &spreadsheetID)
+	return spreadsheetID.WebsiteDataSpreadsheetID
 }
 
 func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {

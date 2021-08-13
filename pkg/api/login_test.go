@@ -35,7 +35,7 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cookie, err := login.NewStore(ctx).NewCookie(ctx, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}}, 600*time.Second)
+		cookie, err := login.NewCookie(ctx, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}}, 600*time.Second)
 		require.NoError(t, err, "sessions.NewCookie()")
 
 		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
@@ -52,12 +52,12 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	loginHandler := PasswordLoginHandler{}
 
-	require.NoError(t,
-		parse_config.WriteToRedisHash(ctx, "password_login", map[string]string{"vvgo-user": "vvgo-pass"}),
-		"redis.Do() failed")
+	ctx = parse_config.SetModuleConfig(ctx, "password_login", map[string]string{"vvgo-user": "vvgo-pass"})
 
 	t.Run("post/failure", func(t *testing.T) {
-		ts := httptest.NewServer(&loginHandler)
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			loginHandler.ServeHTTP(w, r.WithContext(ctx))
+		}))
 		defer ts.Close()
 
 		urlValues := make(url.Values)
@@ -72,8 +72,9 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		ctx := context.Background()
-		ts := httptest.NewServer(&loginHandler)
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			loginHandler.ServeHTTP(w, r.WithContext(ctx))
+		}))
 		defer ts.Close()
 
 		client := noFollow(&http.Client{})
@@ -94,7 +95,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 
 		// check that a session exists for the cookie
 		var dest login.Identity
-		assert.NoError(t, login.NewStore(ctx).GetSession(ctx, cookies[0].Value, &dest))
+		assert.NoError(t, login.GetSession(ctx, cookies[0].Value, &dest))
 		assert.Equal(t, login.KindPassword, dest.Kind, "identity.Kind")
 		assert.Equal(t, []login.Role{login.RoleVVGOMember}, dest.Roles, "identity.Roles")
 	})
@@ -108,7 +109,7 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	defer ts.Close()
 
 	// create a session and cookie
-	cookie, err := login.NewStore(ctx).NewCookie(ctx, &login.Identity{
+	cookie, err := login.NewCookie(ctx, &login.Identity{
 		Kind:  login.KindPassword,
 		Roles: []login.Role{"Cheese"},
 	}, 3600*time.Second)
@@ -125,7 +126,7 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 
 	// check that the session doesn't exist
 	var dest login.Identity
-	assert.Equal(t, login.ErrSessionNotFound, login.NewStore(ctx).GetSession(ctx, cookie.Value, &dest))
+	assert.Equal(t, login.ErrSessionNotFound, login.GetSession(ctx, cookie.Value, &dest))
 }
 
 func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
@@ -165,10 +166,6 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	oauthCode := "test-oauth-code"
 	require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "SETEX", "oauth_state:"+oauthState, "300", oauthValue)))
 
-	loginHandler := DiscordLoginHandler{}
-	ts := httptest.NewServer(&loginHandler)
-	defer ts.Close()
-
 	discordOAuthTokenJSON := []byte(`{
 		"access_token":  "6qrZcUqja7812RVdnEKjpzOL4CvHBFG",
 		"token_type":    "Bearer",
@@ -203,17 +200,23 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 				}
 			}
 		}))
-
-		discordConfig := discord.Config{
-			Endpoint:               ts.URL,
-			BotAuthenticationToken: "test-bot-auth-token",
-		}
-		require.NoError(t, parse_config.WriteToRedisHash(ctx, "discord", &discordConfig), "redis.Do() failed")
 		return ts
 	}
 
-	doRequest := func(t *testing.T, tsURL string, code string, state string, value string) *http.Response {
-		req, err := http.NewRequest(http.MethodPost, tsURL+"?state="+state+"&code="+code, nil)
+	newVVGOServer := func(discordURL string) *httptest.Server {
+		ctx := parse_config.SetModuleConfig(ctx, "discord", discord.Config{
+			Endpoint:               discordURL,
+			BotAuthenticationToken: "test-bot-auth-token",
+		})
+		loginHandler := DiscordLoginHandler{}
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			loginHandler.ServeHTTP(w, r.WithContext(ctx))
+		}))
+		return ts
+	}
+
+	doRequest := func(t *testing.T, vvgoURL string, code string, state string, value string) *http.Response {
+		req, err := http.NewRequest(http.MethodPost, vvgoURL+"?state="+state+"&code="+code, nil)
 		require.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{
@@ -233,6 +236,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
 
 		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -244,7 +249,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 
 		// check that a session exists for the cookie
 		var dest login.Identity
-		assert.NoError(t, login.NewStore(ctx).GetSession(context.Background(), cookies[0].Value, &dest))
+		assert.NoError(t, login.GetSession(context.Background(), cookies[0].Value, &dest))
 		assert.Equal(t, login.KindDiscord, dest.Kind, "identity.Kind")
 		assert.Equal(t, []login.Role{login.RoleVVGOMember}, dest.Roles, "identity.Roles")
 	})
@@ -252,6 +257,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	t.Run("no state", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
 
 		// make the request
 		resp, err := noFollow(&http.Client{}).Get(ts.URL)
@@ -280,6 +287,9 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	t.Run("invalid code", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
+
 		resp := doRequest(t, ts.URL, "fresh", oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Empty(t, len(resp.Cookies()), "cookies")
@@ -288,6 +298,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	t.Run("invalid state", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
 		resp := doRequest(t, ts.URL, oauthCode, "cheese", oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Empty(t, len(resp.Cookies()), "cookies")
@@ -296,6 +308,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	t.Run("invalid value", func(t *testing.T) {
 		discordTs := newDiscordServer(nil)
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
 		resp := doRequest(t, ts.URL, oauthCode, oauthState, "danish")
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Empty(t, len(resp.Cookies()), "cookies")
@@ -308,6 +322,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			}
 		})
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
 		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Empty(t, len(resp.Cookies()), "cookies")
@@ -320,6 +336,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			}
 		})
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
 		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Empty(t, len(resp.Cookies()), "cookies")
@@ -332,6 +350,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			}
 		})
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
 		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Empty(t, len(resp.Cookies()), "cookies")
@@ -344,6 +364,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			}
 		})
 		defer discordTs.Close()
+		ts := newVVGOServer(discordTs.URL)
+		defer ts.Close()
 		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Empty(t, len(resp.Cookies()), "cookies")

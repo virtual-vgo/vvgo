@@ -10,7 +10,7 @@ import (
 const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
 type DownloadConfig struct {
-	DistroBucket string `redis:"distro_bucket"`
+	DistroBucket string `json:"distro_bucket" default:"vvgo-distro"`
 }
 
 var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -27,11 +27,7 @@ var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 
 	ctx := r.Context()
 	var config DownloadConfig
-	if err := parse_config.ReadFromRedisHash(ctx, "download", &config); err != nil {
-		logger.WithError(err).Errorf("redis.Do() failed: %v", err)
-		internalServerError(w)
-		return
-	}
+	parse_config.ReadConfigModule(ctx, "download", &config)
 
 	minioClient, err := minio.NewClient(ctx)
 	if err != nil {

@@ -69,13 +69,12 @@ func updateIntentMessage(ctx context.Context) error {
 		"\n_Last Updated: " + time.Now().Format(time.UnixDate) + "_"
 
 	// batch the content into separate messages
-	discordClient := discord.NewClient(ctx)
 	lines := strings.Split(content, "\n")
 	var nextContent string
 	var messageIds []string
 	for _, line := range lines {
 		if len(nextContent)+len(line) > 1500 {
-			message, err := discordClient.CreateMessage(ctx, SkywardSwordStatsChannelID,
+			message, err := discord.CreateMessage(ctx, SkywardSwordStatsChannelID,
 				discord.CreateMessageParams{Content: nextContent})
 			if err != nil {
 				return err
@@ -85,7 +84,7 @@ func updateIntentMessage(ctx context.Context) error {
 		}
 		nextContent += line + "\n"
 	}
-	message, err := discordClient.CreateMessage(ctx, SkywardSwordStatsChannelID,
+	message, err := discord.CreateMessage(ctx, SkywardSwordStatsChannelID,
 		discord.CreateMessageParams{Content: nextContent})
 	if err != nil {
 		return err
@@ -97,7 +96,7 @@ func updateIntentMessage(ctx context.Context) error {
 **Intent Form:** https://docs.google.com/forms/d/e/1FAIpQLSchQa04TaiVWWvYGYAkCfCFqMvrxBy-h2DN1IjdoQ9qpRtuAQ/viewform
 Please use this form to indicate what part you intend to record. The above post will be kept as up-to-date as Section Leader Chicken receives your responses.
 `
-	message, err = discordClient.CreateMessage(ctx, SkywardSwordStatsChannelID,
+	message, err = discord.CreateMessage(ctx, SkywardSwordStatsChannelID,
 		discord.CreateMessageParams{Content: finalContent})
 	if err != nil {
 		return err
@@ -110,7 +109,7 @@ Please use this form to indicate what part you intend to record. The above post 
 		logger.WithError(err).Error("redis.Do() failed")
 	}
 	if len(oldMessageIdsRaw) > 0 {
-		err := discordClient.BulkDeleteMessages(ctx, SkywardSwordStatsChannelID,
+		err := discord.BulkDeleteMessages(ctx, SkywardSwordStatsChannelID,
 			discord.BulkDeleteMessagesParams{Messages: strings.Split(oldMessageIdsRaw, ",")})
 		if err != nil {
 			logger.WithError(err).Info("discordClient.BulkDeleteMessages failed")
