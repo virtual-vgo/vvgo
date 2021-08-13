@@ -64,5 +64,4 @@ func (e Entry) JsonDecodeFailure(ctx context.Context, err error) {
 
 func (e Entry) SomeMethodFailure(ctx context.Context, method string, err error) {
 	e.WithContext(ctx).WithError(err).Error(method + "() failed")
-
 }
