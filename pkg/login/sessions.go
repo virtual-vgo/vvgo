@@ -12,6 +12,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -45,6 +46,12 @@ func CookieDomain(ctx context.Context) string {
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
 func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
 	config := readConfig(ctx)
+
+	bearer := strings.TrimSpace(r.Header.Get("Authorization"))
+	if strings.HasPrefix(bearer, "Bearer ") {
+		return GetSession(ctx, bearer[len("Bearer "):], dest)
+	}
+
 	cookie, err := r.Cookie(config.CookieName)
 	if err != nil {
 		return err
@@ -90,11 +97,11 @@ func NewCookieValue() string {
 }
 
 // NewSession returns a new session with a crypto-rand session id.
-func NewSession(ctx context.Context, src *Identity, expires time.Duration) (string, error) {
+func NewSession(ctx context.Context, identity *Identity, expires time.Duration) (string, error) {
 	value := NewCookieValue()
 	key := "sessions:" + value
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
-	srcBytes, _ := json.Marshal(src)
+	srcBytes, _ := json.Marshal(identity)
 	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, stringExpires, string(srcBytes))); err != nil {
 		return "", err
 	}
