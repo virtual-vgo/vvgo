@@ -30,6 +30,8 @@ const (
 	RoleVVGOMember Role = "vvgo-member" // password login or has the vvgo-member discord role
 	RoleVVGOTeams  Role = "vvgo-teams"  // has the teams discord role
 	RoleVVGOLeader Role = "vvgo-leader" // has the leader discord role
+
+	RoleReadConfig Role = "read_config"
 )
 
 var anonymous = Identity{

@@ -116,6 +116,6 @@ func (auth *RBACMux) readBearer(r *http.Request, dest *login.Identity) bool {
 	return true
 }
 
-func (auth *RBACMux) readSession(ctx context.Context, r *http.Request, dest *login.Identity) bool {
-	return login.ReadSessionFromRequest(ctx, r, dest) == nil
+func (auth *RBACMux) readSession(ctx context.Context, r *http.Request, identity *login.Identity) bool {
+	return login.ReadSessionFromRequest(ctx, r, identity) == nil
 }

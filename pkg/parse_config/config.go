@@ -44,7 +44,6 @@ func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
 		if err := json.NewDecoder(file).Decode(&configJSON); err != nil {
 			logger.JsonDecodeFailure(ctx, err)
 		} else if moduleJSON, ok := configJSON[module]; ok {
-			print(string(moduleJSON))
 			if err := json.Unmarshal(moduleJSON, dest); err != nil {
 				logger.JsonDecodeFailure(ctx, err)
 			} else {
