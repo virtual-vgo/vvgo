@@ -210,7 +210,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		})
 		loginHandler := DiscordLoginHandler{}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			loginHandler.ServeHTTP(w,r.WithContext(ctx))
+			loginHandler.ServeHTTP(w, r.WithContext(ctx))
 		}))
 		return ts
 	}

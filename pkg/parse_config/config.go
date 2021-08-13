@@ -19,7 +19,6 @@ const CtxKeyVVGOConfig CtxKey = "vvgo_config"
 
 func (x CtxKey) Module(module string) CtxKey { return x + CtxKey("_"+module) }
 
-
 func SetModuleConfig(ctx context.Context, module string, src interface{}) context.Context {
 	return context.WithValue(ctx, CtxKeyVVGOConfig.Module(module), src)
 }

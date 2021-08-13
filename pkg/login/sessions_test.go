@@ -19,8 +19,6 @@ func init() {
 	redis.InitializeFromEnv()
 }
 
-
-
 func TestStore_GetIdentity(t *testing.T) {
 	t.Run("exists", func(t *testing.T) {
 		ctx := context.Background()
@@ -104,8 +102,8 @@ func TestStore_DeleteSessionFromRequest(t *testing.T) {
 func TestStore_NewCookie(t *testing.T) {
 	ctx := context.Background()
 	ctx = parse_config.SetModuleConfig(ctx, ConfigModule, Config{
-		CookiePath: "/authorized",
-		CookieName: "cookie-name",
+		CookiePath:   "/authorized",
+		CookieName:   "cookie-name",
 		CookieDomain: "tester.local",
 	})
 	gotCookie, err := NewCookie(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
