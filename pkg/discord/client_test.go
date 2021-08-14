@@ -17,7 +17,6 @@ func TestClient_QueryOAuth(t *testing.T) {
 	config := Config{
 		BotAuthenticationToken: "test-bot-auth-token",
 		OAuthClientSecret:      "test-oauth-client-secret",
-		OAuthRedirectURI:       "https://localhost/test-oauth-redirect-uri",
 	}
 
 	var gotRequest *http.Request
@@ -54,7 +53,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	wantForm.Add("client_secret", "test-oauth-client-secret")
 	wantForm.Add("grant_type", "authorization_code")
 	wantForm.Add("code", "test-code")
-	wantForm.Add("redirect_uri", "https://localhost/test-oauth-redirect-uri")
+	wantForm.Add("redirect_uri", "https://vvgo.org/login/discord")
 	wantForm.Add("scope", "identify")
 	assert.Equal(t, wantForm.Encode(), gotForm)
 
