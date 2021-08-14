@@ -6,14 +6,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 )
-
-var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func init() {
 	redis.InitializeFromEnv()
