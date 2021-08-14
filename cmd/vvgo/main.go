@@ -15,14 +15,6 @@ import (
 
 var logger = log.New()
 
-type Flags struct {
-	ShowVersion bool
-}
-
-func (x *Flags) Parse() {
-
-}
-
 func main() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 
