@@ -33,7 +33,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Name:     CookieLoginRedirect,
 				Value:    value,
 				Expires:  time.Now().Add(3600 * time.Second),
-				Domain:   login.CookieDomain(ctx),
+				Domain:   login.CookieDomain(),
 				SameSite: http.SameSiteStrictMode,
 				HttpOnly: true,
 			})

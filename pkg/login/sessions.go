@@ -11,6 +11,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -18,26 +19,12 @@ import (
 
 var ErrSessionNotFound = errors.New("session not found")
 
-const ConfigModule = "login"
-
-type Config struct {
-	// CookieDomain is the domain where the cookies can be used.
-	// This should be the domain that users visit in their browser.
-	CookieDomain string `json:"cookie_domain"`
-}
-
 const CookieName = "vvgo-sessions"
 const CookiePath = "/"
 
-func readConfig(ctx context.Context) Config {
-	var config Config
-	parse_config.ReadModule(ctx, ConfigModule, &config)
-	parse_config.SetDefaults(&config)
-	return config
-}
-
-func CookieDomain(ctx context.Context) string {
-	return readConfig(ctx).CookieDomain
+func CookieDomain() string {
+	x, _ := url.Parse(parse_config.ServerURL)
+	return "." + x.Hostname()
 }
 
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
@@ -64,7 +51,6 @@ func DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
 
 // NewCookie returns cookie with a crypto-rand session id.
 func NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http.Cookie, error) {
-	config := readConfig(ctx)
 	session, err := NewSession(ctx, src, expires)
 	if err != nil {
 		return nil, err
@@ -73,7 +59,7 @@ func NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http
 		Name:     CookieName,
 		Value:    session,
 		Expires:  time.Now().Add(expires),
-		Domain:   config.CookieDomain,
+		Domain:   CookieDomain(),
 		Path:     CookiePath,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,

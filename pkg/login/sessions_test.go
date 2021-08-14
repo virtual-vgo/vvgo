@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
 	"net/http/httptest"
@@ -94,16 +93,13 @@ func TestStore_DeleteSessionFromRequest(t *testing.T) {
 
 func TestStore_NewCookie(t *testing.T) {
 	ctx := context.Background()
-	ctx = parse_config.SetModule(ctx, ConfigModule, Config{
-		CookieDomain: "tester.local",
-	})
 	gotCookie, err := NewCookie(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
 	require.NoError(t, err)
 
 	assert.Equal(t, CookieName, gotCookie.Name, "cookie.Name")
 	assert.NotEmpty(t, gotCookie.Value, "cookie.Value")
 	assert.Equal(t, CookiePath, gotCookie.Path, "cookie.Path")
-	assert.Equal(t, "tester.local", gotCookie.Domain, "cookie.Domain")
+	assert.Equal(t, ".vvgo.org", gotCookie.Domain, "cookie.Domain")
 	assert.Equal(t, true, gotCookie.HttpOnly, "cookie.HttpOnly")
 	assert.Equal(t, http.SameSiteStrictMode, gotCookie.SameSite, "cookie.SameSite")
 }

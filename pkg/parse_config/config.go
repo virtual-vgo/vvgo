@@ -13,10 +13,10 @@ import (
 )
 
 // ListenAddress Listen address for the http server.
-var ListenAddress = "localhost:8080"
+var ListenAddress = "0.0.0.0:8080"
 
 // ServerURL Url to reach the http server.
-var ServerURL = "http://localhost:8080"
+var ServerURL = "https://vvgo.org"
 
 // FileName Path to the configuration file.
 var FileName = "/etc/vvgo/vvgo.json"
