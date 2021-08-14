@@ -17,7 +17,6 @@ func TestClient_QueryOAuth(t *testing.T) {
 	config := Config{
 		BotAuthenticationToken: "test-bot-auth-token",
 		OAuthClientSecret:      "test-oauth-client-secret",
-		OAuthRedirectURI:       "https://localhost/test-oauth-redirect-uri",
 	}
 
 	var gotRequest *http.Request
@@ -42,7 +41,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Endpoint = ts.URL
-	ctx = parse_config.SetModuleConfig(ctx, "discord", config)
+	ctx = parse_config.SetModule(ctx, "discord", config)
 	gotToken, gotError := QueryOAuth(ctx, "test-code")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodPost, gotRequest.Method)
@@ -54,7 +53,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	wantForm.Add("client_secret", "test-oauth-client-secret")
 	wantForm.Add("grant_type", "authorization_code")
 	wantForm.Add("code", "test-code")
-	wantForm.Add("redirect_uri", "https://localhost/test-oauth-redirect-uri")
+	wantForm.Add("redirect_uri", "https://vvgo.org/login/discord")
 	wantForm.Add("scope", "identify")
 	assert.Equal(t, wantForm.Encode(), gotForm)
 
@@ -100,7 +99,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Endpoint = ts.URL
-	ctx = parse_config.SetModuleConfig(context.Background(), "discord", config)
+	ctx = parse_config.SetModule(context.Background(), "discord", config)
 	gotUser, gotError := QueryIdentity(ctx, token)
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
@@ -131,7 +130,7 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Endpoint = ts.URL
-	ctx = parse_config.SetModuleConfig(context.Background(), "discord", config)
+	ctx = parse_config.SetModule(context.Background(), "discord", config)
 	gotMember, gotError := QueryGuildMember(ctx, "test-user-id")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)

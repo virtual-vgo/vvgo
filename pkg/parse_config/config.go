@@ -3,15 +3,31 @@ package parse_config
 import (
 	"context"
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"strconv"
 )
 
-var logger = log.New()
+// ListenAddress Listen address for the http server.
+var ListenAddress = "0.0.0.0:8080"
 
-const DefaultConfigFile = "/etc/vvgo/vvgo.json"
+// ServerURL Url to reach the http server.
+var ServerURL = "https://vvgo.org"
+
+// FileName Path to the configuration file.
+var FileName = "/etc/vvgo/vvgo.json"
+
+// Endpoint RPC endpoint for remote configuration.
+var Endpoint = "https://vvgo.org/api/v1/config"
+
+// Session The session key returned by https://vvgo.org/api/v1/session?with_roles=read_config.
+var Session string
+
+var logger = log.New()
 
 type CtxKey string
 
@@ -19,43 +35,75 @@ const CtxKeyVVGOConfig CtxKey = "vvgo_config"
 
 func (x CtxKey) Module(module string) CtxKey { return x + CtxKey("_"+module) }
 
-func SetModuleConfig(ctx context.Context, module string, src interface{}) context.Context {
+func SetModule(ctx context.Context, module string, src interface{}) context.Context {
 	return context.WithValue(ctx, CtxKeyVVGOConfig.Module(module), src)
 }
 
-func ReadConfigModule(ctx context.Context, module string, dest interface{}) {
+func ReadModule(ctx context.Context, module string, dest interface{}) {
 	moduleData := ctx.Value(CtxKeyVVGOConfig.Module(module))
-	if moduleData != nil {
+	switch {
+	//case Session != "": TODO: Finish implementing this or delete it.
+	//	ReadModuleFromEndpoint(ctx, Endpoint, Session, module, dest)
+
+	case moduleData != nil:
 		reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(moduleData))
+	default:
+		ReadModuleFromFile(ctx, FileName, module, dest)
+	}
+}
+
+func ReadModuleFromFile(ctx context.Context, fileName string, module string, dest interface{}) {
+	logger.Infof("reading config from %s", fileName)
+
+	file, err := os.Open(FileName)
+	if err != nil {
+		logger.MethodFailure(ctx, "os.Open", err)
+		return
+	}
+	defer file.Close()
+
+	configJSON := make(map[string]json.RawMessage)
+	if err := json.NewDecoder(file).Decode(&configJSON); err != nil {
+		logger.JsonDecodeFailure(ctx, err)
 		return
 	}
 
-	configJSON := make(map[string]json.RawMessage)
-	file, err := os.Open(ConfigFileName())
-	if err != nil {
-		logger.MethodFailure(ctx, "os.Open", err)
-	} else {
-		defer file.Close()
-		if err := json.NewDecoder(file).Decode(&configJSON); err != nil {
-			logger.JsonDecodeFailure(ctx, err)
-		} else if moduleJSON, ok := configJSON[module]; ok {
-			if err := json.Unmarshal(moduleJSON, dest); err != nil {
-				logger.JsonDecodeFailure(ctx, err)
-			} else {
-				return
-			}
-		}
+	moduleJSON, ok := configJSON[module]
+	if !ok {
+		logger.WithField("config_module", module).Errorf("config module `%s` not found", module)
+		return
 	}
 
-	logger.WithField("config_module", module).Errorf("config module `%s` not found", module)
+	if err := json.Unmarshal(moduleJSON, dest); err != nil {
+		logger.JsonDecodeFailure(ctx, err)
+		return
+	}
 }
 
-func ConfigFileName() string {
-	configFile := os.Getenv("VVGO_CONFIGURATION_FILE")
-	if configFile == "" {
-		configFile = DefaultConfigFile
+func ReadModuleFromEndpoint(ctx context.Context, endpoint string, session string, module string, dest interface{}) {
+	logger.Infof("fetching remote config from %s", endpoint)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		logger.MethodFailure(ctx, "http.NewRequest", err)
+		return
 	}
-	return configFile
+
+	form := make(url.Values)
+	form.Add("module", module)
+	req.Header.Add("Authorization", "Bearer "+session)
+	req.Form = form
+	resp, err := http_wrappers.DoRequest(req)
+	if err != nil {
+		logger.MethodFailure(ctx, "http.Do", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if err := json.NewDecoder(resp.Body).Decode(dest); err != nil {
+		logger.JsonDecodeFailure(ctx, err)
+		return
+	}
 }
 
 func SetDefaults(dest interface{}) {

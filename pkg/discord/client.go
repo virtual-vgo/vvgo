@@ -31,7 +31,7 @@ const VVGOProductionDirectorRoleID = "805504313072943155"
 
 // Config for discord requests.
 type Config struct {
-	// Api endpoint to query. Defaults to https://discord.com/api/v8.
+	// Endpoint is the api endpoint to query. Defaults to https://discord.com/api/v8.
 	// This should only be overwritten for testing.
 	Endpoint string `json:"endpoint" default:"https://discord.com/api/v8"`
 
@@ -42,27 +42,21 @@ type Config struct {
 	// OAuthClientSecret is the secret used in oauth requests.
 	// This is found in the oauth2 tab for the discord app.
 	OAuthClientSecret string `json:"oauth_client_secret"`
-
-	// OAuthRedirectURI is the redirect uri we set in discord.
-	// This is found in the oauth2 tab for the discord app.
-	OAuthRedirectURI string `json:"oauth_redirect_uri"`
 }
 
 const ConfigModule = "discord"
 
 func readConfig(ctx context.Context) Config {
 	var config Config
-	parse_config.ReadConfigModule(ctx, ConfigModule, &config)
+	parse_config.ReadModule(ctx, ConfigModule, &config)
 	parse_config.SetDefaults(&config)
 	return config
 }
 
 func LoginURL(ctx context.Context, state string) string {
-	config := readConfig(ctx)
-
 	query := make(url.Values)
 	query.Set("client_id", OAuthClientID)
-	query.Set("redirect_uri", config.OAuthRedirectURI)
+	query.Set("redirect_uri", parse_config.ServerURL+"/login/discord")
 	query.Set("response_type", "code")
 	query.Set("state", state)
 	query.Set("scope", "identify")
@@ -98,7 +92,7 @@ func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
 	form.Add("client_secret", config.OAuthClientSecret)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", config.OAuthRedirectURI)
+	form.Add("redirect_uri", parse_config.ServerURL+"/login/discord")
 	form.Add("scope", "identify")
 
 	req, err := newRequest(ctx, http.MethodPost, "/oauth2/token", strings.NewReader(form.Encode()))

@@ -40,7 +40,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
-	mux.HandleFunc("/api/v1/config", ConfigApi, login.RoleReadConfig)
+	//mux.HandleFunc("/api/v1/config", ConfigApi, login.RoleReadConfig)
 	mux.HandleFunc("/api/v1/session", SessionApi, login.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/parts", PartsApi, login.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/projects", ProjectsApi, login.RoleAnonymous)

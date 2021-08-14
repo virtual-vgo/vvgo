@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
-	"io"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -47,21 +45,30 @@ var SessionApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 })
 
 var ConfigApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	config := make(map[string]interface{})
-	file, err := os.Open(parse_config.ConfigFileName())
-	if err != nil {
-		logger.MethodFailure(ctx, "os.Open", err)
-		internalServerError(w)
+	if parse_config.Session != "" {
+		methodNotAllowed(w)
 		return
 	}
-	defer file.Close()
 
-	if _, err := io.Copy(w, file); err != nil {
-		logger.MethodFailure(ctx, "io.Copy", err)
-		internalServerError(w)
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
 		return
 	}
+
+	ctx := r.Context()
+	module := r.FormValue("module")
+	if module == "" {
+		logger.Info("module cannot be empty")
+		badRequest(w, "module cannot be empty")
+		return
+	}
+
+	var moduleJSON json.RawMessage
+	parse_config.ReadModuleFromFile(ctx, parse_config.FileName, module, &moduleJSON)
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(config)
+	if _, err := w.Write(moduleJSON); err != nil {
+		logger.MethodFailure(ctx, "w.Write", err)
+		return
+	}
 })

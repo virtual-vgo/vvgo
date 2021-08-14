@@ -25,7 +25,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 
 	downloadHandler := DownloadHandler
 	config := DownloadConfig{DistroBucket: bucketName}
-	ctx = parse_config.SetModuleConfig(ctx, "download", config)
+	ctx = parse_config.SetModule(ctx, "download", config)
 
 	for _, tt := range []struct {
 		name    string

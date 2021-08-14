@@ -4,16 +4,12 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 )
-
-var lrand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func init() {
 	redis.InitializeFromEnv()
@@ -49,10 +45,9 @@ func TestStore_DeleteIdentity(t *testing.T) {
 func TestStore_ReadSessionFromRequest(t *testing.T) {
 	t.Run("no session", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = parse_config.SetModuleConfig(ctx, "login", Config{CookieName: "vvgo-cookie"})
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.AddCookie(&http.Cookie{
-			Name:  "vvgo-cookie",
+			Name:  CookieName,
 			Value: "cheese",
 		})
 		var got Identity
@@ -60,13 +55,12 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 	})
 	t.Run("cookie", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = parse_config.SetModuleConfig(ctx, "login", Config{CookieName: "vvgo-cookie"})
 		session, err := NewSession(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
 		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.AddCookie(&http.Cookie{
-			Name:  "vvgo-cookie",
+			Name:  CookieName,
 			Value: session,
 		})
 		var got Identity
@@ -78,19 +72,17 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 func TestStore_DeleteSessionFromRequest(t *testing.T) {
 	t.Run("no session", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = parse_config.SetModuleConfig(ctx, "login", Config{CookieName: "vvgo-cookie"})
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		require.NoError(t, DeleteSessionFromRequest(ctx, req))
 	})
 	t.Run("cookie", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = parse_config.SetModuleConfig(ctx, "login", Config{CookieName: "vvgo-cookie"})
 		session, err := NewSession(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
 		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.AddCookie(&http.Cookie{
-			Name:  "vvgo-cookie",
+			Name:  CookieName,
 			Value: session,
 		})
 		require.NoError(t, DeleteSessionFromRequest(ctx, req))
@@ -101,18 +93,13 @@ func TestStore_DeleteSessionFromRequest(t *testing.T) {
 
 func TestStore_NewCookie(t *testing.T) {
 	ctx := context.Background()
-	ctx = parse_config.SetModuleConfig(ctx, ConfigModule, Config{
-		CookiePath:   "/authorized",
-		CookieName:   "cookie-name",
-		CookieDomain: "tester.local",
-	})
 	gotCookie, err := NewCookie(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
 	require.NoError(t, err)
 
-	assert.Equal(t, "cookie-name", gotCookie.Name, "cookie.Name")
+	assert.Equal(t, CookieName, gotCookie.Name, "cookie.Name")
 	assert.NotEmpty(t, gotCookie.Value, "cookie.Value")
-	assert.Equal(t, "/authorized", gotCookie.Path, "cookie.Path")
-	assert.Equal(t, "tester.local", gotCookie.Domain, "cookie.Domain")
+	assert.Equal(t, CookiePath, gotCookie.Path, "cookie.Path")
+	assert.Equal(t, ".vvgo.org", gotCookie.Domain, "cookie.Domain")
 	assert.Equal(t, true, gotCookie.HttpOnly, "cookie.HttpOnly")
 	assert.Equal(t, http.SameSiteStrictMode, gotCookie.SameSite, "cookie.SameSite")
 }

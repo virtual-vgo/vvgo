@@ -11,6 +11,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -18,41 +19,22 @@ import (
 
 var ErrSessionNotFound = errors.New("session not found")
 
-const ConfigModule = "login"
+const CookieName = "vvgo-sessions"
+const CookiePath = "/"
 
-type Config struct {
-	// CookieName is the name of the cookies created by the store.
-	CookieName string `json:"cookie_name" default:"vvgo-sessions"`
-
-	// CookieDomain is the domain where the cookies can be used.
-	// This should be the domain that users visit in their browser.
-	CookieDomain string `json:"cookie_domain" default:""`
-
-	// CookiePath is the url path where the cookies can be used.
-	CookiePath string `json:"cookie_path" default:"/"`
-}
-
-func readConfig(ctx context.Context) Config {
-	var config Config
-	parse_config.ReadConfigModule(ctx, ConfigModule, &config)
-	parse_config.SetDefaults(&config)
-	return config
-}
-
-func CookieDomain(ctx context.Context) string {
-	return readConfig(ctx).CookieDomain
+func CookieDomain() string {
+	x, _ := url.Parse(parse_config.ServerURL)
+	return "." + x.Hostname()
 }
 
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
 func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
-	config := readConfig(ctx)
-
 	bearer := strings.TrimSpace(r.Header.Get("Authorization"))
 	if strings.HasPrefix(bearer, "Bearer ") {
 		return GetSession(ctx, bearer[len("Bearer "):], dest)
 	}
 
-	cookie, err := r.Cookie(config.CookieName)
+	cookie, err := r.Cookie(CookieName)
 	if err != nil {
 		return err
 	}
@@ -60,8 +42,7 @@ func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity
 }
 
 func DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
-	config := readConfig(ctx)
-	cookie, err := r.Cookie(config.CookieName)
+	cookie, err := r.Cookie(CookieName)
 	if err != nil {
 		return nil
 	}
@@ -70,17 +51,16 @@ func DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
 
 // NewCookie returns cookie with a crypto-rand session id.
 func NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http.Cookie, error) {
-	config := readConfig(ctx)
 	session, err := NewSession(ctx, src, expires)
 	if err != nil {
 		return nil, err
 	}
 	return &http.Cookie{
-		Name:     config.CookieName,
+		Name:     CookieName,
 		Value:    session,
 		Expires:  time.Now().Add(expires),
-		Domain:   config.CookieDomain,
-		Path:     config.CookiePath,
+		Domain:   CookieDomain(),
+		Path:     CookiePath,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
 	}, nil
