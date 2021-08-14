@@ -28,6 +28,7 @@ var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 	var config DownloadConfig
 	parse_config.ReadModule(ctx, "download", &config)
+	parse_config.SetDefaults(&config)
 
 	minioClient, err := minio.NewClient(ctx)
 	if err != nil {
