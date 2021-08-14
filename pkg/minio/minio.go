@@ -24,7 +24,7 @@ type Client struct{ minio.Client }
 
 func NewClient(ctx context.Context) (*Client, error) {
 	var config Config
-	parse_config.ReadConfigModule(ctx, ConfigModule, &config)
+	parse_config.ReadModule(ctx, ConfigModule, &config)
 	parse_config.SetDefaults(&config)
 	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
 	if err != nil {

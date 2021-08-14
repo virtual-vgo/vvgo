@@ -31,7 +31,7 @@ const VVGOProductionDirectorRoleID = "805504313072943155"
 
 // Config for discord requests.
 type Config struct {
-	// Api endpoint to query. Defaults to https://discord.com/api/v8.
+	// Endpoint is the api endpoint to query. Defaults to https://discord.com/api/v8.
 	// This should only be overwritten for testing.
 	Endpoint string `json:"endpoint" default:"https://discord.com/api/v8"`
 
@@ -52,8 +52,11 @@ const ConfigModule = "discord"
 
 func readConfig(ctx context.Context) Config {
 	var config Config
-	parse_config.ReadConfigModule(ctx, ConfigModule, &config)
+	parse_config.ReadModule(ctx, ConfigModule, &config)
 	parse_config.SetDefaults(&config)
+	if config.OAuthRedirectURI == "" {
+		config.OAuthRedirectURI = parse_config.ServerURL + "/login/discord"
+	}
 	return config
 }
 

@@ -42,7 +42,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Endpoint = ts.URL
-	ctx = parse_config.SetModuleConfig(ctx, "discord", config)
+	ctx = parse_config.SetModule(ctx, "discord", config)
 	gotToken, gotError := QueryOAuth(ctx, "test-code")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodPost, gotRequest.Method)
@@ -100,7 +100,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Endpoint = ts.URL
-	ctx = parse_config.SetModuleConfig(context.Background(), "discord", config)
+	ctx = parse_config.SetModule(context.Background(), "discord", config)
 	gotUser, gotError := QueryIdentity(ctx, token)
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
@@ -131,7 +131,7 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Endpoint = ts.URL
-	ctx = parse_config.SetModuleConfig(context.Background(), "discord", config)
+	ctx = parse_config.SetModule(context.Background(), "discord", config)
 	gotMember, gotError := QueryGuildMember(ctx, "test-user-id")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)

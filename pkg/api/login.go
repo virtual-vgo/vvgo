@@ -103,7 +103,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	passwords := make(map[string]string)
-	parse_config.ReadConfigModule(ctx, "password_login", &passwords)
+	parse_config.ReadModule(ctx, "password_login", &passwords)
 
 	var identity login.Identity
 	if err := login.ReadSessionFromRequest(ctx, r, &identity); err == nil {

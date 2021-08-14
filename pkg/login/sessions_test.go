@@ -49,7 +49,7 @@ func TestStore_DeleteIdentity(t *testing.T) {
 func TestStore_ReadSessionFromRequest(t *testing.T) {
 	t.Run("no session", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = parse_config.SetModuleConfig(ctx, "login", Config{CookieName: "vvgo-cookie"})
+		ctx = parse_config.SetModule(ctx, "login", Config{CookieName: "vvgo-cookie"})
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.AddCookie(&http.Cookie{
 			Name:  "vvgo-cookie",
@@ -60,7 +60,7 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 	})
 	t.Run("cookie", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = parse_config.SetModuleConfig(ctx, "login", Config{CookieName: "vvgo-cookie"})
+		ctx = parse_config.SetModule(ctx, "login", Config{CookieName: "vvgo-cookie"})
 		session, err := NewSession(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
 		require.NoError(t, err)
 
@@ -78,13 +78,13 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 func TestStore_DeleteSessionFromRequest(t *testing.T) {
 	t.Run("no session", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = parse_config.SetModuleConfig(ctx, "login", Config{CookieName: "vvgo-cookie"})
+		ctx = parse_config.SetModule(ctx, "login", Config{CookieName: "vvgo-cookie"})
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		require.NoError(t, DeleteSessionFromRequest(ctx, req))
 	})
 	t.Run("cookie", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = parse_config.SetModuleConfig(ctx, "login", Config{CookieName: "vvgo-cookie"})
+		ctx = parse_config.SetModule(ctx, "login", Config{CookieName: "vvgo-cookie"})
 		session, err := NewSession(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
 		require.NoError(t, err)
 
@@ -101,7 +101,7 @@ func TestStore_DeleteSessionFromRequest(t *testing.T) {
 
 func TestStore_NewCookie(t *testing.T) {
 	ctx := context.Background()
-	ctx = parse_config.SetModuleConfig(ctx, ConfigModule, Config{
+	ctx = parse_config.SetModule(ctx, ConfigModule, Config{
 		CookiePath:   "/authorized",
 		CookieName:   "cookie-name",
 		CookieDomain: "tester.local",

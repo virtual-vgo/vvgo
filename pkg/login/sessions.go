@@ -26,7 +26,7 @@ type Config struct {
 
 	// CookieDomain is the domain where the cookies can be used.
 	// This should be the domain that users visit in their browser.
-	CookieDomain string `json:"cookie_domain" default:""`
+	CookieDomain string `json:"cookie_domain"`
 
 	// CookiePath is the url path where the cookies can be used.
 	CookiePath string `json:"cookie_path" default:"/"`
@@ -34,7 +34,7 @@ type Config struct {
 
 func readConfig(ctx context.Context) Config {
 	var config Config
-	parse_config.ReadConfigModule(ctx, ConfigModule, &config)
+	parse_config.ReadModule(ctx, ConfigModule, &config)
 	parse_config.SetDefaults(&config)
 	return config
 }
