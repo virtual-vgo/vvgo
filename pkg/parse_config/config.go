@@ -3,7 +3,6 @@ package parse_config
 import (
 	"context"
 	"encoding/json"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"net/http"
@@ -28,32 +27,6 @@ var Endpoint = "https://vvgo.org/api/v1/config"
 // Session The session key returned by https://vvgo.org/api/v1/session?with_roles=read_config.
 var Session string
 
-func init() {
-	var env struct {
-		ListenAddress string
-		ServerURL     string
-		FileName      string
-		Endpoint      string
-		Session       string
-	}
-	envconfig.MustProcess("vvgo", &env)
-	if env.ListenAddress != "" {
-		ListenAddress = env.ListenAddress
-	}
-	if env.ServerURL != "" {
-		ServerURL = env.ServerURL
-	}
-	if env.FileName != "" {
-		FileName = env.FileName
-	}
-	if env.Endpoint != "" {
-		Endpoint = env.Endpoint
-	}
-	if env.Session != "" {
-		Session = env.Session
-	}
-}
-
 var logger = log.New()
 
 type CtxKey string
@@ -69,10 +42,11 @@ func SetModule(ctx context.Context, module string, src interface{}) context.Cont
 func ReadModule(ctx context.Context, module string, dest interface{}) {
 	moduleData := ctx.Value(CtxKeyVVGOConfig.Module(module))
 	switch {
+	//case Session != "": TODO: Finish implementing this or delete it.
+	//	ReadModuleFromEndpoint(ctx, Endpoint, Session, module, dest)
+
 	case moduleData != nil:
 		reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(moduleData))
-	case Session != "":
-		ReadModuleFromEndpoint(ctx, Endpoint, Session, module, dest)
 	default:
 		ReadModuleFromFile(ctx, FileName, module, dest)
 	}

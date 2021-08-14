@@ -36,7 +36,7 @@ var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	downloadUrl, err := minioClient.PresignedGetObject("vvgo-distro", object, ProtectedLinkExpiry, nil)
+	downloadUrl, err := minioClient.PresignedGetObject(config.DistroBucket, object, ProtectedLinkExpiry, nil)
 	if err != nil {
 		logger.WithError(err).Error("minio.StatObject() failed")
 		internalServerError(w)

@@ -21,16 +21,13 @@ var ErrSessionNotFound = errors.New("session not found")
 const ConfigModule = "login"
 
 type Config struct {
-	// CookieName is the name of the cookies created by the store.
-	CookieName string `json:"cookie_name" default:"vvgo-sessions"`
-
 	// CookieDomain is the domain where the cookies can be used.
 	// This should be the domain that users visit in their browser.
 	CookieDomain string `json:"cookie_domain"`
-
-	// CookiePath is the url path where the cookies can be used.
-	CookiePath string `json:"cookie_path" default:"/"`
 }
+
+const CookieName = "vvgo-sessions"
+const CookiePath = "/"
 
 func readConfig(ctx context.Context) Config {
 	var config Config
@@ -45,14 +42,12 @@ func CookieDomain(ctx context.Context) string {
 
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
 func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
-	config := readConfig(ctx)
-
 	bearer := strings.TrimSpace(r.Header.Get("Authorization"))
 	if strings.HasPrefix(bearer, "Bearer ") {
 		return GetSession(ctx, bearer[len("Bearer "):], dest)
 	}
 
-	cookie, err := r.Cookie(config.CookieName)
+	cookie, err := r.Cookie(CookieName)
 	if err != nil {
 		return err
 	}
@@ -60,8 +55,7 @@ func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity
 }
 
 func DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
-	config := readConfig(ctx)
-	cookie, err := r.Cookie(config.CookieName)
+	cookie, err := r.Cookie(CookieName)
 	if err != nil {
 		return nil
 	}
@@ -76,11 +70,11 @@ func NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http
 		return nil, err
 	}
 	return &http.Cookie{
-		Name:     config.CookieName,
+		Name:     CookieName,
 		Value:    session,
 		Expires:  time.Now().Add(expires),
 		Domain:   config.CookieDomain,
-		Path:     config.CookiePath,
+		Path:     CookiePath,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
 	}, nil
