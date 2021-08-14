@@ -54,9 +54,7 @@ func readConfig(ctx context.Context) Config {
 	var config Config
 	parse_config.ReadModule(ctx, ConfigModule, &config)
 	parse_config.SetDefaults(&config)
-	if config.OAuthRedirectURI == "" {
-		config.OAuthRedirectURI = parse_config.ServerURL + "/login/discord"
-	}
+	config.OAuthRedirectURI = parse_config.ServerURL + "/login/discord"
 	return config
 }
 
