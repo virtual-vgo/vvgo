@@ -30,8 +30,7 @@ pipeline {
         stage('Test Image') {
             agent {
                 docker {
-                    image 'virtual-vgo/vvgo'
-                    label GIT_COMMIT
+                    image 'virtual-vgo/vvgo:${GIT_COMMIT}'
                 }
             }
 
