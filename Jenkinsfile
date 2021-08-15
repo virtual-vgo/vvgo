@@ -7,13 +7,13 @@ pipeline {
     }
 
     stages {
-        stage('Build Builder Stage') {
+        stage('Unit Test') {
             steps {
                 script {
                     docker.withRegistry('https://ghcr.io', 'github_packages') {
                         docker
                             .build("virtual-vgo/vvgo-builder:${GIT_COMMIT}", "--target builder -f Dockerfile .")
-                            .inside("--network test-network -e REDIS_ADDRESS=redis-testing:6379 -e MINIO_ENDPOINT=minio-testing:9000") {
+                            .inside("-u root --network test-network -e REDIS_ADDRESS=redis-testing:6379 -e MINIO_ENDPOINT=minio-testing:9000") {
                                 sh 'go test ./...'
                         }
                     }
