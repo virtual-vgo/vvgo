@@ -31,7 +31,7 @@ pipeline {
             agent {
                 docker {
                     image 'virtual-vgo/vvgo:${GIT_COMMIT}'
-                    args '--entrypoint cat'
+                    args '--network test-network'
                 }
             }
 
