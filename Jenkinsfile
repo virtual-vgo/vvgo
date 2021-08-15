@@ -11,8 +11,11 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://ghcr.io', 'github_packages') {
-                        def vvgoImage = docker.build("virtual-vgo/vvgo-builder:${GIT_COMMIT}", "--target builder -f Dockerfile .")
-                        vvgoImage.push()
+                        docker
+                            .build("virtual-vgo/vvgo-builder:${GIT_COMMIT}", "--target builder -f Dockerfile .")
+                            .inside("--network test-network -e REDIS_ADDRESS=redis-testing:6379 -e MINIO_ENDPOINT=minio-testing:9000") {
+                                sh 'go test ./...'
+                        }
                     }
                 }
             }
@@ -32,18 +35,6 @@ pipeline {
                         vvgoImage.push(GIT_COMMIT)
                         vvgoImage.push(BRANCH_NAME)
                         if (author != "") { vvgoImage.push(author) }
-                    }
-                }
-            }
-        }
-
-        stage('Test Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://ghcr.io', 'github_packages') {
-                        docker.image("virtual-vgo/vvgo").inside("--network test-network -e REDIS_ADDRESS=redis-testing:6379 -e MINIO_ENDPOINT=minio-testing:9000") {
-                            sh 'go test ./...'
-                        }
                     }
                 }
             }
