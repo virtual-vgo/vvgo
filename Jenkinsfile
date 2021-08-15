@@ -28,16 +28,15 @@ pipeline {
         }
 
         stage('Test Image') {
-            agent {
-                docker {
-                    image 'virtual-vgo/vvgo:${GIT_COMMIT}'
-                    args '--network test-network'
-                }
-            }
+            agent any
 
             steps {
-                sh 'go vet ./...'
-                sh 'go test -v ./...'
+                script {
+                    docker.image('virtual-vgo/vvgo:${GIT_COMMIT}').inside("--network test-image") {
+                        sh 'go vet ./...'
+                        sh 'go test ./...'
+                    }
+                }
             }
         }
 
