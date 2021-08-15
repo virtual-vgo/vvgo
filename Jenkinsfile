@@ -31,7 +31,7 @@ pipeline {
             agent {
                 docker {
                     image 'virtual-vgo/vvgo:${GIT_COMMIT}'
-                    command 'sleep 9999999999d"'
+                    command 'sleep 9999999999d'
                 }
             }
 
