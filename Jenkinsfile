@@ -29,12 +29,13 @@ pipeline {
 
         stage('Test Image') {
             agent any
-
             steps {
                 script {
-                    docker.image('virtual-vgo/vvgo:${GIT_COMMIT}').inside("--network test-image") {
-                        sh 'go vet ./...'
-                        sh 'go test ./...'
+                    docker.withRegistry('https://ghcr.io', 'github_packages') {
+                        docker.image('virtual-vgo/vvgo:${GIT_COMMIT}').inside("--network test-image") {
+                            sh 'go vet ./...'
+                            sh 'go test ./...'
+                        }
                     }
                 }
             }
