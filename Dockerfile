@@ -3,7 +3,7 @@ COPY public/package.json .
 COPY public/package-lock.json .
 RUN npm install
 
-FROM golang:1.14 as builder
+FROM golang:1.16 as builder
 WORKDIR /go/src/app/
 ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
 COPY go.mod go.sum ./
