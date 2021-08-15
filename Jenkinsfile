@@ -28,12 +28,12 @@ pipeline {
 
         stage('Deploy Staging') {
             when { not { branch 'master' } }
-            steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_staging' }
+            steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::staging' }
         }
 
         stage('Deploy Production') {
             when { branch 'master' }
-            steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::docker,vvgo::vvgo_prod' }
+            steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::prod' }
             post {
                 success {
                     withCredentials(bindings: [string(credentialsId: 'web_and_coding_team_webhook', variable: 'WEBHOOK_URL')]) {
