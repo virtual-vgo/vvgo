@@ -26,8 +26,23 @@ pipeline {
             }
         }
 
+        stage('Test Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://ghcr.io', 'github_packages') {
+                        docker.image("virtual-vgo/vvgo").inside("--entrypoint sh") {
+                            sh 'go test ./...'
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Deploy Staging') {
-            when { not { branch 'master' } }
+            when {
+                not { branch 'master' }
+                changeRequest author: 'jacksonargo'
+            }
             steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::staging' }
         }
 
