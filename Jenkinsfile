@@ -31,7 +31,7 @@ pipeline {
             agent {
                 docker {
                     image 'virtual-vgo/vvgo:${GIT_COMMIT}'
-                    args '--entrypoint "sleep 9999999999d"'
+                    args '--entrypoint sleep 9999999999d'
                 }
             }
 
