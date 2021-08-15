@@ -32,7 +32,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://ghcr.io', 'github_packages') {
-                        docker.image('virtual-vgo/vvgo:${GIT_COMMIT}').inside("--network test-image") {
+                        docker.image('virtual-vgo/vvgo:${GIT_COMMIT}').inside("--network test-network") {
                             sh 'go vet ./...'
                             sh 'go test ./...'
                         }
