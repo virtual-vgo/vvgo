@@ -7,6 +7,17 @@ pipeline {
     }
 
     stages {
+        stage('Build Builder Stage') {
+            steps {
+                script {
+                    docker.withRegistry('https://ghcr.io', 'github_packages') {
+                        def vvgoImage = docker.build("virtual-vgo/vvgo-builder:${GIT_COMMIT}", "--target builder -f Dockerfile .")
+                        vvgoImage.push()
+                    }
+                }
+            }
+        }
+
         stage('Build Image') {
             steps {
                 script {
@@ -64,7 +75,7 @@ pipeline {
                         discordSend(link: env.BUILD_URL,
                                 result: currentBuild.currentResult,
                                 title: "vvgo build ${BUILD_NUMBER} has failures",
-                                webhookURL: "${WEBHOOK_URL}")
+                                webhookURL: '${WEBHOOK_URL}')
                     }
                 }
             }
