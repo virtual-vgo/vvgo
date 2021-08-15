@@ -41,7 +41,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://ghcr.io', 'github_packages') {
-                        docker.image("virtual-vgo/vvgo").inside("--network test-network --entrypoint 'sleep 9999' --env REDIS_ADDRESS=") {
+                        docker.image("virtual-vgo/vvgo").inside("--network test-network -e REDIS_ADDRESS=redis-testing -e MINIO_ENDPOINT=minio-testing:9000") {
                             sh 'go test ./...'
                         }
                     }
