@@ -8,6 +8,7 @@ pipeline {
 
     stages {
         stage('Build Image') {
+            agent any
             steps {
                 script {
                     def author = sh(
@@ -26,12 +27,28 @@ pipeline {
             }
         }
 
+        stage('Test Image') {
+            agent {
+                docker {
+                    image 'virtual-vgo/vvgo'
+                    label GIT_COMMIT
+                }
+            }
+
+            steps {
+                sh 'go vet ./...'
+                sh 'go test -v ./...'
+            }
+        }
+
         stage('Deploy Staging') {
+            agent any
             when { not { branch 'master' } }
             steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::staging' }
         }
 
         stage('Deploy Production') {
+            agent any
             when { branch 'master' }
             steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::prod' }
             post {
@@ -56,6 +73,7 @@ pipeline {
         }
 
         stage('Purge Cloudflare Cache') {
+            agent any
             when { branch 'master' }
             steps {
                 withCredentials(bindings: [string(credentialsId: 'cloudflare_purge_key', variable: 'API_KEY')]) {
