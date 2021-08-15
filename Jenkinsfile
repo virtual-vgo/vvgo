@@ -31,7 +31,7 @@ pipeline {
             agent {
                 docker {
                     image 'virtual-vgo/vvgo:${GIT_COMMIT}'
-                    command 'CMD exec /bin/sh -c "trap : TERM INT; sleep 9999999999d & wait"'
+                    command 'sleep 9999999999d"'
                 }
             }
 
