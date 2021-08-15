@@ -30,7 +30,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://ghcr.io', 'github_packages') {
-                        docker.image("virtual-vgo/vvgo").inside("--entrypoint sh") {
+                        docker.image("virtual-vgo/vvgo").inside("--network test-network --entrypoint sh --env REDIS_ADDRESS=") {
                             sh 'go test ./...'
                         }
                     }
