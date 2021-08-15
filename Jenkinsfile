@@ -56,7 +56,6 @@ pipeline {
         }
 
         stage('Purge Cloudflare Cache') {
-            agent any
             when { branch 'master' }
             steps {
                 withCredentials(bindings: [string(credentialsId: 'cloudflare_purge_key', variable: 'API_KEY')]) {
