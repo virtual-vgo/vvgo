@@ -41,10 +41,7 @@ pipeline {
         }
 
         stage('Deploy Staging') {
-            when {
-                not { branch 'master' }
-                changeRequest author: 'jacksonargo'
-            }
+            when { not { branch 'master' } }
             steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::staging' }
         }
 
