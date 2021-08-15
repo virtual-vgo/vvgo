@@ -8,7 +8,6 @@ pipeline {
 
     stages {
         stage('Build Image') {
-            agent any
             steps {
                 script {
                     def author = sh(
@@ -27,28 +26,12 @@ pipeline {
             }
         }
 
-        stage('Test Image') {
-            agent any
-            steps {
-                script {
-                    docker.withRegistry('https://ghcr.io', 'github_packages') {
-                        docker.image('virtual-vgo/vvgo:${GIT_COMMIT}').inside("--network test-network") {
-                            sh 'go vet ./...'
-                            sh 'go test ./...'
-                        }
-                    }
-                }
-            }
-        }
-
         stage('Deploy Staging') {
-            agent any
             when { not { branch 'master' } }
             steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::staging' }
         }
 
         stage('Deploy Production') {
-            agent any
             when { branch 'master' }
             steps { sh 'ssh -i ${SSH_CREDS} ${DEPLOY_TARGET} sudo /usr/local/bin/chef-solo -o vvgo::prod' }
             post {
