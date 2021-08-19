@@ -76,6 +76,10 @@ func Cmd(rcv interface{}, cmd string, args ...string) Action {
 }
 
 func (x *Client) Do(_ context.Context, a Action) error {
-	logger.Infof("redis query: %s %s", a.cmd, strings.Join(a.args, " "))
+	args := strings.Join(a.args, " ")
+	if len(args) > 30 {
+		args = args[:30] + "..."
+	}
+	logger.WithField("cmd", a.cmd).Infof("redis query: %s %s", a.cmd, args)
 	return x.pool.Do(a.radixAction)
 }
