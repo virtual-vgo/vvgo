@@ -16,7 +16,7 @@ type Leader struct {
 }
 
 func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Leaders")
+	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID, "Leaders")
 	if err != nil {
 		return nil, err
 	}

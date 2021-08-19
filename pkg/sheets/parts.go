@@ -23,7 +23,7 @@ type Part struct {
 type Parts []Part
 
 func ListParts(ctx context.Context) (Parts, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Parts")
+	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID, "Parts")
 	if err != nil {
 		return nil, err
 	}

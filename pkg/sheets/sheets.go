@@ -17,16 +17,10 @@ const CacheTTL = "5"
 
 var logger = log.New()
 
+var WebsiteDataSpreadsheetID = parse_config.Config.Sheets.WebsiteDataSpreadsheetID
+
 func NoOpSheets(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "no_op_sheets", true)
-}
-
-func WebsiteDataSpreadsheetID(ctx context.Context) string {
-	var spreadsheetID struct {
-		WebsiteDataSpreadsheetID string `json:"website_data_spreadsheet_id"`
-	}
-	parse_config.ReadModule(ctx, "sheets", &spreadsheetID)
-	return spreadsheetID.WebsiteDataSpreadsheetID
 }
 
 func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {

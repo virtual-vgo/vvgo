@@ -42,7 +42,7 @@ func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 type Projects []Project
 
 func ListProjects(ctx context.Context, identity *login.Identity) (Projects, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Projects")
+	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID, "Projects")
 	if err != nil {
 		return nil, err
 	}

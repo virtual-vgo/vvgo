@@ -19,7 +19,7 @@ type Credit struct {
 type Credits []Credit
 
 func ListCredits(ctx context.Context) (Credits, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID(ctx), "Credits")
+	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID, "Credits")
 	if err != nil {
 		return nil, err
 	}

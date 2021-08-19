@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
@@ -19,20 +20,22 @@ func main() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	var showVersion bool
+	var showConfig bool
 	flag.BoolVar(&showVersion, "version", false, "show version and quit")
-	flag.StringVar(&parse_config.ListenAddress, "listen", parse_config.ListenAddress, "http listen address")
-	flag.StringVar(&parse_config.FileName, "config-file", parse_config.FileName, "configuration file")
-	flag.StringVar(&parse_config.ServerURL, "server-url", parse_config.ServerURL, "url of the server")
+	flag.BoolVar(&showConfig, "env-usage", false, "show environment variable configuration")
 	flag.Parse()
 
 	switch {
 	case showVersion:
 		fmt.Println(version.String())
 		os.Exit(0)
+	case showConfig:
+		_ = envconfig.Usage("", &parse_config.Config)
+		os.Exit(0)
 	}
 
 	redis.InitializeFromEnv()
-	apiServer := api.NewServer(parse_config.ListenAddress)
+	apiServer := api.NewServer(parse_config.Config.VVGO.ListenAddress)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}

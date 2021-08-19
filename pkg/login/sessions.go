@@ -23,7 +23,7 @@ const CookieName = "vvgo-sessions"
 const CookiePath = "/"
 
 func CookieDomain() string {
-	x, _ := url.Parse(parse_config.ServerURL)
+	x, _ := url.Parse(parse_config.Config.VVGO.ServerUrl)
 	return "." + x.Hostname()
 }
 
