@@ -29,9 +29,6 @@ const VVGOProductionTeamRoleID = "746434659252174971"
 const VVGOExecutiveDirectorRoleID = "690626333062987866"
 const VVGOProductionDirectorRoleID = "805504313072943155"
 
-// Config for discord requests.
-var Config = parse_config.Config.Discord
-
 func LoginURL(state string) string {
 	query := make(url.Values)
 	query.Set("client_id", OAuthClientID)
@@ -66,7 +63,7 @@ func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
 	// build the authorization request
 	form := make(url.Values)
 	form.Add("client_id", OAuthClientID)
-	form.Add("client_secret", Config.OAuthClientSecret)
+	form.Add("client_secret", parse_config.Config.Discord.OAuthClientSecret)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
 	form.Add("redirect_uri", parse_config.Config.VVGO.ServerUrl+"/login/discord")
@@ -214,12 +211,12 @@ func newBotRequest(ctx context.Context, method, path string, body io.Reader) (*h
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bot "+Config.BotAuthenticationToken)
+	req.Header.Add("Authorization", "Bot "+parse_config.Config.Discord.BotAuthenticationToken)
 	return req, err
 }
 
 func newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, method, Config.Endpoint+path, body)
+	req, err := http.NewRequestWithContext(ctx, method, parse_config.Config.Discord.Endpoint+path, body)
 	if err != nil {
 		return nil, fmt.Errorf("http.NewRequestWithContext() failed: %w", err)
 	}

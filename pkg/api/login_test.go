@@ -62,7 +62,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		defer ts.Close()
 
 		urlValues := make(url.Values)
-		urlValues.Add("user", "vvgo-user")
+		urlValues.Add("user", "vvgo-member")
 		urlValues.Add("pass", "the-wrong-password")
 		resp, err := noFollow(http.DefaultClient).PostForm(ts.URL, urlValues)
 		require.NoError(t, err, "client.Get")
@@ -81,7 +81,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		client := noFollow(&http.Client{})
 
 		urlValues := make(url.Values)
-		urlValues.Add("user", "vvgo-user")
+		urlValues.Add("user", "vvgo-member")
 		urlValues.Add("pass", "vvgo-pass")
 
 		// do the request

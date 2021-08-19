@@ -28,7 +28,6 @@ func TestClient_QueryOAuth(t *testing.T) {
 		gotForm = buf.String()
 
 		// https://discordapp.com/developers/docs/topics/oauth2#authorization-code-grant-access-token-response
-		//goland:noinspection SpellCheckingInspection
 		_, _ = w.Write([]byte(`{
 			"access_token": "6qrZcUqja7812RVdnEKjpzOL4CvHBFG",
 			"token_type": "Bearer",

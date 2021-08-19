@@ -120,6 +120,8 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		err = errors.New("user is required")
 	case pass == "":
 		err = errors.New("password is required")
+	case passwords[user] == "":
+		err = errors.New("unknown user")
 	default:
 		err = bcrypt.CompareHashAndPassword([]byte(passwords[user]), []byte(pass))
 	}
