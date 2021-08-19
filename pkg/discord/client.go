@@ -29,34 +29,10 @@ const VVGOProductionTeamRoleID = "746434659252174971"
 const VVGOExecutiveDirectorRoleID = "690626333062987866"
 const VVGOProductionDirectorRoleID = "805504313072943155"
 
-// Config for discord requests.
-type Config struct {
-	// Endpoint is the api endpoint to query. Defaults to https://discord.com/api/v8.
-	// This should only be overwritten for testing.
-	Endpoint string `json:"endpoint" default:"https://discord.com/api/v8"`
-
-	// BotAuthenticationToken is used for making queries about our discord guild.
-	// This is found in the bot tab for the discord app.
-	BotAuthenticationToken string `json:"bot_authentication_token"`
-
-	// OAuthClientSecret is the secret used in oauth requests.
-	// This is found in the oauth2 tab for the discord app.
-	OAuthClientSecret string `json:"oauth_client_secret"`
-}
-
-const ConfigModule = "discord"
-
-func readConfig(ctx context.Context) Config {
-	var config Config
-	parse_config.ReadModule(ctx, ConfigModule, &config)
-	parse_config.SetDefaults(&config)
-	return config
-}
-
-func LoginURL(ctx context.Context, state string) string {
+func LoginURL(state string) string {
 	query := make(url.Values)
 	query.Set("client_id", OAuthClientID)
-	query.Set("redirect_uri", parse_config.ServerURL+"/login/discord")
+	query.Set("redirect_uri", parse_config.Config.VVGO.ServerUrl+"/login/discord")
 	query.Set("response_type", "code")
 	query.Set("state", state)
 	query.Set("scope", "identify")
@@ -80,8 +56,6 @@ func QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
 
 // build the oauth request
 func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
-	config := readConfig(ctx)
-
 	if code == "" {
 		return nil, ErrInvalidOAuthCode
 	}
@@ -89,10 +63,10 @@ func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
 	// build the authorization request
 	form := make(url.Values)
 	form.Add("client_id", OAuthClientID)
-	form.Add("client_secret", config.OAuthClientSecret)
+	form.Add("client_secret", parse_config.Config.Discord.OAuthClientSecret)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", parse_config.ServerURL+"/login/discord")
+	form.Add("redirect_uri", parse_config.Config.VVGO.ServerUrl+"/login/discord")
 	form.Add("scope", "identify")
 
 	req, err := newRequest(ctx, http.MethodPost, "/oauth2/token", strings.NewReader(form.Encode()))
@@ -131,7 +105,7 @@ func newTokenRequest(ctx context.Context, oauthToken *OAuthToken, path string) (
 }
 
 // QueryGuildMember Query discord for the guild member object of the guild id and user id.
-// Here we use the the server's own auth token.
+// Here we use the server's own auth token.
 // https://discordapp.com/developers/docs/resources/guild#get-guild-member
 func QueryGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, error) {
 	req, err := newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members/"+userID.String(), nil)
@@ -233,19 +207,16 @@ func doDiscordBotRequestWithJsonParams(ctx context.Context, path, method string,
 
 // returns a request using a bot token for authentication
 func newBotRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
-	config := readConfig(ctx)
 	req, err := newRequest(ctx, method, path, body)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bot "+config.BotAuthenticationToken)
+	req.Header.Add("Authorization", "Bot "+parse_config.Config.Discord.BotAuthenticationToken)
 	return req, err
 }
 
 func newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
-	config := readConfig(ctx)
-
-	req, err := http.NewRequestWithContext(ctx, method, config.Endpoint+path, body)
+	req, err := http.NewRequestWithContext(ctx, method, parse_config.Config.Discord.Endpoint+path, body)
 	if err != nil {
 		return nil, fmt.Errorf("http.NewRequestWithContext() failed: %w", err)
 	}

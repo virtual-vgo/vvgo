@@ -41,7 +41,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 
 func TestHandlePartsInteraction(t *testing.T) {
 	ctx := backgroundContext()
-	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID(ctx), "Projects", [][]interface{}{
+	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released"},
 		{"10-hildas-healing", "Hilda's Healing", true},
 	})
@@ -76,7 +76,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 
 func TestHandleSubmissionInteraction(t *testing.T) {
 	ctx := backgroundContext()
-	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID(ctx), "Projects", [][]interface{}{
+	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released", "Submission Link"},
 		{"10-hildas-healing", "Hilda's Healing", true, "https://bit.ly/vvgo10submit"},
 	})

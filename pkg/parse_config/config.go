@@ -1,134 +1,92 @@
 package parse_config
 
 import (
-	"context"
-	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
+	"bytes"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"net/http"
-	"net/url"
 	"os"
-	"reflect"
-	"strconv"
+	"strings"
 )
-
-// ListenAddress Listen address for the http server.
-var ListenAddress = "0.0.0.0:8080"
-
-// ServerURL Url to reach the http server.
-var ServerURL = "https://vvgo.org"
-
-// FileName Path to the configuration file.
-var FileName = "/etc/vvgo/vvgo.json"
-
-// Endpoint RPC endpoint for remote configuration.
-var Endpoint = "https://vvgo.org/api/v1/config"
-
-// Session The session key returned by https://vvgo.org/api/v1/session?with_roles=read_config.
-var Session string
 
 var logger = log.New()
 
-type CtxKey string
+var Config struct {
+	VVGO struct {
+		ListenAddress      string `json:"listen_address" envconfig:"listen_address" default:"0.0.0.0:8080"`
+		ServerUrl          string `json:"server_url" envconfig:"server_url" default:"https://vvgo.org"`
+		DistroBucket       string `json:"distro_bucket" envconfig:"distro_bucket" default:"vvgo-distro"`
+		MemberPasswordHash string `json:"member_password_hash" envconfig:"member_password_hash"`
+	} `json:"vvgo" envconfig:"vvgo"`
 
-const CtxKeyVVGOConfig CtxKey = "vvgo_config"
+	Minio struct {
+		Endpoint  string `json:"endpoint" envconfig:"endpoint" default:"localhost:9000"`
+		AccessKey string `json:"access_key" envconfig:"access_key" default:"minioadmin"`
+		SecretKey string `json:"secret_key" envconfig:"secret_key" default:"minioadmin"`
+		UseSSL    bool   `json:"use_ssl" envconfig:"use_ssl" default:"false"`
+	} `json:"minio" envconfig:"minio"`
 
-func (x CtxKey) Module(module string) CtxKey { return x + CtxKey("_"+module) }
+	Discord struct {
+		// Endpoint is the api endpoint to query. Defaults to https://discord.com/api/v8.
+		// This should only be overwritten for testing.
+		Endpoint string `json:"endpoint" envconfig:"endpoint" default:"https://discord.com/api/v8"`
 
-func SetModule(ctx context.Context, module string, src interface{}) context.Context {
-	return context.WithValue(ctx, CtxKeyVVGOConfig.Module(module), src)
+		// BotAuthenticationToken is used for making queries about our discord guild.
+		// This is found in the bot tab for the discord app.
+		BotAuthenticationToken string `json:"bot_authentication_token" envconfig:"bot_authentication_token"`
+
+		// OAuthClientSecret is the secret used in oauth requests.
+		// This is found in the oauth2 tab for the discord app.
+		OAuthClientSecret string `json:"oauth_client_secret" envconfig:"oauth_client_secret"`
+	} `json:"discord" envconfig:"discord"`
+
+	Sheets struct {
+		WebsiteDataSpreadsheetID string `json:"website_data_spreadsheet_id" envconfig:"website_data_spreadsheet_id"`
+	} `json:"sheets" envconfig:"sheets"`
+
+	Redis struct {
+		Network  string `json:"network" envconfig:"network" default:"tcp"`
+		Address  string `json:"address" envconfig:"address" default:"localhost:6379"`
+		PoolSize int    `json:"pool_size" envconfig:"pool_size" default:"10"`
+	} `json:"redis" envconfig:"redis"`
 }
 
-func ReadModule(ctx context.Context, module string, dest interface{}) {
-	moduleData := ctx.Value(CtxKeyVVGOConfig.Module(module))
-	switch {
-	//case Session != "": TODO: Finish implementing this or delete it.
-	//	ReadModuleFromEndpoint(ctx, Endpoint, Session, module, dest)
+var envFile string // can be set at build to read env vars from a file.
 
-	case moduleData != nil:
-		reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(moduleData))
-	default:
-		ReadModuleFromFile(ctx, FileName, module, dest)
-	}
-}
-
-func ReadModuleFromFile(ctx context.Context, fileName string, module string, dest interface{}) {
-	logger.Infof("reading config from %s", fileName)
-
-	file, err := os.Open(FileName)
-	if err != nil {
-		logger.MethodFailure(ctx, "os.Open", err)
-		return
-	}
-	defer file.Close()
-
-	configJSON := make(map[string]json.RawMessage)
-	if err := json.NewDecoder(file).Decode(&configJSON); err != nil {
-		logger.JsonDecodeFailure(ctx, err)
-		return
-	}
-
-	moduleJSON, ok := configJSON[module]
-	if !ok {
-		logger.WithField("config_module", module).Errorf("config module `%s` not found", module)
-		return
-	}
-
-	if err := json.Unmarshal(moduleJSON, dest); err != nil {
-		logger.JsonDecodeFailure(ctx, err)
-		return
-	}
-}
-
-func ReadModuleFromEndpoint(ctx context.Context, endpoint string, session string, module string, dest interface{}) {
-	logger.Infof("fetching remote config from %s", endpoint)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		logger.MethodFailure(ctx, "http.NewRequest", err)
-		return
-	}
-
-	form := make(url.Values)
-	form.Add("module", module)
-	req.Header.Add("Authorization", "Bearer "+session)
-	req.Form = form
-	resp, err := http_wrappers.DoRequest(req)
-	if err != nil {
-		logger.MethodFailure(ctx, "http.Do", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if err := json.NewDecoder(resp.Body).Decode(dest); err != nil {
-		logger.JsonDecodeFailure(ctx, err)
-		return
-	}
-}
-
-func SetDefaults(dest interface{}) {
-	reflectType := reflect.TypeOf(dest).Elem()
-	for i := 0; i < reflectType.NumField(); i++ {
-		field := reflectType.Field(i)
-		defaultString := field.Tag.Get("default")
-		if defaultString == "" {
-			continue
+func init() {
+	if envFile != "" {
+		file, err := os.Open(envFile)
+		if err != nil {
+			logger.WithField("file_name", envFile).WithError(err).Error("os.Open() failed")
+			logger.Fatal("cannot read environment file")
+			return
 		}
-		if reflect.ValueOf(dest).Elem().Field(i).IsZero() {
-			setField(dest, field.Type.Kind(), i, defaultString)
+
+		var buf bytes.Buffer
+		if _, err = buf.ReadFrom(file); err != nil {
+			logger.WithField("file_name", envFile).WithError(err).Error("file.Read() failed")
+			logger.Fatal("cannot read environment file")
+			return
+		}
+
+		for _, line := range strings.Split(buf.String(), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+
+			fields := strings.SplitN(line, "=", 2)
+			if len(fields) != 2 {
+				logger.Fatal("cannot parse environment file")
+				return
+			}
+
+			key, val := fields[0], fields[1]
+			if err = os.Setenv(key, val); err != nil {
+				logger.WithField("file_name", envFile).WithError(err).Error("os.Setenv() failed")
+				logger.Fatal("cannot update environment variables")
+				return
+			}
 		}
 	}
-}
-
-func setField(dest interface{}, kind reflect.Kind, i int, valString string) {
-	switch kind {
-	case reflect.String:
-		reflect.ValueOf(dest).Elem().Field(i).SetString(valString)
-	case reflect.Bool:
-		val, _ := strconv.ParseBool(valString)
-		reflect.ValueOf(dest).Elem().Field(i).SetBool(val)
-	case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-		val, _ := strconv.ParseInt(valString, 10, 64)
-		reflect.ValueOf(dest).Elem().Field(i).SetInt(val)
-	}
+	envconfig.MustProcess("", &Config)
 }

@@ -7,6 +7,20 @@ pipeline {
     }
 
     stages {
+        stage('Unit Test') {
+            steps {
+                script {
+                    docker.withRegistry('https://ghcr.io', 'github_packages') {
+                        docker
+                            .build("virtual-vgo/vvgo-builder:${GIT_COMMIT}", "--target builder -f Dockerfile .")
+                            .inside("-u root --network test-network -e REDIS_ADDRESS=redis-testing:6379 -e MINIO_ENDPOINT=minio-testing:9000") {
+                                sh 'go test -v ./...'
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Build Image') {
             steps {
                 script {
@@ -49,7 +63,7 @@ pipeline {
                         discordSend(link: env.BUILD_URL,
                                 result: currentBuild.currentResult,
                                 title: "vvgo build ${BUILD_NUMBER} has failures",
-                                webhookURL: "${WEBHOOK_URL}")
+                                webhookURL: '${WEBHOOK_URL}')
                     }
                 }
             }

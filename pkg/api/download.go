@@ -10,7 +10,7 @@ import (
 const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
 type DownloadConfig struct {
-	DistroBucket string `json:"distro_bucket" default:"vvgo-distro"`
+	DistroBucket string `json:"distro_bucket" envconfig:"distro_bucket" default:"vvgo-distro"`
 }
 
 var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,19 +25,15 @@ var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	ctx := r.Context()
-	var config DownloadConfig
-	parse_config.ReadModule(ctx, "download", &config)
-	parse_config.SetDefaults(&config)
-
-	minioClient, err := minio.NewClient(ctx)
+	minioClient, err := minio.NewClient()
 	if err != nil {
 		logger.WithError(err).Error("minio.New() failed")
 		internalServerError(w)
 		return
 	}
 
-	downloadUrl, err := minioClient.PresignedGetObject(config.DistroBucket, object, ProtectedLinkExpiry, nil)
+	distroBucket := parse_config.Config.VVGO.DistroBucket
+	downloadUrl, err := minioClient.PresignedGetObject(distroBucket, object, ProtectedLinkExpiry, nil)
 	if err != nil {
 		logger.WithError(err).Error("minio.StatObject() failed")
 		internalServerError(w)

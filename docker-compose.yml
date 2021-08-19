@@ -27,21 +27,6 @@ services:
         protocol: tcp
         mode: host
 
-  p3x-redis-ui:
-    image: patrikx3/p3x-redis-ui:latest
-    ports:
-      - target: 7843
-        published: 7843
-        protocol: tcp
-        mode: host
-    volumes:
-      - type: bind
-        source: .p3xrs.json
-        target: /settings/p3xrs.json
-      - type: bind
-        source: .p3xrs-conns.json
-        target: /settings/.p3xrs-conns.json
-
   vvgo:
     build:
       dockerfile: Dockerfile

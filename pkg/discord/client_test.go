@@ -14,10 +14,8 @@ import (
 
 func TestClient_QueryOAuth(t *testing.T) {
 	ctx := context.Background()
-	config := Config{
-		BotAuthenticationToken: "test-bot-auth-token",
-		OAuthClientSecret:      "test-oauth-client-secret",
-	}
+	parse_config.Config.Discord.BotAuthenticationToken = "test-bot-auth-token"
+	parse_config.Config.Discord.OAuthClientSecret = "test-oauth-client-secret"
 
 	var gotRequest *http.Request
 	var gotForm string
@@ -30,7 +28,6 @@ func TestClient_QueryOAuth(t *testing.T) {
 		gotForm = buf.String()
 
 		// https://discordapp.com/developers/docs/topics/oauth2#authorization-code-grant-access-token-response
-		//goland:noinspection SpellCheckingInspection
 		_, _ = w.Write([]byte(`{
 			"access_token": "6qrZcUqja7812RVdnEKjpzOL4CvHBFG",
 			"token_type": "Bearer",
@@ -40,8 +37,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	config.Endpoint = ts.URL
-	ctx = parse_config.SetModule(ctx, "discord", config)
+	parse_config.Config.Discord.Endpoint = ts.URL
 	gotToken, gotError := QueryOAuth(ctx, "test-code")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodPost, gotRequest.Method)
@@ -69,10 +65,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 
 func TestClient_QueryIdentity(t *testing.T) {
 	ctx := context.Background()
-	config := Config{
-		BotAuthenticationToken: "test-bot-auth-token",
-	}
-	//goland:noinspection SpellCheckingInspection
+	parse_config.Config.Discord.BotAuthenticationToken = "test-bot-auth-token"
 	token := &OAuthToken{
 		AccessToken:  "6qrZcUqja7812RVdnEKjpzOL4CvHBFG",
 		TokenType:    "Bearer",
@@ -98,8 +91,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	config.Endpoint = ts.URL
-	ctx = parse_config.SetModule(context.Background(), "discord", config)
+	parse_config.Config.Discord.Endpoint = ts.URL
 	gotUser, gotError := QueryIdentity(ctx, token)
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
@@ -111,9 +103,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 
 func TestClient_QueryGuildMember(t *testing.T) {
 	ctx := context.Background()
-	config := Config{
-		BotAuthenticationToken: "test-bot-auth-token",
-	}
+	parse_config.Config.Discord.BotAuthenticationToken = "test-bot-auth-token"
 
 	var gotRequest *http.Request
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -129,8 +119,7 @@ func TestClient_QueryGuildMember(t *testing.T) {
 		}`))
 	}))
 	defer ts.Close()
-	config.Endpoint = ts.URL
-	ctx = parse_config.SetModule(context.Background(), "discord", config)
+	parse_config.Config.Discord.Endpoint = ts.URL
 	gotMember, gotError := QueryGuildMember(ctx, "test-user-id")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)

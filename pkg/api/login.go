@@ -10,6 +10,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 	"time"
@@ -103,7 +104,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	passwords := make(map[string]string)
-	parse_config.ReadModule(ctx, "password_login", &passwords)
+	passwords["vvgo-member"] = parse_config.Config.VVGO.MemberPasswordHash
 
 	var identity login.Identity
 	if err := login.ReadSessionFromRequest(ctx, r, &identity); err == nil {
@@ -113,11 +114,20 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	user := r.FormValue("user")
 	pass := r.FormValue("pass")
+	var err error
+	switch {
+	case user == "":
+		err = errors.New("user is required")
+	case pass == "":
+		err = errors.New("password is required")
+	case passwords[user] == "":
+		err = errors.New("unknown user")
+	default:
+		err = bcrypt.CompareHashAndPassword([]byte(passwords[user]), []byte(pass))
+	}
 
-	if user == "" || pass == "" || passwords[user] != pass {
-		logger.WithFields(logrus.Fields{
-			"user": user,
-		}).Error("password authentication failed")
+	if err != nil {
+		logger.WithError(err).WithField("user", user).Error("password authentication failed")
 		unauthorized(w)
 		return
 	}
@@ -145,7 +155,7 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			internalServerError(w)
 			return
 		}
-		http.Redirect(w, r, discord.LoginURL(ctx, state), http.StatusFound)
+		http.Redirect(w, r, discord.LoginURL(state), http.StatusFound)
 		return
 	}
 

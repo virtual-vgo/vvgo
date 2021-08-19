@@ -52,7 +52,8 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	loginHandler := PasswordLoginHandler{}
 
-	ctx = parse_config.SetModule(ctx, "password_login", map[string]string{"vvgo-user": "vvgo-pass"})
+	// password is vvgo-pass
+	parse_config.Config.VVGO.MemberPasswordHash = `$2a$10$7FR7RLJNkr1PQV7ahsoPPOV.9orLsENrXi8wnz2mQf8oyKmpnlt2O`
 
 	t.Run("post/failure", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +62,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		defer ts.Close()
 
 		urlValues := make(url.Values)
-		urlValues.Add("user", "vvgo-user")
+		urlValues.Add("user", "vvgo-member")
 		urlValues.Add("pass", "the-wrong-password")
 		resp, err := noFollow(http.DefaultClient).PostForm(ts.URL, urlValues)
 		require.NoError(t, err, "client.Get")
@@ -80,7 +81,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		client := noFollow(&http.Client{})
 
 		urlValues := make(url.Values)
-		urlValues.Add("user", "vvgo-user")
+		urlValues.Add("user", "vvgo-member")
 		urlValues.Add("pass", "vvgo-pass")
 
 		// do the request
@@ -204,10 +205,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	}
 
 	newVVGOServer := func(discordURL string) *httptest.Server {
-		ctx := parse_config.SetModule(ctx, "discord", discord.Config{
-			Endpoint:               discordURL,
-			BotAuthenticationToken: "test-bot-auth-token",
-		})
+		parse_config.Config.Discord.Endpoint = discordURL
+		parse_config.Config.Discord.BotAuthenticationToken = "test-bot-auth-token"
 		loginHandler := DiscordLoginHandler{}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			loginHandler.ServeHTTP(w, r.WithContext(ctx))

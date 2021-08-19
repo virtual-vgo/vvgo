@@ -1,7 +1,6 @@
 package minio
 
 import (
-	"context"
 	"fmt"
 	"github.com/minio/minio-go/v6"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
@@ -10,22 +9,10 @@ import (
 	"time"
 )
 
-type Config struct {
-	Endpoint  string `json:"endpoint" default:"localhost:9000"`
-	Region    string `json:"region" default:"sfo2"`
-	AccessKey string `json:"access_key" default:"minioadmin"`
-	SecretKey string `json:"secret_key" default:"minioadmin"`
-	UseSSL    bool   `json:"use_ssl" default:"false"`
-}
-
-const ConfigModule = "minio"
-
 type Client struct{ minio.Client }
 
-func NewClient(ctx context.Context) (*Client, error) {
-	var config Config
-	parse_config.ReadModule(ctx, ConfigModule, &config)
-	parse_config.SetDefaults(&config)
+func NewClient() (*Client, error) {
+	config := parse_config.Config.Minio
 	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
 	if err != nil {
 		return nil, fmt.Errorf("minio.New() failed: %w", err)
