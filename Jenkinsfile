@@ -14,7 +14,7 @@ pipeline {
                         docker
                             .build("virtual-vgo/vvgo-builder:${GIT_COMMIT}", "--target builder -f Dockerfile .")
                             .inside("-u root --network test-network -e REDIS_ADDRESS=redis-testing:6379 -e MINIO_ENDPOINT=minio-testing:9000") {
-                                sh 'go test ./...'
+                                sh 'go test -v ./...'
                         }
                     }
                 }

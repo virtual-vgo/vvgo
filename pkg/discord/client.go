@@ -105,7 +105,7 @@ func newTokenRequest(ctx context.Context, oauthToken *OAuthToken, path string) (
 }
 
 // QueryGuildMember Query discord for the guild member object of the guild id and user id.
-// Here we use the the server's own auth token.
+// Here we use the server's own auth token.
 // https://discordapp.com/developers/docs/resources/guild#get-guild-member
 func QueryGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, error) {
 	req, err := newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members/"+userID.String(), nil)
