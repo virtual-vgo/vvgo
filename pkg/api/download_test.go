@@ -24,7 +24,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	require.NoError(t, err, "minioClient.PutObject() failed")
 
 	downloadHandler := DownloadHandler
-	parse_config.Config.VVGO.DistroBucket=bucketName
+	parse_config.Config.VVGO.DistroBucket = bucketName
 
 	for _, tt := range []struct {
 		name    string
