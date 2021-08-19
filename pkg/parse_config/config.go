@@ -1,6 +1,8 @@
 package parse_config
 
-import "github.com/kelseyhightower/envconfig"
+import (
+	"github.com/kelseyhightower/envconfig"
+)
 
 var Config struct {
 	VVGO struct {
@@ -37,8 +39,8 @@ var Config struct {
 
 	Redis struct {
 		Network  string `json:"network" envconfig:"network" default:"tcp"`
-		Address  string `json:"address" envconfig:"network" default:"localhost:6379"`
-		PoolSize int    `json:"pool_size" envconfig:"network" default:"10"`
+		Address  string `json:"address" envconfig:"address" default:"localhost:6379"`
+		PoolSize int    `json:"pool_size" envconfig:"pool_size" default:"10"`
 	} `json:"redis" envconfig:"redis"`
 }
 
