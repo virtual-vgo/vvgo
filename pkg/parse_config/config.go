@@ -20,20 +20,26 @@ var Config struct {
 	Discord struct {
 		// Endpoint is the api endpoint to query. Defaults to https://discord.com/api/v8.
 		// This should only be overwritten for testing.
-		Endpoint string `json:"endpoint" default:"https://discord.com/api/v8"`
+		Endpoint string `json:"endpoint" envconfig:"endpoint" default:"https://discord.com/api/v8"`
 
 		// BotAuthenticationToken is used for making queries about our discord guild.
 		// This is found in the bot tab for the discord app.
-		BotAuthenticationToken string `json:"bot_authentication_token"`
+		BotAuthenticationToken string `json:"bot_authentication_token" envconfig:"bot_authentication_token"`
 
 		// OAuthClientSecret is the secret used in oauth requests.
 		// This is found in the oauth2 tab for the discord app.
-		OAuthClientSecret string `json:"oauth_client_secret"`
+		OAuthClientSecret string `json:"oauth_client_secret" envconfig:"oauth_client_secret"`
 	} `json:"discord" envconfig:"discord"`
 
 	Sheets struct {
 		WebsiteDataSpreadsheetID string `json:"website_data_spreadsheet_id" envconfig:"website_data_spreadsheet_id"`
 	} `json:"sheets" envconfig:"sheets"`
+
+	Redis struct {
+		Network  string `json:"network" envconfig:"network" default:"tcp"`
+		Address  string `json:"address" envconfig:"network" default:"localhost:6379"`
+		PoolSize int    `json:"pool_size" envconfig:"network" default:"10"`
+	} `json:"redis" envconfig:"redis"`
 }
 
 func init() { envconfig.MustProcess("", &Config) }

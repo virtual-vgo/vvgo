@@ -7,7 +7,6 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
 	"os"
@@ -34,7 +33,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	redis.InitializeFromEnv()
 	apiServer := api.NewServer(parse_config.Config.VVGO.ListenAddress)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")

@@ -2,63 +2,44 @@ package redis
 
 import (
 	"context"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"strings"
 )
 
 var logger = log.New()
+
+type Client struct{ pool *radix.Pool }
+
 var client *Client
 
-type Client struct {
-	config Config
-	pool   *radix.Pool
-}
+func init() { client = NewClientMust() }
 
-type Config struct {
-	Network  string `default:"tcp"`
-	Address  string `default:"localhost:6379"`
-	PoolSize int    `default:"10"`
-}
+func Do(ctx context.Context, a Action) error { return client.Do(ctx, a) }
 
-func Initialize(config Config) {
-	client = NewClientMust(config)
-}
-
-func InitializeFromEnv() {
-	var config Config
-	envconfig.MustProcess("REDIS", &config)
-	Initialize(config)
-}
-
-func Do(ctx context.Context, a Action) error {
-	return client.Do(ctx, a)
-}
-
-func NewClient(config Config) (*Client, error) {
-	if config.Network == "" {
-		config.Network = "tcp"
-	}
-	if config.Address == "" {
-		config.Address = "localhost:6379"
-	}
-	if config.PoolSize == 0 {
-		config.PoolSize = 10
-	}
-	radixPool, err := radix.NewPool(config.Network, config.Address, config.PoolSize)
-	if err != nil {
-		return nil, err
-	}
-	return &Client{pool: radixPool, config: config}, nil
-}
-
-func NewClientMust(config Config) *Client {
-	client, err := NewClient(config)
+func NewClientMust() *Client {
+	radixPool, err := radix.NewPool(parse_config.Config.Redis.Network, parse_config.Config.Redis.Address, parse_config.Config.Redis.PoolSize)
 	if err != nil {
 		logger.WithError(err).Fatal("redis.NewClient() failed")
+		return nil
+	}
+
+	client := &Client{pool: radixPool}
+	if err != nil {
+		logger.WithError(err).Fatal("redis.NewClient() failed")
+		return nil
 	}
 	return client
+}
+
+func (x *Client) Do(_ context.Context, a Action) error {
+	args := strings.Join(a.args, " ")
+	if len(args) > 30 {
+		args = args[:30] + "..."
+	}
+	logger.WithField("cmd", a.cmd).Infof("redis query: %s %s", a.cmd, args)
+	return x.pool.Do(a.radixAction)
 }
 
 type Action struct {
@@ -73,13 +54,4 @@ func Cmd(rcv interface{}, cmd string, args ...string) Action {
 		args:        args,
 		radixAction: radix.Cmd(rcv, cmd, args...),
 	}
-}
-
-func (x *Client) Do(_ context.Context, a Action) error {
-	args := strings.Join(a.args, " ")
-	if len(args) > 30 {
-		args = args[:30] + "..."
-	}
-	logger.WithField("cmd", a.cmd).Infof("redis query: %s %s", a.cmd, args)
-	return x.pool.Do(a.radixAction)
 }

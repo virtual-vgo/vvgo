@@ -4,16 +4,11 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 )
-
-func init() {
-	redis.InitializeFromEnv()
-}
 
 func TestStore_GetIdentity(t *testing.T) {
 	t.Run("exists", func(t *testing.T) {
