@@ -1,8 +1,15 @@
 package parse_config
 
 import (
+	"bytes"
+	"flag"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/virtual-vgo/vvgo/pkg/log"
+	"os"
+	"strings"
 )
+
+var logger = log.New()
 
 var Config struct {
 	VVGO struct {
@@ -44,4 +51,44 @@ var Config struct {
 	} `json:"redis" envconfig:"redis"`
 }
 
-func init() { envconfig.MustProcess("", &Config) }
+func init() {
+	var envFile string
+	flag.StringVar(&envFile, "env-file", "", "path to a file with environment variables")
+	flag.Parse()
+	if envFile != "" {
+		file, err := os.Open(envFile)
+		if err != nil {
+			logger.WithField("file_name", envFile).WithError(err).Error("os.Open() failed")
+			logger.Fatal("cannot read environment file")
+			return
+		}
+
+		var buf bytes.Buffer
+		if _, err = buf.ReadFrom(file); err != nil {
+			logger.WithField("file_name", envFile).WithError(err).Error("file.Read() failed")
+			logger.Fatal("cannot read environment file")
+			return
+		}
+
+		for _, line := range strings.Split(buf.String(), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+
+			fields := strings.SplitN(line, "=", 2)
+			if len(fields) != 2 {
+				logger.Fatal("cannot parse environment file")
+				return
+			}
+
+			key, val := fields[0], fields[1]
+			if err = os.Setenv(key, val); err != nil {
+				logger.WithField("file_name", envFile).WithError(err).Error("os.Setenv() failed")
+				logger.Fatal("cannot update environment variables")
+				return
+			}
+		}
+	}
+	envconfig.MustProcess("", &Config)
+}
