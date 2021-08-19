@@ -2,7 +2,6 @@ package parse_config
 
 import (
 	"bytes"
-	"flag"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"os"
@@ -51,10 +50,9 @@ var Config struct {
 	} `json:"redis" envconfig:"redis"`
 }
 
+var envFile string // can be set at build to read env vars from a file.
+
 func init() {
-	var envFile string
-	flag.StringVar(&envFile, "env-file", "", "path to a file with environment variables")
-	flag.Parse()
 	if envFile != "" {
 		file, err := os.Open(envFile)
 		if err != nil {
