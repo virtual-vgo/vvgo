@@ -16,7 +16,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 	type wants struct{ code int }
 
-	minioClient, err := vvgo_minio.NewClient(context.Background())
+	minioClient, err := vvgo_minio.NewClient()
 	require.NoError(t, err, "minio.New() failed")
 	bucketName, err := minioClient.NewRandomBucket()
 	require.NoError(t, err, "minioClient.MakeBucket() failed")
@@ -24,8 +24,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	require.NoError(t, err, "minioClient.PutObject() failed")
 
 	downloadHandler := DownloadHandler
-	config := DownloadConfig{DistroBucket: bucketName}
-	ctx = parse_config.SetModule(ctx, "download", config)
+	parse_config.Config.VVGO.DistroBucket=bucketName
 
 	for _, tt := range []struct {
 		name    string
