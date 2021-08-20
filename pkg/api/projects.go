@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
@@ -14,48 +15,48 @@ func ProjectsApi(w http.ResponseWriter, r *http.Request) {
 	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("valuesToProjects() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
-	switch {
-	case r.FormValue("latest") == "true":
+
+	if r.FormValue("latest") == "true" {
 		project := projects.WithField("Video Released", true).Sort().Last()
-		handleError(json.NewEncoder(w).Encode(sheets.Projects{project})).
-			logError("json.Encode() failed")
-	default:
-		handleError(json.NewEncoder(w).Encode(projects)).
-			logError("json.Encode() failed")
+		projects = sheets.Projects{project}
+	}
+
+	if err := json.NewEncoder(w).Encode(projects); err != nil {
+		logger.JsonEncodeFailure(ctx, err)
 	}
 }
 
 func ProjectsView(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
-	handleError(err).ifError(func(err error) {
-		logger.WithError(err).Error("sheets.ListProjects() failed")
-		internalServerError(w)
-	}).ifSuccess(func() {
-		name := r.FormValue("name")
-		project, ok := projects.Get(name)
-		if !ok {
-			ParseAndExecute(ctx, w, r, &projects, "projects_index.gohtml")
-		} else {
-			serveProject(w, r, project)
-		}
-	})
+	if err != nil {
+		logger.MethodFailure(ctx, "sheets.ListProjects", err)
+		return
+	}
+
+	name := r.FormValue("name")
+	project, ok := projects.Get(name)
+	if !ok {
+		ParseAndExecute(ctx, w, r, &projects, "projects_index.gohtml")
+	} else {
+		serveProject(w, r, project)
+	}
 }
 
 func serveProject(w http.ResponseWriter, r *http.Request, project sheets.Project) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
+		helpers.MethodNotAllowed(w)
 		return
 	}
 
 	credits, err := sheets.ListCredits(ctx)
 	if err != nil {
 		logger.WithError(err).Error("valuesToCredits() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 

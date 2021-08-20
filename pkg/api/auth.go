@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"net/url"
@@ -71,7 +72,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 			http.Redirect(w, r, "/login?"+values.Encode(), http.StatusFound)
 			return
 		}
-		unauthorized(w)
+		helpers.Unauthorized(w)
 	})
 }
 

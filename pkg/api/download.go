@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/minio"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
@@ -15,20 +16,20 @@ type DownloadConfig struct {
 
 var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
+		helpers.MethodNotAllowed(w)
 		return
 	}
 
 	object := r.URL.Query().Get("object")
 	if object == "" {
-		badRequest(w, "object required")
+		helpers.BadRequest(w, "object required")
 		return
 	}
 
 	minioClient, err := minio.NewClient()
 	if err != nil {
 		logger.WithError(err).Error("minio.New() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 
@@ -36,7 +37,7 @@ var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 	downloadUrl, err := minioClient.PresignedGetObject(distroBucket, object, ProtectedLinkExpiry, nil)
 	if err != nil {
 		logger.WithError(err).Error("minio.StatObject() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 	http.Redirect(w, r, downloadUrl.String(), http.StatusFound)

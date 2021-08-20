@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
@@ -13,10 +14,10 @@ func LeadersApi(w http.ResponseWriter, r *http.Request) {
 	leaders, err := sheets.ListLeaders(ctx)
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListLeaders() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
-	jsonEncode(w, &leaders)
+	helpers.JsonEncode(w, &leaders)
 }
 
 func AboutMeApi(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +28,7 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 		entries, err := readAboutMeEntries(ctx, nil)
 		if err != nil {
 			logger.WithError(err).Error("readAboutMeEntries() failed")
-			internalServerError(w)
+			helpers.InternalServerError(w)
 			return
 		}
 		var showEntries []AboutMeEntry
@@ -40,18 +41,18 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 				showEntries = append(showEntries, entry)
 			}
 		}
-		jsonEncode(w, showEntries)
+		helpers.JsonEncode(w, showEntries)
 
 	case http.MethodPost:
 		if IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
-			unauthorized(w)
+			helpers.Unauthorized(w)
 			return
 		}
 
 		var newEntries []AboutMeEntry
 		if err := json.NewDecoder(r.Body).Decode(&newEntries); err != nil {
 			logger.JsonDecodeFailure(ctx, err)
-			badRequest(w, "invalid json")
+			helpers.BadRequest(w, "invalid json")
 			return
 		}
 		if len(newEntries) == 0 {
@@ -67,20 +68,20 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 
 		if err := writeAboutMeEntries(ctx, entriesMap); err != nil {
 			logger.WithError(err).Error("writeAboutMeEntries() failed")
-			internalServerError(w)
+			helpers.InternalServerError(w)
 			return
 		}
 
 	case http.MethodDelete:
 		if IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
-			unauthorized(w)
+			helpers.Unauthorized(w)
 			return
 		}
 
 		var keys []string
 		if err := json.NewDecoder(r.Body).Decode(&keys); err != nil {
 			logger.JsonDecodeFailure(ctx, err)
-			badRequest(w, "invalid json")
+			helpers.BadRequest(w, "invalid json")
 			return
 		}
 		if len(keys) == 0 {
@@ -89,7 +90,7 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 
 		if err := deleteAboutmeEntries(ctx, keys); err != nil {
 			logger.WithError(err).Error("deleteAboutMeEntries() failed")
-			internalServerError(w)
+			helpers.InternalServerError(w)
 			return
 		}
 	}

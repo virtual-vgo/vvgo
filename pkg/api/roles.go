@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 )
@@ -8,12 +9,12 @@ import (
 func RolesApi(w http.ResponseWriter, r *http.Request) {
 	identity := IdentityFromContext(r.Context())
 	var wantRoles []login.Role
-	jsonDecode(r.Body, &wantRoles)
+	helpers.JsonDecode(r.Body, &wantRoles)
 	var roles []login.Role
 	if len(wantRoles) != 0 {
 		roles = identity.AssumeRoles(wantRoles...).Roles
 	} else {
 		roles = identity.Roles
 	}
-	jsonEncode(w, roles)
+	helpers.JsonEncode(w, roles)
 }

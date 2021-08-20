@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
@@ -17,14 +18,14 @@ func PartsApi(w http.ResponseWriter, r *http.Request) {
 	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("listProjects() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 
 	parts, err := sheets.ListParts(ctx)
 	if err != nil {
 		logger.WithError(err).Error("listParts() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 	parts = parts.ForProject(projects.Names()...)

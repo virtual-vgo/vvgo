@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/api/config"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/api/session"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"io"
 	"net/http"
@@ -27,7 +30,7 @@ func Routes() http.Handler {
 				identity := IdentityFromContext(r.Context())
 				fmt.Println(identity)
 				if !identity.HasRole(role) {
-					unauthorized(w)
+					helpers.Unauthorized(w)
 				}
 			}), login.RoleAnonymous)
 		}(role)
@@ -41,7 +44,8 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
 	//mux.HandleFunc("/api/v1/config", ConfigApi, login.RoleReadConfig)
-	mux.HandleFunc("/api/v1/session", SessionApi, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/session", session.Handler, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/config", config.Handler, login.RoleReadConfig)
 	mux.HandleFunc("/api/v1/parts", PartsApi, login.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/projects", ProjectsApi, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/leaders", LeadersApi, login.RoleAnonymous)

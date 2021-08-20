@@ -1,4 +1,4 @@
-package api
+package helpers
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func Test_acceptsType(t *testing.T) {
+func TestAcceptsType(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
 		header http.Header
@@ -32,16 +32,16 @@ func Test_acceptsType(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			if expected, got := tt.want, acceptsType(&http.Request{Header: tt.header}, tt.arg); expected != got {
+			if expected, got := tt.want, AcceptsType(&http.Request{Header: tt.header}, tt.arg); expected != got {
 				t.Errorf("expected %v, got %v", expected, got)
 			}
 		})
 	}
 }
 
-func Test_badRequest(t *testing.T) {
+func TestBadRequest(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	badRequest(recorder, "some-reason")
+	BadRequest(recorder, "some-reason")
 	wantBody := "some-reason"
 	wantCode := http.StatusBadRequest
 
@@ -49,9 +49,9 @@ func Test_badRequest(t *testing.T) {
 	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
 }
 
-func Test_internalServerError(t *testing.T) {
+func TestInternalServerError(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	internalServerError(recorder)
+	InternalServerError(recorder)
 	wantBody := ""
 	wantCode := http.StatusInternalServerError
 
@@ -59,9 +59,9 @@ func Test_internalServerError(t *testing.T) {
 	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
 }
 
-func Test_invalidContent(t *testing.T) {
+func TestInvalidContent(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	invalidContent(recorder)
+	InvalidContent(recorder)
 	wantBody := ""
 	wantCode := http.StatusUnsupportedMediaType
 
@@ -69,9 +69,9 @@ func Test_invalidContent(t *testing.T) {
 	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
 }
 
-func Test_methodNotAllowed(t *testing.T) {
+func TestMethodNotAllowed(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	methodNotAllowed(recorder)
+	MethodNotAllowed(recorder)
 	wantBody := ""
 	wantCode := http.StatusMethodNotAllowed
 
@@ -79,9 +79,9 @@ func Test_methodNotAllowed(t *testing.T) {
 	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
 }
 
-func Test_notFound(t *testing.T) {
+func TestNotFound(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	notFound(recorder)
+	NotFound(recorder)
 	wantBody := "404 page not found"
 	wantCode := http.StatusNotFound
 
@@ -89,9 +89,9 @@ func Test_notFound(t *testing.T) {
 	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
 }
 
-func Test_tooManyBytes(t *testing.T) {
+func TestTooManyBytes(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	tooManyBytes(recorder)
+	TooManyBytes(recorder)
 	wantBody := ""
 	wantCode := http.StatusRequestEntityTooLarge
 
@@ -99,9 +99,9 @@ func Test_tooManyBytes(t *testing.T) {
 	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
 }
 
-func Test_unauthorized(t *testing.T) {
+func TestUnauthorized(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	unauthorized(recorder)
+	Unauthorized(recorder)
 	wantBody := "authorization failed"
 	wantCode := http.StatusUnauthorized
 
@@ -109,9 +109,9 @@ func Test_unauthorized(t *testing.T) {
 	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
 }
 
-func Test_notImplemented(t *testing.T) {
+func TestNotImplemented(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	notImplemented(recorder)
+	NotImplemented(recorder)
 	wantBody := ""
 	wantCode := http.StatusNotImplemented
 

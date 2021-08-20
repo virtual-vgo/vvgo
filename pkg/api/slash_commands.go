@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/error_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/foaas"
@@ -20,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 var SlashCommands = []SlashCommand{
@@ -64,10 +66,17 @@ var InteractionResponseGalaxyBrain = interactionResponseMessage("this interactio
 
 func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	timer := time.NewTimer(1 * time.Second)
+	defer timer.Stop()
 	for _, command := range SlashCommands {
-		handleError(command.Create(ctx)).
-			logError("SlashCommand.Create() failed").
-			logSuccess(command.Name + " command created")
+		<-timer.C
+		if err := command.Create(ctx); err != nil {
+			logger.MethodFailure(ctx, "SlashCommand.Create", err)
+			helpers.InternalServerError(w)
+			return
+		} else {
+			logger.Info(command.Name, "command created")
+		}
 	}
 	http.Redirect(w, r, "/slash_commands", http.StatusFound)
 }
@@ -77,7 +86,7 @@ func ViewSlashCommands(w http.ResponseWriter, r *http.Request) {
 	commands, err := discord.GetApplicationCommands(ctx)
 	if err != nil {
 		logger.WithError(err).Error("discord.GetApplicationCommands() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(commands)
@@ -92,44 +101,44 @@ func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
 	publicKey, _ := hex.DecodeString(discord.ClientPublicKey)
 	if len(publicKey) == 0 {
 		logger.Error("invalid discord public key")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 
 	signature, _ := hex.DecodeString(r.Header.Get("X-Signature-Ed25519"))
 	if len(signature) == 0 {
-		badRequest(w, "invalid signature")
+		helpers.BadRequest(w, "invalid signature")
 		return
 	}
 
 	timestamp := r.Header.Get("X-Signature-Timestamp")
 	if len(timestamp) == 0 {
-		badRequest(w, "invalid signature timestamp")
+		helpers.BadRequest(w, "invalid signature timestamp")
 		return
 	}
 
 	if ed25519.Verify(publicKey, []byte(timestamp+body.String()), signature) == false {
-		unauthorized(w)
+		helpers.Unauthorized(w)
 		return
 	}
 
 	var interaction discord.Interaction
 	if err := json.NewDecoder(&body).Decode(&interaction); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
-		badRequest(w, "invalid request body: "+err.Error())
+		helpers.BadRequest(w, "invalid request body: "+err.Error())
 		return
 	}
 
 	response, ok := HandleInteraction(ctx, interaction)
 	if !ok {
-		badRequest(w, "unsupported interaction type")
+		helpers.BadRequest(w, "unsupported interaction type")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.WithError(err).Error("json.Encode() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 	}
 }
 

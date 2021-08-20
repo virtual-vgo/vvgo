@@ -1,17 +1,21 @@
-package api
+package session
 
 import (
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"time"
 )
 
-var SessionApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var logger = log.New()
+
+var Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if err := r.ParseForm(); err != nil {
 		logger.MethodFailure(ctx, "r.ParseForm", err)
-		badRequest(w, "could not parse form")
+		helpers.BadRequest(w, "could not parse form")
 		return
 	}
 	wantRoles := r.Form["with_roles"]
@@ -25,7 +29,7 @@ var SessionApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(roles) == 0 {
-		badRequest(w, "no roles for identity")
+		helpers.BadRequest(w, "no roles for identity")
 		return
 	}
 
@@ -40,5 +44,7 @@ var SessionApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	data["session"] = session
 	data["expires"] = time.Now().Add(expires)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		logger.JsonEncodeFailure(ctx, err)
+	}
 })

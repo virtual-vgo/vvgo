@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
@@ -78,7 +79,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, identity *login.Identi
 	cookie, err := login.NewCookie(ctx, identity, LoginCookieDuration)
 	if err != nil {
 		logger.WithError(err).Error("store.NewCookie() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 
@@ -99,7 +100,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 
 	if r.Method != http.MethodPost {
-		methodNotAllowed(w)
+		helpers.MethodNotAllowed(w)
 		return
 	}
 
@@ -128,7 +129,7 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		logger.WithError(err).WithField("user", user).Error("password authentication failed")
-		unauthorized(w)
+		helpers.Unauthorized(w)
 		return
 	}
 
@@ -152,7 +153,7 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") == "" {
 		state, ok := oauthRedirect(w, r)
 		if !ok {
-			internalServerError(w)
+			helpers.InternalServerError(w)
 			return
 		}
 		http.Redirect(w, r, discord.LoginURL(state), http.StatusFound)
@@ -162,7 +163,7 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handleError := func(err error) bool {
 		if err != nil {
 			logger.WithError(err).Error("discord authentication failed")
-			unauthorized(w)
+			helpers.Unauthorized(w)
 			return false
 		}
 		return true
@@ -275,7 +276,7 @@ func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if err := login.DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.WithError(err).Error("x.Sessions.DeleteSessionFromRequest failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 	} else {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}

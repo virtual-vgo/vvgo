@@ -2,8 +2,12 @@ package parse_config
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -50,43 +54,80 @@ var Config struct {
 	} `json:"redis" envconfig:"redis"`
 }
 
-var envFile string // can be set at build to read env vars from a file.
+func init() { ProcessEnv() }
 
-func init() {
-	if envFile != "" {
-		file, err := os.Open(envFile)
-		if err != nil {
-			logger.WithField("file_name", envFile).WithError(err).Error("os.Open() failed")
-			logger.Fatal("cannot read environment file")
+func ProcessEnv() { envconfig.MustProcess("", &Config) }
+
+func ProcessEnvFile(envFile string) {
+	defer ProcessEnv()
+
+	ctx := context.Background()
+	file, err := os.Open(envFile)
+	if err != nil {
+		logger.WithField("file_name", envFile).MethodFailure(ctx, "os.Open", err)
+		logger.Fatal("cannot read environment file")
+		return
+	}
+
+	var buf bytes.Buffer
+	if _, err = buf.ReadFrom(file); err != nil {
+		logger.WithField("file_name", envFile).MethodFailure(ctx, "file.Read", err)
+		logger.Fatal("cannot read environment file")
+		return
+	}
+
+	for _, line := range strings.Split(buf.String(), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		fields := strings.SplitN(line, "=", 2)
+		if len(fields) != 2 {
+			logger.Fatal("cannot parse environment file")
 			return
 		}
 
-		var buf bytes.Buffer
-		if _, err = buf.ReadFrom(file); err != nil {
-			logger.WithField("file_name", envFile).WithError(err).Error("file.Read() failed")
-			logger.Fatal("cannot read environment file")
+		key, val := fields[0], fields[1]
+		if err = os.Setenv(key, val); err != nil {
+			logger.WithField("file_name", envFile).MethodFailure(ctx, "os.Setenv", err)
+			logger.Fatal("cannot update environment variables")
 			return
-		}
-
-		for _, line := range strings.Split(buf.String(), "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
-			}
-
-			fields := strings.SplitN(line, "=", 2)
-			if len(fields) != 2 {
-				logger.Fatal("cannot parse environment file")
-				return
-			}
-
-			key, val := fields[0], fields[1]
-			if err = os.Setenv(key, val); err != nil {
-				logger.WithField("file_name", envFile).WithError(err).Error("os.Setenv() failed")
-				logger.Fatal("cannot update environment variables")
-				return
-			}
 		}
 	}
-	envconfig.MustProcess("", &Config)
+}
+
+func ProcessEndpoint(endpoint, session string) {
+	ProcessEnv()
+
+	// preserve some fields
+	listenAddress, serverUrl, redisAddress := Config.VVGO.ListenAddress, Config.VVGO.ServerUrl, Config.Redis.Address
+	defer func() {
+		Config.VVGO.ListenAddress, Config.VVGO.ServerUrl, Config.Redis.Address = listenAddress, serverUrl, redisAddress
+	}()
+
+	logger := logger.WithField("endpoint", endpoint)
+	ctx := context.Background()
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		logger.MethodFailure(ctx, "http.NewRequest", err)
+		logger.Fatal("cannot read remote configuration")
+	}
+
+	req.Header.Set("Authorization", "Bearer "+session)
+	resp, err := http_wrappers.DoRequest(req)
+	if err != nil {
+		logger.MethodFailure(ctx, "http.Do", err)
+		logger.Fatal("cannot read remote configuration")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("non-200 response")
+		logger.Fatal("cannot read remote configuration")
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&Config); err != nil {
+		logger.MethodFailure(ctx, "http.Do", err)
+		logger.Fatal("cannot read remote configuration")
+	}
 }

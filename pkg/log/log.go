@@ -34,20 +34,36 @@ func StdLogger() *log.Logger {
 	return log.New(defaultLogger.Writer(), "", 0)
 }
 
+func (x Logger) WithField(key string, value interface{}) Entry {
+	return Entry{Entry: x.Logger.WithField(key, value)}
+}
+
 func (x Logger) WithFields(fields logrus.Fields) Entry {
 	return Entry{Entry: x.Logger.WithFields(fields)}
 }
 
+func (x Logger) JsonEncodeFailure(ctx context.Context, err error) {
+	x.WithContext(ctx).MethodFailure(ctx, "json.Encode", err)
+}
+
 func (x Logger) JsonDecodeFailure(ctx context.Context, err error) {
-	x.WithContext(ctx).SomeMethodFailure(ctx, "json.Decode", err)
+	x.WithContext(ctx).MethodFailure(ctx, "json.Decode", err)
+}
+
+func (x Logger) RedisFailure(ctx context.Context, err error) {
+	x.WithContext(ctx).MethodFailure(ctx, "Redis.Do", err)
 }
 
 func (x Logger) MethodFailure(ctx context.Context, method string, err error) {
-	x.WithContext(ctx).SomeMethodFailure(ctx, method, err)
+	x.WithContext(ctx).MethodFailure(ctx, method, err)
 }
 
 func (x Logger) WithContext(ctx context.Context) Entry {
 	return Entry{Entry: x.Logger.WithContext(ctx)}
+}
+
+func (e Entry) WithField(key string, value interface{}) Entry {
+	return Entry{Entry: e.Entry.WithField(key, value)}
 }
 
 func (e Entry) WithFields(fields logrus.Fields) Entry {
@@ -59,9 +75,9 @@ func (e Entry) WithError(err error) Entry {
 }
 
 func (e Entry) JsonDecodeFailure(ctx context.Context, err error) {
-	e.SomeMethodFailure(ctx, "json.Decode", err)
+	e.MethodFailure(ctx, "json.Decode", err)
 }
 
-func (e Entry) SomeMethodFailure(ctx context.Context, method string, err error) {
+func (e Entry) MethodFailure(ctx context.Context, method string, err error) {
 	e.WithContext(ctx).WithError(err).Error(method + "() failed")
 }

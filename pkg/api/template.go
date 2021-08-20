@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"html/template"
@@ -44,14 +45,14 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		logger.WithError(err).Error("template.ParseFiles() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 
 	var buffer bytes.Buffer
 	if err := tmpl.Execute(&buffer, &data); err != nil {
 		logger.WithError(err).Error("template.Execute() failed")
-		internalServerError(w)
+		helpers.InternalServerError(w)
 		return
 	}
 	_, _ = buffer.WriteTo(w)

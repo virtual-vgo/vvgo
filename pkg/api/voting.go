@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
@@ -24,46 +25,61 @@ var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http
 		w.Header().Set("Content-Disposition", `attachment; filename="ballot.json"`)
 
 		var ballotJSON string
-		handleError(redis.Do(ctx, redis.Cmd(&ballotJSON, "HGET",
-			"arrangements:"+season+":ballots", identity.DiscordID))).
-			logError("redis.Do() failed")
+		if err := redis.Do(ctx, redis.Cmd(&ballotJSON,
+			"HGET", "arrangements:"+season+":ballots", identity.DiscordID)); err != nil {
+			logger.RedisFailure(ctx, err)
+		}
+
 		if ballotJSON != "" {
-			handleError(json.NewEncoder(w).Encode(json.RawMessage(ballotJSON))).
-				logError("json.Encode() failed")
+			if err := json.NewEncoder(w).Encode(json.RawMessage(ballotJSON)); err != nil {
+				logger.JsonEncodeFailure(ctx, err)
+			}
 			return
 		}
 
 		var ballot []string
-		handleError(redis.Do(ctx, redis.Cmd(&ballot, "LRANGE",
-			"arrangements:"+season+":submissions", "0", "-1"))).
-			logError("redis.Do() failed")
+		if err := redis.Do(ctx, redis.Cmd(&ballot,
+			"LRANGE", "arrangements:"+season+":submissions", "0", "-1")); err != nil {
+			logger.RedisFailure(ctx, err)
+			helpers.InternalServerError(w)
+			return
+		}
 		sort.Strings(ballot)
-		handleError(json.NewEncoder(w).Encode(ballot)).
-			logError("json.Encode() failed")
+
+		if err := json.NewEncoder(w).Encode(ballot); err != nil {
+			logger.JsonEncodeFailure(ctx, err)
+		}
 
 	case http.MethodPost:
 		var ballot []string
 
-		handleError(json.NewDecoder(r.Body).Decode(&ballot)).
-			logError("json.Decode() failed")
+		if err := json.NewDecoder(r.Body).Decode(&ballot); err != nil {
+			logger.JsonDecodeFailure(ctx, err)
+			helpers.BadRequest(w, "invalid json")
+			return
+		}
+
 		if validateBallot(ctx, ballot) == false {
-			badRequest(w, "invalid ballot")
+			helpers.BadRequest(w, "invalid ballot")
 			return
 		}
 
 		ballotJSON, _ := json.Marshal(ballot)
-		handleError(redis.Do(ctx, redis.Cmd(nil, "HSET",
-			"arrangements:"+season+":ballots", identity.DiscordID, string(ballotJSON)))).
-			logError("redis.Do() failed")
+		if err := redis.Do(ctx, redis.Cmd(nil,
+			"HSET", "arrangements:"+season+":ballots", identity.DiscordID, string(ballotJSON))); err != nil {
+			logger.RedisFailure(ctx, err)
+			helpers.InternalServerError(w)
+		}
 	}
 })
 
 func validateBallot(ctx context.Context, ballot []string) bool {
 	var allowedChoices []string
-	handleError(redis.Do(ctx, redis.Cmd(&allowedChoices, "LRANGE",
-		"arrangements:"+season+":submissions", "0", "-1"))).
-		logError("redis.Do() failed")
 
+	if err := redis.Do(ctx, redis.Cmd(&allowedChoices,
+		"LRANGE", "arrangements:"+season+":submissions", "0", "-1")); err != nil {
+		logger.RedisFailure(ctx, err)
+	}
 	if len(ballot) != len(allowedChoices) {
 		return false
 	}
