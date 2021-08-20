@@ -1,12 +1,7 @@
 package server
 
 import (
-	"context"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/server/views"
 )
 
-func init() { PublicFiles = "../../public" }
-
-func backgroundContext() context.Context {
-	return sheets.NoOpSheets(context.Background())
-}
+func init() { views.PublicFiles = "../../public" }

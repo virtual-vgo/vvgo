@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
@@ -35,5 +36,5 @@ var CreditsMaker = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	ParseAndExecute(ctx, w, r, nil, "credits-maker.gohtml")
+	views.ParseAndExecute(ctx, w, r, nil, "credits-maker.gohtml")
 })

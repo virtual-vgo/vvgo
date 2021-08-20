@@ -3,10 +3,11 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"net/http"
 	"sort"
 	"strings"
@@ -36,7 +37,7 @@ var VotingResultsView = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 		Results: results,
 		Ballots: nameBallots(ctx, data),
 	}
-	ParseAndExecute(ctx, w, r, &page, "voting_results.gohtml")
+	views.ParseAndExecute(ctx, w, r, &page, "voting_results.gohtml")
 })
 
 type namedBallot struct {

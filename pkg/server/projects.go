@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
@@ -19,7 +20,7 @@ func ProjectsView(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	project, ok := projects.Get(name)
 	if !ok {
-		ParseAndExecute(ctx, w, r, &projects, "projects_index.gohtml")
+		views.ParseAndExecute(ctx, w, r, &projects, "projects_index.gohtml")
 	} else {
 		serveProject(w, r, project)
 	}
@@ -83,5 +84,5 @@ func serveProject(w http.ResponseWriter, r *http.Request, project sheets.Project
 		Credits: creditsTable.Rows,
 	}
 
-	ParseAndExecute(ctx, w, r, &page, "project.gohtml")
+	views.ParseAndExecute(ctx, w, r, &page, "project.gohtml")
 }

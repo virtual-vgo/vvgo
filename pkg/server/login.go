@@ -6,11 +6,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/sirupsen/logrus"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
@@ -47,13 +48,13 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login/success", http.StatusFound)
 		return
 	}
-	ParseAndExecute(ctx, w, r, nil, "login.gohtml")
+	views.ParseAndExecute(ctx, w, r, nil, "login.gohtml")
 }
 
 type LoginSuccessView struct{}
 
 func (x LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
+	views.ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
 }
 
 type LoginRedirect struct{}
@@ -93,7 +94,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, identity *login.Identi
 }
 
 // PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.
-// If the user pass combo exists in the map, then a login cookie with the mapped roles is create and sent in the response.
+// If the user pass combo exists in the map, then a login cookie with the mapped roles is sent in the response.
 type PasswordLoginHandler struct{}
 
 func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

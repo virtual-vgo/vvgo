@@ -14,13 +14,12 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/version"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"io"
 	"net/http"
 	"net/http/pprof"
 	"os"
 )
-
-var PublicFiles = "public"
 
 func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
@@ -74,19 +73,19 @@ func Routes() http.Handler {
 			io.Copy(w, file)
 		}, login.RoleVVGOMember)
 
-	mux.HandleFunc("/voting", VotingView, login.RoleVVGOLeader)
+	mux.HandleFunc("/voting", views.VotingView, login.RoleVVGOLeader)
 	mux.HandleFunc("/voting/results", VotingResultsView, login.RoleVVGOLeader)
-	mux.HandleFunc("/parts", PartsView, login.RoleVVGOMember)
+	mux.HandleFunc("/parts", views.PartsView, login.RoleVVGOMember)
 	mux.HandleFunc("/projects", ProjectsView, login.RoleAnonymous)
 	mux.HandleFunc("/download", download.Handler, login.RoleVVGOMember)
 	mux.HandleFunc("/credits-maker", CreditsMaker, login.RoleVVGOTeams)
-	mux.HandleFunc("/about", AboutView, login.RoleAnonymous)
-	mux.HandleFunc("/contact_us", ContactUs, login.RoleAnonymous)
+	mux.HandleFunc("/about", views.AboutView, login.RoleAnonymous)
+	mux.HandleFunc("/contact_us", views.ContactUs, login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			IndexView(w, r)
+			views.IndexView(w, r)
 		} else {
-			http.FileServer(http.Dir(PublicFiles)).ServeHTTP(w, r)
+			http.FileServer(http.Dir(views.PublicFiles)).ServeHTTP(w, r)
 		}
 	}, login.RoleAnonymous)
 	return &mux

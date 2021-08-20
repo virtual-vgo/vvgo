@@ -1,11 +1,12 @@
-package server
+package views
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"html/template"
 	"math/rand"
@@ -13,6 +14,22 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+var PublicFiles = "public"
+
+var logger = log.New()
+
+var IndexView = ServeTemplate("index.gohtml")
+var ContactUs = ServeTemplate("contact_us.gohtml")
+var AboutView = ServeTemplate("about.gohtml")
+var PartsView = ServeTemplate("parts.gohtml")
+var VotingView = ServeTemplate("voting.gohtml")
+
+func ServeTemplate(templateFile string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ParseAndExecute(r.Context(), w, r, nil, templateFile)
+	}
+}
 
 func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
 	identity := login.IdentityFromContext(ctx)

@@ -23,7 +23,7 @@ func ReadEntries(ctx context.Context, keys []string) (map[string]Entry, error) {
 		cmd := "HGETALL"
 		args := []string{"about_me:entries"}
 		if err := redis.Do(ctx, redis.Cmd(&buf, cmd, args...)); err != nil {
-			return nil, error_wrappers.RedisDoFailed(err)
+			return nil, error_wrappers.RedisFailed(err)
 		}
 		dest := make(map[string]Entry)
 		for _, entryJson := range buf {
@@ -39,7 +39,7 @@ func ReadEntries(ctx context.Context, keys []string) (map[string]Entry, error) {
 		cmd := "HMGET"
 		args := append([]string{"about_me:entries"}, keys...)
 		if err := redis.Do(ctx, redis.Cmd(&buf, cmd, args...)); err != nil {
-			return nil, error_wrappers.RedisDoFailed(err)
+			return nil, error_wrappers.RedisFailed(err)
 		}
 		dest := make(map[string]Entry)
 		for _, entryJson := range buf {
@@ -69,7 +69,7 @@ func WriteEntries(ctx context.Context, src map[string]Entry) error {
 	}
 
 	if err := redis.Do(ctx, redis.Cmd(nil, "HMSET", args...)); err != nil {
-		return error_wrappers.RedisDoFailed(err)
+		return error_wrappers.RedisFailed(err)
 	}
 	return nil
 }
@@ -80,7 +80,7 @@ func DeleteEntries(ctx context.Context, keys []string) error {
 	}
 	args := append([]string{"about_me:entries"}, keys...)
 	if err := redis.Do(ctx, redis.Cmd(nil, "HDEL", args...)); err != nil {
-		return error_wrappers.RedisDoFailed(err)
+		return error_wrappers.RedisFailed(err)
 	}
 	return nil
 }
