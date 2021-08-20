@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"google.golang.org/api/sheets/v4"
 	"reflect"
@@ -16,8 +15,6 @@ import (
 const CacheTTL = "5"
 
 var logger = log.New()
-
-var WebsiteDataSpreadsheetID = parse_config.Config.Sheets.WebsiteDataSpreadsheetID
 
 func NoOpSheets(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "no_op_sheets", true)

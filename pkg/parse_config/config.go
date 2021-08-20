@@ -3,11 +3,8 @@ package parse_config
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"net/http"
 	"os"
 	"strings"
 )
@@ -94,40 +91,5 @@ func ProcessEnvFile(envFile string) {
 			logger.Fatal("cannot update environment variables")
 			return
 		}
-	}
-}
-
-func ProcessEndpoint(endpoint, session string) {
-	ProcessEnv()
-
-	// preserve some fields
-	listenAddress, serverUrl, redisAddress := Config.VVGO.ListenAddress, Config.VVGO.ServerUrl, Config.Redis.Address
-	defer func() {
-		Config.VVGO.ListenAddress, Config.VVGO.ServerUrl, Config.Redis.Address = listenAddress, serverUrl, redisAddress
-	}()
-
-	logger := logger.WithField("endpoint", endpoint)
-	ctx := context.Background()
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
-	if err != nil {
-		logger.MethodFailure(ctx, "http.NewRequest", err)
-		logger.Fatal("cannot read remote configuration")
-	}
-
-	req.Header.Set("Authorization", "Bearer "+session)
-	resp, err := http_wrappers.DoRequest(req)
-	if err != nil {
-		logger.MethodFailure(ctx, "http.Do", err)
-		logger.Fatal("cannot read remote configuration")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		logger.Error("non-200 response")
-		logger.Fatal("cannot read remote configuration")
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&Config); err != nil {
-		logger.MethodFailure(ctx, "http.Do", err)
-		logger.Fatal("cannot read remote configuration")
 	}
 }

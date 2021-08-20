@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/when2meet"
@@ -41,7 +42,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 
 func TestHandlePartsInteraction(t *testing.T) {
 	ctx := backgroundContext()
-	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
+	sheets.WriteValuesToRedis(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released"},
 		{"10-hildas-healing", "Hilda's Healing", true},
 	})
@@ -76,7 +77,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 
 func TestHandleSubmissionInteraction(t *testing.T) {
 	ctx := backgroundContext()
-	sheets.WriteValuesToRedis(ctx, sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
+	sheets.WriteValuesToRedis(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released", "Submission Link"},
 		{"10-hildas-healing", "Hilda's Healing", true, "https://bit.ly/vvgo10submit"},
 	})

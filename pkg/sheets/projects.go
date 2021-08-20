@@ -3,6 +3,7 @@ package sheets
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"sort"
 )
 
@@ -42,7 +43,7 @@ func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 type Projects []Project
 
 func ListProjects(ctx context.Context, identity *login.Identity) (Projects, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID, "Projects")
+	values, err := ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects")
 	if err != nil {
 		return nil, err
 	}

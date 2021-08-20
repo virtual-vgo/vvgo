@@ -2,6 +2,7 @@ package sheets
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"sort"
 )
 
@@ -23,7 +24,7 @@ type Part struct {
 type Parts []Part
 
 func ListParts(ctx context.Context) (Parts, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID, "Parts")
+	values, err := ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Parts")
 	if err != nil {
 		return nil, err
 	}

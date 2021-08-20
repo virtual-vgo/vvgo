@@ -2,6 +2,7 @@ package sheets
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"reflect"
 )
 
@@ -16,7 +17,7 @@ type Leader struct {
 }
 
 func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := ReadSheet(ctx, WebsiteDataSpreadsheetID, "Leaders")
+	values, err := ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Leaders")
 	if err != nil {
 		return nil, err
 	}
