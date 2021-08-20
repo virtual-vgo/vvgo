@@ -1,10 +1,10 @@
 package download
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/clients/minio"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/minio"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"
 	"time"
 )

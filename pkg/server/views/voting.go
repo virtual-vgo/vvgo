@@ -3,8 +3,8 @@ package views
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
+	discord2 "github.com/virtual-vgo/vvgo/pkg/clients/discord"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"
@@ -48,7 +48,7 @@ func nameBallots(ctx context.Context, data map[string]string) []namedBallot {
 	ballots := make([]namedBallot, 0, len(data))
 	for userID, ballotJSON := range data {
 		var nick string
-		guildMember, err := discord.QueryGuildMember(ctx, discord.Snowflake(userID))
+		guildMember, err := discord2.QueryGuildMember(ctx, discord2.Snowflake(userID))
 		if err != nil {
 			logger.WithError(err).Error("discord.QueryGuildMember() failed")
 		} else {

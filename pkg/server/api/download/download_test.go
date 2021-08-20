@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/minio/minio-go/v6"
 	"github.com/stretchr/testify/require"
-	vvgo_minio "github.com/virtual-vgo/vvgo/pkg/minio"
+	vvgo_minio "github.com/virtual-vgo/vvgo/pkg/clients/minio"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
 	"net/http/httptest"

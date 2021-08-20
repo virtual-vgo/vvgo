@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
+	discord2 "github.com/virtual-vgo/vvgo/pkg/clients/discord"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 	"sort"
@@ -74,8 +74,8 @@ func updateIntentMessage(ctx context.Context) error {
 	var messageIds []string
 	for _, line := range lines {
 		if len(nextContent)+len(line) > 1500 {
-			message, err := discord.CreateMessage(ctx, SkywardSwordStatsChannelID,
-				discord.CreateMessageParams{Content: nextContent})
+			message, err := discord2.CreateMessage(ctx, SkywardSwordStatsChannelID,
+				discord2.CreateMessageParams{Content: nextContent})
 			if err != nil {
 				return err
 			}
@@ -84,8 +84,8 @@ func updateIntentMessage(ctx context.Context) error {
 		}
 		nextContent += line + "\n"
 	}
-	message, err := discord.CreateMessage(ctx, SkywardSwordStatsChannelID,
-		discord.CreateMessageParams{Content: nextContent})
+	message, err := discord2.CreateMessage(ctx, SkywardSwordStatsChannelID,
+		discord2.CreateMessageParams{Content: nextContent})
 	if err != nil {
 		return err
 	}
@@ -96,8 +96,8 @@ func updateIntentMessage(ctx context.Context) error {
 **Intent Form:** https://docs.google.com/forms/d/e/1FAIpQLSchQa04TaiVWWvYGYAkCfCFqMvrxBy-h2DN1IjdoQ9qpRtuAQ/viewform
 Please use this form to indicate what part you intend to record. The above post will be kept as up-to-date as Section Leader Chicken receives your responses.
 `
-	message, err = discord.CreateMessage(ctx, SkywardSwordStatsChannelID,
-		discord.CreateMessageParams{Content: finalContent})
+	message, err = discord2.CreateMessage(ctx, SkywardSwordStatsChannelID,
+		discord2.CreateMessageParams{Content: finalContent})
 	if err != nil {
 		return err
 	}
@@ -109,8 +109,8 @@ Please use this form to indicate what part you intend to record. The above post 
 		logger.WithError(err).Error("redis.Do() failed")
 	}
 	if len(oldMessageIdsRaw) > 0 {
-		err := discord.BulkDeleteMessages(ctx, SkywardSwordStatsChannelID,
-			discord.BulkDeleteMessagesParams{Messages: strings.Split(oldMessageIdsRaw, ",")})
+		err := discord2.BulkDeleteMessages(ctx, SkywardSwordStatsChannelID,
+			discord2.BulkDeleteMessagesParams{Messages: strings.Split(oldMessageIdsRaw, ",")})
 		if err != nil {
 			logger.WithError(err).Info("discordClient.BulkDeleteMessages failed")
 		}

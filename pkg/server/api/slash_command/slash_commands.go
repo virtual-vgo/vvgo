@@ -10,14 +10,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/aboutme"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/foaas"
+	discord2 "github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/aboutme"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command/foaas"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command/when2meet"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
-	"github.com/virtual-vgo/vvgo/pkg/when2meet"
 	"io"
 	"net/http"
 	"time"
@@ -84,7 +84,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 
 func List(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	commands, err := discord.GetApplicationCommands(ctx)
+	commands, err := discord2.GetApplicationCommands(ctx)
 	if err != nil {
 		logger.WithError(err).Error("discord.GetApplicationCommands() failed")
 		helpers.InternalServerError(w)
@@ -99,7 +99,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	var body bytes.Buffer
 	_, _ = body.ReadFrom(r.Body)
 
-	publicKey, _ := hex.DecodeString(discord.ClientPublicKey)
+	publicKey, _ := hex.DecodeString(discord2.ClientPublicKey)
 	if len(publicKey) == 0 {
 		logger.Error("invalid discord public key")
 		helpers.InternalServerError(w)
@@ -123,7 +123,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var interaction discord.Interaction
+	var interaction discord2.Interaction
 	if err := json.NewDecoder(&body).Decode(&interaction); err != nil {
 		logger.WithError(err).Error("json.Decode() failed")
 		helpers.BadRequest(w, "invalid request body: "+err.Error())
@@ -143,11 +143,11 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func HandleInteraction(ctx context.Context, interaction discord.Interaction) (discord.InteractionResponse, bool) {
+func HandleInteraction(ctx context.Context, interaction discord2.Interaction) (discord2.InteractionResponse, bool) {
 	switch interaction.Type {
-	case discord.InteractionTypePing:
-		return discord.InteractionResponse{Type: discord.InteractionCallbackTypePong}, true
-	case discord.InteractionTypeApplicationCommand:
+	case discord2.InteractionTypePing:
+		return discord2.InteractionResponse{Type: discord2.InteractionCallbackTypePong}, true
+	case discord2.InteractionTypeApplicationCommand:
 		for _, command := range SlashCommands {
 			if interaction.Data.Name == command.Name {
 				return command.Handler(ctx, interaction), true
@@ -155,50 +155,50 @@ func HandleInteraction(ctx context.Context, interaction discord.Interaction) (di
 		}
 		return InteractionResponseGalaxyBrain, true
 	default:
-		return discord.InteractionResponse{}, false
+		return discord2.InteractionResponse{}, false
 	}
 }
 
 type SlashCommand struct {
 	Name        string
 	Description string
-	Options func(context.Context) ([]discord.ApplicationCommandOption, error)
+	Options func(context.Context) ([]discord2.ApplicationCommandOption, error)
 	Handler InteractionHandler
 }
 
-type InteractionHandler func(context.Context, discord.Interaction) discord.InteractionResponse
+type InteractionHandler func(context.Context, discord2.Interaction) discord2.InteractionResponse
 
 func (x SlashCommand) Create(ctx context.Context) (err error) {
-	var options []discord.ApplicationCommandOption
+	var options []discord2.ApplicationCommandOption
 	if x.Options != nil {
 		options, err = x.Options(ctx)
 		if err != nil {
 			return err
 		}
 	}
-	params := discord.CreateApplicationCommandParams{
+	params := discord2.CreateApplicationCommandParams{
 		Name:        x.Name,
 		Description: x.Description,
 		Options:     options,
 	}
-	_, err = discord.CreateApplicationCommand(ctx, params)
+	_, err = discord2.CreateApplicationCommand(ctx, params)
 	return err
 }
 
-func beepInteractionHandler(context.Context, discord.Interaction) discord.InteractionResponse {
+func beepInteractionHandler(context.Context, discord2.Interaction) discord2.InteractionResponse {
 	return interactionResponseMessage("boop", false)
 }
 
-func partsCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
+func partsCommandOptions(ctx context.Context) ([]discord2.ApplicationCommandOption, error) {
 	identity := login.Anonymous()
 	projects, err := sheets.ListProjects(ctx, &identity)
 	if err != nil {
 		return nil, fmt.Errorf("sheets.ListProjects() failed: %w", err)
 	}
-	return []discord.ApplicationCommandOption{projectCommandOption(projects.Current())}, nil
+	return []discord2.ApplicationCommandOption{projectCommandOption(projects.Current())}, nil
 }
 
-func partsInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func partsInteractionHandler(ctx context.Context, interaction discord2.Interaction) discord2.InteractionResponse {
 	var projectName string
 	for _, option := range interaction.Data.Options {
 		if option.Name == "project" {
@@ -223,40 +223,40 @@ func partsInteractionHandler(ctx context.Context, interaction discord.Interactio
 · Submission Deadline: %s.`,
 		project.PartsPage(), project.SubmissionLink, project.SubmissionDeadline)
 
-	embed := discord.Embed{
+	embed := discord2.Embed{
 		Title:       project.Title,
-		Type:        discord.EmbedTypeRich,
+		Type:        discord2.EmbedTypeRich,
 		Description: description,
 		Url:         "https://vvgo.org" + project.PartsPage(),
 		Color:       0x8C17D9,
-		Footer:      &discord.EmbedFooter{Text: "Bottom text."},
+		Footer:      &discord2.EmbedFooter{Text: "Bottom text."},
 	}
-	return discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{
-			Embeds: []discord.Embed{embed},
+	return discord2.InteractionResponse{
+		Type: discord2.InteractionCallbackTypeChannelMessageWithSource,
+		Data: &discord2.InteractionApplicationCommandCallbackData{
+			Embeds: []discord2.Embed{embed},
 		},
 	}
 }
 
-func submitCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
+func submitCommandOptions(ctx context.Context) ([]discord2.ApplicationCommandOption, error) {
 	identity := login.Anonymous()
 	projects, err := sheets.ListProjects(ctx, &identity)
 	if err != nil {
 		return nil, fmt.Errorf("sheets.ListProjects() failed: %w", err)
 	}
-	return []discord.ApplicationCommandOption{projectCommandOption(projects.Current())}, nil
+	return []discord2.ApplicationCommandOption{projectCommandOption(projects.Current())}, nil
 }
 
-func projectCommandOption(projects sheets.Projects) discord.ApplicationCommandOption {
-	var choices []discord.ApplicationCommandOptionChoice
+func projectCommandOption(projects sheets.Projects) discord2.ApplicationCommandOption {
+	var choices []discord2.ApplicationCommandOptionChoice
 	for _, project := range projects {
-		choices = append(choices, discord.ApplicationCommandOptionChoice{
+		choices = append(choices, discord2.ApplicationCommandOptionChoice{
 			Name: project.Title, Value: project.Name,
 		})
 	}
-	return discord.ApplicationCommandOption{
-		Type:        discord.ApplicationCommandOptionTypeString,
+	return discord2.ApplicationCommandOption{
+		Type:        discord2.ApplicationCommandOptionTypeString,
 		Name:        "project",
 		Description: "Name of the project",
 		Required:    true,
@@ -264,7 +264,7 @@ func projectCommandOption(projects sheets.Projects) discord.ApplicationCommandOp
 	}
 }
 
-func submitInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func submitInteractionHandler(ctx context.Context, interaction discord2.Interaction) discord2.InteractionResponse {
 	var projectName string
 	for _, option := range interaction.Data.Options {
 		if option.Name == "project" {
@@ -287,7 +287,7 @@ func submitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	return interactionResponseMessage(content, true)
 }
 
-func fuckoffInteractionHandler(_ context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func fuckoffInteractionHandler(_ context.Context, interaction discord2.Interaction) discord2.InteractionResponse {
 	content, _ := foaas.FuckOff(fmt.Sprintf("<@%s>", interaction.Member.User.ID))
 	if content == "" {
 		return InteractionResponseOof
@@ -295,22 +295,22 @@ func fuckoffInteractionHandler(_ context.Context, interaction discord.Interactio
 	return interactionResponseMessage(content, true)
 }
 
-func when2meetCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
-	return []discord.ApplicationCommandOption{
+func when2meetCommandOptions(context.Context) ([]discord2.ApplicationCommandOption, error) {
+	return []discord2.ApplicationCommandOption{
 		{
-			Type:        discord.ApplicationCommandOptionTypeString,
+			Type:        discord2.ApplicationCommandOptionTypeString,
 			Name:        "event_name",
 			Description: "A name for the event.",
 			Required:    true,
 		},
 		{
-			Type:        discord.ApplicationCommandOptionTypeString,
+			Type:        discord2.ApplicationCommandOptionTypeString,
 			Name:        "start_date",
 			Description: "Start Date (ex 2021-02-04)",
 			Required:    true,
 		},
 		{
-			Type:        discord.ApplicationCommandOptionTypeString,
+			Type:        discord2.ApplicationCommandOptionTypeString,
 			Name:        "end_date",
 			Description: "End Date (ex 2021-02-05)",
 			Required:    true,
@@ -318,7 +318,7 @@ func when2meetCommandOptions(context.Context) ([]discord.ApplicationCommandOptio
 	}, nil
 }
 
-func when2meetInteractionHandler(_ context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func when2meetInteractionHandler(_ context.Context, interaction discord2.Interaction) discord2.InteractionResponse {
 	var eventName, startDate, endDate string
 	for _, option := range interaction.Data.Options {
 		switch option.Name {
@@ -343,35 +343,35 @@ func when2meetInteractionHandler(_ context.Context, interaction discord.Interact
 		fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url), true)
 }
 
-func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
-	return []discord.ApplicationCommandOption{
+func aboutmeCommandOptions(context.Context) ([]discord2.ApplicationCommandOption, error) {
+	return []discord2.ApplicationCommandOption{
 		{
-			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Type:        discord2.ApplicationCommandOptionTypeSubCommand,
 			Name:        "summary",
 			Description: "Get a summary of your aboutme information on the vvgo website.",
 		},
 		{
-			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Type:        discord2.ApplicationCommandOptionTypeSubCommand,
 			Name:        "show",
 			Description: "Show your aboutme information on the vvgo website.",
 		},
 		{
-			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Type:        discord2.ApplicationCommandOptionTypeSubCommand,
 			Name:        "hide",
 			Description: "Hide your aboutme information from the vvgo website.",
 		},
 		{
-			Type:        discord.ApplicationCommandOptionTypeSubCommand,
+			Type:        discord2.ApplicationCommandOptionTypeSubCommand,
 			Name:        "update",
 			Description: "Update your aboutme information.",
-			Options: []discord.ApplicationCommandOption{
+			Options: []discord2.ApplicationCommandOption{
 				{
-					Type:        discord.ApplicationCommandOptionTypeString,
+					Type:        discord2.ApplicationCommandOptionTypeString,
 					Name:        "name",
 					Description: "Your name.",
 				},
 				{
-					Type:        discord.ApplicationCommandOptionTypeString,
+					Type:        discord2.ApplicationCommandOptionTypeString,
 					Name:        "blurb",
 					Description: "A blurb about yourself.",
 				},
@@ -390,24 +390,24 @@ func getAboutMeTitleFromRoles(roles []string) string {
 		return false
 	}
 
-	if hasRole(discord.VVGOExecutiveDirectorRoleID) {
+	if hasRole(discord2.VVGOExecutiveDirectorRoleID) {
 		return "Executive Director"
-	} else if hasRole(discord.VVGOProductionDirectorRoleID) {
+	} else if hasRole(discord2.VVGOProductionDirectorRoleID) {
 		return "Production Director"
-	} else if hasRole(discord.VVGOProductionTeamRoleID) {
+	} else if hasRole(discord2.VVGOProductionTeamRoleID) {
 		return "Production Team"
 	} else {
 		return ""
 	}
 }
 
-func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func aboutmeInteractionHandler(ctx context.Context, interaction discord2.Interaction) discord2.InteractionResponse {
 	userId := interaction.Member.User.ID.String()
 	title := getAboutMeTitleFromRoles(interaction.Member.Roles)
 
 	isProduction := false
 	for _, role := range interaction.Member.Roles {
-		if role == discord.VVGOProductionTeamRoleID {
+		if role == discord2.VVGOProductionTeamRoleID {
 			isProduction = true
 		}
 	}
@@ -441,7 +441,7 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 	return InteractionResponseOof
 }
 
-func summaryAboutMe(entries map[string]aboutme.Entry, userId string) discord.InteractionResponse {
+func summaryAboutMe(entries map[string]aboutme.Entry, userId string) discord2.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		message := fmt.Sprintf("**%s** ~ %s ~\n", entry.Name, entry.Blurb)
 		message += "Use `/aboutme update` to make changes.\n"
@@ -455,7 +455,7 @@ func summaryAboutMe(entries map[string]aboutme.Entry, userId string) discord.Int
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func hideAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string) discord.InteractionResponse {
+func hideAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string) discord2.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		entry.Show = false
 		entries[userId] = entry
@@ -468,7 +468,7 @@ func hideAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId s
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func showAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string) discord.InteractionResponse {
+func showAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string) discord2.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		entry.Show = true
 		entries[userId] = entry
@@ -481,7 +481,7 @@ func showAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId s
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func updateAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string, title string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
+func updateAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string, title string, option discord2.ApplicationCommandInteractionDataOption) discord2.InteractionResponse {
 	updateEntry := func(entry aboutme.Entry) aboutme.Entry {
 		entry.Title = title
 		for _, option := range option.Options {
@@ -508,14 +508,14 @@ func updateAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId
 	return interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 }
 
-func interactionResponseMessage(text string, ephemeral bool) discord.InteractionResponse {
+func interactionResponseMessage(text string, ephemeral bool) discord2.InteractionResponse {
 	var flags int
 	if ephemeral {
-		flags = discord.InteractionApplicationCommandCallbackDataFlagEphemeral
+		flags = discord2.InteractionApplicationCommandCallbackDataFlagEphemeral
 	}
-	return discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionApplicationCommandCallbackData{
+	return discord2.InteractionResponse{
+		Type: discord2.InteractionCallbackTypeChannelMessageWithSource,
+		Data: &discord2.InteractionApplicationCommandCallbackData{
 			Content: text,
 			Flags:   flags,
 		},

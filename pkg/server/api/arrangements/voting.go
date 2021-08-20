@@ -3,10 +3,10 @@ package arrangements
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"
 	"sort"
 )
