@@ -39,11 +39,11 @@ func AcceptsType(r *http.Request, mediaType string) bool {
 }
 
 func BadRequest(w http.ResponseWriter, reason string) { http.Error(w, reason, http.StatusBadRequest) }
-func InternalServerError(w http.ResponseWriter) { http.Error(w, "", http.StatusInternalServerError) }
-func MethodNotAllowed(w http.ResponseWriter) { http.Error(w, "", http.StatusMethodNotAllowed) }
-func TooManyBytes(w http.ResponseWriter)   { http.Error(w, "", http.StatusRequestEntityTooLarge) }
-func InvalidContent(w http.ResponseWriter) { http.Error(w, "", http.StatusUnsupportedMediaType) }
-func NotFound(w http.ResponseWriter)       { http.Error(w, "404 page not found", http.StatusNotFound) }
+func InternalServerError(w http.ResponseWriter)       { http.Error(w, "", http.StatusInternalServerError) }
+func MethodNotAllowed(w http.ResponseWriter)          { http.Error(w, "", http.StatusMethodNotAllowed) }
+func TooManyBytes(w http.ResponseWriter)              { http.Error(w, "", http.StatusRequestEntityTooLarge) }
+func InvalidContent(w http.ResponseWriter)            { http.Error(w, "", http.StatusUnsupportedMediaType) }
+func NotFound(w http.ResponseWriter)                  { http.Error(w, "404 page not found", http.StatusNotFound) }
 func Unauthorized(w http.ResponseWriter) {
 	http.Error(w, "authorization failed", http.StatusUnauthorized)
 }
