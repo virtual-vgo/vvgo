@@ -34,6 +34,7 @@ func ProjectsView(w http.ResponseWriter, r *http.Request) {
 	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
 	if err != nil {
 		logger.MethodFailure(ctx, "sheets.ListProjects", err)
+		helpers.InternalServerError(w)
 		return
 	}
 

@@ -49,6 +49,7 @@ var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http
 		if err := json.NewEncoder(w).Encode(ballot); err != nil {
 			logger.JsonEncodeFailure(ctx, err)
 		}
+		return
 
 	case http.MethodPost:
 		var ballot []string
@@ -70,6 +71,7 @@ var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http
 			logger.RedisFailure(ctx, err)
 			helpers.InternalServerError(w)
 		}
+		return
 	}
 })
 
