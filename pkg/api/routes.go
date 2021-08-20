@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/api/about_me"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/api/parts"
 	"github.com/virtual-vgo/vvgo/pkg/api/projects"
@@ -54,7 +55,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/slash_commands", HandleSlashCommand, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/update_stats", SkywardSwordIntentHandler, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/aboutme", AboutMeApi, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/aboutme", about_me.Handler, login.RoleVVGOLeader)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),

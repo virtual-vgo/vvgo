@@ -10,17 +10,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/api/about_me"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
-	"github.com/virtual-vgo/vvgo/pkg/error_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/foaas"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/when2meet"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -342,82 +340,6 @@ func when2meetInteractionHandler(_ context.Context, interaction discord.Interact
 		fmt.Sprintf("<@%s> created a [when2meet](%s).", interaction.Member.User.ID, url), true)
 }
 
-type AboutMeEntry struct {
-	DiscordID string `json:"discord_id,omitempty"`
-	Name      string `json:"name"`
-	Title     string `json:"title"`
-	Blurb     string `json:"blurb"`
-	Show      bool   `json:"show"`
-}
-
-func readAboutMeEntries(ctx context.Context, keys []string) (map[string]AboutMeEntry, error) {
-	if keys == nil {
-		buf := make(map[string]string)
-		cmd := "HGETALL"
-		args := []string{"about_me:entries"}
-		if err := redis.Do(ctx, redis.Cmd(&buf, cmd, args...)); err != nil {
-			return nil, error_wrappers.RedisDoFailed(err)
-		}
-		dest := make(map[string]AboutMeEntry)
-		for _, entryJson := range buf {
-			var entry AboutMeEntry
-			if err := json.NewDecoder(strings.NewReader(entryJson)).Decode(&entry); err != nil {
-				return nil, error_wrappers.JsonDecodeFailed(err)
-			}
-			dest[entry.DiscordID] = entry
-		}
-		return dest, nil
-	} else {
-		var buf []string
-		cmd := "HMGET"
-		args := append([]string{"about_me:entries"}, keys...)
-		if err := redis.Do(ctx, redis.Cmd(&buf, cmd, args...)); err != nil {
-			return nil, error_wrappers.RedisDoFailed(err)
-		}
-		dest := make(map[string]AboutMeEntry)
-		for _, entryJson := range buf {
-			var entry AboutMeEntry
-			if err := json.NewDecoder(strings.NewReader(entryJson)).Decode(&entry); err != nil {
-				return nil, error_wrappers.JsonDecodeFailed(err)
-			}
-			dest[entry.DiscordID] = entry
-		}
-		return dest, nil
-	}
-}
-
-func writeAboutMeEntries(ctx context.Context, src map[string]AboutMeEntry) error {
-	if len(src) == 0 {
-		logger.Warnf("writeAboutMeEntries: there's nothing to write!")
-		return nil
-	}
-
-	args := []string{"about_me:entries"}
-	for id, entry := range src {
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(entry); err != nil {
-			return error_wrappers.JsonEncodeFailed(err)
-		}
-		args = append(args, id, buf.String())
-	}
-
-	if err := redis.Do(ctx, redis.Cmd(nil, "HMSET", args...)); err != nil {
-		return error_wrappers.RedisDoFailed(err)
-	}
-	return nil
-}
-
-func deleteAboutmeEntries(ctx context.Context, keys []string) error {
-	if len(keys) == 0 {
-		return nil
-	}
-	args := append([]string{"about_me:entries"}, keys...)
-	if err := redis.Do(ctx, redis.Cmd(nil, "HDEL", args...)); err != nil {
-		return error_wrappers.RedisDoFailed(err)
-	}
-	return nil
-}
-
 func aboutmeCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {
 	return []discord.ApplicationCommandOption{
 		{
@@ -491,14 +413,14 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 		return interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 	}
 
-	entries, err := readAboutMeEntries(ctx, []string{userId})
+	entries, err := about_me.ReadEntries(ctx, []string{userId})
 	if err != nil && !errors.Is(err, io.EOF) {
 		logger.WithError(err).Error("readAboutMeEntries() failed")
 		return InteractionResponseOof
 	}
 
 	if entries == nil {
-		entries = make(map[string]AboutMeEntry)
+		entries = make(map[string]about_me.Entry)
 	}
 
 	for _, option := range interaction.Data.Options {
@@ -516,7 +438,7 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 	return InteractionResponseOof
 }
 
-func summaryAboutMe(entries map[string]AboutMeEntry, userId string) discord.InteractionResponse {
+func summaryAboutMe(entries map[string]about_me.Entry, userId string) discord.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		message := fmt.Sprintf("**%s** ~ %s ~\n", entry.Name, entry.Blurb)
 		message += "Use `/aboutme update` to make changes.\n"
@@ -530,11 +452,11 @@ func summaryAboutMe(entries map[string]AboutMeEntry, userId string) discord.Inte
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func hideAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId string) discord.InteractionResponse {
+func hideAboutme(ctx context.Context, entries map[string]about_me.Entry, userId string) discord.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		entry.Show = false
 		entries[userId] = entry
-		if err := writeAboutMeEntries(ctx, entries); err != nil {
+		if err := about_me.WriteEntries(ctx, entries); err != nil {
 			logger.WithError(err).Error("writeAboutMeEntries() failed")
 			return InteractionResponseOof
 		}
@@ -543,11 +465,11 @@ func hideAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId st
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func showAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId string) discord.InteractionResponse {
+func showAboutme(ctx context.Context, entries map[string]about_me.Entry, userId string) discord.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		entry.Show = true
 		entries[userId] = entry
-		if err := writeAboutMeEntries(ctx, entries); err != nil {
+		if err := about_me.WriteEntries(ctx, entries); err != nil {
 			logger.WithError(err).Error("writeAboutMeEntries() failed")
 			return InteractionResponseOof
 		}
@@ -556,8 +478,8 @@ func showAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId st
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func updateAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId string, title string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
-	updateEntry := func(entry AboutMeEntry) AboutMeEntry {
+func updateAboutme(ctx context.Context, entries map[string]about_me.Entry, userId string, title string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
+	updateEntry := func(entry about_me.Entry) about_me.Entry {
 		entry.Title = title
 		for _, option := range option.Options {
 			switch option.Name {
@@ -573,10 +495,10 @@ func updateAboutme(ctx context.Context, entries map[string]AboutMeEntry, userId 
 	if entry, ok := entries[userId]; ok {
 		entries[userId] = updateEntry(entry)
 	} else {
-		entries[userId] = updateEntry(AboutMeEntry{DiscordID: userId})
+		entries[userId] = updateEntry(about_me.Entry{DiscordID: userId})
 	}
 
-	if err := writeAboutMeEntries(ctx, entries); err != nil {
+	if err := about_me.WriteEntries(ctx, entries); err != nil {
 		logger.WithError(err).Error("writeAboutMeEntries() failed")
 		return InteractionResponseOof
 	}

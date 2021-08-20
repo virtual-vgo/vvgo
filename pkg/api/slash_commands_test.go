@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/api/about_me"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
@@ -163,7 +164,7 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx, nil)
+			got, err := about_me.ReadEntries(ctx, nil)
 			assert.NoError(t, err)
 			assert.Empty(t, got)
 		})
@@ -174,8 +175,8 @@ func TestAboutmeHandler(t *testing.T) {
 
 		t.Run("ok", func(t *testing.T) {
 			resetAboutMeEntries(t)
-			require.NoError(t, writeAboutMeEntries(ctx,
-				map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: true}}))
+			require.NoError(t, about_me.WriteEntries(ctx,
+				map[string]about_me.Entry{"42069": {DiscordID: "42069", Show: true}}))
 
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
@@ -183,9 +184,9 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: You are hidden from https://vvgo.org/about.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx, nil)
+			got, err := about_me.ReadEntries(ctx, nil)
 			assert.NoError(t, err)
-			assert.Equal(t, map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: false}}, got)
+			assert.Equal(t, map[string]about_me.Entry{"42069": {DiscordID: "42069", Show: false}}, got)
 		})
 
 		t.Run("no blurb", func(t *testing.T) {
@@ -204,8 +205,8 @@ func TestAboutmeHandler(t *testing.T) {
 
 		t.Run("ok", func(t *testing.T) {
 			resetAboutMeEntries(t)
-			require.NoError(t, writeAboutMeEntries(ctx,
-				map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: false}}))
+			require.NoError(t, about_me.WriteEntries(ctx,
+				map[string]about_me.Entry{"42069": {DiscordID: "42069", Show: false}}))
 
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
@@ -213,9 +214,9 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: You are visible on https://vvgo.org/about.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx, nil)
+			got, err := about_me.ReadEntries(ctx, nil)
 			assert.NoError(t, err)
-			assert.Equal(t, map[string]AboutMeEntry{"42069": {DiscordID: "42069", Show: true}}, got)
+			assert.Equal(t, map[string]about_me.Entry{"42069": {DiscordID: "42069", Show: true}}, got)
 		})
 
 		t.Run("no blurb", func(t *testing.T) {
@@ -233,7 +234,7 @@ func TestAboutmeHandler(t *testing.T) {
 
 		t.Run("exists", func(t *testing.T) {
 			resetAboutMeEntries(t)
-			require.NoError(t, writeAboutMeEntries(ctx, map[string]AboutMeEntry{"42069": {DiscordID: "42069"}}))
+			require.NoError(t, about_me.WriteEntries(ctx, map[string]about_me.Entry{"42069": {DiscordID: "42069"}}))
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
 				{Name: "name", Value: "chester cheeta"},
 				{Name: "blurb", Value: "dangerously cheesy"},
@@ -243,9 +244,9 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx, nil)
+			got, err := about_me.ReadEntries(ctx, nil)
 			assert.NoError(t, err)
-			assert.Equal(t, map[string]AboutMeEntry{
+			assert.Equal(t, map[string]about_me.Entry{
 				"42069": {DiscordID: "42069", Name: "chester cheeta", Title: "Production Team", Blurb: "dangerously cheesy"},
 			}, got)
 		})
@@ -261,9 +262,9 @@ func TestAboutmeHandler(t *testing.T) {
 			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
-			got, err := readAboutMeEntries(ctx, nil)
+			got, err := about_me.ReadEntries(ctx, nil)
 			assert.NoError(t, err)
-			assert.Equal(t, map[string]AboutMeEntry{
+			assert.Equal(t, map[string]about_me.Entry{
 				"42069": {DiscordID: "42069", Name: "chester cheeta", Title: "Production Team", Blurb: "dangerously cheesy"},
 			}, got)
 		})
