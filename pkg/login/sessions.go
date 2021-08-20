@@ -27,6 +27,18 @@ func CookieDomain() string {
 	return "." + x.Hostname()
 }
 
+const CtxKeyVVGOIdentity = "vvgo_identity"
+
+func IdentityFromContext(ctx context.Context) *Identity {
+	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
+	identity, ok := ctxIdentity.(*Identity)
+	if !ok {
+		identity = new(Identity)
+		*identity = Anonymous()
+	}
+	return identity
+}
+
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
 func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
 	bearer := strings.TrimSpace(r.Header.Get("Authorization"))

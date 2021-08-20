@@ -1,7 +1,8 @@
-package sheets
+package models
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"reflect"
 )
@@ -17,7 +18,7 @@ type Leader struct {
 }
 
 func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Leaders")
+	values, err := sheets.ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Leaders")
 	if err != nil {
 		return nil, err
 	}
@@ -28,10 +29,10 @@ func valuesToLeaders(values [][]interface{}) Leaders {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values[0])
+	index := sheets.BuildIndex(values[0])
 	leaders := make([]Leader, len(values)-1)
 	for i, row := range values[1:] {
-		processRow(row, &leaders[i], index)
+		sheets.ProcessRow(row, &leaders[i], index)
 	}
 	return leaders
 }

@@ -1,7 +1,7 @@
 package views
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ var CreditsMaker = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	}
 
 	if data.SpreadsheetID != "" && data.ReadRange != "" {
-		submissions, err := sheets.ListSubmissions(ctx, data.SpreadsheetID, data.ReadRange)
+		submissions, err := models.ListSubmissions(ctx, data.SpreadsheetID, data.ReadRange)
 		if err != nil {
 			logger.WithError(err).Error("readSheet() failed")
 			data.ErrorMessage = err.Error()

@@ -37,6 +37,19 @@ func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][
 	return nil, fmt.Errorf("no data")
 }
 
+func readValuesFromSheets(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
+	srv, err := sheets.NewService(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
+	}
+
+	resp, err := srv.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
+	}
+	return resp.Values, nil
+}
+
 func ReadValuesFromRedis(ctx context.Context, spreadsheetID string, readRange string) [][]interface{} {
 	var buf bytes.Buffer
 	key := "sheets:" + spreadsheetID + ":" + readRange
@@ -54,19 +67,6 @@ func ReadValuesFromRedis(ctx context.Context, spreadsheetID string, readRange st
 		return nil
 	}
 	return values
-}
-
-func readValuesFromSheets(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
-	srv, err := sheets.NewService(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
-	}
-
-	resp, err := srv.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve data from sheet: %w", err)
-	}
-	return resp.Values, nil
 }
 
 func WriteValuesToSheets(ctx context.Context, spreadsheetID string, readRange string, values [][]interface{}) error {
@@ -103,7 +103,7 @@ func WriteValuesToRedis(ctx context.Context, spreadsheetID string, readRange str
 	}
 }
 
-func buildIndex(fieldNames []interface{}) map[string]int {
+func BuildIndex(fieldNames []interface{}) map[string]int {
 	index := make(map[string]int, len(fieldNames))
 	for i, col := range fieldNames {
 		index[fmt.Sprintf("%s", col)] = i
@@ -111,7 +111,7 @@ func buildIndex(fieldNames []interface{}) map[string]int {
 	return index
 }
 
-func processRow(row []interface{}, dest interface{}, index map[string]int) {
+func ProcessRow(row []interface{}, dest interface{}, index map[string]int) {
 	tagName := "col_name"
 	if len(row) < 1 {
 		return

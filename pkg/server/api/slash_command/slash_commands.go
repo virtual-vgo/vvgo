@@ -17,7 +17,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command/foaas"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command/when2meet"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"io"
 	"net/http"
 	"time"
@@ -191,7 +191,7 @@ func beepInteractionHandler(context.Context, discord2.Interaction) discord2.Inte
 
 func partsCommandOptions(ctx context.Context) ([]discord2.ApplicationCommandOption, error) {
 	identity := login.Anonymous()
-	projects, err := sheets.ListProjects(ctx, &identity)
+	projects, err := models.ListProjects(ctx, &identity)
 	if err != nil {
 		return nil, fmt.Errorf("sheets.ListProjects() failed: %w", err)
 	}
@@ -207,7 +207,7 @@ func partsInteractionHandler(ctx context.Context, interaction discord2.Interacti
 	}
 
 	identity := login.Anonymous()
-	projects, err := sheets.ListProjects(ctx, &identity)
+	projects, err := models.ListProjects(ctx, &identity)
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListProjects() failed")
 		return InteractionResponseOof
@@ -241,14 +241,14 @@ func partsInteractionHandler(ctx context.Context, interaction discord2.Interacti
 
 func submitCommandOptions(ctx context.Context) ([]discord2.ApplicationCommandOption, error) {
 	identity := login.Anonymous()
-	projects, err := sheets.ListProjects(ctx, &identity)
+	projects, err := models.ListProjects(ctx, &identity)
 	if err != nil {
 		return nil, fmt.Errorf("sheets.ListProjects() failed: %w", err)
 	}
 	return []discord2.ApplicationCommandOption{projectCommandOption(projects.Current())}, nil
 }
 
-func projectCommandOption(projects sheets.Projects) discord2.ApplicationCommandOption {
+func projectCommandOption(projects models.Projects) discord2.ApplicationCommandOption {
 	var choices []discord2.ApplicationCommandOptionChoice
 	for _, project := range projects {
 		choices = append(choices, discord2.ApplicationCommandOptionChoice{
@@ -274,7 +274,7 @@ func submitInteractionHandler(ctx context.Context, interaction discord2.Interact
 
 	var content string
 	identity := login.Anonymous()
-	projects, err := sheets.ListProjects(ctx, &identity)
+	projects, err := models.ListProjects(ctx, &identity)
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListProjects() failed")
 	} else if project, ok := projects.Get(projectName); ok {

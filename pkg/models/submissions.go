@@ -1,8 +1,9 @@
-package sheets
+package models
 
 import (
 	"context"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
 	"strings"
 )
 
@@ -15,7 +16,7 @@ type Submission struct {
 type Submissions []Submission
 
 func ListSubmissions(ctx context.Context, spreadsheetID string, readRange string) (Submissions, error) {
-	values, err := ReadSheet(ctx, spreadsheetID, readRange)
+	values, err := sheets.ReadSheet(ctx, spreadsheetID, readRange)
 	if err != nil {
 		return nil, err
 	}
@@ -27,10 +28,10 @@ func valuesToSubmissionRecords(values [][]interface{}) Submissions {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values[0])
+	index := sheets.BuildIndex(values[0])
 	submissionRecords := make([]Submission, len(values)-1) // ignore the header row
 	for i, row := range values[1:] {
-		processRow(row, &submissionRecords[i], index)
+		sheets.ProcessRow(row, &submissionRecords[i], index)
 	}
 	return submissionRecords
 }

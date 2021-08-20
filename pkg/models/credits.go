@@ -1,8 +1,9 @@
-package sheets
+package models
 
 import (
 	"context"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"sort"
 	"strings"
@@ -20,7 +21,7 @@ type Credit struct {
 type Credits []Credit
 
 func ListCredits(ctx context.Context) (Credits, error) {
-	values, err := ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Credits")
+	values, err := sheets.ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Credits")
 	if err != nil {
 		return nil, err
 	}
@@ -31,10 +32,10 @@ func valuesToCredits(values [][]interface{}) []Credit {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values[0])
+	index := sheets.BuildIndex(values[0])
 	credits := make([]Credit, len(values)-1)
 	for i, row := range values[1:] {
-		processRow(row, &credits[i], index)
+		sheets.ProcessRow(row, &credits[i], index)
 	}
 	Credits(credits).Sort()
 	return credits

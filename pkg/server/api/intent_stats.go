@@ -5,7 +5,7 @@ import (
 	"fmt"
 	discord2 "github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 	"sort"
 	"strings"
@@ -40,7 +40,7 @@ func SkywardSwordIntentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateIntentMessage(ctx context.Context) error {
-	intents, err := sheets.ListSkywardSwordIntents(ctx)
+	intents, err := models.ListSkywardSwordIntents(ctx)
 	if err != nil {
 		return err
 	}

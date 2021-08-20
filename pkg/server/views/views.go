@@ -7,7 +7,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"html/template"
 	"math/rand"
 	"net/http"
@@ -50,9 +50,9 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
 		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
 		"download_link":    func(obj string) string { return downloadLink(obj) },
-		"projects":         func() (sheets.Projects, error) { return sheets.ListProjects(ctx, identity) },
-		"parts":            func() (sheets.Parts, error) { return sheets.ListParts(ctx) },
-		"new_query":        sheets.NewQuery,
+		"projects":         func() (models.Projects, error) { return models.ListProjects(ctx, identity) },
+		"parts":            func() (models.Parts, error) { return models.ListParts(ctx) },
+		"new_query":        models.NewQuery,
 		"string_slice":     func(strs ...string) []string { return strs },
 		"append_strings":   func(slice []string, elems ...string) []string { return append(slice, elems...) },
 		"pick_random_elem": func(slice []string) string { return slice[rand.Intn(len(slice))] },

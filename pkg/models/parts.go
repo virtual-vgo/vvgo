@@ -1,7 +1,8 @@
-package sheets
+package models
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"sort"
 )
@@ -24,7 +25,7 @@ type Part struct {
 type Parts []Part
 
 func ListParts(ctx context.Context) (Parts, error) {
-	values, err := ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Parts")
+	values, err := sheets.ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Parts")
 	if err != nil {
 		return nil, err
 	}
@@ -35,10 +36,10 @@ func valuesToParts(values [][]interface{}) Parts {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values[0])
+	index := sheets.BuildIndex(values[0])
 	parts := make([]Part, len(values)-1)
 	for i, row := range values[1:] {
-		processRow(row, &parts[i], index)
+		sheets.ProcessRow(row, &parts[i], index)
 		parts[i].SheetMusicLink = downloadLink(parts[i].SheetMusicFile)
 		parts[i].ClickTrackLink = downloadLink(parts[i].ClickTrackFile)
 		parts[i].PronunciationGuideLink = downloadLink(parts[i].PronunciationGuideLink)

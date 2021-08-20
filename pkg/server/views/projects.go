@@ -3,13 +3,13 @@ package views
 import (
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 )
 
 func Projects(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	projects, err := sheets.ListProjects(ctx, login.IdentityFromContext(ctx))
+	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.MethodFailure(ctx, "sheets.ListProjects", err)
 		helpers.InternalServerError(w)
@@ -25,14 +25,14 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func serveProject(w http.ResponseWriter, r *http.Request, project sheets.Project) {
+func serveProject(w http.ResponseWriter, r *http.Request, project models.Project) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
 		helpers.MethodNotAllowed(w)
 		return
 	}
 
-	credits, err := sheets.ListCredits(ctx)
+	credits, err := models.ListCredits(ctx)
 	if err != nil {
 		logger.WithError(err).Error("valuesToCredits() failed")
 		helpers.InternalServerError(w)
@@ -41,7 +41,7 @@ func serveProject(w http.ResponseWriter, r *http.Request, project sheets.Project
 
 	type minorTable struct {
 		Name string
-		Rows []sheets.Credit
+		Rows []models.Credit
 	}
 
 	type majorTable struct {
@@ -76,7 +76,7 @@ func serveProject(w http.ResponseWriter, r *http.Request, project sheets.Project
 	}
 
 	page := struct {
-		sheets.Project
+		models.Project
 		Credits []*majorTable
 	}{
 		Project: project,

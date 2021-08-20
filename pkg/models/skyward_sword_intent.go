@@ -1,7 +1,8 @@
-package sheets
+package models
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
 	"sort"
 )
 
@@ -17,7 +18,7 @@ type SkywardSwordIntent struct {
 type SkywardSwordIntents []SkywardSwordIntent
 
 func ListSkywardSwordIntents(ctx context.Context) (SkywardSwordIntents, error) {
-	values, err := ReadSheet(ctx, SkywardSwordIntentID, "Form Responses 1")
+	values, err := sheets.ReadSheet(ctx, SkywardSwordIntentID, "Form Responses 1")
 	if err != nil {
 		return nil, err
 	}
@@ -28,10 +29,10 @@ func valuesToSkywardSwordIntents(values [][]interface{}) []SkywardSwordIntent {
 	if len(values) < 1 {
 		return nil
 	}
-	index := buildIndex(values[0])
+	index := sheets.BuildIndex(values[0])
 	docs := make([]SkywardSwordIntent, len(values)-1)
 	for i, row := range values[1:] {
-		processRow(row, &docs[i], index)
+		sheets.ProcessRow(row, &docs[i], index)
 	}
 	SkywardSwordIntents(docs).Sort()
 	return docs

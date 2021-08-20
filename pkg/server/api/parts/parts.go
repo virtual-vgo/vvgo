@@ -5,7 +5,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 )
 
@@ -17,14 +17,14 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	projects, err := sheets.ListProjects(ctx, login.IdentityFromContext(ctx))
+	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("listProjects() failed")
 		helpers.InternalServerError(w)
 		return
 	}
 
-	parts, err := sheets.ListParts(ctx)
+	parts, err := models.ListParts(ctx)
 	if err != nil {
 		logger.WithError(err).Error("listParts() failed")
 		helpers.InternalServerError(w)
@@ -36,7 +36,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		parts = parts.ForProject(project)
 	}
 	if parts == nil {
-		parts = sheets.Parts{}
+		parts = models.Parts{}
 	}
 
 	if err := json.NewEncoder(w).Encode(parts.Sort()); err != nil {
