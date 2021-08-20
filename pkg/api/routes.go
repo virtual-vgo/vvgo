@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api/aboutme"
+	"github.com/virtual-vgo/vvgo/pkg/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/api/download"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/api/leaders"
@@ -20,9 +21,6 @@ import (
 )
 
 var PublicFiles = "public"
-
-var PartsView = ServeTemplate("parts.gohtml")
-var VotingView = ServeTemplate("voting.gohtml")
 
 func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
@@ -59,7 +57,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/projects", projects.Handle, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/leaders", leaders.Handle, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", roles.Handle, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/arrangements/ballot", arrangements.Ballot, login.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, login.RoleVVGOTeams)
 	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, login.RoleVVGOTeams)
