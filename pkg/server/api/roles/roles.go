@@ -1,8 +1,8 @@
 package roles
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"
 )
 

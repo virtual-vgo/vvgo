@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/models"
+	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"html/template"
 	"math/rand"
 	"net/http"
@@ -23,9 +23,9 @@ var (
 	Index           = ServeTemplate("index.gohtml")
 	ServePublicFile = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
 	Parts           = ServeTemplate("parts.gohtml")
-	About     = ServeTemplate("about.gohtml")
-	ContactUs = ServeTemplate("contact_us.gohtml")
-	Voting    = ServeTemplate("voting.gohtml")
+	About           = ServeTemplate("about.gohtml")
+	ContactUs       = ServeTemplate("contact_us.gohtml")
+	Voting          = ServeTemplate("voting.gohtml")
 )
 
 func ServeTemplate(templateFile string) http.HandlerFunc {

@@ -13,11 +13,11 @@ import (
 	discord2 "github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/aboutme"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command/foaas"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command/when2meet"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	"github.com/virtual-vgo/vvgo/pkg/models"
 	"io"
 	"net/http"
 	"time"
@@ -162,8 +162,8 @@ func HandleInteraction(ctx context.Context, interaction discord2.Interaction) (d
 type SlashCommand struct {
 	Name        string
 	Description string
-	Options func(context.Context) ([]discord2.ApplicationCommandOption, error)
-	Handler InteractionHandler
+	Options     func(context.Context) ([]discord2.ApplicationCommandOption, error)
+	Handler     InteractionHandler
 }
 
 type InteractionHandler func(context.Context, discord2.Interaction) discord2.InteractionResponse

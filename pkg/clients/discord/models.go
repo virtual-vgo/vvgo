@@ -21,8 +21,8 @@ type User struct {
 
 // https://discordapp.com/developers/docs/resources/guild#guild-member-object
 type GuildMember struct {
-	User User   `json:"user"`
-	Nick string `json:"nick"`
+	User  User     `json:"user"`
+	Nick  string   `json:"nick"`
 	Roles []string `json:"roles"`
 }
 
@@ -52,12 +52,12 @@ type ApplicationCommand struct {
 
 // https://discord.com/developers/docs/interactions/slash-commands#applicationcommandoption
 type ApplicationCommandOption struct {
-	Type     ApplicationCommandOptionType     `json:"type"`
-	Name     string                           `json:"name"`
+	Type        ApplicationCommandOptionType     `json:"type"`
+	Name        string                           `json:"name"`
 	Description string                           `json:"description"`
-	Required bool                             `json:"required"`
-	Choices  []ApplicationCommandOptionChoice `json:"choices,omitempty"`
-	Options  []ApplicationCommandOption       `json:"options,omitempty"`
+	Required    bool                             `json:"required"`
+	Choices     []ApplicationCommandOptionChoice `json:"choices,omitempty"`
+	Options     []ApplicationCommandOption       `json:"options,omitempty"`
 }
 
 // https://discord.com/developers/docs/interactions/slash-commands#applicationcommandoptiontype
