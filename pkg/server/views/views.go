@@ -19,11 +19,14 @@ var PublicFiles = "public"
 
 var logger = log.New()
 
-var IndexView = ServeTemplate("index.gohtml")
-var ContactUs = ServeTemplate("contact_us.gohtml")
-var AboutView = ServeTemplate("about.gohtml")
-var PartsView = ServeTemplate("parts.gohtml")
-var VotingView = ServeTemplate("voting.gohtml")
+var (
+	Index           = ServeTemplate("index.gohtml")
+	ServePublicFile = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
+	Parts           = ServeTemplate("parts.gohtml")
+	About     = ServeTemplate("about.gohtml")
+	ContactUs = ServeTemplate("contact_us.gohtml")
+	Voting    = ServeTemplate("voting.gohtml")
+)
 
 func ServeTemplate(templateFile string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

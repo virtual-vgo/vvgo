@@ -5,12 +5,16 @@ import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 )
+
+func init() { views.PublicFiles = "../../public" }
 
 func TestServer(t *testing.T) {
 	ctx := context.Background()
@@ -33,7 +37,7 @@ func TestServer(t *testing.T) {
 	}
 
 	doRequest := func(t *testing.T, req *http.Request) *http.Response {
-		resp, err := noFollow(http.DefaultClient).Do(req)
+		resp, err := http_wrappers.NoFollow(http.DefaultClient).Do(req)
 		require.NoError(t, err, "http.Do")
 		return resp
 	}
@@ -129,14 +133,4 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, "/", resp.Header.Get("Location"))
 		})
 	})
-}
-
-func noFollow(client *http.Client) *http.Client {
-	if client == nil {
-		client = new(http.Client)
-	}
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-	return client
 }

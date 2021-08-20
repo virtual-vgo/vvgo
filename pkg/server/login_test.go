@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
@@ -16,37 +17,6 @@ import (
 	"testing"
 	"time"
 )
-
-func TestLoginView_ServeHTTP(t *testing.T) {
-	t.Run("not logged in", func(t *testing.T) {
-		server := LoginView{}
-		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodGet, "/", nil)
-		server.ServeHTTP(recorder, request)
-		gotResp := recorder.Result()
-		assert.Equal(t, http.StatusOK, gotResp.StatusCode)
-	})
-
-	t.Run("logged in", func(t *testing.T) {
-		ctx := context.Background()
-		loginView := LoginView{}
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			loginView.ServeHTTP(w, r.Clone(context.WithValue(ctx, login.CtxKeyVVGOIdentity, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}})))
-		}))
-		defer ts.Close()
-
-		cookie, err := login.NewCookie(ctx, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}}, 600*time.Second)
-		require.NoError(t, err, "sessions.NewCookie()")
-
-		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
-		require.NoError(t, err, "http.NewRequest()")
-		req.AddCookie(cookie)
-		resp, err := noFollow(nil).Do(req)
-		require.NoError(t, err, "http.Do()")
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, "/login/success", resp.Header.Get("Location"))
-	})
-}
 
 func TestLoginHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
@@ -64,7 +34,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		urlValues := make(url.Values)
 		urlValues.Add("user", "vvgo-member")
 		urlValues.Add("pass", "the-wrong-password")
-		resp, err := noFollow(http.DefaultClient).PostForm(ts.URL, urlValues)
+		resp, err := http_wrappers.NoFollow(http.DefaultClient).PostForm(ts.URL, urlValues)
 		require.NoError(t, err, "client.Get")
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		var gotBody bytes.Buffer
@@ -78,7 +48,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		client := noFollow(&http.Client{})
+		client := http_wrappers.NoFollow(&http.Client{})
 
 		urlValues := make(url.Values)
 		urlValues.Add("user", "vvgo-member")
@@ -117,7 +87,7 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	require.NoError(t, err)
 
 	// make the request
-	client := noFollow(http.DefaultClient)
+	client := http_wrappers.NoFollow(http.DefaultClient)
 	req, _ := http.NewRequest(http.MethodGet, ts.URL, nil)
 	req.AddCookie(cookie)
 	resp, err := client.Do(req)
@@ -138,7 +108,7 @@ func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
 	defer ts.Close()
 
 	// make the request
-	resp, err := noFollow(&http.Client{}).Get(ts.URL)
+	resp, err := http_wrappers.NoFollow(&http.Client{}).Get(ts.URL)
 	require.NoError(t, err, "client.Get()")
 	require.Equal(t, http.StatusFound, resp.StatusCode, "status code")
 
@@ -227,7 +197,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
 		})
-		resp, err := noFollow(&http.Client{}).Do(req)
+		resp, err := http_wrappers.NoFollow(&http.Client{}).Do(req)
 		require.NoError(t, err, "client.Post")
 		return resp
 	}
@@ -260,7 +230,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		defer ts.Close()
 
 		// make the request
-		resp, err := noFollow(&http.Client{}).Get(ts.URL)
+		resp, err := http_wrappers.NoFollow(&http.Client{}).Get(ts.URL)
 		require.NoError(t, err, "client.Get()")
 		require.Equal(t, http.StatusFound, resp.StatusCode, "status code")
 

@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/aboutme"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/download"
@@ -26,9 +27,9 @@ func Routes() http.Handler {
 
 	mux.Handle("/login/password", PasswordLoginHandler{}, login.RoleAnonymous)
 	mux.Handle("/login/discord", DiscordLoginHandler{}, login.RoleAnonymous)
-	mux.Handle("/login/success", LoginSuccessView{}, login.RoleAnonymous)
+	mux.Handle("/login/success", views.LoginSuccessView{}, login.RoleAnonymous)
 	mux.Handle("/login/redirect", LoginRedirect{}, login.RoleAnonymous)
-	mux.Handle("/login", LoginView{}, login.RoleAnonymous)
+	mux.Handle("/login", views.LoginView{}, login.RoleAnonymous)
 	mux.Handle("/logout", LogoutHandler{}, login.RoleAnonymous)
 
 	for _, role := range []login.Role{login.RoleVVGOMember, login.RoleVVGOTeams, login.RoleVVGOLeader} {
@@ -62,7 +63,9 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, login.RoleVVGOTeams)
 	mux.HandleFunc("/api/v1/aboutme", aboutme.Handle, login.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/version", version.Handle, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/update_stats", SkywardSwordIntentHandler, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/update_stats", api.SkywardSwordIntentHandler, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/download", download.Handler, login.RoleVVGOMember)
+	mux.HandleFunc("/download", download.Handler, login.RoleVVGOMember)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
@@ -73,19 +76,18 @@ func Routes() http.Handler {
 			io.Copy(w, file)
 		}, login.RoleVVGOMember)
 
-	mux.HandleFunc("/voting", views.VotingView, login.RoleVVGOLeader)
-	mux.HandleFunc("/voting/results", VotingResultsView, login.RoleVVGOLeader)
-	mux.HandleFunc("/parts", views.PartsView, login.RoleVVGOMember)
-	mux.HandleFunc("/projects", ProjectsView, login.RoleAnonymous)
-	mux.HandleFunc("/download", download.Handler, login.RoleVVGOMember)
-	mux.HandleFunc("/credits-maker", CreditsMaker, login.RoleVVGOTeams)
-	mux.HandleFunc("/about", views.AboutView, login.RoleAnonymous)
+	mux.HandleFunc("/voting", views.Voting, login.RoleVVGOLeader)
+	mux.HandleFunc("/voting/results", views.VotingResults, login.RoleVVGOLeader)
+	mux.HandleFunc("/parts", views.Parts, login.RoleVVGOMember)
+	mux.HandleFunc("/projects", views.Projects, login.RoleAnonymous)
+	mux.HandleFunc("/credits-maker", views.CreditsMaker, login.RoleVVGOTeams)
+	mux.HandleFunc("/about", views.About, login.RoleAnonymous)
 	mux.HandleFunc("/contact_us", views.ContactUs, login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			views.IndexView(w, r)
+			views.Index(w, r)
 		} else {
-			http.FileServer(http.Dir(views.PublicFiles)).ServeHTTP(w, r)
+			views.ServePublicFile(w, r)
 		}
 	}, login.RoleAnonymous)
 	return &mux

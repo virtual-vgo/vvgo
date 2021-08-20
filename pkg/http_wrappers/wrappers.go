@@ -14,19 +14,29 @@ import (
 
 var logger = log.New()
 
-// middleware response writer that captures the http response code and other metrics
-type responseWriter struct {
+func NoFollow(client *http.Client) *http.Client {
+	if client == nil {
+		client = new(http.Client)
+	}
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	return client
+}
+
+// ResponseWriter middleware response writer that captures the http response code and other metrics
+type ResponseWriter struct {
 	code int
 	size int
 	http.ResponseWriter
 }
 
-func (x responseWriter) WriteHeader(code int) {
+func (x ResponseWriter) WriteHeader(code int) {
 	x.code = code
 	x.ResponseWriter.WriteHeader(code)
 }
 
-func (x responseWriter) Write(b []byte) (int, error) {
+func (x ResponseWriter) Write(b []byte) (int, error) {
 	version.SetVersionHeaders(x)
 	n, err := x.ResponseWriter.Write(b)
 	x.size += n
@@ -37,7 +47,7 @@ func Handler(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		writer := responseWriter{ResponseWriter: w, code: http.StatusOK} // this is the default status code
+		writer := ResponseWriter{ResponseWriter: w, code: http.StatusOK} // this is the default status code
 		debugRequestIn(r)
 		handler.ServeHTTP(writer, r)
 

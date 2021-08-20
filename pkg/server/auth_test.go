@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"net/http"
 	"net/http/httptest"
@@ -27,7 +28,7 @@ func TestRBACMux_Handle(t *testing.T) {
 	t.Run("no auth", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
 		require.NoError(t, err, "http.NewRequest()")
-		resp, err := noFollow(nil).Do(req)
+		resp, err := http_wrappers.NoFollow(nil).Do(req)
 		require.NoError(t, err, "http.Do()")
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
@@ -48,27 +49,27 @@ func TestRBACMux_Handle(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			req := newAuthRequest(t, "uploader", "uploader")
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("incorrect user", func(t *testing.T) {
 			req := newAuthRequest(t, "", "uploader")
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
 			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect pass", func(t *testing.T) {
 			req := newAuthRequest(t, "uploader", "")
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
 			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect role", func(t *testing.T) {
 			req := newAuthRequest(t, "member", "member")
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -88,20 +89,20 @@ func TestRBACMux_Handle(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			req := newAuthRequest(t, "uploader")
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("incorrect token", func(t *testing.T) {
 			req := newAuthRequest(t, "asdfa")
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusFound, resp.StatusCode)
 			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
 		})
 		t.Run("incorrect role", func(t *testing.T) {
 			req := newAuthRequest(t, "member")
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -121,7 +122,7 @@ func TestRBACMux_Handle(t *testing.T) {
 			req := newAuthRequest(t, &login.Identity{
 				Roles: []login.Role{login.RoleVVGOTeams},
 			})
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
@@ -129,7 +130,7 @@ func TestRBACMux_Handle(t *testing.T) {
 			req := newAuthRequest(t, &login.Identity{
 				Roles: []login.Role{login.RoleVVGOMember},
 			})
-			resp, err := noFollow(nil).Do(req)
+			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
