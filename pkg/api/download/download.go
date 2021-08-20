@@ -1,20 +1,19 @@
-package api
+package download
 
 import (
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/minio"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
 	"time"
 )
 
+var logger = log.New()
+
 const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 
-type DownloadConfig struct {
-	DistroBucket string `json:"distro_bucket" envconfig:"distro_bucket" default:"vvgo-distro"`
-}
-
-var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		helpers.MethodNotAllowed(w)
 		return
@@ -41,4 +40,4 @@ var DownloadHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	http.Redirect(w, r, downloadUrl.String(), http.StatusFound)
-})
+}

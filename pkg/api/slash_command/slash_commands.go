@@ -1,4 +1,4 @@
-package api
+package slash_command
 
 // https://discord.com/developers/docs/interactions/slash-commands
 
@@ -14,6 +14,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/foaas"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/when2meet"
@@ -21,6 +22,8 @@ import (
 	"net/http"
 	"time"
 )
+
+var logger = log.New()
 
 var SlashCommands = []SlashCommand{
 	{
@@ -62,7 +65,7 @@ var SlashCommands = []SlashCommand{
 var InteractionResponseOof = interactionResponseMessage("oof please try again 😅", true)
 var InteractionResponseGalaxyBrain = interactionResponseMessage("this interaction is too galaxy brain for me 😥", true)
 
-func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
+func Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	timer := time.NewTimer(1 * time.Second)
 	defer timer.Stop()
@@ -79,7 +82,7 @@ func CreateSlashCommands(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/slash_commands", http.StatusFound)
 }
 
-func ViewSlashCommands(w http.ResponseWriter, r *http.Request) {
+func View(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	commands, err := discord.GetApplicationCommands(ctx)
 	if err != nil {
@@ -90,7 +93,7 @@ func ViewSlashCommands(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(commands)
 }
 
-func HandleSlashCommand(w http.ResponseWriter, r *http.Request) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var body bytes.Buffer

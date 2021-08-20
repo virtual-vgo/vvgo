@@ -1,4 +1,4 @@
-package api
+package download
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestDownloadHandler_ServeHTTP(t *testing.T) {
+func TestHandler(t *testing.T) {
 	ctx := context.Background()
 	type wants struct{ code int }
 
@@ -23,7 +23,6 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	_, err = minioClient.PutObject(bucketName, "danish", strings.NewReader(""), -1, minio.PutObjectOptions{})
 	require.NoError(t, err, "minioClient.PutObject() failed")
 
-	downloadHandler := DownloadHandler
 	parse_config.Config.VVGO.DistroBucket = bucketName
 
 	for _, tt := range []struct {
@@ -44,7 +43,7 @@ func TestDownloadHandler_ServeHTTP(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			downloadHandler.ServeHTTP(recorder, tt.request.WithContext(ctx))
+			Handler(recorder, tt.request.WithContext(ctx))
 			gotResp := recorder.Result()
 			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)

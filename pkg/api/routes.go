@@ -3,12 +3,15 @@ package api
 import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api/aboutme"
+	"github.com/virtual-vgo/vvgo/pkg/api/download"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/api/leaders"
 	"github.com/virtual-vgo/vvgo/pkg/api/parts"
 	"github.com/virtual-vgo/vvgo/pkg/api/projects"
 	"github.com/virtual-vgo/vvgo/pkg/api/roles"
 	"github.com/virtual-vgo/vvgo/pkg/api/session"
+	"github.com/virtual-vgo/vvgo/pkg/api/slash_command"
+	"github.com/virtual-vgo/vvgo/pkg/api/version"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"io"
 	"net/http"
@@ -56,9 +59,10 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/leaders", leaders.Handler, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", roles.Handler, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)
-	mux.HandleFunc("/api/v1/slash_commands", HandleSlashCommand, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/update_stats", SkywardSwordIntentHandler, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/aboutme", aboutme.Handler, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/version", version.Handler, login.RoleAnonymous)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
@@ -69,17 +73,16 @@ func Routes() http.Handler {
 			io.Copy(w, file)
 		}, login.RoleVVGOMember)
 
-	mux.HandleFunc("/slash_commands", ViewSlashCommands, login.RoleVVGOTeams)
-	mux.HandleFunc("/slash_commands/create", CreateSlashCommands, login.RoleVVGOTeams)
+	mux.HandleFunc("/slash_commands", slash_command.View, login.RoleVVGOTeams)
+	mux.HandleFunc("/slash_commands/create", slash_command.Create, login.RoleVVGOTeams)
 
 	mux.HandleFunc("/voting", VotingView, login.RoleVVGOLeader)
 	mux.HandleFunc("/voting/results", VotingResultsView, login.RoleVVGOLeader)
 	mux.HandleFunc("/parts", PartsView, login.RoleVVGOMember)
 	mux.HandleFunc("/projects", ProjectsView, login.RoleAnonymous)
-	mux.HandleFunc("/download", DownloadHandler, login.RoleVVGOMember)
+	mux.HandleFunc("/download", download.Handler, login.RoleVVGOMember)
 	mux.HandleFunc("/credits-maker", CreditsMaker, login.RoleVVGOTeams)
 	mux.HandleFunc("/about", AboutView, login.RoleAnonymous)
-	mux.HandleFunc("/version", Version, login.RoleAnonymous)
 	mux.HandleFunc("/contact_us", ContactUs, login.RoleAnonymous)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

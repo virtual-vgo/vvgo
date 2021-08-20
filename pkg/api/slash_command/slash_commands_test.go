@@ -1,6 +1,7 @@
-package api
+package slash_command
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/api/aboutme"
@@ -15,8 +16,8 @@ import (
 	"testing"
 )
 
-func TestSlashCommand(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(HandleSlashCommand))
+func TestHandle(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(Handle))
 	req, err := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader(`{"type":1}`))
 	require.NoError(t, err, "http.NewRequest() failed")
 	req.Header.Set("X-Signature-Ed25519", "acbd")
@@ -33,7 +34,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 			Name: "beep",
 		},
 	}
-	response, ok := HandleInteraction(backgroundContext(), interaction)
+	response, ok := HandleInteraction(context.Background(), interaction)
 	assert.True(t, ok)
 	assertEqualInteractionResponse(t, discord.InteractionResponse{
 		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
@@ -42,7 +43,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 }
 
 func TestHandlePartsInteraction(t *testing.T) {
-	ctx := backgroundContext()
+	ctx := context.Background()
 	sheets.WriteValuesToRedis(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released"},
 		{"10-hildas-healing", "Hilda's Healing", true},
@@ -77,7 +78,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 }
 
 func TestHandleSubmissionInteraction(t *testing.T) {
-	ctx := backgroundContext()
+	ctx := context.Background()
 	sheets.WriteValuesToRedis(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released", "Submission Link"},
 		{"10-hildas-healing", "Hilda's Healing", true, "https://bit.ly/vvgo10submit"},
@@ -111,7 +112,7 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	defer ts.Close()
 	when2meet.Endpoint = ts.URL
 
-	ctx := backgroundContext()
+	ctx := context.Background()
 	interaction := discord.Interaction{
 		Type:   discord.InteractionTypeApplicationCommand,
 		Member: discord.GuildMember{User: discord.User{ID: "42069"}},
@@ -133,7 +134,7 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 }
 
 func TestAboutmeHandler(t *testing.T) {
-	ctx := backgroundContext()
+	ctx := context.Background()
 
 	resetAboutMeEntries := func(t *testing.T) {
 		require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "DEL", "about_me:entries")))
