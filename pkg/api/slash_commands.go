@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/api/about_me"
+	"github.com/virtual-vgo/vvgo/pkg/api/aboutme"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
 	"github.com/virtual-vgo/vvgo/pkg/foaas"
@@ -413,14 +413,14 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 		return interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 	}
 
-	entries, err := about_me.ReadEntries(ctx, []string{userId})
+	entries, err := aboutme.ReadEntries(ctx, []string{userId})
 	if err != nil && !errors.Is(err, io.EOF) {
 		logger.WithError(err).Error("readAboutMeEntries() failed")
 		return InteractionResponseOof
 	}
 
 	if entries == nil {
-		entries = make(map[string]about_me.Entry)
+		entries = make(map[string]aboutme.Entry)
 	}
 
 	for _, option := range interaction.Data.Options {
@@ -438,7 +438,7 @@ func aboutmeInteractionHandler(ctx context.Context, interaction discord.Interact
 	return InteractionResponseOof
 }
 
-func summaryAboutMe(entries map[string]about_me.Entry, userId string) discord.InteractionResponse {
+func summaryAboutMe(entries map[string]aboutme.Entry, userId string) discord.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		message := fmt.Sprintf("**%s** ~ %s ~\n", entry.Name, entry.Blurb)
 		message += "Use `/aboutme update` to make changes.\n"
@@ -452,11 +452,11 @@ func summaryAboutMe(entries map[string]about_me.Entry, userId string) discord.In
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func hideAboutme(ctx context.Context, entries map[string]about_me.Entry, userId string) discord.InteractionResponse {
+func hideAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string) discord.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		entry.Show = false
 		entries[userId] = entry
-		if err := about_me.WriteEntries(ctx, entries); err != nil {
+		if err := aboutme.WriteEntries(ctx, entries); err != nil {
 			logger.WithError(err).Error("writeAboutMeEntries() failed")
 			return InteractionResponseOof
 		}
@@ -465,11 +465,11 @@ func hideAboutme(ctx context.Context, entries map[string]about_me.Entry, userId 
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func showAboutme(ctx context.Context, entries map[string]about_me.Entry, userId string) discord.InteractionResponse {
+func showAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string) discord.InteractionResponse {
 	if entry, ok := entries[userId]; ok {
 		entry.Show = true
 		entries[userId] = entry
-		if err := about_me.WriteEntries(ctx, entries); err != nil {
+		if err := aboutme.WriteEntries(ctx, entries); err != nil {
 			logger.WithError(err).Error("writeAboutMeEntries() failed")
 			return InteractionResponseOof
 		}
@@ -478,8 +478,8 @@ func showAboutme(ctx context.Context, entries map[string]about_me.Entry, userId 
 	return interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
 }
 
-func updateAboutme(ctx context.Context, entries map[string]about_me.Entry, userId string, title string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
-	updateEntry := func(entry about_me.Entry) about_me.Entry {
+func updateAboutme(ctx context.Context, entries map[string]aboutme.Entry, userId string, title string, option discord.ApplicationCommandInteractionDataOption) discord.InteractionResponse {
+	updateEntry := func(entry aboutme.Entry) aboutme.Entry {
 		entry.Title = title
 		for _, option := range option.Options {
 			switch option.Name {
@@ -495,10 +495,10 @@ func updateAboutme(ctx context.Context, entries map[string]about_me.Entry, userI
 	if entry, ok := entries[userId]; ok {
 		entries[userId] = updateEntry(entry)
 	} else {
-		entries[userId] = updateEntry(about_me.Entry{DiscordID: userId})
+		entries[userId] = updateEntry(aboutme.Entry{DiscordID: userId})
 	}
 
-	if err := about_me.WriteEntries(ctx, entries); err != nil {
+	if err := aboutme.WriteEntries(ctx, entries); err != nil {
 		logger.WithError(err).Error("writeAboutMeEntries() failed")
 		return InteractionResponseOof
 	}

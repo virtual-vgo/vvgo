@@ -12,9 +12,7 @@ import (
 	"strings"
 )
 
-const season = "season2"
-
-var VotingView = ServeTemplate("voting.gohtml")
+const Season = "season2"
 
 var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -27,7 +25,7 @@ var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http
 
 		var ballotJSON string
 		if err := redis.Do(ctx, redis.Cmd(&ballotJSON,
-			"HGET", "arrangements:"+season+":ballots", identity.DiscordID)); err != nil {
+			"HGET", "arrangements:"+Season+":ballots", identity.DiscordID)); err != nil {
 			logger.RedisFailure(ctx, err)
 		}
 
@@ -40,7 +38,7 @@ var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http
 
 		var ballot []string
 		if err := redis.Do(ctx, redis.Cmd(&ballot,
-			"LRANGE", "arrangements:"+season+":submissions", "0", "-1")); err != nil {
+			"LRANGE", "arrangements:"+Season+":submissions", "0", "-1")); err != nil {
 			logger.RedisFailure(ctx, err)
 			helpers.InternalServerError(w)
 			return
@@ -68,7 +66,7 @@ var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http
 
 		ballotJSON, _ := json.Marshal(ballot)
 		if err := redis.Do(ctx, redis.Cmd(nil,
-			"HSET", "arrangements:"+season+":ballots", identity.DiscordID, string(ballotJSON))); err != nil {
+			"HSET", "arrangements:"+Season+":ballots", identity.DiscordID, string(ballotJSON))); err != nil {
 			logger.RedisFailure(ctx, err)
 			helpers.InternalServerError(w)
 		}
@@ -80,7 +78,7 @@ func validateBallot(ctx context.Context, ballot []string) bool {
 	var allowedChoices []string
 
 	if err := redis.Do(ctx, redis.Cmd(&allowedChoices,
-		"LRANGE", "arrangements:"+season+":submissions", "0", "-1")); err != nil {
+		"LRANGE", "arrangements:"+Season+":submissions", "0", "-1")); err != nil {
 		logger.RedisFailure(ctx, err)
 	}
 	if len(ballot) != len(allowedChoices) {
@@ -103,7 +101,7 @@ func validateBallot(ctx context.Context, ballot []string) bool {
 var VotingResultsView = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := make(map[string]string)
-	redis.Do(ctx, redis.Cmd(&data, "HGETALL", "arrangements:"+season+":ballots"))
+	redis.Do(ctx, redis.Cmd(&data, "HGETALL", "arrangements:"+Season+":ballots"))
 
 	ballots := make([][]string, 0, len(data))
 	for _, ballotJSON := range data {

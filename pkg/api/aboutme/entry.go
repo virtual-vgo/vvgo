@@ -1,4 +1,4 @@
-package about_me
+package aboutme
 
 import (
 	"bytes"

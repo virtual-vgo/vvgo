@@ -2,10 +2,12 @@ package api
 
 import (
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/api/about_me"
+	"github.com/virtual-vgo/vvgo/pkg/api/aboutme"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/api/leaders"
 	"github.com/virtual-vgo/vvgo/pkg/api/parts"
 	"github.com/virtual-vgo/vvgo/pkg/api/projects"
+	"github.com/virtual-vgo/vvgo/pkg/api/roles"
 	"github.com/virtual-vgo/vvgo/pkg/api/session"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"io"
@@ -17,6 +19,7 @@ import (
 var PublicFiles = "public"
 
 var PartsView = ServeTemplate("parts.gohtml")
+var VotingView = ServeTemplate("voting.gohtml")
 
 func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
@@ -50,12 +53,12 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/session", session.Handler, login.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/parts", parts.Handler, login.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/projects", projects.Handler, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/leaders", LeadersApi, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/roles", RolesApi, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/leaders", leaders.Handler, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/roles", roles.Handler, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/slash_commands", HandleSlashCommand, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/update_stats", SkywardSwordIntentHandler, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/aboutme", about_me.Handler, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/aboutme", aboutme.Handler, login.RoleVVGOLeader)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
