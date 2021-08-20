@@ -65,7 +65,7 @@ var SlashCommands = []SlashCommand{
 var InteractionResponseOof = interactionResponseMessage("oof please try again 😅", true)
 var InteractionResponseGalaxyBrain = interactionResponseMessage("this interaction is too galaxy brain for me 😥", true)
 
-func Create(w http.ResponseWriter, r *http.Request) {
+func Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	timer := time.NewTimer(1 * time.Second)
 	defer timer.Stop()
@@ -82,7 +82,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/slash_commands", http.StatusFound)
 }
 
-func View(w http.ResponseWriter, r *http.Request) {
+func List(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	commands, err := discord.GetApplicationCommands(ctx)
 	if err != nil {

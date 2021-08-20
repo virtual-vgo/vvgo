@@ -11,7 +11,7 @@ import (
 
 var logger = log.New()
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if err := r.ParseForm(); err != nil {
 		logger.MethodFailure(ctx, "r.ParseForm", err)

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	identity := login.IdentityFromContext(r.Context())
 	var wantRoles []login.Role
 	helpers.JsonDecode(r.Body, &wantRoles)

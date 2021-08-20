@@ -11,7 +11,7 @@ import (
 
 var logger = log.New()
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 

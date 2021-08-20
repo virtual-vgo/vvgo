@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		helpers.MethodNotAllowed(w)
 		return

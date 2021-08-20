@@ -53,16 +53,19 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, login.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
-	mux.HandleFunc("/api/v1/session", session.Handler, login.RoleVVGOLeader)
-	mux.HandleFunc("/api/v1/parts", parts.Handler, login.RoleVVGOMember)
-	mux.HandleFunc("/api/v1/projects", projects.Handler, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/leaders", leaders.Handler, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/roles", roles.Handler, login.RoleAnonymous)
+	// api endpoints
+	mux.HandleFunc("/api/v1/session", session.Handle, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/parts", parts.Handle, login.RoleVVGOMember)
+	mux.HandleFunc("/api/v1/projects", projects.Handle, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/leaders", leaders.Handle, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/roles", roles.Handle, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, login.RoleVVGOTeams)
+	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, login.RoleVVGOTeams)
+	mux.HandleFunc("/api/v1/aboutme", aboutme.Handle, login.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/version", version.Handle, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/update_stats", SkywardSwordIntentHandler, login.RoleAnonymous)
-	mux.HandleFunc("/api/v1/aboutme", aboutme.Handler, login.RoleVVGOLeader)
-	mux.HandleFunc("/api/v1/version", version.Handler, login.RoleAnonymous)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
@@ -72,9 +75,6 @@ func Routes() http.Handler {
 			file, _ := os.Open("ui/build/index.html")
 			io.Copy(w, file)
 		}, login.RoleVVGOMember)
-
-	mux.HandleFunc("/slash_commands", slash_command.View, login.RoleVVGOTeams)
-	mux.HandleFunc("/slash_commands/create", slash_command.Create, login.RoleVVGOTeams)
 
 	mux.HandleFunc("/voting", VotingView, login.RoleVVGOLeader)
 	mux.HandleFunc("/voting/results", VotingResultsView, login.RoleVVGOLeader)

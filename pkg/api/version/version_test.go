@@ -13,7 +13,7 @@ func TestVersion(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/version", strings.NewReader(""))
 	req.Header.Set("Accept", "application/json")
-	Handler(recorder, req)
+	Handle(recorder, req)
 
 	var gotJSON json.RawMessage
 	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"), "content type")
