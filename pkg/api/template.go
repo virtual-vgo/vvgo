@@ -15,7 +15,7 @@ import (
 )
 
 func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
-	identity := IdentityFromContext(ctx)
+	identity := login.IdentityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
 		"template_file":    func() string { return templateFile },

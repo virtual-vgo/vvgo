@@ -11,7 +11,7 @@ import (
 
 var logger = log.New()
 
-var Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if err := r.ParseForm(); err != nil {
 		logger.MethodFailure(ctx, "r.ParseForm", err)
@@ -47,4 +47,4 @@ var Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		logger.JsonEncodeFailure(ctx, err)
 	}
-})
+}

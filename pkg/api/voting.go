@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/discord"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/redis"
 	"net/http"
 	"sort"
@@ -17,7 +18,7 @@ var VotingView = ServeTemplate("voting.gohtml")
 
 var ArrangementsBallotApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	identity := IdentityFromContext(ctx)
+	identity := login.IdentityFromContext(ctx)
 
 	switch r.Method {
 	case http.MethodGet:

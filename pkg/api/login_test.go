@@ -31,7 +31,7 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 		ctx := context.Background()
 		loginView := LoginView{}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			loginView.ServeHTTP(w, r.Clone(context.WithValue(ctx, CtxKeyVVGOIdentity, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}})))
+			loginView.ServeHTTP(w, r.Clone(context.WithValue(ctx, login.CtxKeyVVGOIdentity, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}})))
 		}))
 		defer ts.Close()
 

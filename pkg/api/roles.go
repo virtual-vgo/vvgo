@@ -7,7 +7,7 @@ import (
 )
 
 func RolesApi(w http.ResponseWriter, r *http.Request) {
-	identity := IdentityFromContext(r.Context())
+	identity := login.IdentityFromContext(r.Context())
 	var wantRoles []login.Role
 	helpers.JsonDecode(r.Body, &wantRoles)
 	var roles []login.Role

@@ -9,19 +9,7 @@ import (
 	"strings"
 )
 
-const CtxKeyVVGOIdentity = "vvgo_identity"
-
-func IdentityFromContext(ctx context.Context) *login.Identity {
-	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
-	identity, ok := ctxIdentity.(*login.Identity)
-	if !ok {
-		identity = new(login.Identity)
-		*identity = login.Anonymous()
-	}
-	return identity
-}
-
-// Authenticate http requests using the sessions api
+// RBACMux Authenticate http requests using the sessions api.
 // If the request has a valid session or token with the required role, it is allowed access.
 type RBACMux struct {
 	Basic  map[[2]string][]login.Role
@@ -61,7 +49,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role login.Rol
 			if role != login.RoleAnonymous {
 				logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access granted")
 			}
-			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, CtxKeyVVGOIdentity, &identity)))
+			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, login.CtxKeyVVGOIdentity, &identity)))
 			return
 		}
 		logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")

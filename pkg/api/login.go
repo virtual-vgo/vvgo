@@ -42,7 +42,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	identity := IdentityFromContext(ctx)
+	identity := login.IdentityFromContext(ctx)
 	if identity.IsAnonymous() == false {
 		http.Redirect(w, r, "/login/success", http.StatusFound)
 		return

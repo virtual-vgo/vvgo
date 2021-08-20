@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/api/parts"
+	"github.com/virtual-vgo/vvgo/pkg/api/projects"
 	"github.com/virtual-vgo/vvgo/pkg/api/session"
 	"github.com/virtual-vgo/vvgo/pkg/login"
 	"io"
@@ -12,6 +14,8 @@ import (
 )
 
 var PublicFiles = "public"
+
+var PartsView = ServeTemplate("parts.gohtml")
 
 func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
@@ -26,7 +30,7 @@ func Routes() http.Handler {
 	for _, role := range []login.Role{login.RoleVVGOMember, login.RoleVVGOTeams, login.RoleVVGOLeader} {
 		func(role login.Role) {
 			mux.Handle("/authorize/"+role.String(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				identity := IdentityFromContext(r.Context())
+				identity := login.IdentityFromContext(r.Context())
 				fmt.Println(identity)
 				if !identity.HasRole(role) {
 					helpers.Unauthorized(w)
@@ -43,8 +47,8 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, login.RoleVVGOTeams)
 
 	mux.HandleFunc("/api/v1/session", session.Handler, login.RoleVVGOLeader)
-	mux.HandleFunc("/api/v1/parts", PartsApi, login.RoleVVGOMember)
-	mux.HandleFunc("/api/v1/projects", ProjectsApi, login.RoleAnonymous)
+	mux.HandleFunc("/api/v1/parts", parts.Handler, login.RoleVVGOMember)
+	mux.HandleFunc("/api/v1/projects", projects.Handler, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/leaders", LeadersApi, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", RolesApi, login.RoleAnonymous)
 	mux.HandleFunc("/api/v1/arrangements/ballot", ArrangementsBallotApi, login.RoleVVGOLeader)

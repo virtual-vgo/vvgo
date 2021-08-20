@@ -32,7 +32,7 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var showEntries []AboutMeEntry
-		isLeader := IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader)
+		isLeader := login.IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader)
 		for _, entry := range entries {
 			if entry.Show {
 				if isLeader == false {
@@ -44,7 +44,7 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 		helpers.JsonEncode(w, showEntries)
 
 	case http.MethodPost:
-		if IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
+		if login.IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
 			helpers.Unauthorized(w)
 			return
 		}
@@ -73,7 +73,7 @@ func AboutMeApi(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case http.MethodDelete:
-		if IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
+		if login.IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
 			helpers.Unauthorized(w)
 			return
 		}

@@ -1,21 +1,23 @@
-package api
+package parts
 
 import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/api/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/sheets"
 	"net/http"
 )
 
-var PartsView = ServeTemplate("parts.gohtml")
+var logger = log.New()
 
-func PartsApi(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
 	ctx := r.Context()
 
-	projects, err := sheets.ListProjects(ctx, IdentityFromContext(ctx))
+	projects, err := sheets.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.WithError(err).Error("listProjects() failed")
 		helpers.InternalServerError(w)
@@ -36,5 +38,8 @@ func PartsApi(w http.ResponseWriter, r *http.Request) {
 	if parts == nil {
 		parts = sheets.Parts{}
 	}
-	json.NewEncoder(w).Encode(parts.Sort())
+
+	if err := json.NewEncoder(w).Encode(parts.Sort()); err != nil {
+		logger.JsonEncodeFailure(ctx, err)
+	}
 }
