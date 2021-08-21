@@ -11,10 +11,10 @@ RUN go mod download
 
 COPY cmd cmd
 COPY pkg pkg
+COPY tools tools
 RUN go generate ./...
 RUN go build -o vvgo ./cmd/vvgo
 
-COPY tools tools
 COPY .git .git
 RUN go run ./tools/version
 
