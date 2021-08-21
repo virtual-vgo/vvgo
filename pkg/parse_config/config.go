@@ -2,6 +2,7 @@ package parse_config
 
 import (
 	"bytes"
+	"context"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"os"
@@ -50,43 +51,45 @@ var Config struct {
 	} `json:"redis" envconfig:"redis"`
 }
 
-var envFile string // can be set at build to read env vars from a file.
+func init() { ProcessEnv() }
 
-func init() {
-	if envFile != "" {
-		file, err := os.Open(envFile)
-		if err != nil {
-			logger.WithField("file_name", envFile).WithError(err).Error("os.Open() failed")
-			logger.Fatal("cannot read environment file")
+func ProcessEnv() { envconfig.MustProcess("", &Config) }
+
+func ProcessEnvFile(envFile string) {
+	defer ProcessEnv()
+
+	ctx := context.Background()
+	file, err := os.Open(envFile)
+	if err != nil {
+		logger.WithField("file_name", envFile).MethodFailure(ctx, "os.Open", err)
+		logger.Fatal("cannot read environment file")
+		return
+	}
+
+	var buf bytes.Buffer
+	if _, err = buf.ReadFrom(file); err != nil {
+		logger.WithField("file_name", envFile).MethodFailure(ctx, "file.Read", err)
+		logger.Fatal("cannot read environment file")
+		return
+	}
+
+	for _, line := range strings.Split(buf.String(), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		fields := strings.SplitN(line, "=", 2)
+		if len(fields) != 2 {
+			logger.Fatal("cannot parse environment file")
 			return
 		}
 
-		var buf bytes.Buffer
-		if _, err = buf.ReadFrom(file); err != nil {
-			logger.WithField("file_name", envFile).WithError(err).Error("file.Read() failed")
-			logger.Fatal("cannot read environment file")
+		key, val := fields[0], fields[1]
+		if err = os.Setenv(key, val); err != nil {
+			logger.WithField("file_name", envFile).MethodFailure(ctx, "os.Setenv", err)
+			logger.Fatal("cannot update environment variables")
 			return
-		}
-
-		for _, line := range strings.Split(buf.String(), "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
-			}
-
-			fields := strings.SplitN(line, "=", 2)
-			if len(fields) != 2 {
-				logger.Fatal("cannot parse environment file")
-				return
-			}
-
-			key, val := fields[0], fields[1]
-			if err = os.Setenv(key, val); err != nil {
-				logger.WithField("file_name", envFile).WithError(err).Error("os.Setenv() failed")
-				logger.Fatal("cannot update environment variables")
-				return
-			}
 		}
 	}
-	envconfig.MustProcess("", &Config)
 }
