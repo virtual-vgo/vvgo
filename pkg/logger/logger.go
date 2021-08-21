@@ -22,28 +22,25 @@ var defaultLogger = Logger{
 	},
 }
 
-type Entry struct {
-	*logrus.Entry
-}
-
-type Logger struct {
-	*logrus.Logger
-}
+type Logger struct{ *logrus.Logger }
 
 func New() Logger { return defaultLogger }
 
-func StdLogger() *log.Logger {
-	return log.New(defaultLogger.Writer(), "", 0)
-}
+type Entry struct{ *logrus.Entry }
+
+func NewEntry() Entry            { return Entry{logrus.NewEntry(defaultLogger.Logger)} }
+func (x Logger) NewEntry() Entry { return Entry{logrus.NewEntry(defaultLogger.Logger)} }
+
+func StdLogger() *log.Logger            { return log.New(defaultLogger.Writer(), "", 0) }
+func (x Logger) StdLogger() *log.Logger { return log.New(x.Writer(), "", 0) }
+func (e Entry) StdLogger() *log.Logger  { return log.New(e.Writer(), "", 0) }
 
 func MethodFailure(ctx context.Context, method string, err error) {
 	defaultLogger.MethodFailure(ctx, method, err)
 }
-
 func (x Logger) MethodFailure(ctx context.Context, method string, err error) {
-	x.WithContext(ctx).MethodFailure(ctx, method, err)
+	x.NewEntry().MethodFailure(ctx, method, err)
 }
-
 func (e Entry) MethodFailure(ctx context.Context, method string, err error) {
 	e.WithContext(ctx).WithError(err).Error(method + "() failed")
 }
