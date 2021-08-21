@@ -31,7 +31,7 @@ func When2meetCommandOptions(context.Context) ([]discord.ApplicationCommandOptio
 	}, nil
 }
 
-func when2meetInteractionHandler(_ context.Context, interaction discord.Interaction) discord.InteractionResponse {
+func when2meetInteractionHandler(ctx context.Context, interaction discord.Interaction) discord.InteractionResponse {
 	var eventName, startDate, endDate string
 	for _, option := range interaction.Data.Options {
 		switch option.Name {
@@ -49,7 +49,7 @@ func when2meetInteractionHandler(_ context.Context, interaction discord.Interact
 
 	url, err := when2meet.CreateEvent(eventName, startDate, endDate)
 	if err != nil {
-		logger.WithError(err).Error("when2meet.CreateEvent() failed", err)
+		logger.MethodFailure(ctx, "when2meet.CreateEvent", err)
 		return InteractionResponseOof
 	}
 	return InteractionResponseMessage(

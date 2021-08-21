@@ -17,14 +17,14 @@ func Parts(w http.ResponseWriter, r *http.Request) {
 
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
-		logger.WithError(err).Error("listProjects() failed")
+		logger.ListProjectsFailure(ctx, err)
 		helpers.InternalServerError(w)
 		return
 	}
 
 	parts, err := models.ListParts(ctx)
 	if err != nil {
-		logger.WithError(err).Error("listParts() failed")
+		logger.ListPartsFailure(ctx, err)
 		helpers.InternalServerError(w)
 		return
 	}

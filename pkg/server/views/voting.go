@@ -51,7 +51,7 @@ func nameBallots(ctx context.Context, data map[string]string) []namedBallot {
 		var nick string
 		guildMember, err := discord.QueryGuildMember(ctx, discord.Snowflake(userID))
 		if err != nil {
-			logger.WithError(err).Error("discord.QueryGuildMember() failed")
+			logger.MethodFailure(ctx, "discord.QueryGuildMember", err)
 		} else {
 			nick = guildMember.Nick
 		}

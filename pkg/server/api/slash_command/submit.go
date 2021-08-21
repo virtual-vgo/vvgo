@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
+	"github.com/virtual-vgo/vvgo/pkg/errors"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 )
@@ -12,7 +13,7 @@ func SubmitCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOpti
 	identity := models.Anonymous()
 	projects, err := models.ListProjects(ctx, &identity)
 	if err != nil {
-		return nil, fmt.Errorf("sheets.ListProjects() failed: %w", err)
+		return nil, errors.ListProjectsFailure(err)
 	}
 	return []discord.ApplicationCommandOption{ProjectCommandOption(projects.Current())}, nil
 }
@@ -29,7 +30,7 @@ func SubmitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	identity := models.Anonymous()
 	projects, err := models.ListProjects(ctx, &identity)
 	if err != nil {
-		logger.WithError(err).Error("sheets.ListProjects() failed")
+		logger.ListProjectsFailure(ctx, err)
 	} else if project, ok := projects.Get(projectName); ok {
 		content = fmt.Sprintf(`[Submit here](%s) for %s. Submission Deadline is `, project.SubmissionLink, project.Title)
 	}

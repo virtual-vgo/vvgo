@@ -109,7 +109,7 @@ func newTokenRequest(ctx context.Context, oauthToken *OAuthToken, path string) (
 func QueryGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, error) {
 	req, err := newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members/"+userID.String(), nil)
 	if err != nil {
-		logger.WithError(err).Error("http.NewRequestWithContext() failed")
+		logger.NewRequestFailure(ctx, err)
 		return nil, err
 	}
 
@@ -227,7 +227,7 @@ func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, erro
 	resp, err := http_wrappers.DoRequest(req)
 	switch {
 	case err != nil:
-		logger.WithError(err).Error("http.Do() failed")
+		logger.HttpDoFailure(req.Context(), err)
 		return nil, err
 
 	case resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent:

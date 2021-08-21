@@ -12,7 +12,7 @@ func Leaders(w http.ResponseWriter, r *http.Request) {
 
 	leaders, err := models.ListLeaders(ctx)
 	if err != nil {
-		logger.WithError(err).Error("sheets.ListLeaders() failed")
+		logger.ListLeadersFailure(ctx, err)
 		helpers.InternalServerError(w)
 		return
 	}
