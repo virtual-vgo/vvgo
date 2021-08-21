@@ -3,7 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	logger "github.com/virtual-vgo/vvgo/pkg/logger/codegen"
+	"github.com/virtual-vgo/vvgo/pkg/errors/codegen"
+	"github.com/virtual-vgo/vvgo/pkg/logger/codegen"
 	"io"
 	"log"
 	"os"
@@ -11,14 +12,16 @@ import (
 	"strings"
 )
 
+const OutputFile = "generated_methods.go"
+
 func main() {
-	if len(os.Args) != 3 {
-		_, _ = fmt.Fprintf(os.Stderr, "usage: %s PACKAGE_NAME OUTPUT_FILE.GO\n", os.Args[0])
+	if len(os.Args) != 2 {
+		_, _ = fmt.Fprintf(os.Stderr, "usage: %s PACKAGE_NAME\n", os.Args[0])
 		os.Exit(1)
 	}
-	packageName, outputName := os.Args[1], os.Args[2]
+	packageName := os.Args[1]
 
-	file, err := os.OpenFile(outputName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(OutputFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("os.OpenFile() failed: %v", err)
 	}
@@ -28,6 +31,8 @@ func main() {
 	switch packageName {
 	case "pkg/logger":
 		generator = logger.Generate
+	case "pkg/errors":
+		generator = errors.Generate
 	default:
 		log.Fatalf("I don't know how to generate for `%s`", packageName)
 	}
@@ -47,5 +52,5 @@ func main() {
 		log.Fatalf("cmd.Run() failed: %v", err)
 	}
 
-	fmt.Printf("generated %s/%s\n", packageName, outputName)
+	fmt.Printf("generated %s/%s\n", packageName, OutputFile)
 }

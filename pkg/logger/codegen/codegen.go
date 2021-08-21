@@ -1,4 +1,4 @@
-package codegen
+package logger
 
 import (
 	"fmt"
@@ -64,21 +64,13 @@ func generateMethods() []string {
 
 func generateMethodFailures() []string {
 	var statements []string
-	for _, x := range []struct {
-		method string
-		failed string
-	}{
-		{method: `JsonDecodeFailure`, failed: `json.Decode`},
-		{method: `JsonEncodeFailure`, failed: `json.Encode`},
-		{method: `RedisFailure`, failed: `redis.Do`},
-		{method: `OpenFileFailure`, failed: `os.OpenFile`},
-	} {
+	for _, x := range codegen.MethodFailures {
 		params := `ctx context.Context, err error`
-		args := fmt.Sprintf(`ctx, "%s", err`, x.failed)
+		args := fmt.Sprintf(`ctx, "%s", err`, x.Failed)
 		statements = append(statements,
-			fmt.Sprintf("func %s(%s) { defaultLogger.MethodFailure(%s) }", x.method, params, args),
-			fmt.Sprintf("func (x Logger) %s(%s) { x.MethodFailure(%s) }", x.method, params, args),
-			fmt.Sprintf("func (e Entry) %s(%s)  { e.MethodFailure(%s) }", x.method, params, args))
+			fmt.Sprintf("func %s(%s) { defaultLogger.MethodFailure(%s) }", x.Method, params, args),
+			fmt.Sprintf("func (x Logger) %s(%s) { x.MethodFailure(%s) }", x.Method, params, args),
+			fmt.Sprintf("func (e Entry) %s(%s)  { e.MethodFailure(%s) }", x.Method, params, args))
 	}
 	return statements
 }
