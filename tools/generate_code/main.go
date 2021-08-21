@@ -18,7 +18,7 @@ func main() {
 	}
 	packageName, outputName := os.Args[1], os.Args[2]
 
-	file, err := os.OpenFile(outputName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+	file, err := os.OpenFile(outputName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("os.OpenFile() failed: %v", err)
 	}
@@ -47,5 +47,5 @@ func main() {
 		log.Fatalf("cmd.Run() failed: %v", err)
 	}
 
-	fmt.Printf("generated %s\n", outputName)
+	fmt.Printf("generated %s/%s\n", packageName, outputName)
 }
