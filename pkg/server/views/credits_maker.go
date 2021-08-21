@@ -1,6 +1,7 @@
 package views
 
 import (
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 )

@@ -3,7 +3,7 @@ package http_wrappers
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"net/http/httputil"
@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 )
-
-var logger = log.New()
 
 func NoFollow(client *http.Client) *http.Client {
 	if client == nil {

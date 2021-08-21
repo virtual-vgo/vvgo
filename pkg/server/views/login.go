@@ -2,6 +2,7 @@ package views
 
 import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"time"

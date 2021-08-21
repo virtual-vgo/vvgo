@@ -2,13 +2,11 @@ package helpers
 
 import (
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"io"
 	"net/http"
 	"strings"
 )
-
-var logger = log.New()
 
 func JsonEncode(w http.ResponseWriter, src interface{}) bool {
 	w.Header().Set("Content-Type", "application/json")

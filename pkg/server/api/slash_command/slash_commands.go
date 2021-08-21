@@ -9,13 +9,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"
 	"time"
 )
-
-var logger = log.New()
 
 var SlashCommands = []SlashCommand{
 	{

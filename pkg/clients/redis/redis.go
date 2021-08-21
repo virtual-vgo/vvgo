@@ -4,11 +4,9 @@ import (
 	"context"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/config"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"strings"
 )
-
-var logger = log.New()
 
 type Client struct{ pool *radix.Pool }
 

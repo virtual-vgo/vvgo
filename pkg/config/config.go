@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"os"
 	"strings"
 )
-
-var logger = log.New()
 
 var Config struct {
 	VVGO struct {

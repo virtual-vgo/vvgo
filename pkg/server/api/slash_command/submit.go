@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 )
 

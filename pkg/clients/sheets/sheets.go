@@ -6,15 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"google.golang.org/api/sheets/v4"
 	"reflect"
 	"strconv"
 )
 
 const CacheTTL = "5"
-
-var logger = log.New()
 
 func NoOpSheets(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "no_op_sheets", true)

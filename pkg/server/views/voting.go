@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"

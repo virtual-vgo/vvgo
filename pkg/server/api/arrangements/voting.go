@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
@@ -12,8 +12,6 @@ import (
 )
 
 const Season = "season2"
-
-var logger = log.New()
 
 func Ballot(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

@@ -3,6 +3,7 @@ package login
 import (
 	"errors"
 	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"golang.org/x/crypto/bcrypt"
