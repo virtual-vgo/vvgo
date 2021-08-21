@@ -5,7 +5,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/models"
+	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,11 +27,11 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 		ctx := context.Background()
 		loginView := LoginView{}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			loginView.ServeHTTP(w, r.Clone(context.WithValue(ctx, login.CtxKeyVVGOIdentity, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}})))
+			loginView.ServeHTTP(w, r.Clone(context.WithValue(ctx, login2.CtxKeyVVGOIdentity, &models.Identity{Roles: []models.Role{models.RoleVVGOMember}})))
 		}))
 		defer ts.Close()
 
-		cookie, err := login.NewCookie(ctx, &login.Identity{Roles: []login.Role{login.RoleVVGOMember}}, 600*time.Second)
+		cookie, err := login2.NewCookie(ctx, &models.Identity{Roles: []models.Role{models.RoleVVGOMember}}, 600*time.Second)
 		require.NoError(t, err, "sessions.NewCookie()")
 
 		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)

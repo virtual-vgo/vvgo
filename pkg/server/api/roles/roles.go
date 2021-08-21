@@ -1,16 +1,17 @@
 package roles
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 )
 
 func Handle(w http.ResponseWriter, r *http.Request) {
-	identity := login.IdentityFromContext(r.Context())
-	var wantRoles []login.Role
+	identity := login2.IdentityFromContext(r.Context())
+	var wantRoles []models.Role
 	helpers.JsonDecode(r.Body, &wantRoles)
-	var roles []login.Role
+	var roles []models.Role
 	if len(wantRoles) != 0 {
 		roles = identity.AssumeRoles(wantRoles...).Roles
 	} else {

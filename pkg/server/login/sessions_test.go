@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,16 +14,16 @@ import (
 func TestStore_GetIdentity(t *testing.T) {
 	t.Run("exists", func(t *testing.T) {
 		ctx := context.Background()
-		session, err := NewSession(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
+		session, err := NewSession(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
 		require.NoError(t, err)
-		var gotIdentity Identity
+		var gotIdentity models.Identity
 		require.NoError(t, GetSession(ctx, session, &gotIdentity))
-		assert.Equal(t, Identity{Kind: "Testing", Roles: []Role{"Tester"}}, gotIdentity)
+		assert.Equal(t, models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, gotIdentity)
 	})
 
 	t.Run("doesnt exist", func(t *testing.T) {
 		ctx := context.Background()
-		var gotIdentity Identity
+		var gotIdentity models.Identity
 		assert.Equal(t, ErrSessionNotFound, GetSession(ctx, "cheese", &gotIdentity))
 	})
 }
@@ -30,10 +31,10 @@ func TestStore_GetIdentity(t *testing.T) {
 func TestStore_DeleteIdentity(t *testing.T) {
 	ctx := context.Background()
 
-	session1, err := NewSession(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
+	session1, err := NewSession(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, DeleteSession(ctx, session1))
-	var gotIdentity Identity
+	var gotIdentity models.Identity
 	assert.Equal(t, ErrSessionNotFound, GetSession(ctx, session1, &gotIdentity))
 }
 
@@ -45,12 +46,12 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 			Name:  CookieName,
 			Value: "cheese",
 		})
-		var got Identity
+		var got models.Identity
 		require.Equal(t, ErrSessionNotFound, ReadSessionFromRequest(ctx, req, &got))
 	})
 	t.Run("cookie", func(t *testing.T) {
 		ctx := context.Background()
-		session, err := NewSession(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
+		session, err := NewSession(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
 		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -58,9 +59,9 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 			Name:  CookieName,
 			Value: session,
 		})
-		var got Identity
+		var got models.Identity
 		require.NoError(t, ReadSessionFromRequest(ctx, req, &got))
-		assert.Equal(t, Identity{Kind: "Testing", Roles: []Role{"Tester"}}, got)
+		assert.Equal(t, models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, got)
 	})
 }
 
@@ -72,7 +73,7 @@ func TestStore_DeleteSessionFromRequest(t *testing.T) {
 	})
 	t.Run("cookie", func(t *testing.T) {
 		ctx := context.Background()
-		session, err := NewSession(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
+		session, err := NewSession(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
 		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -81,14 +82,14 @@ func TestStore_DeleteSessionFromRequest(t *testing.T) {
 			Value: session,
 		})
 		require.NoError(t, DeleteSessionFromRequest(ctx, req))
-		var gotIdentity Identity
+		var gotIdentity models.Identity
 		assert.Equal(t, ErrSessionNotFound, GetSession(ctx, session, &gotIdentity))
 	})
 }
 
 func TestStore_NewCookie(t *testing.T) {
 	ctx := context.Background()
-	gotCookie, err := NewCookie(ctx, &Identity{Kind: "Testing", Roles: []Role{"Tester"}}, 30*time.Second)
+	gotCookie, err := NewCookie(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
 	require.NoError(t, err)
 
 	assert.Equal(t, CookieName, gotCookie.Name, "cookie.Name")

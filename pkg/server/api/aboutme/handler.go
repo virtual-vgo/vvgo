@@ -3,8 +3,9 @@ package aboutme
 import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 )
 
@@ -22,7 +23,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var showEntries []Entry
-		isLeader := login.IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader)
+		isLeader := login.IdentityFromContext(ctx).HasRole(models.RoleVVGOLeader)
 		for _, entry := range entries {
 			if entry.Show {
 				if isLeader == false {
@@ -34,7 +35,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		helpers.JsonEncode(w, showEntries)
 
 	case http.MethodPost:
-		if login.IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
+		if login.IdentityFromContext(ctx).HasRole(models.RoleVVGOLeader) == false {
 			helpers.Unauthorized(w)
 			return
 		}
@@ -63,7 +64,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case http.MethodDelete:
-		if login.IdentityFromContext(ctx).HasRole(login.RoleVVGOLeader) == false {
+		if login.IdentityFromContext(ctx).HasRole(models.RoleVVGOLeader) == false {
 			helpers.Unauthorized(w)
 			return
 		}

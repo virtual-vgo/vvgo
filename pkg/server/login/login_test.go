@@ -1,4 +1,4 @@
-package server
+package login
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
 	"net/http/httptest"
@@ -48,7 +48,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		client := http_wrappers.NoFollow(&http.Client{})
+		client := http_wrappers.NoFollow(nil)
 
 		urlValues := make(url.Values)
 		urlValues.Add("user", "vvgo-member")
@@ -57,7 +57,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		// do the request
 		resp, err := client.PostForm(ts.URL, urlValues)
 		require.NoError(t, err, "client.Get")
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		// check that we get a cookie
 		cookies := resp.Cookies()
@@ -65,10 +65,10 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		assert.Equal(t, "vvgo-sessions", cookies[0].Name, "cookie name")
 
 		// check that a session exists for the cookie
-		var dest login.Identity
-		assert.NoError(t, login.GetSession(ctx, cookies[0].Value, &dest))
-		assert.Equal(t, login.KindPassword, dest.Kind, "identity.Kind")
-		assert.Equal(t, []login.Role{login.RoleVVGOMember}, dest.Roles, "identity.Roles")
+		var dest models.Identity
+		assert.NoError(t, GetSession(ctx, cookies[0].Value, &dest))
+		assert.Equal(t, models.KindPassword, dest.Kind, "identity.Kind")
+		assert.Equal(t, []models.Role{models.RoleVVGOMember}, dest.Roles, "identity.Roles")
 	})
 }
 
@@ -80,9 +80,9 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	defer ts.Close()
 
 	// create a session and cookie
-	cookie, err := login.NewCookie(ctx, &login.Identity{
-		Kind:  login.KindPassword,
-		Roles: []login.Role{"Cheese"},
+	cookie, err := NewCookie(ctx, &models.Identity{
+		Kind:  models.KindPassword,
+		Roles: []models.Role{"Cheese"},
 	}, 3600*time.Second)
 	require.NoError(t, err)
 
@@ -96,8 +96,8 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	assert.Equal(t, "/", resp.Header.Get("Location"), "location")
 
 	// check that the session doesn't exist
-	var dest login.Identity
-	assert.Equal(t, login.ErrSessionNotFound, login.GetSession(ctx, cookie.Value, &dest))
+	var dest models.Identity
+	assert.Equal(t, ErrSessionNotFound, GetSession(ctx, cookie.Value, &dest))
 }
 
 func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
@@ -209,7 +209,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		defer ts.Close()
 
 		resp := doRequest(t, ts.URL, oauthCode, oauthState, oauthValue)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		// check that we get a cookie
 		cookies := resp.Cookies()
@@ -217,10 +217,10 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		assert.Equal(t, "vvgo-sessions", cookies[0].Name, "cookie name")
 
 		// check that a session exists for the cookie
-		var dest login.Identity
-		assert.NoError(t, login.GetSession(context.Background(), cookies[0].Value, &dest))
-		assert.Equal(t, login.KindDiscord, dest.Kind, "identity.Kind")
-		assert.Equal(t, []login.Role{login.RoleVVGOMember}, dest.Roles, "identity.Roles")
+		var dest models.Identity
+		assert.NoError(t, GetSession(context.Background(), cookies[0].Value, &dest))
+		assert.Equal(t, models.KindDiscord, dest.Kind, "identity.Kind")
+		assert.Equal(t, []models.Role{models.RoleVVGOMember}, dest.Roles, "identity.Roles")
 	})
 
 	t.Run("no state", func(t *testing.T) {

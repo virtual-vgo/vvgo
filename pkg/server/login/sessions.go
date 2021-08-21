@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
 	"net/url"
@@ -29,18 +30,18 @@ func CookieDomain() string {
 
 const CtxKeyVVGOIdentity = "vvgo_identity"
 
-func IdentityFromContext(ctx context.Context) *Identity {
+func IdentityFromContext(ctx context.Context) *models.Identity {
 	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
-	identity, ok := ctxIdentity.(*Identity)
+	identity, ok := ctxIdentity.(*models.Identity)
 	if !ok {
-		identity = new(Identity)
-		*identity = Anonymous()
+		identity = new(models.Identity)
+		*identity = models.Anonymous()
 	}
 	return identity
 }
 
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
-func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *Identity) error {
+func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *models.Identity) error {
 	bearer := strings.TrimSpace(r.Header.Get("Authorization"))
 	if strings.HasPrefix(bearer, "Bearer ") {
 		return GetSession(ctx, bearer[len("Bearer "):], dest)
@@ -62,7 +63,7 @@ func DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
 }
 
 // NewCookie returns cookie with a crypto-rand session id.
-func NewCookie(ctx context.Context, src *Identity, expires time.Duration) (*http.Cookie, error) {
+func NewCookie(ctx context.Context, src *models.Identity, expires time.Duration) (*http.Cookie, error) {
 	session, err := NewSession(ctx, src, expires)
 	if err != nil {
 		return nil, err
@@ -89,7 +90,7 @@ func NewCookieValue() string {
 }
 
 // NewSession returns a new session with a crypto-rand session id.
-func NewSession(ctx context.Context, identity *Identity, expires time.Duration) (string, error) {
+func NewSession(ctx context.Context, identity *models.Identity, expires time.Duration) (string, error) {
 	value := NewCookieValue()
 	key := "sessions:" + value
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
@@ -101,7 +102,7 @@ func NewSession(ctx context.Context, identity *Identity, expires time.Duration) 
 }
 
 // GetSession reads the login identity for the given session ID.
-func GetSession(ctx context.Context, id string, dest *Identity) error {
+func GetSession(ctx context.Context, id string, dest *models.Identity) error {
 	var gotBytes []byte
 	err := redis.Do(ctx, redis.Cmd(&gotBytes, "GET", "sessions:"+id))
 	switch {

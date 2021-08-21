@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
-	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 )
 
 func SubmitCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
-	identity := login.Anonymous()
+	identity := models.Anonymous()
 	projects, err := models.ListProjects(ctx, &identity)
 	if err != nil {
 		return nil, fmt.Errorf("sheets.ListProjects() failed: %w", err)
@@ -26,7 +25,7 @@ func SubmitInteractionHandler(ctx context.Context, interaction discord.Interacti
 	}
 
 	var content string
-	identity := login.Anonymous()
+	identity := models.Anonymous()
 	projects, err := models.ListProjects(ctx, &identity)
 	if err != nil {
 		logger.WithError(err).Error("sheets.ListProjects() failed")

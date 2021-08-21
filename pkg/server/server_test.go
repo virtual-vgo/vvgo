@@ -6,7 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/models"
+	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
 	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"net/http"
 	"net/http/httptest"
@@ -23,11 +24,11 @@ func TestServer(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(server.Server.Handler.ServeHTTP))
 	defer ts.Close()
 
-	newRequest := func(t *testing.T, method, url string, roles ...login.Role) *http.Request {
+	newRequest := func(t *testing.T, method, url string, roles ...models.Role) *http.Request {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err, "http.NewRequest")
 		if len(roles) != 0 {
-			cookie, err := login.NewCookie(context.Background(), &login.Identity{
+			cookie, err := login2.NewCookie(context.Background(), &models.Identity{
 				Roles: roles,
 			}, 3600*time.Second)
 			require.NoError(t, err, "sessions.NewCookie")
@@ -59,7 +60,7 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, "/login?target=%2Fdownload", resp.Header.Get("Location"))
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/download", login.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/download", models.RoleVVGOMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
@@ -67,32 +68,32 @@ func TestServer(t *testing.T) {
 
 	t.Run("authorize", func(t *testing.T) {
 		t.Run("ok /authorize/vvgo-leader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", login.RoleVVGOLeader)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", models.RoleVVGOLeader)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("fail /authorize/vvgo-leader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", login.RoleVVGOTeams)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", models.RoleVVGOTeams)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
 		t.Run("ok /authorize/vvgo-teams", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", login.RoleVVGOTeams)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOTeams)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("fail /authorize/vvgo-teams", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", login.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
 		t.Run("ok /authorize/vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", login.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", models.RoleVVGOMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("fail /authorize/vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", login.RoleAnonymous)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", models.RoleAnonymous)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
@@ -103,17 +104,17 @@ func TestServer(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/api/v1/roles")
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			var got []login.Role
+			var got []models.Role
 			assert.NoError(t, json.NewDecoder(resp.Body).Decode(&got))
-			assert.Equal(t, []login.Role{login.RoleAnonymous}, got)
+			assert.Equal(t, []models.Role{models.RoleAnonymous}, got)
 		})
 		t.Run("vvgo-uploader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/api/v1/roles", login.RoleVVGOTeams, login.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/api/v1/roles", models.RoleVVGOTeams, models.RoleVVGOMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			var got []login.Role
+			var got []models.Role
 			assert.NoError(t, json.NewDecoder(resp.Body).Decode(&got))
-			assert.Equal(t, []login.Role{login.RoleVVGOTeams, login.RoleVVGOMember}, got)
+			assert.Equal(t, []models.Role{models.RoleVVGOTeams, models.RoleVVGOMember}, got)
 		})
 	})
 

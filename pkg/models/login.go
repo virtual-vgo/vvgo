@@ -1,4 +1,4 @@
-package login
+package models
 
 import (
 	"fmt"

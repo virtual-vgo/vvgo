@@ -1,4 +1,4 @@
-package server
+package login
 
 import (
 	"context"
@@ -8,24 +8,27 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-const LoginCookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
+var logger = log.New()
 
-type LoginRedirect struct{}
+const CookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
+const CookieLoginRedirect = "vvgo-login-redirect"
 
-func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+type Redirect struct{}
+
+func (Redirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	redirect := "/parts"
-	if cookie, err := r.Cookie(views.CookieLoginRedirect); err != nil {
+	if cookie, err := r.Cookie(CookieLoginRedirect); err != nil {
 		logger.WithError(err).Error("r.Cookie() failed")
 	} else {
 		var want string
@@ -38,9 +41,9 @@ func (LoginRedirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirect, http.StatusFound)
 }
 
-func loginSuccess(w http.ResponseWriter, r *http.Request, identity *login.Identity) {
+func loginSuccess(w http.ResponseWriter, r *http.Request, identity *models.Identity) {
 	ctx := r.Context()
-	cookie, err := login.NewCookie(ctx, identity, LoginCookieDuration)
+	cookie, err := NewCookie(ctx, identity, CookieDuration)
 	if err != nil {
 		logger.WithError(err).Error("store.NewCookie() failed")
 		helpers.InternalServerError(w)
@@ -53,7 +56,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, identity *login.Identi
 		"roles":    identity.Roles,
 	}).Info("authorization succeeded")
 
-	views.LoginSuccessView{}.ServeHTTP(w, r)
+	http.Redirect(w, r, "/login/success", http.StatusFound)
 }
 
 // PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.
@@ -71,8 +74,8 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	passwords := make(map[string]string)
 	passwords["vvgo-member"] = parse_config.Config.VVGO.MemberPasswordHash
 
-	var identity login.Identity
-	if err := login.ReadSessionFromRequest(ctx, r, &identity); err == nil {
+	var identity models.Identity
+	if err := ReadSessionFromRequest(ctx, r, &identity); err == nil {
 		http.Redirect(w, r, "/parts", http.StatusFound)
 		return
 	}
@@ -97,9 +100,9 @@ func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	loginSuccess(w, r.WithContext(ctx), &login.Identity{
-		Kind:  login.KindPassword,
-		Roles: []login.Role{login.RoleVVGOMember},
+	loginSuccess(w, r.WithContext(ctx), &models.Identity{
+		Kind:  models.KindPassword,
+		Roles: []models.Role{models.RoleVVGOMember},
 	})
 }
 
@@ -157,17 +160,17 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check that they have the member role
-	var loginRoles []login.Role
+	var loginRoles []models.Role
 	for _, discordRole := range guildMember.Roles {
 		switch discordRole {
 		case "": // ignore empty strings
 			continue
 		case discord.VVGOExecutiveDirectorRoleID:
-			loginRoles = append(loginRoles, login.RoleVVGOLeader)
+			loginRoles = append(loginRoles, models.RoleVVGOLeader)
 		case discord.VVGOProductionTeamRoleID:
-			loginRoles = append(loginRoles, login.RoleVVGOTeams)
+			loginRoles = append(loginRoles, models.RoleVVGOTeams)
 		case discord.VVGOVerifiedMemberRoleID:
-			loginRoles = append(loginRoles, login.RoleVVGOMember)
+			loginRoles = append(loginRoles, models.RoleVVGOMember)
 		}
 	}
 	if len(loginRoles) == 0 {
@@ -175,8 +178,8 @@ func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginSuccess(w, r, &login.Identity{
-		Kind:      login.KindDiscord,
+	loginSuccess(w, r, &models.Identity{
+		Kind:      models.KindDiscord,
 		Roles:     loginRoles,
 		DiscordID: discordUser.ID.String(),
 	})
@@ -238,7 +241,7 @@ type LogoutHandler struct{}
 func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if err := login.DeleteSessionFromRequest(ctx, r); err != nil {
+	if err := DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.WithError(err).Error("x.Sessions.DeleteSessionFromRequest failed")
 		helpers.InternalServerError(w)
 	} else {

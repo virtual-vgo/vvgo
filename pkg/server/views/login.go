@@ -2,14 +2,12 @@ package views
 
 import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"time"
 )
 
 type LoginView struct{}
-
-const CookieLoginRedirect = "vvgo-login-redirect"
 
 func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -20,7 +18,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			logger.RedisFailure(ctx, err)
 		} else {
 			http.SetCookie(w, &http.Cookie{
-				Name:     CookieLoginRedirect,
+				Name:     login.CookieLoginRedirect,
 				Value:    value,
 				Expires:  time.Now().Add(3600 * time.Second),
 				Domain:   login.CookieDomain(),

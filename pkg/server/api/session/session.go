@@ -3,8 +3,9 @@ package session
 import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/login"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"time"
 )
@@ -19,8 +20,8 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	wantRoles := r.Form["with_roles"]
-	allowedRoles := []login.Role{login.RoleReadConfig}
-	var roles []login.Role
+	allowedRoles := []models.Role{models.RoleReadConfig}
+	var roles []models.Role
 	for _, want := range wantRoles {
 		for _, allowed := range allowedRoles {
 			if want == allowed.String() {
@@ -34,8 +35,8 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expires := 24 * 3600 * time.Second
-	identity := login.Identity{Kind: "SessionToken", Roles: roles}
-	session, err := login.NewSession(ctx, &identity, expires)
+	identity := models.Identity{Kind: "SessionToken", Roles: roles}
+	session, err := login2.NewSession(ctx, &identity, expires)
 	if err != nil {
 		logger.MethodFailure(ctx, "login.NewSession", err)
 	}

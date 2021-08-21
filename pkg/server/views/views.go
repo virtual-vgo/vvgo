@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
 	"html/template"
 	"math/rand"
 	"net/http"
@@ -35,20 +35,20 @@ func ServeTemplate(templateFile string) http.HandlerFunc {
 }
 
 func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
-	identity := login.IdentityFromContext(ctx)
+	identity := login2.IdentityFromContext(ctx)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
 		"template_file":    func() string { return templateFile },
 		"link_to_template": func() string { return "https://github.com/virtual-vgo/vvgo/blob/master/public/" + templateFile },
 		"user_info":        identity.Info,
-		"user_roles":       func() []login.Role { return identity.Roles },
-		"user_identity":    func() *login.Identity { return identity },
+		"user_roles":       func() []models.Role { return identity.Roles },
+		"user_identity":    func() *models.Identity { return identity },
 		"title":            strings.Title,
 		"form_value":       func(key string) string { return r.FormValue(key) },
 		"user_logged_in":   func() bool { return identity.IsAnonymous() == false },
-		"user_is_member":   func() bool { return identity.HasRole(login.RoleVVGOMember) },
-		"user_is_leader":   func() bool { return identity.HasRole(login.RoleVVGOLeader) },
-		"user_on_teams":    func() bool { return identity.HasRole(login.RoleVVGOTeams) },
+		"user_is_member":   func() bool { return identity.HasRole(models.RoleVVGOMember) },
+		"user_is_leader":   func() bool { return identity.HasRole(models.RoleVVGOLeader) },
+		"user_on_teams":    func() bool { return identity.HasRole(models.RoleVVGOTeams) },
 		"download_link":    func(obj string) string { return downloadLink(obj) },
 		"projects":         func() (models.Projects, error) { return models.ListProjects(ctx, identity) },
 		"parts":            func() (models.Parts, error) { return models.ListParts(ctx) },

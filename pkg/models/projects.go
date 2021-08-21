@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
-	"github.com/virtual-vgo/vvgo/pkg/login"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"sort"
 )
@@ -43,7 +42,7 @@ func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 
 type Projects []Project
 
-func ListProjects(ctx context.Context, identity *login.Identity) (Projects, error) {
+func ListProjects(ctx context.Context, identity *Identity) (Projects, error) {
 	values, err := sheets.ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects")
 	if err != nil {
 		return nil, err
@@ -81,15 +80,15 @@ func (x Projects) Get(name string) (Project, bool) {
 
 func (x Projects) Has(name string) bool { _, ok := x.Get(name); return ok }
 
-func (x Projects) ForIdentity(identity *login.Identity) Projects {
+func (x Projects) ForIdentity(identity *Identity) Projects {
 	var want Projects
 	for _, project := range x {
 		switch {
 		case project.PartsReleased == true:
 			want = append(want, project)
-		case identity.HasRole(login.RoleVVGOTeams):
+		case identity.HasRole(RoleVVGOTeams):
 			want = append(want, project)
-		case identity.HasRole(login.RoleVVGOLeader):
+		case identity.HasRole(RoleVVGOLeader):
 			want = append(want, project)
 		}
 	}
