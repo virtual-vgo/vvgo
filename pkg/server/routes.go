@@ -33,7 +33,7 @@ func Routes() http.Handler {
 		mux.HandleFunc("/authorize/"+role.String(), authorize(role), models.RoleAnonymous)
 	}
 
-	// debug endpoints from net/http/pprof
+	// debug
 	mux.HandleFunc("/debug/pprof/", pprof.Index, models.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, models.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, models.RoleVVGOTeams)
