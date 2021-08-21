@@ -15,7 +15,6 @@ import (
 	"time"
 )
 
-
 var SlashCommands = []SlashCommand{
 	{
 		Name:        "beep",
