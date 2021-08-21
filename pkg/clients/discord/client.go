@@ -9,14 +9,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-var logger = log.New()
 var ErrNon200Response = errors.New("non-200 response from discord")
 var ErrInvalidOAuthCode = errors.New("invalid oauth code")
 

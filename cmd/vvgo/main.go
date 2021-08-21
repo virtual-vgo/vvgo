@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/config"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
 	"os"
 	"time"
 )
-
-var logger = log.New()
 
 func main() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))

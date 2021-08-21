@@ -11,6 +11,7 @@ RUN go mod download
 
 COPY cmd cmd
 COPY pkg pkg
+RUN go generate ./...
 RUN go build -o vvgo ./cmd/vvgo
 
 COPY tools tools

@@ -7,15 +7,13 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"
 	"strconv"
 	"time"
 )
-
-var logger = log.New()
 
 var ErrNotAMember = errors.New("not a member")
 
@@ -47,7 +45,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, identity *models.Ident
 	ctx := r.Context()
 	cookie, err := NewCookie(ctx, identity, SessionCookieDuration)
 	if err != nil {
-		logger.WithError(err).Error("store.NewCookie() failed")
+		logger.WithError(err).Error("login.NewCookie() failed")
 		helpers.InternalServerError(w)
 		return
 	}

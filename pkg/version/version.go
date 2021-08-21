@@ -3,7 +3,7 @@ package version
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
 	"os"
 )
@@ -16,9 +16,9 @@ var version Version
 
 func init() {
 	if file, err := os.Open(VersionFile); err != nil {
-		log.New().WithError(err).WithField("path", VersionFile).Info("failed to open version file")
+		logger.New().WithError(err).WithField("path", VersionFile).Info("failed to open version file")
 	} else if err = json.NewDecoder(file).Decode(&version); err != nil {
-		log.New().WithError(err).WithField("path", VersionFile).Info("failed unmarshal version file")
+		logger.New().WithError(err).WithField("path", VersionFile).Info("failed unmarshal version file")
 	}
 }
 

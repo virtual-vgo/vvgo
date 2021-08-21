@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/log"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
@@ -17,7 +17,7 @@ import (
 
 var PublicFiles = "public"
 
-var logger = log.New()
+var logger = logger.New()
 
 var (
 	Index           = ServeTemplate("index.gohtml")
