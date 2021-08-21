@@ -1,4 +1,4 @@
-package parse_config
+package config
 
 import (
 	"bytes"

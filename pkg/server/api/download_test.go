@@ -5,7 +5,7 @@ import (
 	"github.com/minio/minio-go/v6"
 	"github.com/stretchr/testify/require"
 	vvgo_minio "github.com/virtual-vgo/vvgo/pkg/clients/minio"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -23,7 +23,7 @@ func TestDownload(t *testing.T) {
 	_, err = minioClient.PutObject(bucketName, "danish", strings.NewReader(""), -1, minio.PutObjectOptions{})
 	require.NoError(t, err, "minioClient.PutObject() failed")
 
-	parse_config.Config.VVGO.DistroBucket = bucketName
+	config.Config.VVGO.DistroBucket = bucketName
 
 	for _, tt := range []struct {
 		name    string

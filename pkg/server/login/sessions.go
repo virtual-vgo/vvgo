@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -21,7 +21,7 @@ import (
 var ErrSessionNotFound = errors.New("session not found")
 
 func CookieDomain() string {
-	x, _ := url.Parse(parse_config.Config.VVGO.ServerUrl)
+	x, _ := url.Parse(config.Config.VVGO.ServerUrl)
 	return "." + x.Hostname()
 }
 

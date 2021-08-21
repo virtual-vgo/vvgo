@@ -3,7 +3,7 @@ package models
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"sort"
 )
 
@@ -43,7 +43,7 @@ func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 type Projects []Project
 
 func ListProjects(ctx context.Context, identity *Identity) (Projects, error) {
-	values, err := sheets.ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects")
+	values, err := sheets.ReadSheet(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects")
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,7 @@ package models
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"sort"
 )
 
@@ -25,7 +25,7 @@ type Part struct {
 type Parts []Part
 
 func ListParts(ctx context.Context) (Parts, error) {
-	values, err := sheets.ReadSheet(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Parts")
+	values, err := sheets.ReadSheet(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Parts")
 	if err != nil {
 		return nil, err
 	}

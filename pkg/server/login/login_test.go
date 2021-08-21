@@ -9,7 +9,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -22,11 +22,11 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
 
 	// password is vvgo-pass
-	parse_config.Config.VVGO.MemberPasswordHash = `$2a$10$7FR7RLJNkr1PQV7ahsoPPOV.9orLsENrXi8wnz2mQf8oyKmpnlt2O`
+	config.Config.VVGO.MemberPasswordHash = `$2a$10$7FR7RLJNkr1PQV7ahsoPPOV.9orLsENrXi8wnz2mQf8oyKmpnlt2O`
 
 	t.Run("post/failure", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			PasswordLoginHandler(w, r.WithContext(ctx))
+			Password(w, r.WithContext(ctx))
 		}))
 		defer ts.Close()
 
@@ -43,7 +43,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			PasswordLoginHandler(w, r.WithContext(ctx))
+			Password(w, r.WithContext(ctx))
 		}))
 		defer ts.Close()
 
@@ -100,7 +100,7 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 
 func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
-	ts := httptest.NewServer(http.HandlerFunc(DiscordLoginHandler))
+	ts := httptest.NewServer(http.HandlerFunc(Discord))
 	defer ts.Close()
 
 	// make the request
@@ -171,10 +171,10 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	}
 
 	newVVGOServer := func(discordURL string) *httptest.Server {
-		parse_config.Config.Discord.Endpoint = discordURL
-		parse_config.Config.Discord.BotAuthenticationToken = "test-bot-auth-token"
+		config.Config.Discord.Endpoint = discordURL
+		config.Config.Discord.BotAuthenticationToken = "test-bot-auth-token"
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			DiscordLoginHandler(w, r.WithContext(ctx))
+			Discord(w, r.WithContext(ctx))
 		}))
 		return ts
 	}

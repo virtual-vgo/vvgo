@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/server"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
@@ -31,15 +31,15 @@ func main() {
 		fmt.Println(version.String())
 		os.Exit(0)
 	case showConfig:
-		_ = envconfig.Usage("", &parse_config.Config)
+		_ = envconfig.Usage("", &config.Config)
 		os.Exit(0)
 	case envFile != "":
-		parse_config.ProcessEnvFile(envFile)
+		config.ProcessEnvFile(envFile)
 	default:
-		parse_config.ProcessEnv()
+		config.ProcessEnv()
 	}
 
-	apiServer := server.NewServer(parse_config.Config.VVGO.ListenAddress)
+	apiServer := server.NewServer(config.Config.VVGO.ListenAddress)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}
