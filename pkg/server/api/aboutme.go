@@ -17,7 +17,7 @@ func Aboutme(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		entries, err := aboutme.ReadEntries(ctx, nil)
 		if err != nil {
-			logger.WithError(err).Error("ReadEntries() failed")
+			logger.MethodFailure(ctx, "aboutme.ReadEntries", err)
 			helpers.InternalServerError(w)
 			return
 		}
@@ -57,7 +57,7 @@ func Aboutme(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := aboutme.WriteEntries(ctx, entriesMap); err != nil {
-			logger.WithError(err).Error("WriteEntries() failed")
+			logger.MethodFailure(ctx, "aboutme.WriteEntries", err)
 			helpers.InternalServerError(w)
 			return
 		}
@@ -79,7 +79,7 @@ func Aboutme(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := aboutme.DeleteEntries(ctx, keys); err != nil {
-			logger.WithError(err).Error("deleteAboutMeEntries() failed")
+			logger.MethodFailure(ctx, "aboutme.DeleteEntries", err)
 			helpers.InternalServerError(w)
 			return
 		}

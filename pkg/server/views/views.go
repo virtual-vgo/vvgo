@@ -62,14 +62,14 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 	)
 
 	if err != nil {
-		logger.WithError(err).Error("template.ParseFiles() failed")
+		logger.MethodFailure(ctx, "template.ParseFiles", err)
 		helpers.InternalServerError(w)
 		return
 	}
 
 	var buffer bytes.Buffer
 	if err := tmpl.Execute(&buffer, &data); err != nil {
-		logger.WithError(err).Error("template.Execute() failed")
+		logger.MethodFailure(ctx, "template.Execute", err)
 		helpers.InternalServerError(w)
 		return
 	}

@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"io"
@@ -11,7 +12,7 @@ import (
 func JsonEncode(w http.ResponseWriter, src interface{}) bool {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(src); err != nil {
-		logger.WithError(err).Error("json.Encode() failed")
+		logger.JsonEncodeFailure(context.Background(), err)
 		return false
 	}
 	return true
@@ -19,7 +20,7 @@ func JsonEncode(w http.ResponseWriter, src interface{}) bool {
 
 func JsonDecode(src io.Reader, dest interface{}) bool {
 	if err := json.NewDecoder(src).Decode(dest); err != nil {
-		logger.WithError(err).Error("json.Decode() failed")
+		logger.JsonDecodeFailure(context.Background(), err)
 		return false
 	}
 	return true

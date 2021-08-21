@@ -21,7 +21,7 @@ func SkywardSwordIntentHandler(w http.ResponseWriter, r *http.Request) {
 	var lockStatus string
 	err := redis.Do(ctx, redis.Cmd(&lockStatus, "SET", "intent_stats:skyward_sword:lock", "locked", "NX", "EX", "5"))
 	if err != nil {
-		logger.WithError(err).Error("redis.Do() failed")
+		logger.RedisFailure(ctx, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -33,7 +33,7 @@ func SkywardSwordIntentHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = updateIntentMessage(ctx)
 	if err != nil {
-		logger.WithError(err).Error("discordClient.CreateMessage() failed")
+		logger.MethodFailure(ctx, "discordClient.CreateMessage", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -107,19 +107,19 @@ Please use this form to indicate what part you intend to record. The above post 
 	// delete the old messages
 	var oldMessageIdsRaw string
 	if err := redis.Do(ctx, redis.Cmd(&oldMessageIdsRaw, "GET", "intent_stats:skyward_sword:message_ids")); err != nil {
-		logger.WithError(err).Error("redis.Do() failed")
+		logger.RedisFailure(ctx, err)
 	}
 	if len(oldMessageIdsRaw) > 0 {
 		err := discord2.BulkDeleteMessages(ctx, SkywardSwordStatsChannelID,
 			discord2.BulkDeleteMessagesParams{Messages: strings.Split(oldMessageIdsRaw, ",")})
 		if err != nil {
-			logger.WithError(err).Info("discordClient.BulkDeleteMessages failed")
+			logger.MethodFailure(ctx, "discordClient.BulkDeleteMessages", err)
 		}
 	}
 
 	// store the new ids in redis
 	if err := redis.Do(ctx, redis.Cmd(nil, "SET", "intent_stats:skyward_sword:message_ids", strings.Join(messageIds, ","))); err != nil {
-		logger.WithError(err).Error("redis.Do() failed")
+		logger.RedisFailure(ctx, err)
 	}
 	return nil
 }

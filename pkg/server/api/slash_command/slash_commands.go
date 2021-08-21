@@ -76,11 +76,13 @@ func List(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	commands, err := discord.GetApplicationCommands(ctx)
 	if err != nil {
-		logger.WithError(err).Error("discord.GetApplicationCommands() failed")
+		logger.MethodFailure(ctx, "discord.GetApplicationCommands", err)
 		helpers.InternalServerError(w)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(commands)
+	if err := json.NewEncoder(w).Encode(commands); err != nil {
+		logger.JsonEncodeFailure(ctx, err)
+	}
 }
 
 func Handle(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +117,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	var interaction discord.Interaction
 	if err := json.NewDecoder(&body).Decode(&interaction); err != nil {
-		logger.WithError(err).Error("json.Decode() failed")
+		logger.JsonDecodeFailure(ctx, err)
 		helpers.BadRequest(w, "invalid request body: "+err.Error())
 		return
 	}
@@ -128,8 +130,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		logger.WithError(err).Error("json.Encode() failed")
-		helpers.InternalServerError(w)
+		logger.JsonEncodeFailure(ctx, err)
 	}
 }
 

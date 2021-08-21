@@ -29,11 +29,11 @@ func Redirect(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	redirect := "/parts"
 	if cookie, err := r.Cookie(RedirectCookieName); err != nil {
-		logger.WithError(err).Error("r.Cookie() failed")
+		logger.MethodFailure(ctx, "r.Cookie", err)
 	} else {
 		var want string
 		if err := redis.Do(ctx, redis.Cmd(&want, "GET", "vvgo_login_redirect"+":"+cookie.Value)); err != nil {
-			logger.WithError(err).Error("redis.Do() failed")
+			logger.RedisFailure(ctx, err)
 		} else {
 			redirect = want
 		}
@@ -45,7 +45,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, identity *models.Ident
 	ctx := r.Context()
 	cookie, err := NewCookie(ctx, identity, SessionCookieDuration)
 	if err != nil {
-		logger.WithError(err).Error("login.NewCookie() failed")
+		logger.NewCookieFailure(ctx, err)
 		helpers.InternalServerError(w)
 		return
 	}
@@ -67,7 +67,7 @@ func oauthRedirect(w http.ResponseWriter, r *http.Request) (string, bool) {
 	// read a random state number
 	statusBytes := make([]byte, 32)
 	if _, err := rand.Read(statusBytes); err != nil {
-		logger.WithError(err).Error("rand.Read() failed")
+		logger.MethodFailure(ctx, "rand.Read", err)
 		return "", false
 	}
 	state := strconv.FormatUint(binary.BigEndian.Uint64(statusBytes[:16]), 16)
@@ -75,7 +75,7 @@ func oauthRedirect(w http.ResponseWriter, r *http.Request) (string, bool) {
 
 	// store the number in redis
 	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", "oauth_state:"+state, "300", value)); err != nil {
-		logger.WithError(err).Error("redis.Do() failed")
+		logger.RedisFailure(ctx, err)
 		return "", false
 	}
 	http.SetCookie(w, &http.Cookie{
@@ -114,7 +114,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if err := DeleteSessionFromRequest(ctx, r); err != nil {
-		logger.WithError(err).Error("x.Sessions.DeleteSessionFromRequest failed")
+		logger.MethodFailure(ctx, "login.DeleteSessionFromRequest", err)
 		helpers.InternalServerError(w)
 	} else {
 		http.Redirect(w, r, "/", http.StatusFound)

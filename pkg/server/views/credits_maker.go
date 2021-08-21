@@ -26,7 +26,7 @@ func CreditsMaker(w http.ResponseWriter, r *http.Request) {
 	if data.SpreadsheetID != "" && data.ReadRange != "" {
 		submissions, err := models.ListSubmissions(ctx, data.SpreadsheetID, data.ReadRange)
 		if err != nil {
-			logger.WithError(err).Error("readSheet() failed")
+			logger.ListSubmissionsFailure(ctx, err)
 			data.ErrorMessage = err.Error()
 		} else {
 			credits := submissions.ToCredits(data.Project)

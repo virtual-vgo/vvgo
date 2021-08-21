@@ -16,7 +16,7 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
-		logger.WithError(err).Error("valuesToProjects() failed")
+		logger.ListProjectsFailure(ctx, err)
 		helpers.InternalServerError(w)
 		return
 	}

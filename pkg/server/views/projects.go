@@ -12,7 +12,7 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
-		logger.MethodFailure(ctx, "sheets.ListProjects", err)
+		logger.ListProjectsFailure(ctx, err)
 		helpers.InternalServerError(w)
 		return
 	}
@@ -35,7 +35,7 @@ func serveProject(w http.ResponseWriter, r *http.Request, project models.Project
 
 	credits, err := models.ListCredits(ctx)
 	if err != nil {
-		logger.WithError(err).Error("valuesToCredits() failed")
+		logger.ListCreditsFailure(ctx, err)
 		helpers.InternalServerError(w)
 		return
 	}

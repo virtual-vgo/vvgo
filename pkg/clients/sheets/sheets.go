@@ -61,7 +61,7 @@ func ReadValuesFromRedis(ctx context.Context, spreadsheetID string, readRange st
 
 	var values [][]interface{}
 	if err := json.NewDecoder(&buf).Decode(&values); err != nil {
-		logger.WithError(err).Error("json.Decode() failed")
+		logger.JsonDecodeFailure(ctx, err)
 		return nil
 	}
 	return values
@@ -91,7 +91,7 @@ func WriteValuesToSheets(ctx context.Context, spreadsheetID string, readRange st
 func WriteValuesToRedis(ctx context.Context, spreadsheetID string, readRange string, values [][]interface{}) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(&values); err != nil {
-		logger.WithError(err).Error("json.Encode() failed")
+		logger.JsonEncodeFailure(ctx, err)
 		return
 	}
 
