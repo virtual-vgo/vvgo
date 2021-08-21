@@ -6,6 +6,17 @@ import (
 	"strings"
 )
 
+var MethodFailures = []struct {
+	Method string
+	Failed string
+}{
+	{Method: `JsonDecodeFailure`, Failed: `json.Decode`},
+	{Method: `JsonEncodeFailure`, Failed: `json.Encode`},
+	{Method: `RedisFailure`, Failed: `redis.Do`},
+	{Method: `OpenFileFailure`, Failed: `os.OpenFile`},
+	{Method: `HttpDoFailure`, Failed: `http.Do`},
+}
+
 func Package(writer io.Writer, pkg string) error {
 	_, err := fmt.Fprintf(writer, "\npackage %s\n", pkg)
 	return err

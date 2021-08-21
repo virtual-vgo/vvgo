@@ -2,9 +2,8 @@ package when2meet
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/error_wrappers"
+	"github.com/virtual-vgo/vvgo/pkg/errors"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -52,9 +51,9 @@ func CreateEvent(name, startDate, endDate string) (string, error) {
 	data.Set("NoLaterThan", "0")
 	resp, err := http.PostForm(Endpoint+"/SaveNewEvent.php", data)
 	if err != nil {
-		return "", error_wrappers.HTTPDoFailed(err)
+		return "", errors.HttpDoFailure(err)
 	} else if resp.StatusCode != http.StatusOK {
-		return "", error_wrappers.Non200StatusCode()
+		return "", errors.Non200StatusCode()
 	}
 
 	var body bytes.Buffer
