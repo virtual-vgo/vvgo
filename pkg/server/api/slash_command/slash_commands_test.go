@@ -8,8 +8,8 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/clients/when2meet"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/models/aboutme"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -44,7 +44,7 @@ func TestHandleBeepInteraction(t *testing.T) {
 
 func TestHandlePartsInteraction(t *testing.T) {
 	ctx := context.Background()
-	sheets.WriteValuesToRedis(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
+	sheets.WriteValuesToRedis(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released"},
 		{"10-hildas-healing", "Hilda's Healing", true},
 	})
@@ -79,7 +79,7 @@ func TestHandlePartsInteraction(t *testing.T) {
 
 func TestHandleSubmissionInteraction(t *testing.T) {
 	ctx := context.Background()
-	sheets.WriteValuesToRedis(ctx, parse_config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
+	sheets.WriteValuesToRedis(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
 		{"Name", "Title", "Parts Released", "Submission Link"},
 		{"10-hildas-healing", "Hilda's Healing", true, "https://bit.ly/vvgo10submit"},
 	})

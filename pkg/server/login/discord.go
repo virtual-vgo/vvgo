@@ -7,11 +7,11 @@ import (
 	"net/http"
 )
 
-// DiscordLoginHandler
+// Discord
 // If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
 // authentication is established and a login session cookie is sent in the response.
 // Otherwise, 401 unauthorized.
-func DiscordLoginHandler(w http.ResponseWriter, r *http.Request) {
+func Discord(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.FormValue("state") == "" {

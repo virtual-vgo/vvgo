@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func LoginView(w http.ResponseWriter, r *http.Request) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if target := r.FormValue("target"); target != "" {
@@ -34,6 +34,6 @@ func LoginView(w http.ResponseWriter, r *http.Request) {
 	ParseAndExecute(ctx, w, r, nil, "login.gohtml")
 }
 
-func LoginSuccessView(w http.ResponseWriter, r *http.Request) {
+func LoginSuccess(w http.ResponseWriter, r *http.Request) {
 	ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
 }

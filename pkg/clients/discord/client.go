@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"io"
 	"net/http"
 	"net/url"
@@ -32,7 +32,7 @@ const VVGOProductionDirectorRoleID = "805504313072943155"
 func LoginURL(state string) string {
 	query := make(url.Values)
 	query.Set("client_id", OAuthClientID)
-	query.Set("redirect_uri", parse_config.Config.VVGO.ServerUrl+"/login/discord")
+	query.Set("redirect_uri", config.Config.VVGO.ServerUrl+"/login/discord")
 	query.Set("response_type", "code")
 	query.Set("state", state)
 	query.Set("scope", "identify")
@@ -63,10 +63,10 @@ func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
 	// build the authorization request
 	form := make(url.Values)
 	form.Add("client_id", OAuthClientID)
-	form.Add("client_secret", parse_config.Config.Discord.OAuthClientSecret)
+	form.Add("client_secret", config.Config.Discord.OAuthClientSecret)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", parse_config.Config.VVGO.ServerUrl+"/login/discord")
+	form.Add("redirect_uri", config.Config.VVGO.ServerUrl+"/login/discord")
 	form.Add("scope", "identify")
 
 	req, err := newRequest(ctx, http.MethodPost, "/oauth2/token", strings.NewReader(form.Encode()))
@@ -211,12 +211,12 @@ func newBotRequest(ctx context.Context, method, path string, body io.Reader) (*h
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bot "+parse_config.Config.Discord.BotAuthenticationToken)
+	req.Header.Add("Authorization", "Bot "+config.Config.Discord.BotAuthenticationToken)
 	return req, err
 }
 
 func newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, method, parse_config.Config.Discord.Endpoint+path, body)
+	req, err := http.NewRequestWithContext(ctx, method, config.Config.Discord.Endpoint+path, body)
 	if err != nil {
 		return nil, fmt.Errorf("http.NewRequestWithContext() failed: %w", err)
 	}

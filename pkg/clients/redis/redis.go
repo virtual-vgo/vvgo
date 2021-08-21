@@ -3,8 +3,8 @@ package redis
 import (
 	"context"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/log"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"strings"
 )
 
@@ -19,7 +19,7 @@ func init() { client = NewClientMust() }
 func Do(ctx context.Context, a Action) error { return client.Do(ctx, a) }
 
 func NewClientMust() *Client {
-	radixPool, err := radix.NewPool(parse_config.Config.Redis.Network, parse_config.Config.Redis.Address, parse_config.Config.Redis.PoolSize)
+	radixPool, err := radix.NewPool(config.Config.Redis.Network, config.Config.Redis.Address, config.Config.Redis.PoolSize)
 	if err != nil {
 		logger.WithError(err).Fatal("redis.NewClient() failed")
 		return nil

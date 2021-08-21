@@ -28,23 +28,25 @@ func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
 func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
 
-	mux.HandleFunc("/login/password", login.PasswordLoginHandler, models.RoleAnonymous)
-	mux.HandleFunc("/login/discord", login.DiscordLoginHandler, models.RoleAnonymous)
-	mux.HandleFunc("/login/success", views.LoginSuccessView, models.RoleAnonymous)
-	mux.HandleFunc("/login/redirect", login.Redirect, models.RoleAnonymous)
-	mux.HandleFunc("/login", views.LoginView, models.RoleAnonymous)
-	mux.HandleFunc("/logout", login.Logout, models.RoleAnonymous)
-
+	// authorize
 	for _, role := range []models.Role{models.RoleVVGOMember, models.RoleVVGOTeams, models.RoleVVGOLeader} {
 		mux.HandleFunc("/authorize/"+role.String(), authorize(role), models.RoleAnonymous)
 	}
 
-	// debug endpoints from net/http/pprof
+	// debug
 	mux.HandleFunc("/debug/pprof/", pprof.Index, models.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, models.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, models.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, models.RoleVVGOTeams)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, models.RoleVVGOTeams)
+
+	// login
+	mux.HandleFunc("/login/password", login.Password, models.RoleAnonymous)
+	mux.HandleFunc("/login/discord", login.Discord, models.RoleAnonymous)
+	mux.HandleFunc("/login/redirect", login.Redirect, models.RoleAnonymous)
+	mux.HandleFunc("/login/success", views.LoginSuccess, models.RoleAnonymous)
+	mux.HandleFunc("/login", views.Login, models.RoleAnonymous)
+	mux.HandleFunc("/logout", login.Logout, models.RoleAnonymous)
 
 	// api endpoints
 	mux.HandleFunc("/api/v1/session", api.Session, models.RoleVVGOLeader)
@@ -62,6 +64,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/download", api.Download, models.RoleVVGOMember)
 	mux.HandleFunc("/download", api.Download, models.RoleVVGOMember)
 
+	// parts browser
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
 		models.RoleVVGOMember)

@@ -3,7 +3,7 @@ package minio
 import (
 	"fmt"
 	"github.com/minio/minio-go/v6"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"math/rand"
 	"strconv"
 	"time"
@@ -12,7 +12,7 @@ import (
 type Client struct{ minio.Client }
 
 func NewClient() (*Client, error) {
-	config := parse_config.Config.Minio
+	config := config.Config.Minio
 	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
 	if err != nil {
 		return nil, fmt.Errorf("minio.New() failed: %w", err)

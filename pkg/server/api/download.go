@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/minio"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"
 	"time"
@@ -29,7 +29,7 @@ func Download(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	distroBucket := parse_config.Config.VVGO.DistroBucket
+	distroBucket := config.Config.VVGO.DistroBucket
 	downloadUrl, err := minioClient.PresignedGetObject(distroBucket, object, ProtectedLinkExpiry, nil)
 	if err != nil {
 		logger.WithError(err).Error("minio.StatObject() failed")
