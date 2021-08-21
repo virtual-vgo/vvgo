@@ -17,8 +17,6 @@ import (
 
 var PublicFiles = "public"
 
-var logger = logger.New()
-
 var (
 	Index           = ServeTemplate("index.gohtml")
 	ServePublicFile = http.FileServer(http.Dir(PublicFiles)).ServeHTTP

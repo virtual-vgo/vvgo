@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/when2meet"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 )
 
 func When2meetCommandOptions(context.Context) ([]discord.ApplicationCommandOption, error) {

@@ -13,8 +13,6 @@ import (
 
 const Season = "season2"
 
-var logger = logger.New()
-
 func Ballot(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	identity := login.IdentityFromContext(ctx)

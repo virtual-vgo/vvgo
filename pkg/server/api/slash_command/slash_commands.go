@@ -15,7 +15,6 @@ import (
 	"time"
 )
 
-var logger = logger.New()
 
 var SlashCommands = []SlashCommand{
 	{

@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/minio"
 	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"net/http"
 	"time"
