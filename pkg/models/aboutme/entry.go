@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/error_wrappers"
+	"github.com/virtual-vgo/vvgo/pkg/log"
 	"strings"
 )
+
+var logger = log.New()
 
 type Entry struct {
 	DiscordID string `json:"discord_id,omitempty"`

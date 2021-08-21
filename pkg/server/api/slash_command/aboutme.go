@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/aboutme"
+	"github.com/virtual-vgo/vvgo/pkg/models/aboutme"
 	"io"
 )
 

@@ -53,4 +53,3 @@ func PasswordLoginHandler(w http.ResponseWriter, r *http.Request) {
 		Roles: []models.Role{models.RoleVVGOMember},
 	})
 }
-

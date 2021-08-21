@@ -1,28 +1,26 @@
-package aboutme
+package api
 
 import (
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/models"
+	"github.com/virtual-vgo/vvgo/pkg/models/aboutme"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 )
 
-var logger = log.New()
-
-func Handle(w http.ResponseWriter, r *http.Request) {
+func Aboutme(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	switch r.Method {
 	case http.MethodGet:
-		entries, err := ReadEntries(ctx, nil)
+		entries, err := aboutme.ReadEntries(ctx, nil)
 		if err != nil {
 			logger.WithError(err).Error("ReadEntries() failed")
 			helpers.InternalServerError(w)
 			return
 		}
-		var showEntries []Entry
+		var showEntries []aboutme.Entry
 		isLeader := login.IdentityFromContext(ctx).HasRole(models.RoleVVGOLeader)
 		for _, entry := range entries {
 			if entry.Show {
@@ -40,7 +38,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var newEntries []Entry
+		var newEntries []aboutme.Entry
 		if err := json.NewDecoder(r.Body).Decode(&newEntries); err != nil {
 			logger.JsonDecodeFailure(ctx, err)
 			helpers.BadRequest(w, "invalid json")
@@ -50,14 +48,14 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		entriesMap := make(map[string]Entry)
+		entriesMap := make(map[string]aboutme.Entry)
 		for _, entry := range newEntries {
 			if entry.DiscordID != "" {
 				entriesMap[entry.DiscordID] = entry
 			}
 		}
 
-		if err := WriteEntries(ctx, entriesMap); err != nil {
+		if err := aboutme.WriteEntries(ctx, entriesMap); err != nil {
 			logger.WithError(err).Error("WriteEntries() failed")
 			helpers.InternalServerError(w)
 			return
@@ -79,7 +77,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := DeleteEntries(ctx, keys); err != nil {
+		if err := aboutme.DeleteEntries(ctx, keys); err != nil {
 			logger.WithError(err).Error("deleteAboutMeEntries() failed")
 			helpers.InternalServerError(w)
 			return

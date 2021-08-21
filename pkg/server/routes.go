@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/aboutme"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
@@ -57,7 +56,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, models.RoleVVGOTeams)
 	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, models.RoleVVGOTeams)
-	mux.HandleFunc("/api/v1/aboutme", aboutme.Handle, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/aboutme", api.Aboutme, models.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/version", api.Version, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/update_stats", api.SkywardSwordIntentHandler, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/download", api.Download, models.RoleVVGOMember)
