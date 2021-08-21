@@ -4,13 +4,13 @@ import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-// RBACMux Authenticate http requests using the sessions api.
+// RBACMux Authenticate http requests using session based authentication.
 // If the request has a valid session or token with the required role, it is allowed access.
 type RBACMux struct {
 	Basic  map[[2]string][]models.Role
@@ -50,7 +50,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Ro
 			if role != models.RoleAnonymous {
 				logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access granted")
 			}
-			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, login2.CtxKeyVVGOIdentity, &identity)))
+			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, login.CtxKeyVVGOIdentity, &identity)))
 			return
 		}
 		logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
@@ -107,5 +107,5 @@ func (auth *RBACMux) readBearer(r *http.Request, dest *models.Identity) bool {
 }
 
 func (auth *RBACMux) readSession(ctx context.Context, r *http.Request, identity *models.Identity) bool {
-	return login2.ReadSessionFromRequest(ctx, r, identity) == nil
+	return login.ReadSessionFromRequest(ctx, r, identity) == nil
 }
