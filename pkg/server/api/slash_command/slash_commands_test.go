@@ -7,9 +7,9 @@ import (
 	discord2 "github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/clients/when2meet"
 	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/aboutme"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command/when2meet"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -129,7 +129,7 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	response, ok := HandleInteraction(ctx, interaction)
 	assert.True(t, ok)
 
-	want := interactionResponseMessage("<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).", true)
+	want := InteractionResponseMessage("<@42069> created a [when2meet](https://when2meet.com/?10947260-c2u6i).", true)
 	assertEqualInteractionResponse(t, want, response)
 }
 
@@ -162,7 +162,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, interaction)
 			assert.True(t, ok)
 
-			want := interactionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
+			want := InteractionResponseMessage("Sorry, this tool is only for production teams. :bow:", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, err := aboutme.ReadEntries(ctx, nil)
@@ -182,7 +182,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: You are hidden from https://vvgo.org/about.", true)
+			want := InteractionResponseMessage(":person_gesturing_ok: You are hidden from https://vvgo.org/about.", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, err := aboutme.ReadEntries(ctx, nil)
@@ -196,7 +196,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("hide", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
+			want := InteractionResponseMessage("You dont have a blurb! :open_mouth:", true)
 			assertEqualInteractionResponse(t, want, response)
 		})
 	})
@@ -212,7 +212,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: You are visible on https://vvgo.org/about.", true)
+			want := InteractionResponseMessage(":person_gesturing_ok: You are visible on https://vvgo.org/about.", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, err := aboutme.ReadEntries(ctx, nil)
@@ -225,7 +225,7 @@ func TestAboutmeHandler(t *testing.T) {
 			response, ok := HandleInteraction(ctx, aboutMeInteraction("show", nil))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage("You dont have a blurb! :open_mouth:", true)
+			want := InteractionResponseMessage("You dont have a blurb! :open_mouth:", true)
 			assertEqualInteractionResponse(t, want, response)
 		})
 	})
@@ -242,7 +242,7 @@ func TestAboutmeHandler(t *testing.T) {
 			}))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
+			want := InteractionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, err := aboutme.ReadEntries(ctx, nil)
@@ -260,7 +260,7 @@ func TestAboutmeHandler(t *testing.T) {
 			}))
 			assert.True(t, ok)
 
-			want := interactionResponseMessage(":person_gesturing_ok: It is written.", true)
+			want := InteractionResponseMessage(":person_gesturing_ok: It is written.", true)
 			assertEqualInteractionResponse(t, want, response)
 
 			got, err := aboutme.ReadEntries(ctx, nil)
