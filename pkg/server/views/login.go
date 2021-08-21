@@ -7,9 +7,7 @@ import (
 	"time"
 )
 
-type LoginView struct{}
-
-func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func LoginView(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if target := r.FormValue("target"); target != "" {
@@ -18,7 +16,7 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			logger.RedisFailure(ctx, err)
 		} else {
 			http.SetCookie(w, &http.Cookie{
-				Name:     login.CookieLoginRedirect,
+				Name:     login.RedirectCookieName,
 				Value:    value,
 				Expires:  time.Now().Add(3600 * time.Second),
 				Domain:   login.CookieDomain(),
@@ -36,8 +34,6 @@ func (x LoginView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ParseAndExecute(ctx, w, r, nil, "login.gohtml")
 }
 
-type LoginSuccessView struct{}
-
-func (x LoginSuccessView) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func LoginSuccessView(w http.ResponseWriter, r *http.Request) {
 	ParseAndExecute(r.Context(), w, r, nil, "login_success.gohtml")
 }

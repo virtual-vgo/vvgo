@@ -1,4 +1,4 @@
-package download
+package api
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestHandler(t *testing.T) {
+func TestDownload(t *testing.T) {
 	ctx := context.Background()
 	type wants struct{ code int }
 
@@ -43,7 +43,7 @@ func TestHandler(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			Handler(recorder, tt.request.WithContext(ctx))
+			Download(recorder, tt.request.WithContext(ctx))
 			gotResp := recorder.Result()
 			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
 				t.Errorf("expected code %v, got %v", expected, got)

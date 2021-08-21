@@ -6,13 +6,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/sirupsen/logrus"
-	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/parse_config"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 	"time"
@@ -20,15 +17,20 @@ import (
 
 var logger = log.New()
 
-const CookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
-const CookieLoginRedirect = "vvgo-login-redirect"
+var ErrNotAMember = errors.New("not a member")
 
-type Redirect struct{}
+const (
+	SessionCookieName     = "vvgo-sessions"
+	SessionCookiePath     = "/"
+	SessionCookieDuration = 2 * 7 * 24 * 3600 * time.Second // 2 weeks
+	RedirectCookieName    = "vvgo-login-redirect"
+	CtxKeyVVGOIdentity    = "vvgo_identity"
+)
 
-func (Redirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func Redirect(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	redirect := "/parts"
-	if cookie, err := r.Cookie(CookieLoginRedirect); err != nil {
+	if cookie, err := r.Cookie(RedirectCookieName); err != nil {
 		logger.WithError(err).Error("r.Cookie() failed")
 	} else {
 		var want string
@@ -43,7 +45,7 @@ func (Redirect) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func loginSuccess(w http.ResponseWriter, r *http.Request, identity *models.Identity) {
 	ctx := r.Context()
-	cookie, err := NewCookie(ctx, identity, CookieDuration)
+	cookie, err := NewCookie(ctx, identity, SessionCookieDuration)
 	if err != nil {
 		logger.WithError(err).Error("store.NewCookie() failed")
 		helpers.InternalServerError(w)
@@ -57,132 +59,6 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, identity *models.Ident
 	}).Info("authorization succeeded")
 
 	http.Redirect(w, r, "/login/success", http.StatusFound)
-}
-
-// PasswordLoginHandler authenticates requests using form values user and pass and a static map of valid combinations.
-// If the user pass combo exists in the map, then a login cookie with the mapped roles is sent in the response.
-type PasswordLoginHandler struct{}
-
-func (x PasswordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	if r.Method != http.MethodPost {
-		helpers.MethodNotAllowed(w)
-		return
-	}
-
-	passwords := make(map[string]string)
-	passwords["vvgo-member"] = parse_config.Config.VVGO.MemberPasswordHash
-
-	var identity models.Identity
-	if err := ReadSessionFromRequest(ctx, r, &identity); err == nil {
-		http.Redirect(w, r, "/parts", http.StatusFound)
-		return
-	}
-
-	user := r.FormValue("user")
-	pass := r.FormValue("pass")
-	var err error
-	switch {
-	case user == "":
-		err = errors.New("user is required")
-	case pass == "":
-		err = errors.New("password is required")
-	case passwords[user] == "":
-		err = errors.New("unknown user")
-	default:
-		err = bcrypt.CompareHashAndPassword([]byte(passwords[user]), []byte(pass))
-	}
-
-	if err != nil {
-		logger.WithError(err).WithField("user", user).Error("password authentication failed")
-		helpers.Unauthorized(w)
-		return
-	}
-
-	loginSuccess(w, r.WithContext(ctx), &models.Identity{
-		Kind:  models.KindPassword,
-		Roles: []models.Role{models.RoleVVGOMember},
-	})
-}
-
-// DiscordLoginHandler
-// If the discord identity is a member of the vvgo discord server and has the vvgo-member role,
-// authentication is established and a login session cookie is sent in the response.
-// Otherwise, 401 unauthorized.
-type DiscordLoginHandler struct{}
-
-var ErrNotAMember = errors.New("not a member")
-
-func (x DiscordLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	if r.FormValue("state") == "" {
-		state, ok := oauthRedirect(w, r)
-		if !ok {
-			helpers.InternalServerError(w)
-			return
-		}
-		http.Redirect(w, r, discord.LoginURL(state), http.StatusFound)
-		return
-	}
-
-	handleError := func(err error) bool {
-		if err != nil {
-			logger.WithError(err).Error("discord authentication failed")
-			helpers.Unauthorized(w)
-			return false
-		}
-		return true
-	}
-
-	if ok := handleError(validateState(r, ctx)); !ok {
-		return
-	}
-
-	// get an oauth token from discord
-	code := r.FormValue("code")
-	oauthToken, err := discord.QueryOAuth(ctx, code)
-	if ok := handleError(err); !ok {
-		return
-	}
-
-	// get the user id
-	discordUser, err := discord.QueryIdentity(ctx, oauthToken)
-	if ok := handleError(err); !ok {
-		return
-	}
-
-	// check if this user is in our guild
-	guildMember, err := discord.QueryGuildMember(ctx, discordUser.ID)
-	if ok := handleError(err); !ok {
-		return
-	}
-
-	// check that they have the member role
-	var loginRoles []models.Role
-	for _, discordRole := range guildMember.Roles {
-		switch discordRole {
-		case "": // ignore empty strings
-			continue
-		case discord.VVGOExecutiveDirectorRoleID:
-			loginRoles = append(loginRoles, models.RoleVVGOLeader)
-		case discord.VVGOProductionTeamRoleID:
-			loginRoles = append(loginRoles, models.RoleVVGOTeams)
-		case discord.VVGOVerifiedMemberRoleID:
-			loginRoles = append(loginRoles, models.RoleVVGOMember)
-		}
-	}
-	if len(loginRoles) == 0 {
-		handleError(ErrNotAMember)
-		return
-	}
-
-	loginSuccess(w, r, &models.Identity{
-		Kind:      models.KindDiscord,
-		Roles:     loginRoles,
-		DiscordID: discordUser.ID.String(),
-	})
 }
 
 const CookieOAuthState = "vvgo-oauth-state"
@@ -235,10 +111,8 @@ func validateState(r *http.Request, ctx context.Context) error {
 	return nil
 }
 
-// LogoutHandler deletes the login session from the incoming request, if it exists.
-type LogoutHandler struct{}
-
-func (x LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// Logout deletes the login session from the incoming request, if it exists.
+func Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if err := DeleteSessionFromRequest(ctx, r); err != nil {

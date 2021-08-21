@@ -1,8 +1,7 @@
-package session
+package api
 
 import (
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/log"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
@@ -10,9 +9,7 @@ import (
 	"time"
 )
 
-var logger = log.New()
-
-func Handle(w http.ResponseWriter, r *http.Request) {
+func Session(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if err := r.ParseForm(); err != nil {
 		logger.MethodFailure(ctx, "r.ParseForm", err)

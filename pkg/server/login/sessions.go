@@ -20,15 +20,10 @@ import (
 
 var ErrSessionNotFound = errors.New("session not found")
 
-const CookieName = "vvgo-sessions"
-const CookiePath = "/"
-
 func CookieDomain() string {
 	x, _ := url.Parse(parse_config.Config.VVGO.ServerUrl)
 	return "." + x.Hostname()
 }
-
-const CtxKeyVVGOIdentity = "vvgo_identity"
 
 func IdentityFromContext(ctx context.Context) *models.Identity {
 	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
@@ -47,7 +42,7 @@ func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *models.I
 		return GetSession(ctx, bearer[len("Bearer "):], dest)
 	}
 
-	cookie, err := r.Cookie(CookieName)
+	cookie, err := r.Cookie(SessionCookieName)
 	if err != nil {
 		return err
 	}
@@ -55,7 +50,7 @@ func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *models.I
 }
 
 func DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
-	cookie, err := r.Cookie(CookieName)
+	cookie, err := r.Cookie(SessionCookieName)
 	if err != nil {
 		return nil
 	}
@@ -69,11 +64,11 @@ func NewCookie(ctx context.Context, src *models.Identity, expires time.Duration)
 		return nil, err
 	}
 	return &http.Cookie{
-		Name:     CookieName,
+		Name:     SessionCookieName,
 		Value:    session,
 		Expires:  time.Now().Add(expires),
 		Domain:   CookieDomain(),
-		Path:     CookiePath,
+		Path:     SessionCookiePath,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
 	}, nil

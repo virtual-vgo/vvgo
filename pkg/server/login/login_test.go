@@ -20,14 +20,13 @@ import (
 
 func TestLoginHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
-	loginHandler := PasswordLoginHandler{}
 
 	// password is vvgo-pass
 	parse_config.Config.VVGO.MemberPasswordHash = `$2a$10$7FR7RLJNkr1PQV7ahsoPPOV.9orLsENrXi8wnz2mQf8oyKmpnlt2O`
 
 	t.Run("post/failure", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			loginHandler.ServeHTTP(w, r.WithContext(ctx))
+			PasswordLoginHandler(w, r.WithContext(ctx))
 		}))
 		defer ts.Close()
 
@@ -44,7 +43,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			loginHandler.ServeHTTP(w, r.WithContext(ctx))
+			PasswordLoginHandler(w, r.WithContext(ctx))
 		}))
 		defer ts.Close()
 
@@ -74,9 +73,8 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 
 func TestLogoutHandler_ServeHTTP(t *testing.T) {
 	ctx := context.Background()
-	logoutHandler := LogoutHandler{}
 
-	ts := httptest.NewServer(&logoutHandler)
+	ts := httptest.NewServer(http.HandlerFunc(Logout))
 	defer ts.Close()
 
 	// create a session and cookie
@@ -101,10 +99,8 @@ func TestLogoutHandler_ServeHTTP(t *testing.T) {
 }
 
 func TestDiscordOAuthPre_ServeHTTP(t *testing.T) {
-
 	ctx := context.Background()
-	handler := DiscordLoginHandler{}
-	ts := httptest.NewServer(&handler)
+	ts := httptest.NewServer(http.HandlerFunc(DiscordLoginHandler))
 	defer ts.Close()
 
 	// make the request
@@ -177,9 +173,8 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	newVVGOServer := func(discordURL string) *httptest.Server {
 		parse_config.Config.Discord.Endpoint = discordURL
 		parse_config.Config.Discord.BotAuthenticationToken = "test-bot-auth-token"
-		loginHandler := DiscordLoginHandler{}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			loginHandler.ServeHTTP(w, r.WithContext(ctx))
+			DiscordLoginHandler(w, r.WithContext(ctx))
 		}))
 		return ts
 	}

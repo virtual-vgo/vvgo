@@ -1,4 +1,4 @@
-package roles
+package api
 
 import (
 	"github.com/virtual-vgo/vvgo/pkg/models"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func Handle(w http.ResponseWriter, r *http.Request) {
+func Roles(w http.ResponseWriter, r *http.Request) {
 	identity := login2.IdentityFromContext(r.Context())
 	var wantRoles []models.Role
 	helpers.JsonDecode(r.Body, &wantRoles)

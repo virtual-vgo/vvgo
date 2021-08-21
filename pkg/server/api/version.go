@@ -1,4 +1,4 @@
-package version
+package api
 
 import (
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func Handle(w http.ResponseWriter, r *http.Request) {
+func Version(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		helpers.MethodNotAllowed(w)
 		return

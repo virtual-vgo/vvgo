@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-var CreditsMaker = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func CreditsMaker(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	data := struct {
@@ -36,4 +36,4 @@ var CreditsMaker = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	}
 
 	ParseAndExecute(ctx, w, r, nil, "credits-maker.gohtml")
-})
+}

@@ -43,7 +43,7 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 		ctx := context.Background()
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.AddCookie(&http.Cookie{
-			Name:  CookieName,
+			Name:  SessionCookieName,
 			Value: "cheese",
 		})
 		var got models.Identity
@@ -56,7 +56,7 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.AddCookie(&http.Cookie{
-			Name:  CookieName,
+			Name:  SessionCookieName,
 			Value: session,
 		})
 		var got models.Identity
@@ -78,7 +78,7 @@ func TestStore_DeleteSessionFromRequest(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.AddCookie(&http.Cookie{
-			Name:  CookieName,
+			Name:  SessionCookieName,
 			Value: session,
 		})
 		require.NoError(t, DeleteSessionFromRequest(ctx, req))
@@ -92,9 +92,9 @@ func TestStore_NewCookie(t *testing.T) {
 	gotCookie, err := NewCookie(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
 	require.NoError(t, err)
 
-	assert.Equal(t, CookieName, gotCookie.Name, "cookie.Name")
+	assert.Equal(t, SessionCookieName, gotCookie.Name, "cookie.Name")
 	assert.NotEmpty(t, gotCookie.Value, "cookie.Value")
-	assert.Equal(t, CookiePath, gotCookie.Path, "cookie.Path")
+	assert.Equal(t, SessionCookiePath, gotCookie.Path, "cookie.Path")
 	assert.Equal(t, ".vvgo.org", gotCookie.Domain, "cookie.Domain")
 	assert.Equal(t, true, gotCookie.HttpOnly, "cookie.HttpOnly")
 	assert.Equal(t, http.SameSiteStrictMode, gotCookie.SameSite, "cookie.SameSite")

@@ -6,14 +6,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/aboutme"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/download"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/leaders"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/parts"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/projects"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/roles"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/session"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/version"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"github.com/virtual-vgo/vvgo/pkg/server/views"
@@ -23,26 +16,28 @@ import (
 	"os"
 )
 
+func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		identity := login.IdentityFromContext(r.Context())
+		fmt.Println(identity)
+		if !identity.HasRole(role) {
+			helpers.Unauthorized(w)
+		}
+	}
+}
+
 func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
 
-	mux.Handle("/login/password", login.PasswordLoginHandler{}, models.RoleAnonymous)
-	mux.Handle("/login/discord", login.DiscordLoginHandler{}, models.RoleAnonymous)
-	mux.Handle("/login/success", views.LoginSuccessView{}, models.RoleAnonymous)
-	mux.Handle("/login/redirect", login.Redirect{}, models.RoleAnonymous)
-	mux.Handle("/login", views.LoginView{}, models.RoleAnonymous)
-	mux.Handle("/logout", login.LogoutHandler{}, models.RoleAnonymous)
+	mux.HandleFunc("/login/password", login.PasswordLoginHandler, models.RoleAnonymous)
+	mux.HandleFunc("/login/discord", login.DiscordLoginHandler, models.RoleAnonymous)
+	mux.HandleFunc("/login/success", views.LoginSuccessView, models.RoleAnonymous)
+	mux.HandleFunc("/login/redirect", login.Redirect, models.RoleAnonymous)
+	mux.HandleFunc("/login", views.LoginView, models.RoleAnonymous)
+	mux.HandleFunc("/logout", login.Logout, models.RoleAnonymous)
 
 	for _, role := range []models.Role{models.RoleVVGOMember, models.RoleVVGOTeams, models.RoleVVGOLeader} {
-		func(role models.Role) {
-			mux.Handle("/authorize/"+role.String(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				identity := login.IdentityFromContext(r.Context())
-				fmt.Println(identity)
-				if !identity.HasRole(role) {
-					helpers.Unauthorized(w)
-				}
-			}), models.RoleAnonymous)
-		}(role)
+		mux.HandleFunc("/authorize/"+role.String(), authorize(role), models.RoleAnonymous)
 	}
 
 	// debug endpoints from net/http/pprof
@@ -53,20 +48,20 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, models.RoleVVGOTeams)
 
 	// api endpoints
-	mux.HandleFunc("/api/v1/session", session.Handle, models.RoleVVGOLeader)
-	mux.HandleFunc("/api/v1/parts", parts.Handle, models.RoleVVGOMember)
-	mux.HandleFunc("/api/v1/projects", projects.Handle, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/leaders", leaders.Handle, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/roles", roles.Handle, models.RoleAnonymous)
+	mux.HandleFunc("/api/v1/session", api.Session, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/parts", api.Parts, models.RoleVVGOMember)
+	mux.HandleFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
+	mux.HandleFunc("/api/v1/leaders", api.Leaders, models.RoleAnonymous)
+	mux.HandleFunc("/api/v1/roles", api.Roles, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, models.RoleVVGOTeams)
 	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, models.RoleVVGOTeams)
 	mux.HandleFunc("/api/v1/aboutme", aboutme.Handle, models.RoleVVGOLeader)
-	mux.HandleFunc("/api/v1/version", version.Handle, models.RoleAnonymous)
+	mux.HandleFunc("/api/v1/version", api.Version, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/update_stats", api.SkywardSwordIntentHandler, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/download", download.Handler, models.RoleVVGOMember)
-	mux.HandleFunc("/download", download.Handler, models.RoleVVGOMember)
+	mux.HandleFunc("/api/v1/download", api.Download, models.RoleVVGOMember)
+	mux.HandleFunc("/download", api.Download, models.RoleVVGOMember)
 
 	mux.Handle("/browser/static/",
 		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
@@ -77,6 +72,7 @@ func Routes() http.Handler {
 			io.Copy(w, file)
 		}, models.RoleVVGOMember)
 
+	// views
 	mux.HandleFunc("/voting", views.Voting, models.RoleVVGOLeader)
 	mux.HandleFunc("/voting/results", views.VotingResults, models.RoleVVGOLeader)
 	mux.HandleFunc("/parts", views.Parts, models.RoleVVGOMember)

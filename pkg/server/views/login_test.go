@@ -15,19 +15,17 @@ import (
 
 func TestLoginView_ServeHTTP(t *testing.T) {
 	t.Run("not logged in", func(t *testing.T) {
-		server := LoginView{}
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, "/", nil)
-		server.ServeHTTP(recorder, request)
+		LoginView(recorder, request)
 		gotResp := recorder.Result()
 		assert.Equal(t, http.StatusOK, gotResp.StatusCode)
 	})
 
 	t.Run("logged in", func(t *testing.T) {
 		ctx := context.Background()
-		loginView := LoginView{}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			loginView.ServeHTTP(w, r.Clone(context.WithValue(ctx, login2.CtxKeyVVGOIdentity, &models.Identity{Roles: []models.Role{models.RoleVVGOMember}})))
+			LoginView(w, r.Clone(context.WithValue(ctx, login2.CtxKeyVVGOIdentity, &models.Identity{Roles: []models.Role{models.RoleVVGOMember}})))
 		}))
 		defer ts.Close()
 
