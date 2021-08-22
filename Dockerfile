@@ -28,7 +28,7 @@ COPY --from=node node_modules /public/node_modules
 COPY --from=builder /go/src/app/vvgo /vvgo
 COPY ./public /public
 COPY --from=builder /go/src/app/version.json ./version.json
-COPY --from=ui build ./ui/build
+COPY --from=parts_browser build ./parts_browser/build
 EXPOSE 8080
 CMD ["/vvgo"]
 ENTRYPOINT ["/vvgo"]
