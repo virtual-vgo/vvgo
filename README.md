@@ -27,9 +27,9 @@ Below are links to installation docs for each service:
  * A container engine that we use to download and run service dependencies for the webapp.
  * Installers: [Windows](https://docs.docker.com/docker-for-windows/install/) | [Mac](https://docs.docker.com/docker-for-mac/install/) | [Linux](https://docs.docker.com/engine/install/)
 
-#### Yarn
+#### NPM
  * Manages and downloads the javascript dependencies.
- * Installers: [Windows](https://classic.yarnpkg.com/en/docs/install/#windows-stable) | [Mac](https://classic.yarnpkg.com/en/docs/install/#mac-stable) | [Linux](https://classic.yarnpkg.com/en/docs/install)
+ * Installers: [All](https://nodejs.org/en/download/)
 
 #### Golang 1.14
  * Builds and compiles the source code.
