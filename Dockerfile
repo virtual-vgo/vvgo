@@ -18,8 +18,8 @@ RUN go build -o vvgo ./cmd/vvgo
 COPY .git .git
 RUN go run ./tools/version
 
-FROM node:13.12 as ui
-COPY ui .
+FROM node:13.12 as parts_browser
+COPY parts_browser .
 RUN npm install && npm run-script build
 
 FROM alpine:3.4 as vvgo

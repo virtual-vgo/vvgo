@@ -66,11 +66,11 @@ func Routes() http.Handler {
 
 	// parts browser
 	mux.Handle("/browser/static/",
-		http.StripPrefix("/browser/", http.FileServer(http.Dir("ui/build"))),
+		http.StripPrefix("/browser/", http.FileServer(http.Dir("parts_browser/build"))),
 		models.RoleVVGOMember)
 	mux.HandleFunc("/browser/",
 		func(w http.ResponseWriter, r *http.Request) {
-			file, _ := os.Open("ui/build/index.html")
+			file, _ := os.Open("parts_browser/build/index.html")
 			io.Copy(w, file)
 		}, models.RoleVVGOMember)
 
