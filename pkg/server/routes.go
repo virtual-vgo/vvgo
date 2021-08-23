@@ -52,6 +52,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/session", api.Session, models.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/parts", api.Parts, models.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
+	mux.HandleFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/leaders", api.Leaders, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", api.Roles, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOLeader)
@@ -82,6 +83,9 @@ func Routes() http.Handler {
 	mux.HandleFunc("/credits-maker", views.CreditsMaker, models.RoleVVGOTeams)
 	mux.HandleFunc("/about", views.About, models.RoleAnonymous)
 	mux.HandleFunc("/contact_us", views.ContactUs, models.RoleAnonymous)
+
+	mux.HandleFunc("/feature", views.ServeTemplate("feature.gohtml"), models.RoleAnonymous)
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			views.Index(w, r)

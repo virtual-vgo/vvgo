@@ -2,6 +2,7 @@ FROM node:13.12 as node
 COPY public/package.json .
 COPY public/package-lock.json .
 RUN npm install
+RUN npx babel js/src --out-dir js --presets @babel/preset-react
 
 FROM golang:1.16 as builder
 WORKDIR /go/src/app/
