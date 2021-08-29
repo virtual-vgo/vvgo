@@ -29,6 +29,7 @@ RUN npm install && npm run-script build
 FROM alpine:3.4 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils
 WORKDIR /app
+COPY LICENSE .
 COPY --from=node /wrk ./public
 COPY --from=builder /go/src/app/vvgo ./vvgo
 COPY --from=builder /go/src/app/version.json ./version.json
