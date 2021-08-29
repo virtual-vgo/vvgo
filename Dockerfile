@@ -34,5 +34,5 @@ COPY --from=builder /go/src/app/vvgo ./vvgo
 COPY --from=builder /go/src/app/version.json ./version.json
 COPY --from=parts_browser build ./parts_browser/build
 EXPOSE 8080
-CMD ["/vvgo"]
-ENTRYPOINT ["/vvgo"]
+CMD ["./vvgo"]
+ENTRYPOINT ["./vvgo"]
