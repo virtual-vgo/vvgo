@@ -5,5 +5,5 @@
 Dockerfile
 LICENSE
 public/node_modules
-ui/node_modules
-ui/build
+parts_browser/node_modules
+parts_browser/build

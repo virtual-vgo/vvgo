@@ -83,7 +83,6 @@ func Routes() http.Handler {
 	mux.HandleFunc("/credits-maker", views.CreditsMaker, models.RoleVVGOTeams)
 	mux.HandleFunc("/about", views.About, models.RoleAnonymous)
 	mux.HandleFunc("/contact_us", views.ContactUs, models.RoleAnonymous)
-
 	mux.HandleFunc("/feature", views.ServeTemplate("feature.gohtml"), models.RoleAnonymous)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
