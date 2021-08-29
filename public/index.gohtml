@@ -17,18 +17,13 @@
 {{ $latest := $released.Sort.Last }}
 
 <div class="mt-2 container">
-
     <div class="row">
-
-    </div>
-    <div class="row row-cols-1">
-        <div class="col">
+        <div class="col col-12 col-lg-7">
             <a href="{{ $latest.YoutubeLink }}" class="btn btn-link nav-link">
-                <img src="{{ $latest.BannerLink }}" class="mx-auto img-fluid" alt="banner">
+                <img src="{{ $latest.BannerLink }}" class="mw-100" alt="banner" height="250">
             </a>
-        </div>
-        <div class="col">
-            <div class="row row-cols-1 justify-content-md-center text-center m-2">
+
+            <div class="row justify-content-md-center text-center m-2">
                 {{ if $latest.YoutubeEmbed }}
                     <div class="col project-iframe-wrapper text-center m-2">
                         <iframe class="project-iframe" src="{{ $latest.YoutubeEmbed }}"
@@ -38,50 +33,38 @@
                 {{ end }}
             </div>
         </div>
-        <div class="col">
-            <h2>Projects</h2>
-            <h3>Open for Submissions</h3>
+        <div class="col mt-2">
+            <h3>Latest Projects</h3>
             <table class="table text-light clickable">
                 {{- range $open_projects.Sort }}
                     <tr>
                         <td>
                             <a href="{{ .PartsPage }}" class="text-light">
-                                {{ .Title }}<br/><small>{{ .Sources }}</small>
+                                {{ .Title }} <br/> {{ .Sources }}
                             </a>
                         </td>
                     </tr>
                 {{- end }}
             </table>
-            <h3>Post-Production</h3>
+
+            <h3>Member Highlights</h3>
             <table class="table text-light">
-                {{- range $post_production_projects.Sort }}
-                    <tr>
-                        <td>
-                            <i class="text-light">{{ .Title }}<br/><small>{{ .Sources }}</small></i>
-                        </td>
-                    </tr>
-                {{ end }}
-            </table>
-        </div>
-        <div class="col">
-            <h2>Member Highlights</h2>
-            <div class="row">
-                <div class="col">
+                <tr><td>
                     <img src="https://cdn.discordapp.com/attachments/869388540272861245/869389373693640714/11-GS-Thomas.png"
                          width="100%" alt="Thomas">
-                </div>
-                <div class="col">
-                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/870052230802313316/11-GS-Will.png"
-                         width="100%" alt="Thomas">
-                </div>
-                <div class="col">
-                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/870843556800135210/11-GS-Jordy.png"
-                         width="100%" alt="Thomas">
-                </div>
-                <div class="col">
-                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/871453949427855400/Artboard_1.png"
-                         width="100%" alt="Thomas">
-                </div>
+                    </td></tr></table>
+{{/*                <div class="col">*/}}
+{{/*                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/870052230802313316/11-GS-Will.png"*/}}
+{{/*                         width="100%" alt="Thomas">*/}}
+{{/*                </div>*/}}
+{{/*                <div class="col">*/}}
+{{/*                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/870843556800135210/11-GS-Jordy.png"*/}}
+{{/*                         width="100%" alt="Thomas">*/}}
+{{/*                </div>*/}}
+{{/*                <div class="col">*/}}
+{{/*                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/871453949427855400/Artboard_1.png"*/}}
+{{/*                         width="100%" alt="Thomas">*/}}
+{{/*                </div>*/}}
             </div>
         </div>
     </div>
