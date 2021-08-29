@@ -3,11 +3,11 @@ import React, {useState} from 'react'
 import ReactDOM from 'react-dom'
 import {useCredits, useProjects} from "./models";
 
-const BannerFadeoutStart = 3000
-const BannerFadeoutEnd = BannerFadeoutStart + 2000
+const BannerFadeoutStart = 500
+const BannerFadeoutEnd = BannerFadeoutStart + 500
 
-export const Render = () => {
-    const domContainer = document.querySelector('#reactDom')
+export const Render = (selectors) => {
+    const domContainer = document.querySelector(selectors)
     ReactDOM.render(<Feature/>, domContainer)
 }
 
@@ -31,7 +31,6 @@ const Feature = (props) => {
         <div className='row row-cols-1'>
             <Banner latest={latest} showBanner={showBanner} drawBanner={drawBanner}/>
             <Video latest={latest} drawBanner={drawBanner}/>
-            <Credits latest={latest} credits={credits} showCredits={showCredits} toggleCredits={toggleCredits}/>
         </div>
     </div>
 }
@@ -51,23 +50,40 @@ const Banner = (props) => {
 }
 
 const Video = (props) => {
+    const latest = props.latest
     if (props.drawBanner) return <div/>
 
-    const latest = props.latest
+
+
     if (latest === undefined) return <div/>
     else if (latest.youtubeEmbed === null) return <div/>
     else if (latest.youtubeEmbed.startsWith('https://') === false) return <div/>
-    else return <div className='col'>
-            <div className='project-iframe-wrapper text-center m-2'>
-                <iframe className='project-iframe' src={latest.youtubeEmbed}
-                        allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture'
-                        allowFullScreen/>
-            </div>
-            <div className="text-right font small text-uppercase">
-                {latest.composers} <br/>
-                {latest.arrangers}
+    else return <div className={'container-fluid'}>
+            <div className={'row'}>
+                <div className='col col-12'>
+                    <YoutubeIframe youtubeEmbed={latest.youtubeEmbed} />
+                </div>
+                <div className='col col-lg-6 col-md-12'>
+                    <div className='text-left text-uppercase'>
+                        Performance by<br/>The Virtual Video Game Orchestra
+                    </div>
+                </div>
+                <div className='col col-lg-6 col-md-12'>
+                    <div className='text-right text-uppercase'>
+                        {latest.composers} <br/>
+                        {latest.arrangers}
+                    </div>
+                </div>
             </div>
         </div>
+}
+
+const YoutubeIframe = (props) => {
+    return <div className='project-iframe-wrapper text-center m-2'>
+        <iframe className='project-iframe' src={props.youtubeEmbed}
+                allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture'
+                allowFullScreen/>
+    </div>;
 }
 
 const Credits = (props) => {
