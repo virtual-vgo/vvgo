@@ -5,7 +5,9 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"io"
 	"net/http"
+	"os"
 )
 
 // Discord
@@ -28,7 +30,15 @@ func Discord(w http.ResponseWriter, r *http.Request) {
 	handleError := func(err error) bool {
 		if err != nil {
 			logger.WithError(err).Error("discord authentication failed")
-			helpers.Unauthorized(w)
+			fileName := "public/discord_login_failure.html"
+			file, err := os.Open(fileName)
+			w.WriteHeader(http.StatusUnauthorized)
+			if err != nil {
+				logger.WithField("file_name", fileName).OpenFileFailure(ctx, err)
+				helpers.Unauthorized(w)
+			}
+			defer file.Close()
+			_, _ = io.Copy(w, file)
 			return false
 		}
 		return true
