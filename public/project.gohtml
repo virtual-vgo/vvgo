@@ -41,14 +41,14 @@
         {{ end }}
         <div class="row">
             <div class="col m-4 text-center">
-                Composed by {{ .Project.Composers }}<br/>
+                {{ .Project.Composers }}<br/>
                 {{ .Project.Arrangers }}
             </div>
         </div>
         {{ range .Credits }}
             <div class="row">
                 <div class="col text-center">
-                    <h2><strong>-- {{ .Name }} --</strong></h2>
+                    <h2><strong>— {{ .Name }} —</strong></h2>
                 </div>
             </div>
             <div class="card-columns">
