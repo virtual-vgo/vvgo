@@ -1,7 +1,8 @@
 import {hot} from 'react-hot-loader'
 import React, {useState} from 'react'
 import ReactDOM from 'react-dom'
-import {useCredits, useProjects} from "./models";
+import {latestProject, useCredits, useProjects} from "./models";
+import {YoutubeIframe} from "./components"
 
 const BannerFadeoutStart = 500
 const BannerFadeoutEnd = BannerFadeoutStart + 500
@@ -53,15 +54,13 @@ const Video = (props) => {
     const latest = props.latest
     if (props.drawBanner) return <div/>
 
-
-
     if (latest === undefined) return <div/>
     else if (latest.youtubeEmbed === null) return <div/>
     else if (latest.youtubeEmbed.startsWith('https://') === false) return <div/>
     else return <div className={'container-fluid'}>
             <div className={'row'}>
                 <div className='col col-12'>
-                    <YoutubeIframe youtubeEmbed={latest.youtubeEmbed} />
+                    <YoutubeIframe latest={latest}/>
                 </div>
                 <div className='col col-lg-6 col-md-12'>
                     <div className='text-left text-uppercase'>
@@ -78,13 +77,6 @@ const Video = (props) => {
         </div>
 }
 
-const YoutubeIframe = (props) => {
-    return <div className='project-iframe-wrapper text-center m-2'>
-        <iframe className='project-iframe' src={props.youtubeEmbed}
-                allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture'
-                allowFullScreen/>
-    </div>;
-}
 
 const Credits = (props) => {
     if (props.showCredits) {
@@ -128,11 +120,5 @@ const CreditsTeam = (props) => {
     </div>
 }
 
-const latestProject = (projects) => {
-    console.log(projects)
-    const released = projects.filter(proj => proj.videoReleased === true)
-    released.sort()
-    return released.pop()
-}
 
 export default hot(module)(Feature)

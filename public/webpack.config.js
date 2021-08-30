@@ -2,7 +2,10 @@ const path = require('path')
 const webpack = require('webpack')
 
 module.exports = {
-    entry: {feature: './js/src/feature.js'},
+    entry: {
+        feature: './js/src/feature.js',
+        index: './js/src/index.js'
+    },
     mode: 'development',
     devtool: false,
     module: {
@@ -19,6 +22,6 @@ module.exports = {
     resolve: {extensions: ['*', '.js']},
     output: {
         path: path.resolve(__dirname, 'dist/'),
-        library: 'Feature'
+        library: 'Bundle'
     }
 }

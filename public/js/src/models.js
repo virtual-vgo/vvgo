@@ -1,8 +1,7 @@
-import React from "react";
+import React from 'react'
 
 const ProjectsEndpoint = '/api/v1/projects'
 const CreditsEndpoint = '/api/v1/credits'
-
 
 class Project {
     constructor(obj) {
@@ -14,7 +13,26 @@ class Project {
         this.bannerLink = obj['BannerLink']
         this.composers = obj['Composers']
         this.arrangers = obj['Arrangers']
+        this.partsPage = obj['PartsPage']
+        this.sources = obj['Sources']
+        this.partsArchived = obj['PartsArchived']
+        this.partsReleased = obj['PartsReleased']
+        this.hidden = obj['Hidden']
     }
+
+    isOpenForSubmission() {
+        if (this.hidden) return false
+        if (this.videoReleased) return false
+        if (this.partsArchived) return false
+        return this.partsReleased
+    }
+}
+
+export const latestProject = (projects) => {
+    console.log(projects)
+    const released = projects.filter(proj => proj.videoReleased === true)
+    released.sort()
+    return released.pop()
 }
 
 export const useProjects = () => {

@@ -5,78 +5,17 @@
     <title>Virtual Video Game Orchestra</title>
     <meta name="description" content="">
     {{ template "header.gohtml" }}
+
+    <script type="text/javascript" src="dist/index.js"></script>
 </head>
 <body class="">
 {{ template "navbar.gohtml" }}
 
-{{ $projects := projects }}
-{{ $open_projects := $projects.WithFields "Hidden" false "Video Released" false "Parts Archived" false "Parts Released" true }}
-{{ $post_production_projects := $projects.WithFields "Hidden" false "Video Released" false "Parts Archived" true }}
+<main role="main">
+    <div id="reactDom"></div>
+</main>
+<script type="text/javascript">Bundle.Render('#reactDom')</script>
 
-{{ $released := projects.WithField "Video Released" true }}
-{{ $latest := $released.Sort.Last }}
-
-<div class="mt-2 container">
-    <div class="row">
-        <div class="col col-12 col-lg-7">
-            <a href="{{ $latest.YoutubeLink }}" class="btn btn-link nav-link">
-                <img src="{{ $latest.BannerLink }}" class="mw-100" alt="banner" height="250">
-            </a>
-
-            <div class="row justify-content-md-center text-center m-2">
-                {{ if $latest.YoutubeEmbed }}
-                    <div class="col project-iframe-wrapper text-center m-2">
-                        <iframe class="project-iframe" src="{{ $latest.YoutubeEmbed }}"
-                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                    </div>
-                {{ end }}
-            </div>
-        </div>
-        <div class="col mt-2">
-            <h3>Latest Projects</h3>
-            <table class="table text-light clickable">
-                {{- range $open_projects.Sort }}
-                    <tr>
-                        <td>
-                            <a href="{{ .PartsPage }}" class="text-light">
-                                {{ .Title }} <br/> {{ .Sources }}
-                            </a>
-                        </td>
-                    </tr>
-                {{- end }}
-            </table>
-
-            <h3>Member Highlights</h3>
-            <table class="table text-light">
-                <tr><td>
-                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/869389373693640714/11-GS-Thomas.png"
-                         width="100%" alt="Thomas">
-                    </td></tr></table>
-{{/*                <div class="col">*/}}
-{{/*                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/870052230802313316/11-GS-Will.png"*/}}
-{{/*                         width="100%" alt="Thomas">*/}}
-{{/*                </div>*/}}
-{{/*                <div class="col">*/}}
-{{/*                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/870843556800135210/11-GS-Jordy.png"*/}}
-{{/*                         width="100%" alt="Thomas">*/}}
-{{/*                </div>*/}}
-{{/*                <div class="col">*/}}
-{{/*                    <img src="https://cdn.discordapp.com/attachments/869388540272861245/871453949427855400/Artboard_1.png"*/}}
-{{/*                         width="100%" alt="Thomas">*/}}
-{{/*                </div>*/}}
-            </div>
-        </div>
-    </div>
-    <div class="row justify-content-md-center text-center m-2">
-        <div class="col text-center mt-2">
-            <p>
-                If you would like to join our orchestra or get more information about our current projects,
-                please join us on <a href="https://discord.gg/9RVUJMQ">Discord!</a>
-            </p>
-        </div>
-    </div>
-</div>
 {{ template "footer.gohtml" }}
 </body>
 </html>
