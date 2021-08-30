@@ -1,9 +1,8 @@
 *.md
 .dockerignore
-.vvgo-config.json
 .google_api_credentials.json
 Dockerfile
-LICENSE
 public/node_modules
-ui/node_modules
-ui/build
+public/dist
+parts_browser/node_modules
+parts_browser/build
