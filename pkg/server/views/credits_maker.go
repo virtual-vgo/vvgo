@@ -36,5 +36,5 @@ func CreditsMaker(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ParseAndExecute(ctx, w, r, nil, "credits-maker.gohtml")
+	ParseAndExecute(ctx, w, r, data, "credits-maker.gohtml")
 }
