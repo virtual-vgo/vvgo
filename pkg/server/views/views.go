@@ -7,7 +7,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"html/template"
 	"math/rand"
 	"net/http"
@@ -33,7 +33,10 @@ func ServeTemplate(templateFile string) http.HandlerFunc {
 }
 
 func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {
-	identity := login2.IdentityFromContext(ctx)
+	identity := login.IdentityFromContext(ctx)
+
+	// pre-fetch projects
+	_, _ = models.ListProjects(ctx, identity)
 
 	tmpl, err := template.New(filepath.Base(templateFile)).Funcs(map[string]interface{}{
 		"template_file":    func() string { return templateFile },

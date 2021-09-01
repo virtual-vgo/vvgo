@@ -14,10 +14,6 @@ import (
 
 const CacheTTL = "5"
 
-func NoOpSheets(ctx context.Context) context.Context {
-	return context.WithValue(ctx, "no_op_sheets", true)
-}
-
 func ReadSheet(ctx context.Context, spreadsheetID string, readRange string) ([][]interface{}, error) {
 	values := ReadValuesFromRedis(ctx, spreadsheetID, readRange)
 	if len(values) != 0 || ctx.Value("no_op_sheets") == true {
