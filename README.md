@@ -31,7 +31,7 @@ Below are links to installation docs for each service:
  * Manages and downloads the javascript dependencies.
  * Installers: [All](https://nodejs.org/en/download/)
 
-#### Golang 1.14
+#### Golang 1.16
  * Builds and compiles the source code.
  * Installers: [All](https://golang.org/dl/)
 
