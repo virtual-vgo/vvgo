@@ -63,6 +63,8 @@ cd public && npm install
 
 ### 4. Build and run the app!
 ```sh
-go generate ./... && go build -v -o vvgo ./cmd/vvgo && ./vvgo
+go run ./tools/version
+go generate ./...
+go run ./cmd/vvgo
 ```
 
