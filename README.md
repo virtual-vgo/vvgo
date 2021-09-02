@@ -23,6 +23,10 @@ Below are links to installation docs for each service:
  * A version control system that we use to tracks changes to the source code.
  * Installers: [Windows](https://gitforwindows.org/) | [Mac](https://git-scm.com/download/mac) | [Linux](https://git-scm.com/download/linux)
 
+#### WSL 2 | Windows Only
+ * This is a Linux integration layer for Windows 10 and required for Docker.
+ * [Installation Docs](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+
 #### Docker
  * A container engine that we use to download and run service dependencies for the webapp.
  * Installers: [Windows](https://docs.docker.com/docker-for-windows/install/) | [Mac](https://docs.docker.com/docker-for-mac/install/) | [Linux](https://docs.docker.com/engine/install/)
