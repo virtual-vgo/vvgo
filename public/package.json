@@ -1,4 +1,9 @@
 {
+  "name": "vvgo",
+  "repository": "git@github.com:virtual-vgo/vvgo.git",
+  "author": "Jackson Argo <jackson@jacksonargo.com>",
+  "license": "Apache-2.0",
+  "scripts": {"build":  "webpack --mode=development"},
   "dependencies": {
     "@babel/cli": "^7.14.8",
     "@babel/core": "^7.15.0",
@@ -15,10 +20,6 @@
     "react-dom": "^17.0.2",
     "react-hot-loader": "^4.13.0"
   },
-  "name": "vvgo",
-  "repository": "git@github.com:virtual-vgo/vvgo.git",
-  "author": "Jackson Argo <jackson@jacksonargo.com>",
-  "license": "Apache-2.0",
   "devDependencies": {
     "@babel/preset-react": "^7.14.5",
     "babel-loader": "^8.2.2",

@@ -38,14 +38,24 @@ const Index = (props) => {
 }
 
 const Banner = (props) => {
+    if (props.drawBanner === false) return <div/>
+    if (props.latest === undefined) return <div/>
+
     const latest = props.latest
-    if (latest === undefined) return <div/>
     const youtubeLink = latest.youtubeLink
     const bannerLink = latest.bannerLink
-    if (props.drawBanner === false) return <div/>
+
+    const Banner = () => {
+        if (bannerLink === "") return <div>
+            <h1 className="title">{latest.title}</h1>
+            <h2>{latest.sources}</h2>
+        </div>
+        else return <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>
+    }
+
     return <div id='banner' className={'col'}>
-        <a href={youtubeLink} className="btn btn-link nav-link">
-            <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>
+        <a href={youtubeLink} className="text-light text-center">
+            <Banner/>
         </a>
     </div>
 }
