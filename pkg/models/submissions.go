@@ -28,11 +28,8 @@ func valuesToSubmissionRecords(values [][]interface{}) Submissions {
 	if len(values) < 1 {
 		return nil
 	}
-	index := sheets.BuildIndex(values[0])
-	submissionRecords := make([]Submission, len(values)-1) // ignore the header row
-	for i, row := range values[1:] {
-		sheets.ProcessRow(row, &submissionRecords[i], index)
-	}
+	submissionRecords := make([]Submission, 0, len(values)-1) // ignore the header row
+	UnmarshalSheet(values, &submissionRecords)
 	return submissionRecords
 }
 

@@ -3,9 +3,10 @@ package models
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
-	"github.com/virtual-vgo/vvgo/pkg/config"
 	"sort"
 )
+
+const SheetParts = "Parts"
 
 type Part struct {
 	Project            string
@@ -25,7 +26,7 @@ type Part struct {
 type Parts []Part
 
 func ListParts(ctx context.Context) (Parts, error) {
-	values, err := sheets.ReadSheet(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Parts")
+	values, err := sheets.ReadSheet(ctx, SpreadsheetWebsiteData, SheetParts)
 	if err != nil {
 		return nil, err
 	}
@@ -36,13 +37,18 @@ func valuesToParts(values [][]interface{}) Parts {
 	if len(values) < 1 {
 		return nil
 	}
-	index := sheets.BuildIndex(values[0])
-	parts := make([]Part, len(values)-1)
-	for i, row := range values[1:] {
-		sheets.ProcessRow(row, &parts[i], index)
-		parts[i].SheetMusicLink = downloadLink(parts[i].SheetMusicFile)
-		parts[i].ClickTrackLink = downloadLink(parts[i].ClickTrackFile)
-		parts[i].PronunciationGuideLink = downloadLink(parts[i].PronunciationGuideLink)
+	parts := make([]Part, 0, len(values)-1)
+	UnmarshalSheet(values, &parts)
+	for i := range parts {
+		if parts[i].SheetMusicLink == "" {
+			parts[i].SheetMusicLink = downloadLink(parts[i].SheetMusicFile)
+		}
+		if parts[i].ClickTrackLink == "" {
+			parts[i].ClickTrackLink = downloadLink(parts[i].ClickTrackFile)
+		}
+		if parts[i].PronunciationGuideLink == "" {
+			parts[i].PronunciationGuideLink = downloadLink(parts[i].PronunciationGuide)
+		}
 	}
 	return parts
 }

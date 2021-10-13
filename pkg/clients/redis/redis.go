@@ -1,20 +1,33 @@
 package redis
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/errors"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"strings"
 )
 
+type Action struct {
+	Rcv  interface{}
+	Cmd  string
+	Args []string
+}
+
+func Cmd(rcv interface{}, cmd string, args ...string) Action {
+	return Action{
+		Rcv:  rcv,
+		Cmd:  cmd,
+		Args: args,
+	}
+}
+
 type Client struct{ pool *radix.Pool }
 
-var client *Client
-
-func init() { client = NewClientMust() }
-
-func Do(ctx context.Context, a Action) error { return client.Do(ctx, a) }
+var client = NewClientMust()
 
 func NewClientMust() *Client {
 	radixPool, err := radix.NewPool(config.Config.Redis.Network, config.Config.Redis.Address, config.Config.Redis.PoolSize)
@@ -31,25 +44,42 @@ func NewClientMust() *Client {
 	return client
 }
 
-func (x *Client) Do(_ context.Context, a Action) error {
-	args := strings.Join(a.args, " ")
-	if len(args) > 30 {
-		args = args[:30] + "..."
+func ReadSheet(ctx context.Context, spreadsheetName string, name string) ([][]interface{}, error) {
+	var buf bytes.Buffer
+	key := "sheets:" + spreadsheetName + ":" + name
+	if err := Do(ctx, Cmd(&buf, "GET", key)); err != nil {
+		return nil, errors.RedisFailure(err)
 	}
-	logger.WithField("cmd", a.cmd).Infof("redis query: %s %s", a.cmd, args)
-	return x.pool.Do(a.radixAction)
+
+	var values [][]interface{}
+	if err := json.NewDecoder(&buf).Decode(&values); err != nil {
+		return nil, errors.JsonDecodeFailure(err)
+	}
+	return values, nil
 }
 
-type Action struct {
-	cmd         string
-	args        []string
-	radixAction radix.Action
+func WriteSheet(ctx context.Context, spreadsheetName, name string, values [][]interface{}) error {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(&values); err != nil {
+		return errors.JsonEncodeFailure(err)
+	}
+
+	key := "sheets:" + spreadsheetName + ":" + name
+	if err := Do(ctx, Cmd(nil, "SET", key, buf.String())); err != nil {
+		return errors.RedisFailure(err)
+	}
+	return nil
 }
 
-func Cmd(rcv interface{}, cmd string, args ...string) Action {
-	return Action{
-		cmd:         cmd,
-		args:        args,
-		radixAction: radix.Cmd(rcv, cmd, args...),
+func Do(_ context.Context, a Action) error {
+	truncArgs := func(args []string) string {
+		argString := strings.Join(args, " ")
+		if len(args) > 30 {
+			argString = argString[:30] + "..."
+		}
+		return argString
 	}
+
+	logger.WithField("cmd", a.Cmd).Infof("redis query: %s %s", a.Cmd, truncArgs(a.Args))
+	return client.pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...))
 }

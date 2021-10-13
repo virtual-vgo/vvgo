@@ -3,9 +3,10 @@ package models
 import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
-	"github.com/virtual-vgo/vvgo/pkg/config"
 	"reflect"
 )
+
+const SheetExecutiveDirectors = "Leaders"
 
 type Leaders []Leader
 
@@ -18,7 +19,7 @@ type Leader struct {
 }
 
 func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := sheets.ReadSheet(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Leaders")
+	values, err := sheets.ReadSheet(ctx, SpreadsheetWebsiteData, SheetExecutiveDirectors)
 	if err != nil {
 		return nil, err
 	}
@@ -29,11 +30,8 @@ func valuesToLeaders(values [][]interface{}) Leaders {
 	if len(values) < 1 {
 		return nil
 	}
-	index := sheets.BuildIndex(values[0])
-	leaders := make([]Leader, len(values)-1)
-	for i, row := range values[1:] {
-		sheets.ProcessRow(row, &leaders[i], index)
-	}
+	leaders := make([]Leader, 0, len(values)-1)
+	UnmarshalSheet(values, &leaders)
 	return leaders
 }
 

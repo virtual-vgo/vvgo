@@ -2,10 +2,11 @@ package models
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
-	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"sort"
 )
+
+const SheetProjects = "Projects"
 
 type Project struct {
 	Name                    string
@@ -43,22 +44,23 @@ func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 type Projects []Project
 
 func ListProjects(ctx context.Context, identity *Identity) (Projects, error) {
-	values, err := sheets.ReadSheet(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects")
+	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetProjects)
 	if err != nil {
 		return nil, err
 	}
-	return valuesToProjects(values).ForIdentity(identity), nil
+	return ValuesToProjects(values).ForIdentity(identity), nil
 }
 
-func valuesToProjects(values [][]interface{}) Projects {
+func ValuesToProjects(values [][]interface{}) Projects {
 	if len(values) < 1 {
 		return nil
 	}
-	index := sheets.BuildIndex(values[0])
-	projects := make([]Project, len(values)-1) // ignore the header row
-	for i, row := range values[1:] {
-		sheets.ProcessRow(row, &projects[i], index)
-		projects[i].ReferenceTrackLink = downloadLink(projects[i].ReferenceTrack)
+	var projects []Project // ignore the header row
+	UnmarshalSheet( values, &projects)
+	for i := range projects {
+		if projects[i].ReferenceTrackLink == "" {
+			projects[i].ReferenceTrackLink = downloadLink(projects[i].ReferenceTrack)
+		}
 	}
 	return projects
 }

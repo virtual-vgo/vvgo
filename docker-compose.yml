@@ -4,7 +4,7 @@ services:
     image: minio/minio
     command: server /data
     healthcheck:
-      test: ["CMD", "curl", "http://localhost:9000"]
+      test: [ "CMD", "curl", "http://localhost:9000" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -17,7 +17,7 @@ services:
   redis:
     image: redis:6
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5

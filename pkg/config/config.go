@@ -38,10 +38,6 @@ var Config struct {
 		OAuthClientSecret string `json:"oauth_client_secret" envconfig:"oauth_client_secret"`
 	} `json:"discord" envconfig:"discord"`
 
-	Sheets struct {
-		WebsiteDataSpreadsheetID string `json:"website_data_spreadsheet_id" envconfig:"website_data_spreadsheet_id"`
-	} `json:"sheets" envconfig:"sheets"`
-
 	Redis struct {
 		Network  string `json:"network" envconfig:"network" default:"tcp"`
 		Address  string `json:"address" envconfig:"address" default:"localhost:6379"`
