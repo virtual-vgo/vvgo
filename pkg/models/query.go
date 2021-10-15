@@ -1,6 +1,9 @@
 package models
 
-import "reflect"
+import (
+	"reflect"
+	"strings"
+)
 
 type Query map[string]interface{}
 
@@ -36,19 +39,16 @@ func (x Query) MatchSlice(src, dest interface{}) {
 			destVals.Index(matches - 1).Set(val)
 		}
 	}
+	reflect.ValueOf(dest).Elem().Set(destVals)
 }
 
 func (x Query) MatchStruct(str interface{}) bool {
-	tagName := "col_name"
 	wantRow := true
 	reflectType := reflect.TypeOf(str)
+	query := x.Query()
 	for i := 0; i < reflectType.NumField(); i++ {
 		field := reflectType.Field(i)
-		colName := field.Tag.Get(tagName)
-		if colName == "" {
-			colName = field.Name
-		}
-		wantValue, ok := x[colName]
+		wantValue, ok := query[field.Name]
 		if !ok {
 			continue
 		}
@@ -57,4 +57,12 @@ func (x Query) MatchStruct(str interface{}) bool {
 		}
 	}
 	return wantRow
+}
+
+func (x Query) Query() Query {
+	clean := NewQuery()
+	for k, v := range x {
+		clean[strings.ReplaceAll(k, " ", "")] = v
+	}
+	return clean
 }

@@ -3,11 +3,12 @@ package models
 import (
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
-	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"sort"
 	"strings"
 )
+
+const SheetCredits = "Credits"
 
 type Credit struct {
 	Project       string
@@ -21,7 +22,7 @@ type Credit struct {
 type Credits []Credit
 
 func ListCredits(ctx context.Context) (Credits, error) {
-	values, err := sheets.ReadSheet(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Credits")
+	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetCredits)
 	if err != nil {
 		return nil, err
 	}
@@ -32,11 +33,8 @@ func valuesToCredits(values [][]interface{}) []Credit {
 	if len(values) < 1 {
 		return nil
 	}
-	index := sheets.BuildIndex(values[0])
-	credits := make([]Credit, len(values)-1)
-	for i, row := range values[1:] {
-		sheets.ProcessRow(row, &credits[i], index)
-	}
+	credits := make([]Credit, 0, len(values)-1)
+	UnmarshalSheet(values, &credits)
 	Credits(credits).Sort()
 	return credits
 }

@@ -49,20 +49,20 @@ func Routes() http.Handler {
 	mux.HandleFunc("/logout", login.Logout, models.RoleAnonymous)
 
 	// api endpoints
-	mux.HandleFunc("/api/v1/session", api.Session, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/aboutme", api.Aboutme, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/download", api.Download, models.RoleVVGOMember)
+	mux.HandleFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/parts", api.Parts, models.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/leaders", api.Leaders, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", api.Roles, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, models.RoleVVGOTeams)
 	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, models.RoleVVGOTeams)
-	mux.HandleFunc("/api/v1/aboutme", api.Aboutme, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/session", api.Session, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/spreadsheet", api.Spreadsheet, models.RoleWriteSpreadsheet)
 	mux.HandleFunc("/api/v1/version", api.Version, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/update_stats", api.SkywardSwordIntentHandler, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/download", api.Download, models.RoleVVGOMember)
 	mux.HandleFunc("/download", api.Download, models.RoleVVGOMember)
 
 	// parts browser

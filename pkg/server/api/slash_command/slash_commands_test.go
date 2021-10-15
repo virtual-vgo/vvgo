@@ -4,11 +4,10 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	discord2 "github.com/virtual-vgo/vvgo/pkg/clients/discord"
+	discord "github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
-	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
 	"github.com/virtual-vgo/vvgo/pkg/clients/when2meet"
-	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/models/aboutme"
 	"net/http"
 	"net/http/httptest"
@@ -28,32 +27,32 @@ func TestHandle(t *testing.T) {
 }
 
 func TestHandleBeepInteraction(t *testing.T) {
-	interaction := discord2.Interaction{
-		Type: discord2.InteractionTypeApplicationCommand,
-		Data: &discord2.ApplicationCommandInteractionData{
+	interaction := discord.Interaction{
+		Type: discord.InteractionTypeApplicationCommand,
+		Data: &discord.ApplicationCommandInteractionData{
 			Name: "beep",
 		},
 	}
 	response, ok := HandleInteraction(context.Background(), interaction)
 	assert.True(t, ok)
-	assertEqualInteractionResponse(t, discord2.InteractionResponse{
-		Type: discord2.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord2.InteractionApplicationCommandCallbackData{Content: "boop"},
+	assertEqualInteractionResponse(t, discord.InteractionResponse{
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{Content: "boop"},
 	}, response)
 }
 
 func TestHandlePartsInteraction(t *testing.T) {
 	ctx := context.Background()
-	sheets.WriteValuesToRedis(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
+	require.NoError(t, redis.WriteSheet(ctx, models.SpreadsheetWebsiteData, models.SheetProjects, [][]interface{}{
 		{"Name", "Title", "Parts Released"},
 		{"10-hildas-healing", "Hilda's Healing", true},
-	})
+	}))
 
-	interaction := discord2.Interaction{
-		Type: discord2.InteractionTypeApplicationCommand,
-		Data: &discord2.ApplicationCommandInteractionData{
+	interaction := discord.Interaction{
+		Type: discord.InteractionTypeApplicationCommand,
+		Data: &discord.ApplicationCommandInteractionData{
 			Name: "parts",
-			Options: []discord2.ApplicationCommandInteractionDataOption{
+			Options: []discord.ApplicationCommandInteractionDataOption{
 				{Name: "project", Value: "10-hildas-healing"},
 			},
 		},
@@ -62,16 +61,16 @@ func TestHandlePartsInteraction(t *testing.T) {
 	response, ok := HandleInteraction(ctx, interaction)
 	assert.True(t, ok)
 
-	assertEqualInteractionResponse(t, discord2.InteractionResponse{
-		Type: discord2.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord2.InteractionApplicationCommandCallbackData{
-			Embeds: []discord2.Embed{{
+	assertEqualInteractionResponse(t, discord.InteractionResponse{
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{
+			Embeds: []discord.Embed{{
 				Title:       "Hilda's Healing",
 				Type:        "rich",
 				Description: "· Parts are [here!](https://vvgo.org/parts?project=10-hildas-healing)\n· Submit files [here!]()\n· Submission Deadline: .",
 				Url:         "https://vvgo.org/parts?project=10-hildas-healing",
 				Color:       9181145,
-				Footer:      &discord2.EmbedFooter{Text: "Bottom text."},
+				Footer:      &discord.EmbedFooter{Text: "Bottom text."},
 			}},
 		},
 	}, response)
@@ -79,16 +78,16 @@ func TestHandlePartsInteraction(t *testing.T) {
 
 func TestHandleSubmissionInteraction(t *testing.T) {
 	ctx := context.Background()
-	sheets.WriteValuesToRedis(ctx, config.Config.Sheets.WebsiteDataSpreadsheetID, "Projects", [][]interface{}{
+	redis.WriteSheet(ctx, models.SpreadsheetWebsiteData, models.SheetProjects, [][]interface{}{
 		{"Name", "Title", "Parts Released", "Submission Link"},
 		{"10-hildas-healing", "Hilda's Healing", true, "https://bit.ly/vvgo10submit"},
 	})
 
-	interaction := discord2.Interaction{
-		Type: discord2.InteractionTypeApplicationCommand,
-		Data: &discord2.ApplicationCommandInteractionData{
+	interaction := discord.Interaction{
+		Type: discord.InteractionTypeApplicationCommand,
+		Data: &discord.ApplicationCommandInteractionData{
 			Name: "submit",
-			Options: []discord2.ApplicationCommandInteractionDataOption{
+			Options: []discord.ApplicationCommandInteractionDataOption{
 				{Name: "project", Value: "10-hildas-healing"},
 			},
 		},
@@ -97,9 +96,9 @@ func TestHandleSubmissionInteraction(t *testing.T) {
 	response, ok := HandleInteraction(ctx, interaction)
 	assert.True(t, ok)
 
-	assertEqualInteractionResponse(t, discord2.InteractionResponse{
-		Type: discord2.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord2.InteractionApplicationCommandCallbackData{
+	assertEqualInteractionResponse(t, discord.InteractionResponse{
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
+		Data: &discord.InteractionApplicationCommandCallbackData{
 			Content: "[Submit here](https://bit.ly/vvgo10submit) for Hilda's Healing. Submission Deadline is ",
 		},
 	}, response)
@@ -113,12 +112,12 @@ func TestHandleWhen2MeetInteraction(t *testing.T) {
 	when2meet.Endpoint = ts.URL
 
 	ctx := context.Background()
-	interaction := discord2.Interaction{
-		Type:   discord2.InteractionTypeApplicationCommand,
-		Member: discord2.GuildMember{User: discord2.User{ID: "42069"}},
-		Data: &discord2.ApplicationCommandInteractionData{
+	interaction := discord.Interaction{
+		Type:   discord.InteractionTypeApplicationCommand,
+		Member: discord.GuildMember{User: discord.User{ID: "42069"}},
+		Data: &discord.ApplicationCommandInteractionData{
 			Name: "when2meet",
-			Options: []discord2.ApplicationCommandInteractionDataOption{
+			Options: []discord.ApplicationCommandInteractionDataOption{
 				{Name: "start_date", Value: "2030-02-01"},
 				{Name: "end_date", Value: "2030-02-02"},
 				{Name: "event_name", Value: "holy cheesus"},
@@ -140,13 +139,13 @@ func TestAboutmeHandler(t *testing.T) {
 		require.NoError(t, redis.Do(ctx, redis.Cmd(nil, "DEL", "about_me:entries")))
 	}
 
-	aboutMeInteraction := func(cmd string, options []discord2.ApplicationCommandInteractionDataOption) discord2.Interaction {
-		return discord2.Interaction{
-			Type:   discord2.InteractionTypeApplicationCommand,
-			Member: discord2.GuildMember{User: discord2.User{ID: "42069"}, Roles: []string{discord2.VVGOProductionTeamRoleID}},
-			Data: &discord2.ApplicationCommandInteractionData{
+	aboutMeInteraction := func(cmd string, options []discord.ApplicationCommandInteractionDataOption) discord.Interaction {
+		return discord.Interaction{
+			Type:   discord.InteractionTypeApplicationCommand,
+			Member: discord.GuildMember{User: discord.User{ID: "42069"}, Roles: []string{discord.VVGOProductionTeamRoleID}},
+			Data: &discord.ApplicationCommandInteractionData{
 				Name: "aboutme",
-				Options: []discord2.ApplicationCommandInteractionDataOption{
+				Options: []discord.ApplicationCommandInteractionDataOption{
 					{Name: cmd, Options: options},
 				},
 			},
@@ -236,7 +235,7 @@ func TestAboutmeHandler(t *testing.T) {
 		t.Run("exists", func(t *testing.T) {
 			resetAboutMeEntries(t)
 			require.NoError(t, aboutme.WriteEntries(ctx, map[string]aboutme.Entry{"42069": {DiscordID: "42069"}}))
-			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord2.ApplicationCommandInteractionDataOption{
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
 				{Name: "name", Value: "chester cheeta"},
 				{Name: "blurb", Value: "dangerously cheesy"},
 			}))
@@ -254,7 +253,7 @@ func TestAboutmeHandler(t *testing.T) {
 
 		t.Run("doesnt exist", func(t *testing.T) {
 			resetAboutMeEntries(t)
-			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord2.ApplicationCommandInteractionDataOption{
+			response, ok := HandleInteraction(ctx, aboutMeInteraction("update", []discord.ApplicationCommandInteractionDataOption{
 				{Name: "name", Value: "chester cheeta"},
 				{Name: "blurb", Value: "dangerously cheesy"},
 			}))
@@ -272,12 +271,12 @@ func TestAboutmeHandler(t *testing.T) {
 	})
 }
 
-func assertEqualInteractionResponse(t *testing.T, want, got discord2.InteractionResponse) {
+func assertEqualInteractionResponse(t *testing.T, want, got discord.InteractionResponse) {
 	assert.Equal(t, want.Type, got.Type, "interaction.Type")
 	assertEqualInteractionApplicationCommandCallbackData(t, want.Data, got.Data)
 }
 
-func assertEqualInteractionApplicationCommandCallbackData(t *testing.T, want, got *discord2.InteractionApplicationCommandCallbackData) {
+func assertEqualInteractionApplicationCommandCallbackData(t *testing.T, want, got *discord.InteractionApplicationCommandCallbackData) {
 	assert.Equal(t, want.Content, got.Content, "interaction.Data.Content")
 	assert.Equal(t, want.TTS, got.TTS, "interaction.Data.TTS")
 	assert.Equal(t, want.Embeds, got.Embeds, "interaction.Data.Embeds")
