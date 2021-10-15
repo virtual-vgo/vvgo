@@ -29,7 +29,7 @@ func Spreadsheet(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		for i, _ := range data.Sheets {
+		for i := range data.Sheets {
 			values, err := redis.ReadSheet(ctx, data.SpreadsheetName, data.Sheets[i].Name)
 			if err != nil {
 				logger.RedisFailure(ctx, err)
