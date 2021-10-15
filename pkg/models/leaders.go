@@ -2,7 +2,7 @@ package models
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"reflect"
 )
 
@@ -19,7 +19,7 @@ type Leader struct {
 }
 
 func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := sheets.ReadSheet(ctx, SpreadsheetWebsiteData, SheetExecutiveDirectors)
+	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetExecutiveDirectors)
 	if err != nil {
 		return nil, err
 	}

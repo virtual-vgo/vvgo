@@ -5,7 +5,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
-	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
+	login "github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"time"
 )
@@ -37,7 +37,7 @@ func Session(w http.ResponseWriter, r *http.Request) {
 
 	expires := 24 * 3600 * time.Second
 	identity := models.Identity{Kind: "SessionToken", Roles: roles}
-	session, err := login2.NewSession(ctx, &identity, expires)
+	session, err := login.NewSession(ctx, &identity, expires)
 	if err != nil {
 		logger.MethodFailure(ctx, "login.NewSession", err)
 	}

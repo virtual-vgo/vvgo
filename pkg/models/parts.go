@@ -2,7 +2,7 @@ package models
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"sort"
 )
 
@@ -26,7 +26,7 @@ type Part struct {
 type Parts []Part
 
 func ListParts(ctx context.Context) (Parts, error) {
-	values, err := sheets.ReadSheet(ctx, SpreadsheetWebsiteData, SheetParts)
+	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetParts)
 	if err != nil {
 		return nil, err
 	}

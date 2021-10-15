@@ -3,7 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/clients/sheets"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"sort"
 	"strings"
 )
@@ -22,7 +22,7 @@ type Credit struct {
 type Credits []Credit
 
 func ListCredits(ctx context.Context) (Credits, error) {
-	values, err := sheets.ReadSheet(ctx, SpreadsheetWebsiteData, SheetCredits)
+	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetCredits)
 	if err != nil {
 		return nil, err
 	}

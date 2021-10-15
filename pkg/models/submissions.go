@@ -8,9 +8,9 @@ import (
 )
 
 type Submission struct {
-	CreditedName string `col_name:"Credited Name"`
+	CreditedName string
 	Instrument   string
-	BottomText   string `col_name:"Bottom Text"`
+	BottomText   string
 }
 
 type Submissions []Submission
