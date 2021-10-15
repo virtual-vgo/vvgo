@@ -13,26 +13,26 @@ type Project struct {
 	Title                   string
 	Season                  string
 	Hidden                  bool
-	PartsReleased           bool `col_name:"Parts Released"`
-	PartsArchived           bool `col_name:"Parts Archived"`
-	VideoReleased           bool `col_name:"Video Released"`
+	PartsReleased           bool
+	PartsArchived           bool
+	VideoReleased           bool
 	Sources                 string
 	Composers               string
 	Arrangers               string
 	Editors                 string
 	Transcribers            string
 	Preparers               string
-	ClixBy                  string `col_name:"Clix By"`
+	ClixBy                  string
 	Reviewers               string
 	Lyricists               string
-	AdditionalContent       string `col_name:"Additional Content"`
-	ReferenceTrack          string `col_name:"Reference Track"`
-	ChoirPronunciationGuide string `col_name:"Choir Pronunciation Guide"`
-	BannerLink              string `col_name:"Banner Link"`
-	YoutubeLink             string `col_name:"Youtube Link"`
-	YoutubeEmbed            string `col_name:"Youtube Embed"`
-	SubmissionDeadline      string `col_name:"Submission Deadline"`
-	SubmissionLink          string `col_name:"Submission Link"`
+	AdditionalContent       string
+	ReferenceTrack          string
+	ChoirPronunciationGuide string
+	BannerLink              string
+	YoutubeLink             string
+	YoutubeEmbed            string
+	SubmissionDeadline      string
+	SubmissionLink          string
 
 	// Derived
 	ReferenceTrackLink string
@@ -56,7 +56,7 @@ func ValuesToProjects(values [][]interface{}) Projects {
 		return nil
 	}
 	var projects []Project // ignore the header row
-	UnmarshalSheet( values, &projects)
+	UnmarshalSheet(values, &projects)
 	for i := range projects {
 		if projects[i].ReferenceTrackLink == "" {
 			projects[i].ReferenceTrackLink = downloadLink(projects[i].ReferenceTrack)

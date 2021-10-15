@@ -10,12 +10,12 @@ const SheetParts = "Parts"
 
 type Part struct {
 	Project            string
-	PartName           string `col_name:"Part Name"`
-	ScoreOrder         int    `col_name:"Score Order"`
-	SheetMusicFile     string `col_name:"Sheet Music File"`
-	ClickTrackFile     string `col_name:"Click Track File"`
-	ConductorVideo     string `col_name:"Conductor Video"`
-	PronunciationGuide string `col_name:"Pronunciation Guide"`
+	PartName           string
+	ScoreOrder         int
+	SheetMusicFile     string
+	ClickTrackFile     string
+	ConductorVideo     string
+	PronunciationGuide string
 
 	// Derived Columns
 	SheetMusicLink         string
