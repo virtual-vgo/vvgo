@@ -31,7 +31,7 @@ const (
 	RoleVVGOTeams  Role = "vvgo-teams"  // has the teams discord role
 	RoleVVGOLeader Role = "vvgo-leader" // has the leader discord role
 
-	RoleWriteSpreadsheet Role = "write_website_data"
+	RoleWriteSpreadsheet Role = "write_spreadsheet"
 	RoleReadConfig       Role = "read_config"
 )
 
