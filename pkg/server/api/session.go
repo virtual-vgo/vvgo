@@ -18,7 +18,10 @@ func Session(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	wantRoles := r.Form["with_roles"]
-	allowedRoles := []models.Role{models.RoleReadConfig}
+	allowedRoles := []models.Role{
+		models.RoleReadConfig,
+		models.RoleWriteSpreadsheet,
+	}
 	var roles []models.Role
 	for _, want := range wantRoles {
 		for _, allowed := range allowedRoles {
