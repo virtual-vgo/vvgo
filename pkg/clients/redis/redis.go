@@ -74,8 +74,8 @@ func WriteSheet(ctx context.Context, spreadsheetName, name string, values [][]in
 func Do(_ context.Context, a Action) error {
 	truncArgs := func(args []string) string {
 		argString := strings.Join(args, " ")
-		if len(argString) > 30 {
-			argString = argString[:30] + "..."
+		if len(argString) > 64 {
+			argString = argString[:61] + "..."
 		}
 		return argString
 	}
