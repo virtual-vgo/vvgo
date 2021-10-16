@@ -39,7 +39,7 @@ func Credits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("HtmlSource-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	data := models.BuildCreditsTable(credits, project)
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		logger.JsonEncodeFailure(ctx, err)

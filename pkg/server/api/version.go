@@ -12,6 +12,6 @@ func Version(w http.ResponseWriter, r *http.Request) {
 		http_helpers.MethodNotAllowed(ctx, w)
 		return
 	}
-	w.Header().Set("HtmlSource-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(version.JSON())
 }

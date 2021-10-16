@@ -85,7 +85,7 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 		data["roles"] = identity.Roles
 		data["session"] = session
 		data["expires"] = time.Now().Add(expires)
-		w.Header().Set("HtmlSource-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(data); err != nil {
 			logger.JsonEncodeFailure(ctx, err)
 		}

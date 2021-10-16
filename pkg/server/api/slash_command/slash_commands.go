@@ -79,7 +79,7 @@ func List(w http.ResponseWriter, r *http.Request) {
 		logger.MethodFailure(ctx, "discord.GetApplicationCommands", err)
 		http_helpers.InternalServerError(ctx, w)
 	}
-	w.Header().Set("HtmlSource-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(commands); err != nil {
 		logger.JsonEncodeFailure(ctx, err)
 	}

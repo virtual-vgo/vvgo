@@ -11,7 +11,7 @@ import (
 
 func Projects(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("HtmlSource-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
 	ctx := r.Context()
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))

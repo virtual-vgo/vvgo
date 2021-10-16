@@ -19,7 +19,7 @@ func Ballot(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		w.Header().Set("HtmlSource-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json")
 
 		var ballotJSON string
 		if err := redis.Do(ctx, redis.Cmd(&ballotJSON,

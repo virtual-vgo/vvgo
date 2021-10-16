@@ -72,7 +72,7 @@ func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("HtmlSource-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	return req, nil
 }
 
@@ -142,7 +142,7 @@ func CreateApplicationCommand(ctx context.Context, params CreateApplicationComma
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("HtmlSource-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	var command ApplicationCommand
 	_, err = doDiscordRequest(req, &command)
@@ -198,7 +198,7 @@ func doDiscordBotRequestWithJsonParams(ctx context.Context, path, method string,
 	if err != nil {
 		return err
 	}
-	req.Header.Set("HtmlSource-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	_, err = doDiscordRequest(req, dest)
 	return err

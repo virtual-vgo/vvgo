@@ -42,7 +42,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodPost, gotRequest.Method)
 	assert.Equal(t, "/oauth2/token", gotRequest.URL.String())
-	assert.Equal(t, "application/x-www-form-urlencoded", gotRequest.Header.Get("HtmlSource-Type"))
+	assert.Equal(t, "application/x-www-form-urlencoded", gotRequest.Header.Get("Content-Type"))
 
 	wantForm := make(url.Values)
 	wantForm.Add("client_id", OAuthClientID)

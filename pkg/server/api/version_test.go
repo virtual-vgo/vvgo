@@ -16,7 +16,7 @@ func TestVersion(t *testing.T) {
 	Version(recorder, req)
 
 	var gotJSON json.RawMessage
-	assert.Equal(t, "application/json", recorder.Header().Get("HtmlSource-Type"), "content type")
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"), "content type")
 	assert.Equal(t, http.StatusOK, recorder.Code, "status code")
 	assert.NoError(t, json.NewDecoder(recorder.Body).Decode(&gotJSON))
 }

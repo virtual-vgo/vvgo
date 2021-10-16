@@ -61,7 +61,7 @@ func NewRequest(method, url string, body interface{}) (*http.Request, error) {
 		return nil, errors.NewRequestFailure(err)
 	}
 	req.Header.Set("Authorization", "Bearer "+config.Config.VVGO.ClientToken)
-	req.Header.Set("HtmlSource-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "vvgo-client")
 	return req, nil
 }

@@ -12,7 +12,6 @@ import (
 
 func JsonEncode(w http.ResponseWriter, src interface{}) bool {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("HtmlSource-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(src); err != nil {
 		logger.JsonEncodeFailure(context.Background(), err)
 		return false
@@ -72,7 +71,6 @@ func WriteAPIResponse(_ context.Context, w http.ResponseWriter, resp models.Resp
 		code = http.StatusInternalServerError
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("HtmlSource-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(&resp)
 }
