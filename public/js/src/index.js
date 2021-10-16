@@ -1,15 +1,12 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 import {latestProject, useProjects} from "./models"
 import {YoutubeIframe} from "./components"
+import {Render} from "./render";
 
-export const Render = (selectors) => {
-    const domContainer = document.querySelector(selectors)
-    ReactDOM.render(<Index/>, domContainer)
-}
+export const Entrypoint = (selectors) => Render(<Index/>, selectors)
 
 const Index = (props) => {
-    const [projects,] = useProjects()
+    const projects = useProjects()
 
     const latest = latestProject(projects)
     return <div className="mt-2 container">

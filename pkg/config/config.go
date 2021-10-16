@@ -10,11 +10,14 @@ import (
 )
 
 var Config struct {
+	Development bool
+
 	VVGO struct {
 		ListenAddress      string `json:"listen_address" envconfig:"listen_address" default:"0.0.0.0:8080"`
 		ServerUrl          string `json:"server_url" envconfig:"server_url" default:"https://vvgo.org"`
 		DistroBucket       string `json:"distro_bucket" envconfig:"distro_bucket" default:"vvgo-distro"`
 		MemberPasswordHash string `json:"member_password_hash" envconfig:"member_password_hash"`
+		ClientToken        string `json:"vvgo_client_token" envconfig:"vvgo_client_token"`
 	} `json:"vvgo" envconfig:"vvgo"`
 
 	Minio struct {

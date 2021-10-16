@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"net/url"
@@ -56,13 +56,13 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Ro
 		}
 		logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
 
-		if identity.IsAnonymous() {
+		if identity.IsAnonymous() && strings.HasPrefix(r.URL.Path, "/api") == false {
 			values := make(url.Values)
 			values.Set("target", r.RequestURI)
 			http.Redirect(w, r, "/login?"+values.Encode(), http.StatusFound)
 			return
 		}
-		helpers.Unauthorized(w)
+		http_helpers.Unauthorized(ctx,w)
 	})
 }
 

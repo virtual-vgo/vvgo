@@ -182,7 +182,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 	doRequest := func(t *testing.T, vvgoURL string, code string, state string, value string) *http.Response {
 		req, err := http.NewRequest(http.MethodPost, vvgoURL+"?state="+state+"&code="+code, nil)
 		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("HtmlSource-Type", "application/json")
 		req.AddCookie(&http.Cookie{
 			Name:     CookieOAuthState,
 			Value:    value,

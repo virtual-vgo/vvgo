@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-const SheetExecutiveDirectors = "Leaders"
+const SheetDirectors = "Leaders"
 
 type Leaders []Leader
 
@@ -19,7 +19,7 @@ type Leader struct {
 }
 
 func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetExecutiveDirectors)
+	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetDirectors)
 	if err != nil {
 		return nil, err
 	}

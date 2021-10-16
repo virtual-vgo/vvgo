@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"net/http"
 )
 
@@ -13,8 +13,8 @@ func Leaders(w http.ResponseWriter, r *http.Request) {
 	leaders, err := models.ListLeaders(ctx)
 	if err != nil {
 		logger.ListLeadersFailure(ctx, err)
-		helpers.InternalServerError(w)
+		http_helpers.InternalServerError(ctx, w)
 		return
 	}
-	helpers.JsonEncode(w, &leaders)
+	http_helpers.JsonEncode(w, &leaders)
 }

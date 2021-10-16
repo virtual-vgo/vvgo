@@ -1,7 +1,11 @@
 import React from 'react'
 
-const ProjectsEndpoint = '/api/v1/projects'
-const CreditsEndpoint = '/api/v1/credits'
+const Endpoint = '/api/v1'
+
+const StatusOk = "ok"
+const StatusError = "error"
+const ResponseTypeError = "error"
+const ResponseTypeSessions = "sessions"
 
 class Project {
     constructor(obj) {
@@ -28,6 +32,8 @@ class Project {
     }
 }
 
+export const useProjects = () => useApiData(Endpoint + "/projects", Project)
+
 export const latestProject = (projects) => {
     console.log(projects)
     const released = projects.filter(proj => proj.videoReleased === true)
@@ -35,17 +41,6 @@ export const latestProject = (projects) => {
     return released.pop()
 }
 
-export const useProjects = () => {
-    const [data, setData] = React.useState([])
-    React.useEffect(() => {
-        fetch(ProjectsEndpoint)
-            .then(response => response.json())
-            .then(data => data.map(obj => new Project(obj)))
-            .then(projects => setData(projects))
-            .catch(error => console.log(error))
-    }, [ProjectsEndpoint])
-    return [data, setData]
-}
 
 class Credit {
     constructor(obj) {
@@ -56,6 +51,11 @@ class Credit {
         this.minorCategory = obj['MinorCategory']
         this.bottomText = obj['BottomText']
     }
+}
+
+export const useCredits = (project) => {
+    const url = (project !== undefined && project.name !== undefined) ? `${Endpoint + "/credits"}?project=${project.name}` : undefined
+    return useApiData(url, TopicCreditsRow)
 }
 
 class TeamCreditsRow {
@@ -72,16 +72,85 @@ class TopicCreditsRow {
     }
 }
 
-export const useCredits = (project) => {
+class ExecutiveDirector {
+    constructor(obj) {
+        this.Name = obj['Name']
+        this.Epithet = obj['Epithet']
+        this.Affiliations = obj['Affiliations']
+        this.Blurb = obj['Blurb']
+        this.Icon = obj['Icon']
+    }
+}
+
+export const useDirectors = () =>
+    useApiData(Endpoint + "/leaders", ExecutiveDirector)
+
+class Session {
+    constructor(obj) {
+        this.Key = obj['key']
+        this.Kind = obj['kind']
+        this.Roles = obj['roles']
+        this.DiscordID = obj['discord_id']
+    }
+}
+
+export const useSessions = () =>
+    useApiData(Endpoint + "/sessions", Session)
+
+export const deleteSessions = async (sessions) => {
+    const payload = JSON.stringify(({'sessions': sessions}))
+    return fetch(Endpoint + "/sessions", {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: payload
+    }).then(resp => resp.json()).then(data => {
+        const response = new Response(data)
+        if (response.Type === ResponseTypeError) {
+            throw 'vvgo.org error: ' + response.Error
+        }
+    })
+}
+
+const useApiData = (url, decoder) => {
     const [data, setData] = React.useState([])
-    const url = (project !== undefined && project.name !== undefined) ? `${CreditsEndpoint}?project=${project.name}` : undefined
     React.useEffect(() => {
-        if (url !== undefined)
-            fetch(url)
-                .then(response => response.json())
-                .then(data => data.map(obj => new TopicCreditsRow(obj)))
-                .then(credits => setData(credits))
-                .catch(error => console.log(error))
-    }, [url])
-    return [data, setData]
+        fetch(url)
+            .then(response => response.json())
+            .then(jsonData => jsonData.map(obj => new decoder(obj)))
+            .then(decoded => setData(decoded))
+            .catch(error => console.log(error))
+    }, [url, decoder])
+    return data
+}
+
+class Response {
+    constructor(obj) {
+        this.Status = obj['status']
+        this.Type = obj['type']
+
+        switch (this.Type) {
+            case ResponseTypeError:
+                this.Error = new ErrorResponse(obj['error'])
+                break
+            case ResponseTypeSessions:
+                this.Sessions = new SessionResponse(obj['sessions'])
+                break
+        }
+    }
+}
+
+class ErrorResponse {
+    constructor(obj) {
+        this.Code = obj['code']
+        this.Error = obj['error']
+    }
+}
+
+class SessionResponse {
+    constructor(obj) {
+        this.Status = obj['status']
+        this.Type = obj['type']
+        this.Error = obj['error']
+        this.Session = obj['session']
+    }
 }

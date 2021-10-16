@@ -2,11 +2,13 @@ package server
 
 import (
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/devel"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"github.com/virtual-vgo/vvgo/pkg/server/views"
 	"io"
@@ -17,10 +19,11 @@ import (
 
 func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		identity := login.IdentityFromContext(r.Context())
 		fmt.Println(identity)
 		if !identity.HasRole(role) {
-			helpers.Unauthorized(w)
+			http_helpers.Unauthorized(ctx, w)
 		}
 	}
 }
@@ -60,10 +63,14 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, models.RoleVVGOTeams)
 	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, models.RoleVVGOTeams)
-	mux.HandleFunc("/api/v1/session", api.Session, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/spreadsheet", api.Spreadsheet, models.RoleWriteSpreadsheet)
 	mux.HandleFunc("/api/v1/version", api.Version, models.RoleAnonymous)
 	mux.HandleFunc("/download", api.Download, models.RoleVVGOMember)
+
+	if config.Config.Development {
+		mux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOTeams)
+	}
 
 	// parts browser
 	mux.Handle("/browser/static/",
@@ -84,6 +91,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/about", views.About, models.RoleAnonymous)
 	mux.HandleFunc("/contact_us", views.ContactUs, models.RoleAnonymous)
 	mux.HandleFunc("/feature", views.ServeTemplate("feature.gohtml"), models.RoleAnonymous)
+	mux.HandleFunc("/sessions", views.Sessions, models.RoleVVGOMember)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

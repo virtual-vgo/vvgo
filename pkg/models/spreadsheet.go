@@ -9,6 +9,16 @@ import (
 
 const SpreadsheetWebsiteData = "website_data"
 
+type Spreadsheet struct {
+	SpreadsheetName string  `json:"spreadsheet_name"`
+	Sheets          []Sheet `json:"sheets"`
+}
+
+type Sheet struct {
+	Name   string          `json:"name"`
+	Values [][]interface{} `json:"values"`
+}
+
 func UnmarshalSheet(rows [][]interface{}, dest interface{}) {
 	colNames := make([]string, len(rows[0]))
 	for i := range colNames {

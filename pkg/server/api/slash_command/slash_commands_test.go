@@ -277,7 +277,7 @@ func assertEqualInteractionResponse(t *testing.T, want, got discord.InteractionR
 }
 
 func assertEqualInteractionApplicationCommandCallbackData(t *testing.T, want, got *discord.InteractionApplicationCommandCallbackData) {
-	assert.Equal(t, want.Content, got.Content, "interaction.Data.Content")
+	assert.Equal(t, want.Content, got.Content, "interaction.Data.HtmlSource")
 	assert.Equal(t, want.TTS, got.TTS, "interaction.Data.TTS")
 	assert.Equal(t, want.Embeds, got.Embeds, "interaction.Data.Embeds")
 }

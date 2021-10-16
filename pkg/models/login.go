@@ -1,7 +1,10 @@
 package models
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"strings"
 )
 
@@ -46,9 +49,37 @@ func Anonymous() Identity { return anonymous }
 // This _absolutely_ should not contain any personally identifiable information.
 // Numeric user ids are fine, but no emails, usernames, addresses, etc.
 type Identity struct {
+	Key       string `json:"key"`
 	Kind      Kind   `json:"kind"`
 	Roles     []Role `json:"roles"`
 	DiscordID string `json:"discord_id"`
+}
+
+func ListSessions(ctx context.Context, identity Identity) ([]Identity, error) {
+	var keys []string
+	redis.Do(ctx, redis.Cmd(&keys, "KEYS", "sessions:*"))
+
+	sessionData := make([]string, 0, len(keys))
+	redis.Do(ctx, redis.Cmd(&sessionData, "MGET", keys...))
+
+	sessions := make([]Identity, len(keys))
+	for i := range sessionData {
+		json.Unmarshal([]byte(sessionData[i]), &sessions[i])
+	}
+	for i := range sessions {
+		sessions[i].Key = strings.TrimPrefix(keys[i], "sessions:")
+	}
+
+	var want []Identity
+	for _, session := range sessions {
+		switch {
+		case identity.HasRole(RoleVVGOLeader):
+			want = append(want, session)
+		case session.DiscordID == identity.DiscordID:
+			want = append(want, session)
+		}
+	}
+	return want, nil
 }
 
 func (x Identity) Info() string {

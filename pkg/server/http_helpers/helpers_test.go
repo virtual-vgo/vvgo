@@ -1,12 +1,15 @@
-package helpers
+package http_helpers
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
+
+var ctx = context.Background()
 
 func TestAcceptsType(t *testing.T) {
 	for _, tt := range []struct {
@@ -40,8 +43,9 @@ func TestAcceptsType(t *testing.T) {
 }
 
 func TestBadRequest(t *testing.T) {
+
 	recorder := httptest.NewRecorder()
-	BadRequest(recorder, "some-reason")
+	BadRequest(ctx, recorder, "some-reason")
 	wantBody := "some-reason"
 	wantCode := http.StatusBadRequest
 
@@ -51,7 +55,7 @@ func TestBadRequest(t *testing.T) {
 
 func TestInternalServerError(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	InternalServerError(recorder)
+	InternalServerError(ctx, recorder)
 	wantBody := ""
 	wantCode := http.StatusInternalServerError
 
@@ -71,7 +75,7 @@ func TestInvalidContent(t *testing.T) {
 
 func TestMethodNotAllowed(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	MethodNotAllowed(recorder)
+	MethodNotAllowed(ctx, recorder)
 	wantBody := ""
 	wantCode := http.StatusMethodNotAllowed
 
@@ -101,7 +105,7 @@ func TestTooManyBytes(t *testing.T) {
 
 func TestUnauthorized(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	Unauthorized(recorder)
+	Unauthorized(ctx, recorder)
 	wantBody := "authorization failed"
 	wantCode := http.StatusUnauthorized
 

@@ -3,7 +3,7 @@ package views
 import (
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 )
@@ -13,7 +13,7 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		helpers.InternalServerError(w)
+		http_helpers.InternalServerError(ctx, w)
 		return
 	}
 
@@ -29,14 +29,14 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 func serveProject(w http.ResponseWriter, r *http.Request, project models.Project) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
-		helpers.MethodNotAllowed(w)
+		http_helpers.MethodNotAllowed(ctx, w)
 		return
 	}
 
 	credits, err := models.ListCredits(ctx)
 	if err != nil {
 		logger.ListCreditsFailure(ctx, err)
-		helpers.InternalServerError(w)
+		http_helpers.InternalServerError(ctx, w)
 		return
 	}
 

@@ -1,19 +1,16 @@
 import {hot} from 'react-hot-loader'
 import React, {useState} from 'react'
-import ReactDOM from 'react-dom'
-import {latestProject, useCredits, useProjects} from "./models";
+import {latestProject, useCredits, useProjects} from "./models"
 import {YoutubeIframe} from "./components"
+import {Render} from "./render"
 
 const BannerFadeoutStart = 500
 const BannerFadeoutEnd = BannerFadeoutStart + 500
 
-export const Render = (selectors) => {
-    const domContainer = document.querySelector(selectors)
-    ReactDOM.render(<Feature/>, domContainer)
-}
+export const Entrypoint = (selectors) => Render(<Feature/>, selectors)
 
 const Feature = (props) => {
-    const [projects,] = useProjects()
+    const projects = useProjects()
 
     const [showBanner, setShowBanner] = useState(true)
     new Promise((resolve) => setTimeout(resolve, BannerFadeoutStart)).then(_ => setShowBanner(false))
@@ -25,7 +22,7 @@ const Feature = (props) => {
     const toggleCredits = () => setShowCredits(!showCredits)
 
     const latest = latestProject(projects)
-    const [credits,] = useCredits(latest)
+    const credits = useCredits(latest)
 
     if (latest === undefined) return <div/>
     return <div className='container'>

@@ -86,14 +86,14 @@ func NewCookieValue() string {
 
 // NewSession returns a new session with a crypto-rand session id.
 func NewSession(ctx context.Context, identity *models.Identity, expires time.Duration) (string, error) {
-	value := NewCookieValue()
-	key := "sessions:" + value
+	identity.Key = NewCookieValue()
+	key := "sessions:" + identity.Key
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
 	srcBytes, _ := json.Marshal(identity)
 	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, stringExpires, string(srcBytes))); err != nil {
 		return "", err
 	}
-	return value, nil
+	return identity.Key, nil
 }
 
 // GetSession reads the login identity for the given session ID.

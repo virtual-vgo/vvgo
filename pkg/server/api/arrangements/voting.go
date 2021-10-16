@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"sort"
@@ -19,7 +19,7 @@ func Ballot(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("HtmlSource-Type", "application/json")
 
 		var ballotJSON string
 		if err := redis.Do(ctx, redis.Cmd(&ballotJSON,
@@ -38,7 +38,7 @@ func Ballot(w http.ResponseWriter, r *http.Request) {
 		if err := redis.Do(ctx, redis.Cmd(&ballot,
 			"LRANGE", "arrangements:"+Season+":submissions", "0", "-1")); err != nil {
 			logger.RedisFailure(ctx, err)
-			helpers.InternalServerError(w)
+			http_helpers.InternalServerError(ctx, w)
 			return
 		}
 		sort.Strings(ballot)
@@ -53,12 +53,12 @@ func Ballot(w http.ResponseWriter, r *http.Request) {
 
 		if err := json.NewDecoder(r.Body).Decode(&ballot); err != nil {
 			logger.JsonDecodeFailure(ctx, err)
-			helpers.BadRequest(w, "invalid json")
+			http_helpers.BadRequest(ctx, w, "invalid json")
 			return
 		}
 
 		if validateBallot(ctx, ballot) == false {
-			helpers.BadRequest(w, "invalid ballot")
+			http_helpers.BadRequest(ctx, w, "invalid ballot")
 			return
 		}
 
@@ -66,7 +66,7 @@ func Ballot(w http.ResponseWriter, r *http.Request) {
 		if err := redis.Do(ctx, redis.Cmd(nil,
 			"HSET", "arrangements:"+Season+":ballots", identity.DiscordID, string(ballotJSON))); err != nil {
 			logger.RedisFailure(ctx, err)
-			helpers.InternalServerError(w)
+			http_helpers.InternalServerError(ctx, w)
 		}
 		return
 	}

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>{{.Title}}</title>
+    <meta name="description" content="">
+    {{ template "header.gohtml" }}
+
+    {{ if .JsSource }}
+        <script type="text/javascript" src="{{.JsSource}}"></script>
+    {{ end }}
+</head>
+<body class="">
+{{ template "navbar.gohtml" }}
+
+<main role="main">
+    <div id="entrypoint">
+        {{ .Content }}
+    </div>
+</main>
+
+{{ template "footer.gohtml" }}
+{{ if .JsSource}}
+    <script type="text/javascript">Bundle.Entrypoint("#entrypoint")</script>
+{{ end }}
+</body>
+</html>

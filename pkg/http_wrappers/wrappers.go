@@ -102,7 +102,7 @@ func PostForm(url string, data url.Values) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HtmlSource-Type", "application/x-www-form-urlencoded")
 	return DoRequest(req)
 }
 
