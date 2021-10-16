@@ -17,7 +17,7 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		http_helpers.InternalServerError(ctx,w)
+		http_helpers.InternalServerError(ctx, w)
 		return
 	}
 

@@ -62,7 +62,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Ro
 			http.Redirect(w, r, "/login?"+values.Encode(), http.StatusFound)
 			return
 		}
-		http_helpers.Unauthorized(ctx,w)
+		http_helpers.Unauthorized(ctx, w)
 	})
 }
 
