@@ -96,10 +96,8 @@ const CreateButton = (props) => {
                 expires: Number(props.inputExpires.current.value)
             }])
         ).then(resp => {
-            const sessions = props.sessions
-            sessions.Sessions = [...resp.Sessions, ...sessions.Sessions]
-            console.log(sessions)
-            props.setSessions(sessions)
+            console.log("Created sessions:", resp)
+            props.setSessions([...resp, ...props.sessions])
             props.setButtonState('created')
         }).catch(error => console.log(error))
     }

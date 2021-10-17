@@ -1,13 +1,17 @@
 import React from 'react'
-import {latestProject, useProjects} from "./models"
+import {Highlight, latestProject, useHighlights, useProjects} from "./models"
 import {YoutubeIframe} from "./components"
 import {Render} from "./render";
 
 export const Entrypoint = (selectors) => Render(<Index/>, selectors)
 
 const Index = (props) => {
-    const [projects, _] = useProjects()
-
+    const [highlights, setHighlights] = useHighlights()
+    const [projects, setProjects] = useProjects()
+    console.log(highlights)
+    const highlight = highlights && highlights.length > 0 ?
+        highlights[Math.floor(Math.random() * highlights.length)] : new Highlight()
+    console.log(highlight)
     const latest = latestProject(projects)
     return <div className="mt-2 container">
         <div className="row">
@@ -20,7 +24,7 @@ const Index = (props) => {
                 <h3>Latest Projects</h3>
                 <LatestProjects projects={projects}/>
                 <h3>Member Highlights</h3>
-                <MemberHighlights/>
+                <MemberHighlight highlight={highlight}/>
             </div>
         </div>
         <div className="row justify-content-md-center text-center m-2">
@@ -77,20 +81,12 @@ const LatestProjects = (props) => {
     </table>
 }
 
-const memberHighlightSrcs = [
-    "https://cdn.discordapp.com/attachments/869388540272861245/869389373693640714/11-GS-Thomas.png",
-    "https://cdn.discordapp.com/attachments/869388540272861245/870052230802313316/11-GS-Will.png",
-    "https://cdn.discordapp.com/attachments/869388540272861245/870843556800135210/11-GS-Jordy.png",
-    "https://cdn.discordapp.com/attachments/869388540272861245/871453949427855400/Artboard_1.png"
-]
-const memberHighlightSrc = memberHighlightSrcs[Math.floor(Math.random() * memberHighlightSrcs.length)]
-
-const MemberHighlights = (props) => {
+const MemberHighlight = (props) => {
     return <table className="table text-light">
         <tbody>
         <tr>
             <td>
-                <img src={memberHighlightSrc} width="100%" alt="Thomas"/>
+                <img src={props.highlight.Source} width="100%" alt={props.highlight.Alt}/>
             </td>
         </tr>
         </tbody>

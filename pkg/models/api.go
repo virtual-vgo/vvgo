@@ -8,10 +8,15 @@ type ApiResponse struct {
 	Error       *ErrorResponse `json:"error,omitempty"`
 	Projects    []Project      `json:"projects,omitempty"`
 	Parts       []Part         `json:"parts,omitempty"`
-	Directors   []Director     `json:"directors,omitempty"`
 	Sessions    []Identity     `json:"sessions,omitempty"`
 	Spreadsheet *Spreadsheet   `json:"spreadsheet,omitempty"`
+	Dataset     *Dataset       `json:"dataset,omitempty"`
 	Identity    *Identity      `json:"identity,omitempty"`
+}
+
+type Dataset struct {
+	Name string
+	Rows []map[string]string
 }
 
 type ErrorResponse struct {

@@ -14,6 +14,29 @@ type Sheet struct {
 	Values [][]interface{} `json:"values"`
 }
 
+func ValuesToMap(rows [][]interface{}) []map[string]string {
+	if len(rows) == 0 {
+		return nil
+	}
+
+	colNames := make([]string, len(rows[0]))
+	for i := range colNames {
+		colNames[i] = fmt.Sprintf("%s", rows[0][i])
+		colNames[i] = strings.ReplaceAll(colNames[i], " ", "")
+	}
+	data := make([]map[string]string, 0, len(rows)-1)
+	for _, row := range rows[1:] {
+		rowMap := make(map[string]string, len(colNames))
+		for j := range colNames {
+			if j < len(row) {
+				rowMap[colNames[j]] = fmt.Sprintf("%s", row[j])
+			}
+		}
+		data = append(data, rowMap)
+	}
+	return data
+}
+
 func UnmarshalSheet(rows [][]interface{}, dest interface{}) {
 	colNames := make([]string, len(rows[0]))
 	for i := range colNames {

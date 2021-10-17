@@ -9,34 +9,18 @@ export const ApiResponseStatus = Object.freeze({
     Error: "error",
 })
 
-class ApiResponse {
-    Status
-    Projects
-    Parts
-    Directors
-    Sessions
-    Identity
-
-    static fromJSON = (obj) => {
-        const resp = apiObjectFromJSON(obj, new ApiResponse())
-        if (resp.Status === ApiResponseStatus.Error) {
-            resp.Error = ErrorResponse.fromJSON(_.get(resp, 'Error', {'error': 'unknown'}))
-        } else {
-            resp.Projects = _.get(resp, 'Projects', []).map(p => Project.fromJSON(p))
-            resp.Parts = _.get(resp, 'Parts', []).map(p => Part.fromJSON(p))
-            resp.Directors = _.get(resp, 'Directors', []).map(p => Director.fromJSON(p))
-            resp.Sessions = _.get(resp, 'Sessions', []).map(p => Session.fromJSON(p))
-            resp.Identity = Session.fromJSON(_.get(resp, 'Identity', {}))
-        }
-        console.log(resp)
-        return resp
-    }
-}
 
 const apiObjectFromJSON = (obj, dest) => {
     const cleanMap = _.keys(obj).reduce((a, b) => a.set(_.snakeCase(b), obj[b]), new Map())
     _.keys(dest).forEach(k => dest[k] = cleanMap.get(_.snakeCase(k)))
     return dest
+}
+
+export class Dataset {
+    Name = ""
+    Rows = []
+
+    static fromJSON = (obj) => apiObjectFromJSON(obj, new Dataset())
 }
 
 class ErrorResponse {
@@ -91,7 +75,6 @@ export class Part {
     SheetMusicLink
     ClickTrackLink
     PronunciationGuideLink
-
     static fromJSON = (obj) => apiObjectFromJSON(obj, new Part())
 }
 
@@ -101,7 +84,6 @@ export class Director {
     Affiliations
     Blurb
     Icon
-
     static fromJSON = (obj) => apiObjectFromJSON(obj, new Director())
 }
 
@@ -119,7 +101,6 @@ export class Session {
     Roles
     DiscordID
     ExpiresAt
-
     static fromJSON = (obj) => {
         const dest = apiObjectFromJSON(obj, new Session())
         if (dest.ExpiresAt) dest.ExpiresAt = new Date(dest.ExpiresAt)
@@ -156,11 +137,46 @@ export const deleteSessions = async (sessionsId) => {
     })
 }
 
+export class Highlight {
+    Alt
+    Source
+    static fromJSON = (obj) => apiObjectFromJSON(obj, new Highlight())
+}
+
+class ApiResponse {
+    Status
+    Dataset
+    Parts
+    Projects
+    Sessions
+    Identity
+
+    static fromJSON = (obj) => {
+        const resp = apiObjectFromJSON(obj, new ApiResponse())
+        if (resp.Status === ApiResponseStatus.Error) {
+            resp.Error = ErrorResponse.fromJSON(_.get(resp, 'Error', {'Error': 'unknown'}))
+        } else {
+            resp.Projects = _.get(resp, 'Projects', []).map(p => Project.fromJSON(p))
+            resp.Parts = _.get(resp, 'Parts', []).map(p => Part.fromJSON(p))
+            resp.Sessions = _.get(resp, 'Sessions', []).map(p => Session.fromJSON(p))
+            resp.Identity = Session.fromJSON(_.get(resp, 'Identity', {}))
+
+            // Datasets
+            if (resp.Dataset) _.set(resp, resp.Dataset.Name, resp.Dataset.Rows)
+            resp.Dataset = Dataset.fromJSON(_.get(resp, 'Dataset', {}))
+            resp.Directors = _.get(resp, 'Leaders', []).map(p => Director.fromJSON(p))
+            resp.Highlights = _.get(resp, 'Highlights', []).map(p => Highlight.fromJSON(p))
+        }
+        return resp
+    }
+}
+
+export const useDirectors = () => useApiState(Endpoint + "/dataset?name=Leaders", 'Leaders', [])
+export const useHighlights = () => useApiState(Endpoint + "/dataset?name=Highlights", 'Highlights', [])
+export const useMySession = () => useApiState(Endpoint + "/me", 'Identity', new Session())
 export const useParts = () => useApiState(Endpoint + "/parts", 'Parts', [])
 export const useProjects = () => useApiState(Endpoint + "/projects", 'Projects', [])
-export const useDirectors = () => useApiState(Endpoint + "/leaders", 'Directors', [])
 export const useSessions = () => useApiState(Endpoint + "/sessions", 'Sessions', [])
-export const useMySession = () => useApiState(Endpoint + "/me", 'Identity', new Session())
 
 export const useApiState = (url, key, defaultValue) => {
     const [data, setData] = useApiData(url)
@@ -173,12 +189,14 @@ export const useApiState = (url, key, defaultValue) => {
 const useApiData = (url) => {
     const [data, setData] = React.useState(new ApiResponse())
     React.useEffect(() => {
+        console.log("Api Request:", "GET", url)
         fetch(url, {
             method: 'GET'
         }).then(response =>
             response.json()
         ).then(obj => {
             const response = ApiResponse.fromJSON(obj)
+            console.log("Api Response:", response)
             if (response.Type === ApiResponseStatus.Error) {
                 throw `vvgo.org error: [${response.Error.Code}] ${response.Error.Error}`
             }
