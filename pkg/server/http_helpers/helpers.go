@@ -117,5 +117,3 @@ func AcceptsType(r *http.Request, mediaType string) bool {
 	}
 	return false
 }
-
-
