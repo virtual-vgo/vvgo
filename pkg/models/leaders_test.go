@@ -6,7 +6,7 @@ import (
 )
 
 func Test_valuesToLeaders(t *testing.T) {
-	got := valuesToLeaders([][]interface{}{
+	got := valuesToDirectors([][]interface{}{
 		{"Name", "Epithet", "Affiliations", "Blurb", "Email", "Icon"},
 		{"Brandon", "Keeper of Smol Horn™", "Reno Video Game Symphony, The Intermission Orchestra at Berkeley", "", "brandon@vvgo.org", "images/leaders/brandon-128x128.jpg"},
 		{"Jackson", "Coder of Things", "SACWE, TIO @ Berkeley", "I like to make music and code things.", "jackson@vvgo.org", "images/leaders/jackson-128x128.jpg"},
@@ -15,7 +15,7 @@ func Test_valuesToLeaders(t *testing.T) {
 		{"Jose", "", "", "", "", "images/leaders/jose-128x128.jpg"},
 	})
 
-	want := Leaders{
+	want := Directors{
 		{
 			Name:         "Brandon",
 			Epithet:      "Keeper of Smol Horn™",

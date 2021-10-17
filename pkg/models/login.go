@@ -1,8 +1,12 @@
 package models
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"strings"
+	"time"
 )
 
 // Kind The kind of login.
@@ -16,6 +20,7 @@ const (
 	KindBearer   Kind = "bearer"
 	KindBasic    Kind = "basic"
 	KindDiscord  Kind = "discord"
+	KindApiToken Kind = "api_token"
 )
 
 // Role A user role.
@@ -43,12 +48,39 @@ var anonymous = Identity{
 func Anonymous() Identity { return anonymous }
 
 // Identity A user identity.
-// This _absolutely_ should not contain any personally identifiable information.
-// Numeric user ids are fine, but no emails, usernames, addresses, etc.
 type Identity struct {
-	Kind      Kind   `json:"kind"`
-	Roles     []Role `json:"roles"`
-	DiscordID string `json:"discord_id"`
+	Key       string     `json:"key"`
+	Kind      Kind       `json:"kind"`
+	Roles     []Role     `json:"roles"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	DiscordID string     `json:"discord_id,omitempty"`
+}
+
+func ListSessions(ctx context.Context, identity Identity) ([]Identity, error) {
+	var keys []string
+	redis.Do(ctx, redis.Cmd(&keys, "KEYS", "sessions:*"))
+
+	sessionData := make([]string, 0, len(keys))
+	redis.Do(ctx, redis.Cmd(&sessionData, "MGET", keys...))
+
+	sessions := make([]Identity, len(keys))
+	for i := range sessionData {
+		json.Unmarshal([]byte(sessionData[i]), &sessions[i])
+	}
+	for i := range sessions {
+		sessions[i].Key = strings.TrimPrefix(keys[i], "sessions:")
+	}
+
+	var want []Identity
+	for _, session := range sessions {
+		switch {
+		case identity.HasRole(RoleVVGOLeader):
+			want = append(want, session)
+		case session.DiscordID == identity.DiscordID:
+			want = append(want, session)
+		}
+	}
+	return want, nil
 }
 
 func (x Identity) Info() string {

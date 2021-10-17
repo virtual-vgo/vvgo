@@ -11,7 +11,7 @@ import (
 
 func PartsCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
 	identity := models.Anonymous()
-	projects, err := models.ListProjects(ctx, &identity)
+	projects, err := models.ListProjects(ctx, identity)
 	if err != nil {
 		return nil, errors.ListProjectsFailure(err)
 	}
@@ -27,7 +27,7 @@ func PartsInteractionHandler(ctx context.Context, interaction discord.Interactio
 	}
 
 	identity := models.Anonymous()
-	projects, err := models.ListProjects(ctx, &identity)
+	projects, err := models.ListProjects(ctx, identity)
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
 		return InteractionResponseOof

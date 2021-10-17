@@ -38,6 +38,7 @@ func main() {
 	}
 
 	apiServer := server.NewServer(config.Config.VVGO.ListenAddress)
+	logger.Println("listening on " + config.Config.VVGO.ListenAddress)
 	if err := apiServer.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
 	}

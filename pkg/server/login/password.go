@@ -5,7 +5,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
@@ -16,7 +16,7 @@ func Password(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method != http.MethodPost {
-		helpers.MethodNotAllowed(w)
+		http_helpers.MethodNotAllowed(ctx, w)
 		return
 	}
 
@@ -45,7 +45,7 @@ func Password(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		logger.WithError(err).WithField("user", user).Error("password authentication failed")
-		helpers.Unauthorized(w)
+		http_helpers.Unauthorized(ctx, w)
 		return
 	}
 

@@ -6,11 +6,11 @@ import (
 	"reflect"
 )
 
-const SheetExecutiveDirectors = "Leaders"
+const SheetDirectors = "Leaders"
 
-type Leaders []Leader
+type Directors []Director
 
-type Leader struct {
+type Director struct {
 	Name         string
 	Epithet      string
 	Affiliations string
@@ -18,26 +18,26 @@ type Leader struct {
 	Icon         string
 }
 
-func ListLeaders(ctx context.Context) (Leaders, error) {
-	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetExecutiveDirectors)
+func ListDirectors(ctx context.Context, identity Identity) (Directors, error) {
+	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetDirectors)
 	if err != nil {
 		return nil, err
 	}
-	return valuesToLeaders(values), nil
+	return valuesToDirectors(values), nil
 }
 
-func valuesToLeaders(values [][]interface{}) Leaders {
+func valuesToDirectors(values [][]interface{}) Directors {
 	if len(values) < 1 {
 		return nil
 	}
-	leaders := make([]Leader, 0, len(values)-1)
+	leaders := make([]Director, 0, len(values)-1)
 	UnmarshalSheet(values, &leaders)
 	return leaders
 }
 
-func leadersToValues(leaders Leaders) [][]interface{} {
+func directorsToValues(leaders Directors) [][]interface{} {
 	values := make([][]interface{}, 1, len(leaders)+1)
-	values[0] = structToColNames(Leader{})
+	values[0] = structToColNames(Director{})
 	for _, leader := range leaders {
 		values = append(values, structToValueRow(leader))
 	}

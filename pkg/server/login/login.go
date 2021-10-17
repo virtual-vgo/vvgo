@@ -9,7 +9,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"net/http"
 	"strconv"
 	"time"
@@ -46,7 +46,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, identity *models.Ident
 	cookie, err := NewCookie(ctx, identity, SessionCookieDuration)
 	if err != nil {
 		logger.NewCookieFailure(ctx, err)
-		helpers.InternalServerError(w)
+		http_helpers.InternalServerError(ctx, w)
 		return
 	}
 
@@ -115,7 +115,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 	if err := DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.MethodFailure(ctx, "login.DeleteSessionFromRequest", err)
-		helpers.InternalServerError(w)
+		http_helpers.InternalServerError(ctx, w)
 	} else {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}

@@ -1,16 +1,17 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
-import {latestProject, useProjects} from "./models"
+import {Highlight, latestProject, useHighlights, useProjects} from "./models"
 import {YoutubeIframe} from "./components"
+import {Render} from "./render";
 
-export const Render = (selectors) => {
-    const domContainer = document.querySelector(selectors)
-    ReactDOM.render(<Index/>, domContainer)
-}
+export const Entrypoint = (selectors) => Render(<Index/>, selectors)
 
 const Index = (props) => {
-    const [projects,] = useProjects()
-
+    const [highlights, setHighlights] = useHighlights()
+    const [projects, setProjects] = useProjects()
+    console.log(highlights)
+    const highlight = highlights && highlights.length > 0 ?
+        highlights[Math.floor(Math.random() * highlights.length)] : new Highlight()
+    console.log(highlight)
     const latest = latestProject(projects)
     return <div className="mt-2 container">
         <div className="row">
@@ -23,7 +24,7 @@ const Index = (props) => {
                 <h3>Latest Projects</h3>
                 <LatestProjects projects={projects}/>
                 <h3>Member Highlights</h3>
-                <MemberHighlights/>
+                <MemberHighlight highlight={highlight}/>
             </div>
         </div>
         <div className="row justify-content-md-center text-center m-2">
@@ -38,17 +39,16 @@ const Index = (props) => {
 }
 
 const Banner = (props) => {
-    if (props.drawBanner === false) return <div/>
     if (props.latest === undefined) return <div/>
 
     const latest = props.latest
-    const youtubeLink = latest.youtubeLink
-    const bannerLink = latest.bannerLink
+    const youtubeLink = latest.YoutubeLink
+    const bannerLink = latest.BannerLink
 
     const Banner = () => {
         if (bannerLink === "") return <div>
-            <h1 className="title">{latest.title}</h1>
-            <h2>{latest.sources}</h2>
+            <h1 className="title">{latest.Title}</h1>
+            <h2>{latest.Sources}</h2>
         </div>
         else return <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>
     }
@@ -67,32 +67,28 @@ const LatestProjects = (props) => {
         const project = props.project
         return <tr>
             <td>
-                <a href={project.partsPage} className="text-light">
-                    {project.title} <br/> {project.sources}
+                <a href={project.PartsPage} className="text-light">
+                    {project.Title} <br/> {project.Sources}
                 </a>
             </td>
         </tr>
     }
 
     return <table className="table text-light clickable">
-        {projects.map(project => <Row key={project.name} project={project}/>)}
+        <tbody>
+        {projects.map(project => <Row key={project.Name} project={project}/>)}
+        </tbody>
     </table>
 }
 
-const memberHighlightSrcs = [
-    "https://cdn.discordapp.com/attachments/869388540272861245/869389373693640714/11-GS-Thomas.png",
-    "https://cdn.discordapp.com/attachments/869388540272861245/870052230802313316/11-GS-Will.png",
-    "https://cdn.discordapp.com/attachments/869388540272861245/870843556800135210/11-GS-Jordy.png",
-    "https://cdn.discordapp.com/attachments/869388540272861245/871453949427855400/Artboard_1.png"
-]
-const memberHighlightSrc = memberHighlightSrcs[Math.floor(Math.random() * memberHighlightSrcs.length)]
-
-const MemberHighlights = (props) => {
+const MemberHighlight = (props) => {
     return <table className="table text-light">
+        <tbody>
         <tr>
             <td>
-                <img src={memberHighlightSrc} width="100%" alt="Thomas"/>
+                <img src={props.highlight.Source} width="100%" alt={props.highlight.Alt}/>
             </td>
         </tr>
+        </tbody>
     </table>
 }

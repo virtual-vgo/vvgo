@@ -18,7 +18,12 @@ func TestStore_GetIdentity(t *testing.T) {
 		require.NoError(t, err)
 		var gotIdentity models.Identity
 		require.NoError(t, GetSession(ctx, session, &gotIdentity))
-		assert.Equal(t, models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, gotIdentity)
+		assert.Equal(t, models.Identity{
+			Key:       session,
+			Kind:      "Testing",
+			Roles:     []models.Role{"Tester"},
+			ExpiresAt: gotIdentity.ExpiresAt, // TODO: implement a better test
+		}, gotIdentity)
 	})
 
 	t.Run("doesnt exist", func(t *testing.T) {
@@ -51,7 +56,10 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 	})
 	t.Run("cookie", func(t *testing.T) {
 		ctx := context.Background()
-		session, err := NewSession(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
+		session, err := NewSession(ctx, &models.Identity{
+			Kind:  "Testing",
+			Roles: []models.Role{"Tester"},
+		}, 30*time.Second)
 		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -61,7 +69,12 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 		})
 		var got models.Identity
 		require.NoError(t, ReadSessionFromRequest(ctx, req, &got))
-		assert.Equal(t, models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, got)
+		assert.Equal(t, models.Identity{
+			Key:       session,
+			Kind:      "Testing",
+			Roles:     []models.Role{"Tester"},
+			ExpiresAt: got.ExpiresAt, // TODO: Implement a better test here.
+		}, got)
 	})
 }
 

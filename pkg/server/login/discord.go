@@ -4,7 +4,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"io"
 	"net/http"
 	"os"
@@ -20,7 +20,7 @@ func Discord(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") == "" {
 		state, ok := oauthRedirect(w, r)
 		if !ok {
-			helpers.InternalServerError(w)
+			http_helpers.InternalServerError(ctx, w)
 			return
 		}
 		http.Redirect(w, r, discord.LoginURL(state), http.StatusFound)
@@ -35,7 +35,7 @@ func Discord(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			if err != nil {
 				logger.WithField("file_name", fileName).OpenFileFailure(ctx, err)
-				helpers.Unauthorized(w)
+				http_helpers.Unauthorized(ctx, w)
 			}
 			defer file.Close()
 			_, _ = io.Copy(w, file)

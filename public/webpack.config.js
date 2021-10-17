@@ -1,10 +1,10 @@
 const path = require('path')
-const webpack = require('webpack')
 
 module.exports = {
     entry: {
-        feature: './js/src/feature.js',
-        index: './js/src/index.js'
+        index: './js/src/index.js',
+        about: './js/src/about.js',
+        sessions: './js/src/sessions.js'
     },
     mode: 'development',
     devtool: false,

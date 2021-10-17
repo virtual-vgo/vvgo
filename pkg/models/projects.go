@@ -43,7 +43,7 @@ func (x Project) PartsPage() string   { return "/parts?project=" + x.Name }
 
 type Projects []Project
 
-func ListProjects(ctx context.Context, identity *Identity) (Projects, error) {
+func ListProjects(ctx context.Context, identity Identity) (Projects, error) {
 	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetProjects)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (x Projects) Get(name string) (Project, bool) {
 
 func (x Projects) Has(name string) bool { _, ok := x.Get(name); return ok }
 
-func (x Projects) ForIdentity(identity *Identity) Projects {
+func (x Projects) ForIdentity(identity Identity) Projects {
 	var want Projects
 	for _, project := range x {
 		switch {

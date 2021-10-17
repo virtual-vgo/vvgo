@@ -1,7 +1,6 @@
 package login
 
 import (
-	"bytes"
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -10,10 +9,10 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/models"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers/test_helpers"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 )
@@ -25,37 +24,28 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 	config.Config.VVGO.MemberPasswordHash = `$2a$10$7FR7RLJNkr1PQV7ahsoPPOV.9orLsENrXi8wnz2mQf8oyKmpnlt2O`
 
 	t.Run("post/failure", func(t *testing.T) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			Password(w, r.WithContext(ctx))
-		}))
-		defer ts.Close()
-
 		urlValues := make(url.Values)
 		urlValues.Add("user", "vvgo-member")
 		urlValues.Add("pass", "the-wrong-password")
-		resp, err := http_wrappers.NoFollow(http.DefaultClient).PostForm(ts.URL, urlValues)
-		require.NoError(t, err, "client.Get")
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		var gotBody bytes.Buffer
-		gotBody.ReadFrom(resp.Body)
-		assert.Equal(t, "authorization failed", strings.TrimSpace(gotBody.String()), "body")
+		recorder := httptest.NewRecorder()
+		Password(recorder, httptest.NewRequest(http.MethodPost, "/?"+urlValues.Encode(), nil))
+		test_helpers.AssertEqualResponse(t, models.ApiResponse{
+			Status: models.StatusError,
+			Error: &models.ErrorResponse{
+				Code:  http.StatusUnauthorized,
+				Error: "unauthorized",
+			},
+		}, recorder.Result())
 	})
 
 	t.Run("success", func(t *testing.T) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			Password(w, r.WithContext(ctx))
-		}))
-		defer ts.Close()
-
-		client := http_wrappers.NoFollow(nil)
-
 		urlValues := make(url.Values)
 		urlValues.Add("user", "vvgo-member")
 		urlValues.Add("pass", "vvgo-pass")
+		recorder := httptest.NewRecorder()
+		Password(recorder, httptest.NewRequest(http.MethodPost, "/?"+urlValues.Encode(), nil))
 
-		// do the request
-		resp, err := client.PostForm(ts.URL, urlValues)
-		require.NoError(t, err, "client.Get")
+		resp := recorder.Result()
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		// check that we get a cookie

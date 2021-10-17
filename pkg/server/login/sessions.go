@@ -25,14 +25,14 @@ func CookieDomain() string {
 	return "." + x.Hostname()
 }
 
-func IdentityFromContext(ctx context.Context) *models.Identity {
+func IdentityFromContext(ctx context.Context) models.Identity {
 	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
 	identity, ok := ctxIdentity.(*models.Identity)
 	if !ok {
 		identity = new(models.Identity)
 		*identity = models.Anonymous()
 	}
-	return identity
+	return *identity
 }
 
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
@@ -86,14 +86,16 @@ func NewCookieValue() string {
 
 // NewSession returns a new session with a crypto-rand session id.
 func NewSession(ctx context.Context, identity *models.Identity, expires time.Duration) (string, error) {
-	value := NewCookieValue()
-	key := "sessions:" + value
+	identity.Key = NewCookieValue()
+	expiresAt := time.Now().Add(expires)
+	identity.ExpiresAt = &expiresAt
+	key := "sessions:" + identity.Key
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
 	srcBytes, _ := json.Marshal(identity)
 	if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", key, stringExpires, string(srcBytes))); err != nil {
 		return "", err
 	}
-	return value, nil
+	return identity.Key, nil
 }
 
 // GetSession reads the login identity for the given session ID.

@@ -7,7 +7,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
-	"github.com/virtual-vgo/vvgo/pkg/server/helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"net/http"
 	"sort"
 	"strings"
@@ -19,7 +19,7 @@ func VotingResults(w http.ResponseWriter, r *http.Request) {
 	if err := redis.Do(ctx, redis.Cmd(&data,
 		"HGETALL", "arrangements:"+arrangements.Season+":ballots")); err != nil {
 		logger.RedisFailure(ctx, err)
-		helpers.InternalServerError(w)
+		http_helpers.InternalServerError(ctx, w)
 		return
 	}
 
