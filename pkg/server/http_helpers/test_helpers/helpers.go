@@ -13,7 +13,7 @@ import (
 func AssertEqualResponse(t *testing.T, want models.ApiResponse, got *http.Response) {
 	t.Helper()
 	require.NotNil(t, got, "got response is nil")
-	if want.Type == models.ResponseTypeError {
+	if want.Status == models.StatusError {
 		require.NotNil(t, want.Error, "error field")
 		assert.Equal(t, want.Error.Code, got.StatusCode, "status code")
 	} else {

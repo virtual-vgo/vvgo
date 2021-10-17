@@ -4,41 +4,29 @@ const _ = require('lodash')
 
 const Endpoint = '/api/v1'
 
-export const ApiResponseTypes = {
+export const ApiResponseStatus = Object.freeze({
+    OK: "ok",
     Error: "error",
-    Projects: "projects",
-    Parts: "parts",
-    Directors: "directors",
-    Sessions: "sessions"
-}
+})
 
 class ApiResponse {
     Status
-    Type
     Projects
     Parts
     Directors
     Sessions
+    Identity
 
-    get = (key, defaultValue) => _.get(this, key, defaultValue)
     static fromJSON = (obj) => {
         const resp = apiObjectFromJSON(obj, new ApiResponse())
-        switch (resp.Type) {
-            case ApiResponseTypes.Error:
-                resp.Error = ErrorResponse.fromJSON(resp.Error)
-                break;
-            case ApiResponseTypes.Projects:
-                resp.Projects = ProjectsResponse.fromJSON(resp.Projects)
-                break;
-            case ApiResponseTypes.Parts:
-                resp.Parts = PartsResponse.fromJSON(resp.Parts)
-                break;
-            case ApiResponseTypes.Directors:
-                resp.Directors = DirectorsResponse.fromJSON(resp.Directors)
-                break;
-            case ApiResponseTypes.Sessions:
-                resp.Sessions = SessionsResponse.fromJSON(resp.Sessions)
-                break;
+        if (resp.Status === ApiResponseStatus.Error) {
+            resp.Error = ErrorResponse.fromJSON(_.get(resp, 'Error', {'error': 'unknown'}))
+        } else {
+            resp.Projects = _.get(resp, 'Projects', []).map(p => Project.fromJSON(p))
+            resp.Parts = _.get(resp, 'Parts', []).map(p => Part.fromJSON(p))
+            resp.Directors = _.get(resp, 'Directors', []).map(p => Director.fromJSON(p))
+            resp.Sessions = _.get(resp, 'Sessions', []).map(p => Session.fromJSON(p))
+            resp.Identity = Session.fromJSON(_.get(resp, 'Identity', {}))
         }
         console.log(resp)
         return resp
@@ -56,16 +44,6 @@ class ErrorResponse {
     Error
 
     static fromJSON = (obj) => apiObjectFromJSON(obj, new ErrorResponse())
-}
-
-class ProjectsResponse {
-    Projects = []
-
-    static fromJSON = (obj) => {
-        const resp = apiObjectFromJSON(obj, new ProjectsResponse())
-        resp.Projects = _.get(resp, 'Projects', []).map(p => Project.fromJSON(p))
-        return resp
-    }
 }
 
 class Project {
@@ -102,16 +80,6 @@ export const latestProject = (projects) => {
     }
 }
 
-export class PartsResponse {
-    Parts = []
-
-    static fromJSON = (obj) => {
-        const resp = apiObjectFromJSON(obj, new PartsResponse())
-        resp.Parts = _.get(resp, 'Parts', []).map(p => Part.fromJSON(p))
-        return resp
-    }
-}
-
 export class Part {
     Project
     PartName
@@ -127,16 +95,6 @@ export class Part {
     static fromJSON = (obj) => apiObjectFromJSON(obj, new Part())
 }
 
-export class DirectorsResponse {
-    Directors = []
-
-    static fromJSON = (obj) => {
-        const resp = apiObjectFromJSON(obj, new DirectorsResponse())
-        resp.Directors = _.get(resp, 'Directors', []).map(p => Director.fromJSON(p))
-        return resp
-    }
-}
-
 export class Director {
     Name
     Epithet
@@ -147,93 +105,70 @@ export class Director {
     static fromJSON = (obj) => apiObjectFromJSON(obj, new Director())
 }
 
-
-export class SessionsResponse {
-    Sessions = []
-
-    static fromJSON = (obj) => {
-        const resp = apiObjectFromJSON(obj, new SessionsResponse())
-        resp.Sessions = _.get(resp, 'Sessions', []).map(p => Session.fromJSON(p))
-        return resp
-    }
-}
-
-const __sessionKinds = Object.freeze({
+export const SessionKinds = Object.freeze({
     Password: "password",
     Bearer: "bearer",
     Basic: "basic",
     Discord: "discord",
+    ApiToken: "api_token"
 })
-
-export const SessionKinds = __sessionKinds
 
 export class Session {
     Key
     Kind
     Roles
     DiscordID
-    Expires
+    ExpiresAt
 
     static fromJSON = (obj) => {
         const dest = apiObjectFromJSON(obj, new Session())
-        if (dest.Expires) dest.Expires = new Date(dest.Expires)
+        if (dest.ExpiresAt) dest.ExpiresAt = new Date(dest.ExpiresAt)
         return dest
     }
 }
 
-export const deleteSessions = async (sessions) => {
+export const createSessions = async (sessions) => {
     const payload = JSON.stringify(({'sessions': sessions}))
+    return fetch(Endpoint + "/sessions", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: payload
+    }).then(resp => resp.json()).then(data => {
+        const response = ApiResponse.fromJSON(data)
+        if (response.Type === ApiResponseStatus.Error) {
+            throw 'vvgo.org error: ' + response.Error
+        }
+        return response.Sessions
+    })
+}
+
+export const deleteSessions = async (sessionsId) => {
+    const payload = JSON.stringify(({'sessions': sessionsId}))
     return fetch(Endpoint + "/sessions", {
         method: 'DELETE',
         headers: {'Content-Type': 'application/json'},
         body: payload
     }).then(resp => resp.json()).then(data => {
         const response = ApiResponse.fromJSON(data)
-        if (response.Type === ApiResponseTypes.Error) {
+        if (response.Type === ApiResponseStatus.Error) {
             throw 'vvgo.org error: ' + response.Error
         }
     })
 }
 
-export class SpreadsheetResponse {
-    Spreadsheet
-}
+export const useParts = () => useApiState(Endpoint + "/parts", 'Parts', [])
+export const useProjects = () => useApiState(Endpoint + "/projects", 'Projects', [])
+export const useDirectors = () => useApiState(Endpoint + "/leaders", 'Directors', [])
+export const useSessions = () => useApiState(Endpoint + "/sessions", 'Sessions', [])
+export const useMySession = () => useApiState(Endpoint + "/me", 'Identity', new Session())
 
-export class Credit {
-    constructor(obj) {
-        this.project = obj['Project']
-        this.order = obj['Order']
-        this.name = obj['Name']
-        this.majorCategory = obj['MajorCategory']
-        this.minorCategory = obj['MinorCategory']
-        this.bottomText = obj['BottomText']
+export const useApiState = (url, key, defaultValue) => {
+    const [data, setData] = useApiData(url)
+    const setDataKey = (value) => {
+        setData(_.set(data, key, value))
     }
+    return [_.get(data, key, defaultValue), setDataKey]
 }
-
-class TeamCreditsRow {
-    constructor(obj) {
-        this.name = obj['Name']
-        this.rows = obj['Rows'].map(credit => new Credit(credit))
-    }
-}
-
-class TopicCreditsRow {
-    constructor(obj) {
-        this.name = obj['Name']
-        this.rows = obj['Rows'].map(teamRow => new TeamCreditsRow(teamRow))
-    }
-}
-
-export const useParts = () => _.get(useApiData(Endpoint + "/parts"), 'Parts', new PartsResponse())
-export const useProjects = () => _.get(useApiData(Endpoint + "/projects"), 'Projects', new ProjectsResponse())
-export const useDirectors = () => _.get(useApiData(Endpoint + "/leaders"), 'Directors', new DirectorsResponse())
-export const useSessions = () => _.get(useApiData(Endpoint + "/sessions"), 'Sessions', new SessionsResponse())
-
-export const useCredits = (project) => {
-    const url = (project !== undefined && project.name !== undefined) ? `${Endpoint + "/credits"}?project=${project.name}` : undefined
-    return useApiData(url)
-}
-
 
 const useApiData = (url) => {
     const [data, setData] = React.useState(new ApiResponse())
@@ -244,12 +179,12 @@ const useApiData = (url) => {
             response.json()
         ).then(obj => {
             const response = ApiResponse.fromJSON(obj)
-            if (response.Type === ApiResponseTypes.Error) {
+            if (response.Type === ApiResponseStatus.Error) {
                 throw `vvgo.org error: [${response.Error.Code}] ${response.Error.Error}`
             }
             setData(response)
         })
     }, [url])
-    return data
+    return [data, setData]
 }
 

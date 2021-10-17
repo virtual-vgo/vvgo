@@ -28,4 +28,8 @@ func FetchSpreadsheets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
+		Status:      models.StatusOk,
+		Spreadsheet: &spreadsheet,
+	})
 }

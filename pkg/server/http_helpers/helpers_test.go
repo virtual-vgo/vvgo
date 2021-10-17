@@ -47,7 +47,6 @@ func TestBadRequest(t *testing.T) {
 	BadRequest(ctx, recorder, "some-reason")
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error: &models.ErrorResponse{
 			Code:  http.StatusBadRequest,
 			Error: "some-reason",
@@ -60,7 +59,6 @@ func TestInternalServerError(t *testing.T) {
 	InternalServerError(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error: &models.ErrorResponse{
 			Code:  http.StatusInternalServerError,
 			Error: "internal server error",
@@ -73,7 +71,6 @@ func TestUnsupportedFile(t *testing.T) {
 	UnsupportedFile(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error: &models.ErrorResponse{
 			Code:  http.StatusUnsupportedMediaType,
 			Error: "unsupported file",
@@ -86,7 +83,6 @@ func TestMethodNotAllowed(t *testing.T) {
 	MethodNotAllowed(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error: &models.ErrorResponse{
 			Code:  http.StatusMethodNotAllowed,
 			Error: "method not allowed",
@@ -99,7 +95,6 @@ func TestNotFound(t *testing.T) {
 	NotFound(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error: &models.ErrorResponse{
 			Code:  http.StatusNotFound,
 			Error: "not found",
@@ -112,7 +107,6 @@ func TestTooManyBytes(t *testing.T) {
 	TooManyBytes(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error: &models.ErrorResponse{
 			Code:  http.StatusRequestEntityTooLarge,
 			Error: "request too chonk",
@@ -125,7 +119,6 @@ func TestUnauthorized(t *testing.T) {
 	Unauthorized(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error: &models.ErrorResponse{
 			Code:  http.StatusUnauthorized,
 			Error: "unauthorized",
@@ -138,7 +131,6 @@ func TestNotImplemented(t *testing.T) {
 	NotImplemented(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error: &models.ErrorResponse{
 			Code:  http.StatusNotImplemented,
 			Error: "not implemented",

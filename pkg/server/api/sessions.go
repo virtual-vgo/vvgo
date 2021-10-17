@@ -18,13 +18,16 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		identity := login.IdentityFromContext(ctx)
-		sessions, err := models.ListSessions(ctx, *identity)
+		sessions, err := models.ListSessions(ctx, identity)
 		if err != nil {
 			logger.MethodFailure(ctx, "models.ListSessions", err)
 			http_helpers.InternalServerError(ctx, w)
 			return
 		}
-		http_helpers.WriteAPIResponse(ctx, w, models.NewSessionsResponse(sessions))
+		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
+			Status:   models.StatusOk,
+			Sessions: sessions,
+		})
 
 	case http.MethodDelete:
 		var data models.DeleteSessionsRequest
@@ -47,11 +50,9 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 			http_helpers.InternalServerError(ctx, w)
 		}
 
-		sessions := make([]models.Identity, 0, len(sessionIds))
-		for _, session := range sessionIds {
-			sessions = append(sessions, models.Identity{Key: session})
-		}
-		http_helpers.WriteAPIResponse(ctx, w, models.NewSessionsResponse(sessions))
+		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
+			Status: models.StatusOk,
+		})
 
 	case http.MethodPost:
 		var data models.CreateSessionsRequest
@@ -71,7 +72,7 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 					allowed = append(allowed, models.Role(role))
 				}
 			}
-			return models.Identity{Kind: "SessionToken", Roles: allowed, DiscordID: identity.DiscordID}
+			return models.Identity{Kind: models.KindApiToken, Roles: allowed, DiscordID: identity.DiscordID}
 		}
 
 		var results []models.Identity
@@ -86,10 +87,10 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 			switch {
 			case sessionData.Expires == 0:
 				expires = 24 * 3600 * time.Second
-			case sessionData.Expires < 5*time.Second:
+			case time.Duration(sessionData.Expires)*time.Second < 5*time.Second:
 				expires = 5 * time.Second
 			default:
-				expires = sessionData.Expires
+				expires = time.Duration(sessionData.Expires) * time.Second
 			}
 
 			var err error
@@ -101,6 +102,11 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 			}
 			results = append(results, newIdentity)
 		}
+
+		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
+			Status:   models.StatusOk,
+			Sessions: results,
+		})
 
 	default:
 		http_helpers.MethodNotAllowed(ctx, w)

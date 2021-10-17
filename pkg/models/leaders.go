@@ -18,7 +18,7 @@ type Director struct {
 	Icon         string
 }
 
-func ListDirectors(ctx context.Context) (Directors, error) {
+func ListDirectors(ctx context.Context, identity Identity) (Directors, error) {
 	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetDirectors)
 	if err != nil {
 		return nil, err

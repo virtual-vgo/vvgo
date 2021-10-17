@@ -6,7 +6,7 @@ import {Render} from "./render";
 export const Entrypoint = (selectors) => Render(<Index/>, selectors)
 
 const Index = (props) => {
-    const projects = useProjects().Projects
+    const [projects, _] = useProjects()
 
     const latest = latestProject(projects)
     return <div className="mt-2 container">
@@ -35,7 +35,6 @@ const Index = (props) => {
 }
 
 const Banner = (props) => {
-    if (props.drawBanner === false) return <div/>
     if (props.latest === undefined) return <div/>
 
     const latest = props.latest
@@ -72,7 +71,9 @@ const LatestProjects = (props) => {
     }
 
     return <table className="table text-light clickable">
+        <tbody>
         {projects.map(project => <Row key={project.Name} project={project}/>)}
+        </tbody>
     </table>
 }
 
@@ -86,10 +87,12 @@ const memberHighlightSrc = memberHighlightSrcs[Math.floor(Math.random() * member
 
 const MemberHighlights = (props) => {
     return <table className="table text-light">
+        <tbody>
         <tr>
             <td>
                 <img src={memberHighlightSrc} width="100%" alt="Thomas"/>
             </td>
         </tr>
+        </tbody>
     </table>
 }

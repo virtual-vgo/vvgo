@@ -25,12 +25,29 @@ type Part struct {
 
 type Parts []Part
 
-func ListParts(ctx context.Context) (Parts, error) {
+func ListParts(ctx context.Context, identity Identity) (Parts, error) {
+	if identity.IsAnonymous() {
+		return []Part{}, nil
+	}
+
+	projects, err := ListProjects(ctx, identity)
+	if err != nil {
+		return nil, err
+	}
+
 	values, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, SheetParts)
 	if err != nil {
 		return nil, err
 	}
-	return valuesToParts(values), nil
+	parts := valuesToParts(values)
+
+	var allowed []Part
+	for _, part := range parts {
+		if projects.Has(part.Project) {
+			allowed = append(allowed, part)
+		}
+	}
+	return allowed, nil
 }
 
 func valuesToParts(values [][]interface{}) Parts {

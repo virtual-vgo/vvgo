@@ -59,6 +59,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/parts", api.Parts, models.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/leaders", api.Directors, models.RoleAnonymous)
+	mux.HandleFunc("/api/v1/me", api.Me, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", api.Roles, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, models.RoleVVGOTeams)

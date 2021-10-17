@@ -55,7 +55,6 @@ func InternalServerError(ctx context.Context, w http.ResponseWriter) {
 func WriteErrorResponse(ctx context.Context, w http.ResponseWriter, error models.ErrorResponse) {
 	WriteAPIResponse(ctx, w, models.ApiResponse{
 		Status: models.StatusError,
-		Type:   models.ResponseTypeError,
 		Error:  &error,
 	})
 }

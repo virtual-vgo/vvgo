@@ -2,7 +2,6 @@ const path = require('path')
 
 module.exports = {
     entry: {
-        feature: './js/src/feature.js',
         index: './js/src/index.js',
         about: './js/src/about.js',
         sessions: './js/src/sessions.js'

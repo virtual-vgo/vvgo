@@ -11,7 +11,7 @@ import (
 
 func SubmitCommandOptions(ctx context.Context) ([]discord.ApplicationCommandOption, error) {
 	identity := models.Anonymous()
-	projects, err := models.ListProjects(ctx, &identity)
+	projects, err := models.ListProjects(ctx, identity)
 	if err != nil {
 		return nil, errors.ListProjectsFailure(err)
 	}
@@ -28,7 +28,7 @@ func SubmitInteractionHandler(ctx context.Context, interaction discord.Interacti
 
 	var content string
 	identity := models.Anonymous()
-	projects, err := models.ListProjects(ctx, &identity)
+	projects, err := models.ListProjects(ctx, identity)
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
 	} else if project, ok := projects.Get(projectName); ok {

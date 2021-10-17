@@ -12,8 +12,8 @@ import (
 
 const Endpoint = "https://vvgo.org/api/v1"
 
-func GetSheets(spreadsheet string, sheets ...string) (models.SpreadsheetResponse, error) {
-	data := models.SpreadsheetResponse{
+func GetSheets(spreadsheet string, sheets ...string) (models.Spreadsheet, error) {
+	data := models.Spreadsheet{
 		SpreadsheetName: spreadsheet,
 	}
 	for _, sheet := range sheets {
@@ -22,11 +22,11 @@ func GetSheets(spreadsheet string, sheets ...string) (models.SpreadsheetResponse
 
 	req, err := NewRequest(http.MethodGet, Endpoint+"/spreadsheet", data)
 	if err != nil {
-		return models.SpreadsheetResponse{}, errors.NewRequestFailure(err)
+		return models.Spreadsheet{}, errors.NewRequestFailure(err)
 	}
 
 	if err := DoRequest(req, &data); err != nil {
-		return models.SpreadsheetResponse{}, err
+		return models.Spreadsheet{}, err
 	}
 	return data, nil
 }

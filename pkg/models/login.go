@@ -20,6 +20,7 @@ const (
 	KindBearer   Kind = "bearer"
 	KindBasic    Kind = "basic"
 	KindDiscord  Kind = "discord"
+	KindApiToken Kind = "api_token"
 )
 
 // Role A user role.
@@ -48,11 +49,11 @@ func Anonymous() Identity { return anonymous }
 
 // Identity A user identity.
 type Identity struct {
-	Key       string    `json:"key"`
-	Kind      Kind      `json:"kind"`
-	Roles     []Role    `json:"roles"`
-	ExpiresAt time.Time `json:"expires_at"`
-	DiscordID string    `json:"discord_id"`
+	Key       string     `json:"key"`
+	Kind      Kind       `json:"kind"`
+	Roles     []Role     `json:"roles"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	DiscordID string     `json:"discord_id,omitempty"`
 }
 
 func ListSessions(ctx context.Context, identity Identity) ([]Identity, error) {

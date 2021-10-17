@@ -1,15 +1,34 @@
 import React, {useState} from "react";
 import {Render} from "./render";
-import {deleteSessions, Session, SessionKinds, useSessions} from "./models";
+import {createSessions, deleteSessions, SessionKinds, useMySession, useSessions} from "./models";
 import _ from "lodash";
 
 export const Entrypoint = (selectors) => Render(<Sessions/>, selectors)
 
 const Sessions = () => {
-    const sessions = useSessions().Sessions
-    const [refresh, setRefresh] = useState(0)
+    const [me, _] = useMySession()
+    const [sessions, setSessions] = useSessions()
     const [deleteButtonState, setDeleteButtonState] = useState(new Map())
-    sessions.sort((a, b) => a.Expires - b.Expires)
+    const [createButtonState, setCreateButtonState] = useState('new')
+    sessions.sort((a, b) => a.ExpiresAt - b.ExpiresAt)
+
+    const MySessions = () => {
+        return sessions
+            .filter(session => deleteButtonState.get(session.Key) !== 'deleted')
+            .filter(session => session.DiscordID === me.DiscordID)
+            .map(session => <SessionRow key={session.Key} session={session} buttonState={deleteButtonState}
+                                        setButtonState={setDeleteButtonState}/>)
+    }
+
+    const OtherSessions = () => {
+        return sessions
+            .filter(session => deleteButtonState.get(session.Key) !== 'deleted')
+            .filter(session => session.DiscordID !== me.DiscordID)
+            .map(session => <SessionRow className={'text-warning'} key={session.Key} session={session}
+                                        buttonState={deleteButtonState}
+                                        setButtonState={setDeleteButtonState}/>)
+    }
+
     return <div className={'container mt-4'}>
         <div className={'row row-cols-1 mt-2'}>
             <div className={'col'}>
@@ -25,12 +44,10 @@ const Sessions = () => {
                     </tr>
                     </thead>
                     <tbody>
-                    <NewSession buttonState={deleteButtonState} setButtonState={setDeleteButtonState}/>
-                    {sessions
-                        .filter(session => deleteButtonState.get(session.Key) !== 'deleted')
-                        .map((x, i) =>
-                            <SessionRow key={i} session={x} buttonState={deleteButtonState}
-                                        setButtonState={setDeleteButtonState}/>)}
+                    <NewSession buttonState={createButtonState} setButtonState={setCreateButtonState}
+                                sessions={sessions} setSessions={setSessions}/>
+                    <MySessions/>
+                    <OtherSessions/>
                     </tbody>
                 </table>
             </div>
@@ -39,56 +56,80 @@ const Sessions = () => {
 }
 
 const NewSession = (props) => {
-    const [session, setSession] = React.useState(new Session())
-    session.Key = "new"
+    const inputKind = React.useRef()
+    const inputRoles = React.useRef()
+    const inputExpires = React.useRef()
 
+    const roles = ['write_spreadsheet']
     return <tr>
         <td>
-            <select className="custom-select mr-sm-2" id="selectKind">
-                <option defaultValue>Kind...</option>
-                {_.keys(SessionKinds).map(k => <option key={k} value={k}>{k}</option>)}
+            <select className="custom-select mr-sm-2" ref={inputKind}>
+                <option defaultValue>{SessionKinds.ApiToken}</option>
+                {_.keys(SessionKinds)
+                    .filter(k => k !== 'ApiToken')
+                    .map(k => <option key={k} value={SessionKinds[k]}>{SessionKinds[k]}</option>)}
             </select>
         </td>
         <td>
-            <select className="custom-select mr-sm-2" id="selectRoles">
-                <option defaultValue>Roles...</option>
-                {['write_spreadsheet'].map(k => <option key={k} value={k}>{k}</option>)}
+            <select className="custom-select mr-sm-2" ref={inputRoles}>
+                <option defaultValue>{roles[0]}</option>
+                {roles.slice(1, -1).map(k => <option key={k} value={k}>{k}</option>)}
             </select>
         </td>
         <td/>
-        <td><input type={'number'} className={'form-control'} id={'selectExpires'}/></td>
+        <td><input type={'number'} className={'form-control'} ref={inputExpires} defaultValue={3600}/></td>
         <td width={120}>
-            <DeleteButton session={session} buttonState={props.buttonState} setButtonState={props.setButtonState}/>
+            <CreateButton sessions={props.sessions} setSessions={props.setSessions}
+                          inputKind={inputKind} inputRoles={inputRoles} inputExpires={inputExpires}
+                          buttonState={props.buttonState} setButtonState={props.setButtonState}/>
         </td>
     </tr>
 }
 
 const CreateButton = (props) => {
-    const buttonState = props.buttonState
-    const setButtonState = props.setButtonState
-
-    const buttonClick = (event) => {
-        setButtonState('creating')
+    const buttonClick = (e) => {
+        props.setButtonState('creating')
         new Promise(resolve => setTimeout(resolve, 500)
-        ).then(() => console.log(event)
-        ).then(() => setButtonState('created')
-        ).catch(error => console.log(error))
+        ).then(() => createSessions([{
+                kind: props.inputKind.current.value,
+                roles: [props.inputRoles.current.value],
+                expires: Number(props.inputExpires.current.value)
+            }])
+        ).then(resp => {
+            const sessions = props.sessions
+            sessions.Sessions = [...resp.Sessions, ...sessions.Sessions]
+            console.log(sessions)
+            props.setSessions(sessions)
+            props.setButtonState('created')
+        }).catch(error => console.log(error))
     }
 
-    if (buttonState === 'ready')
+    if (props.buttonState !== 'creating')
         return <button className={'btn btn-sm btn-dark btn-outline-dark text-light w-100'}
-                       onClick={() => buttonClick(props.session)}>Create</button>
-    if (buttonState === 'created')
-        return <button className={'btn btn-sm btn-warning text-warning w-100'}>☠️☠️☠️</button>
-    return <div/>
+                       onClick={buttonClick}>
+            Create
+        </button>
+    return <button className={'btn btn-sm btn-dark btn-outline-dark text-light w-100'}>
+        Creating
+    </button>
 }
 
 const SessionRow = (props) => {
-    return <tr>
-        <td>{props.session.Kind}</td>
-        <td>{props.session.Roles.reduce((a, b) => a + ", " + b)}</td>
-        <td>{props.session.DiscordID}</td>
-        <td>{props.session.Expires}</td>
+    const session = props.session
+    const expiresAt = () => {
+        if (session.ExpiresAt) {
+            const expiresAt = session.ExpiresAt
+            const date = expiresAt.toDateString()
+            const time = `${expiresAt.toLocaleTimeString()}`
+            return expiresAt.toLocaleString()
+        }
+        return ""
+    }
+    return <tr className={props.className}>
+        <td>{session.Kind}</td>
+        <td>{session.Roles.reduce((a, b) => a + ", " + b)}</td>
+        <td>{session.DiscordID}</td>
+        <td>{expiresAt()}</td>
         <td width={120}>
             <DeleteButton session={props.session} buttonState={props.buttonState}
                           setButtonState={props.setButtonState}/>
@@ -100,7 +141,8 @@ const DeleteButton = (props) => {
     const buttonState = props.buttonState
     const setButtonState = props.setButtonState
 
-    const buttonClick = (session, event) => {
+    const buttonClick = (e) => {
+        const session = props.session
         const newState = new Map()
         buttonState.forEach((val, key) => newState.set(key, val))
         newState.set(session.Key, 'deleting')
@@ -116,18 +158,13 @@ const DeleteButton = (props) => {
         }).catch(error => console.log(error))
     }
 
-
     const key = props.session.Key
-    const status = (key) => {
-        if (key === 'new') return 'new'
-        if (buttonState.has(key)) return buttonState.get(key)
-        return 'ready'
-    }
 
-    if (status(key) === 'ready')
-        return <button className={'btn btn-sm btn-dark btn-outline-dark text-light w-100'}
-                       onClick={() => buttonClick(props.session)}>Delete</button>
-    if (status(key) === 'deleting')
+    if (buttonState.get(key) === 'deleted')
+        return <div/>
+    if (buttonState.get(key) === 'deleting')
         return <button className={'btn btn-sm btn-warning text-warning w-100'}>☠️☠️☠️</button>
-    return <div/>
+
+    return <button className={'btn btn-sm btn-dark btn-outline-dark text-light w-100'}
+                   onClick={buttonClick}>Delete</button>
 }
