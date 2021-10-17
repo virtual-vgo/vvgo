@@ -1,48 +1,205 @@
 import React from 'react'
 
+const _ = require('lodash')
+
 const Endpoint = '/api/v1'
 
-const StatusOk = "ok"
-const StatusError = "error"
-const ResponseTypeError = "error"
-const ResponseTypeSessions = "sessions"
+export const ApiResponseTypes = {
+    Error: "error",
+    Projects: "projects",
+    Parts: "parts",
+    Directors: "directors",
+    Sessions: "sessions"
+}
+
+class ApiResponse {
+    Status
+    Type
+    Projects
+    Parts
+    Directors
+    Sessions
+
+    get = (key, defaultValue) => _.get(this, key, defaultValue)
+    static fromJSON = (obj) => {
+        const resp = apiObjectFromJSON(obj, new ApiResponse())
+        switch (resp.Type) {
+            case ApiResponseTypes.Error:
+                resp.Error = ErrorResponse.fromJSON(resp.Error)
+                break;
+            case ApiResponseTypes.Projects:
+                resp.Projects = ProjectsResponse.fromJSON(resp.Projects)
+                break;
+            case ApiResponseTypes.Parts:
+                resp.Parts = PartsResponse.fromJSON(resp.Parts)
+                break;
+            case ApiResponseTypes.Directors:
+                resp.Directors = DirectorsResponse.fromJSON(resp.Directors)
+                break;
+            case ApiResponseTypes.Sessions:
+                resp.Sessions = SessionsResponse.fromJSON(resp.Sessions)
+                break;
+        }
+        console.log(resp)
+        return resp
+    }
+}
+
+const apiObjectFromJSON = (obj, dest) => {
+    const cleanMap = _.keys(obj).reduce((a, b) => a.set(_.snakeCase(b), obj[b]), new Map())
+    _.keys(dest).forEach(k => dest[k] = cleanMap.get(_.snakeCase(k)))
+    return dest
+}
+
+class ErrorResponse {
+    Code
+    Error
+
+    static fromJSON = (obj) => apiObjectFromJSON(obj, new ErrorResponse())
+}
+
+class ProjectsResponse {
+    Projects = []
+
+    static fromJSON = (obj) => {
+        const resp = apiObjectFromJSON(obj, new ProjectsResponse())
+        resp.Projects = _.get(resp, 'Projects', []).map(p => Project.fromJSON(p))
+        return resp
+    }
+}
 
 class Project {
-    constructor(obj) {
-        this.name = obj['Name']
-        this.title = obj['Title']
-        this.videoReleased = obj['VideoReleased']
-        this.youtubeLink = obj['YoutubeLink']
-        this.youtubeEmbed = obj['YoutubeEmbed']
-        this.bannerLink = obj['BannerLink']
-        this.composers = obj['Composers']
-        this.arrangers = obj['Arrangers']
-        this.partsPage = obj['PartsPage']
-        this.sources = obj['Sources']
-        this.partsArchived = obj['PartsArchived']
-        this.partsReleased = obj['PartsReleased']
-        this.hidden = obj['Hidden']
-    }
+    Name
+    Title
+    VideoReleased
+    YoutubeLink
+    YoutubeEmbed
+    BannerLink
+    Composers
+    Arrangers
+    PartsPage
+    Sources
+    PartsArchived
+    PartsReleased
+    Hidden
+
+    static fromJSON = (obj) => apiObjectFromJSON(obj, new Project())
 
     isOpenForSubmission() {
-        if (this.hidden) return false
-        if (this.videoReleased) return false
-        if (this.partsArchived) return false
-        return this.partsReleased
+        if (this.Hidden) return false
+        if (this.VideoReleased) return false
+        if (this.PartsArchived) return false
+        return this.PartsReleased
     }
 }
 
-export const useProjects = () => useApiData(Endpoint + "/projects", Project)
 
 export const latestProject = (projects) => {
-    console.log(projects)
-    const released = projects.filter(proj => proj.videoReleased === true)
-    released.sort()
-    return released.pop()
+    if (projects) {
+        const released = projects.filter(proj => proj.VideoReleased === true)
+        released.sort()
+        return released.pop()
+    }
+}
+
+export class PartsResponse {
+    Parts = []
+
+    static fromJSON = (obj) => {
+        const resp = apiObjectFromJSON(obj, new PartsResponse())
+        resp.Parts = _.get(resp, 'Parts', []).map(p => Part.fromJSON(p))
+        return resp
+    }
+}
+
+export class Part {
+    Project
+    PartName
+    ScoreOrder
+    SheetMusicFile
+    ClickTrackFile
+    ConductorVideo
+    PronunciationGuide
+    SheetMusicLink
+    ClickTrackLink
+    PronunciationGuideLink
+
+    static fromJSON = (obj) => apiObjectFromJSON(obj, new Part())
+}
+
+export class DirectorsResponse {
+    Directors = []
+
+    static fromJSON = (obj) => {
+        const resp = apiObjectFromJSON(obj, new DirectorsResponse())
+        resp.Directors = _.get(resp, 'Directors', []).map(p => Director.fromJSON(p))
+        return resp
+    }
+}
+
+export class Director {
+    Name
+    Epithet
+    Affiliations
+    Blurb
+    Icon
+
+    static fromJSON = (obj) => apiObjectFromJSON(obj, new Director())
 }
 
 
-class Credit {
+export class SessionsResponse {
+    Sessions = []
+
+    static fromJSON = (obj) => {
+        const resp = apiObjectFromJSON(obj, new SessionsResponse())
+        resp.Sessions = _.get(resp, 'Sessions', []).map(p => Session.fromJSON(p))
+        return resp
+    }
+}
+
+const __sessionKinds = Object.freeze({
+    Password: "password",
+    Bearer: "bearer",
+    Basic: "basic",
+    Discord: "discord",
+})
+
+export const SessionKinds = __sessionKinds
+
+export class Session {
+    Key
+    Kind
+    Roles
+    DiscordID
+    Expires
+
+    static fromJSON = (obj) => {
+        const dest = apiObjectFromJSON(obj, new Session())
+        if (dest.Expires) dest.Expires = new Date(dest.Expires)
+        return dest
+    }
+}
+
+export const deleteSessions = async (sessions) => {
+    const payload = JSON.stringify(({'sessions': sessions}))
+    return fetch(Endpoint + "/sessions", {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: payload
+    }).then(resp => resp.json()).then(data => {
+        const response = ApiResponse.fromJSON(data)
+        if (response.Type === ApiResponseTypes.Error) {
+            throw 'vvgo.org error: ' + response.Error
+        }
+    })
+}
+
+export class SpreadsheetResponse {
+    Spreadsheet
+}
+
+export class Credit {
     constructor(obj) {
         this.project = obj['Project']
         this.order = obj['Order']
@@ -51,11 +208,6 @@ class Credit {
         this.minorCategory = obj['MinorCategory']
         this.bottomText = obj['BottomText']
     }
-}
-
-export const useCredits = (project) => {
-    const url = (project !== undefined && project.name !== undefined) ? `${Endpoint + "/credits"}?project=${project.name}` : undefined
-    return useApiData(url, TopicCreditsRow)
 }
 
 class TeamCreditsRow {
@@ -72,85 +224,32 @@ class TopicCreditsRow {
     }
 }
 
-class ExecutiveDirector {
-    constructor(obj) {
-        this.Name = obj['Name']
-        this.Epithet = obj['Epithet']
-        this.Affiliations = obj['Affiliations']
-        this.Blurb = obj['Blurb']
-        this.Icon = obj['Icon']
-    }
+export const useParts = () => _.get(useApiData(Endpoint + "/parts"), 'Parts', new PartsResponse())
+export const useProjects = () => _.get(useApiData(Endpoint + "/projects"), 'Projects', new ProjectsResponse())
+export const useDirectors = () => _.get(useApiData(Endpoint + "/leaders"), 'Directors', new DirectorsResponse())
+export const useSessions = () => _.get(useApiData(Endpoint + "/sessions"), 'Sessions', new SessionsResponse())
+
+export const useCredits = (project) => {
+    const url = (project !== undefined && project.name !== undefined) ? `${Endpoint + "/credits"}?project=${project.name}` : undefined
+    return useApiData(url)
 }
 
-export const useDirectors = () =>
-    useApiData(Endpoint + "/leaders", ExecutiveDirector)
 
-class Session {
-    constructor(obj) {
-        this.Key = obj['key']
-        this.Kind = obj['kind']
-        this.Roles = obj['roles']
-        this.DiscordID = obj['discord_id']
-    }
-}
-
-export const useSessions = () =>
-    useApiData(Endpoint + "/sessions", Session)
-
-export const deleteSessions = async (sessions) => {
-    const payload = JSON.stringify(({'sessions': sessions}))
-    return fetch(Endpoint + "/sessions", {
-        method: 'DELETE',
-        headers: {'Content-Type': 'application/json'},
-        body: payload
-    }).then(resp => resp.json()).then(data => {
-        const response = new Response(data)
-        if (response.Type === ResponseTypeError) {
-            throw 'vvgo.org error: ' + response.Error
-        }
-    })
-}
-
-const useApiData = (url, decoder) => {
-    const [data, setData] = React.useState([])
+const useApiData = (url) => {
+    const [data, setData] = React.useState(new ApiResponse())
     React.useEffect(() => {
-        fetch(url)
-            .then(response => response.json())
-            .then(jsonData => jsonData.map(obj => new decoder(obj)))
-            .then(decoded => setData(decoded))
-            .catch(error => console.log(error))
-    }, [url, decoder])
+        fetch(url, {
+            method: 'GET'
+        }).then(response =>
+            response.json()
+        ).then(obj => {
+            const response = ApiResponse.fromJSON(obj)
+            if (response.Type === ApiResponseTypes.Error) {
+                throw `vvgo.org error: [${response.Error.Code}] ${response.Error.Error}`
+            }
+            setData(response)
+        })
+    }, [url])
     return data
 }
 
-class Response {
-    constructor(obj) {
-        this.Status = obj['status']
-        this.Type = obj['type']
-
-        switch (this.Type) {
-            case ResponseTypeError:
-                this.Error = new ErrorResponse(obj['error'])
-                break
-            case ResponseTypeSessions:
-                this.Sessions = new SessionResponse(obj['sessions'])
-                break
-        }
-    }
-}
-
-class ErrorResponse {
-    constructor(obj) {
-        this.Code = obj['code']
-        this.Error = obj['error']
-    }
-}
-
-class SessionResponse {
-    constructor(obj) {
-        this.Status = obj['status']
-        this.Type = obj['type']
-        this.Error = obj['error']
-        this.Session = obj['session']
-    }
-}

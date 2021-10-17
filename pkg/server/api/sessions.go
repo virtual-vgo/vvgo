@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
@@ -13,6 +14,7 @@ import (
 
 func Sessions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	identity := login.IdentityFromContext(ctx)
 	switch r.Method {
 	case http.MethodGet:
 		identity := login.IdentityFromContext(ctx)
@@ -22,10 +24,10 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 			http_helpers.InternalServerError(ctx, w)
 			return
 		}
-		json.NewEncoder(w).Encode(sessions)
+		http_helpers.WriteAPIResponse(ctx, w, models.NewSessionsResponse(sessions))
 
 	case http.MethodDelete:
-		var data models.DeleteSessionRequest
+		var data models.DeleteSessionsRequest
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			http_helpers.JsonDecodeFailure(ctx, w, err)
 			return
@@ -36,59 +38,70 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sessions := make([]string, 0, len(data.Sessions))
+		sessionIds := make([]string, 0, len(data.Sessions))
 		for _, session := range data.Sessions {
-			sessions = append(sessions, "sessions:"+session)
+			sessionIds = append(sessionIds, "sessions:"+session)
 		}
-		if err := redis.Do(ctx, redis.Cmd(nil, "DEL", sessions...)); err != nil {
+		if err := redis.Do(ctx, redis.Cmd(nil, "DEL", sessionIds...)); err != nil {
 			logger.RedisFailure(ctx, err)
 			http_helpers.InternalServerError(ctx, w)
 		}
 
-		http_helpers.WriteAPIResponse(ctx, w, models.Response{
-			Status:   models.StatusOk,
-			Type:     models.ResponseTypeSessions,
-			Sessions: &models.SessionsResponse{Type: models.SessionResponseTypeDeleted},
-		})
+		sessions := make([]models.Identity, 0, len(sessionIds))
+		for _, session := range sessionIds {
+			sessions = append(sessions, models.Identity{Key: session})
+		}
+		http_helpers.WriteAPIResponse(ctx, w, models.NewSessionsResponse(sessions))
 
 	case http.MethodPost:
-		if err := r.ParseForm(); err != nil {
-			logger.MethodFailure(ctx, "r.ParseForm", err)
-			http_helpers.BadRequest(ctx, w, "could not parse form")
-			return
-		}
-		wantRoles := r.Form["with_roles"]
-		allowedRoles := []models.Role{
-			models.RoleReadConfig,
-			models.RoleWriteSpreadsheet,
-		}
-		var roles []models.Role
-		for _, want := range wantRoles {
-			for _, allowed := range allowedRoles {
-				if want == allowed.String() {
-					roles = append(roles, allowed)
-				}
-			}
-		}
-		if len(roles) == 0 {
-			http_helpers.BadRequest(ctx, w, "no roles for identity")
+		var data models.CreateSessionsRequest
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http_helpers.JsonDecodeFailure(ctx, w, err)
 			return
 		}
 
-		expires := 24 * 3600 * time.Second
-		identity := models.Identity{Kind: "SessionToken", Roles: roles}
-		session, err := login.NewSession(ctx, &identity, expires)
-		if err != nil {
-			logger.MethodFailure(ctx, "login.NewSession", err)
+		newSessionId := func(roles []string) models.Identity {
+			allowedRoles := map[models.Role]bool{
+				models.RoleReadConfig:       true,
+				models.RoleWriteSpreadsheet: true,
+			}
+			var allowed []models.Role
+			for _, role := range roles {
+				if allowedRoles[models.Role(role)] {
+					allowed = append(allowed, models.Role(role))
+				}
+			}
+			return models.Identity{Kind: "SessionToken", Roles: allowed, DiscordID: identity.DiscordID}
 		}
-		data := make(map[string]interface{})
-		data["roles"] = identity.Roles
-		data["session"] = session
-		data["expires"] = time.Now().Add(expires)
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(data); err != nil {
-			logger.JsonEncodeFailure(ctx, err)
+
+		var results []models.Identity
+		for i, sessionData := range data.Sessions {
+			newIdentity := newSessionId(sessionData.Roles)
+			if len(newIdentity.Roles) == 0 {
+				http_helpers.BadRequest(ctx, w, fmt.Sprintf("session %d has no usable roles", i))
+				return
+			}
+
+			var expires time.Duration
+			switch {
+			case sessionData.Expires == 0:
+				expires = 24 * 3600 * time.Second
+			case sessionData.Expires < 5*time.Second:
+				expires = 5 * time.Second
+			default:
+				expires = sessionData.Expires
+			}
+
+			var err error
+			_, err = login.NewSession(ctx, &newIdentity, expires)
+			if err != nil {
+				logger.MethodFailure(ctx, "login.NewSession", err)
+				http_helpers.InternalServerError(ctx, w)
+				return
+			}
+			results = append(results, newIdentity)
 		}
+
 	default:
 		http_helpers.MethodNotAllowed(ctx, w)
 	}

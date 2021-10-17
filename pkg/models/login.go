@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"strings"
+	"time"
 )
 
 // Kind The kind of login.
@@ -46,13 +47,12 @@ var anonymous = Identity{
 func Anonymous() Identity { return anonymous }
 
 // Identity A user identity.
-// This _absolutely_ should not contain any personally identifiable information.
-// Numeric user ids are fine, but no emails, usernames, addresses, etc.
 type Identity struct {
-	Key       string `json:"key"`
-	Kind      Kind   `json:"kind"`
-	Roles     []Role `json:"roles"`
-	DiscordID string `json:"discord_id"`
+	Key       string    `json:"key"`
+	Kind      Kind      `json:"kind"`
+	Roles     []Role    `json:"roles"`
+	ExpiresAt time.Time `json:"expires_at"`
+	DiscordID string    `json:"discord_id"`
 }
 
 func ListSessions(ctx context.Context, identity Identity) ([]Identity, error) {

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
@@ -37,7 +36,9 @@ func Parts(w http.ResponseWriter, r *http.Request) {
 		parts = models.Parts{}
 	}
 
-	if err := json.NewEncoder(w).Encode(parts.Sort()); err != nil {
-		logger.JsonEncodeFailure(ctx, err)
-	}
+	http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
+		Status: models.StatusOk,
+		Type:   models.ResponseTypeParts,
+		Parts:  &models.PartsResponse{Parts: parts.Sort()},
+	})
 }

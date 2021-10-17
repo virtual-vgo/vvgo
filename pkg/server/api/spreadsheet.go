@@ -12,7 +12,7 @@ import (
 func Spreadsheet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var data models.Spreadsheet
+	var data models.SpreadsheetResponse
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		logger.JsonDecodeFailure(ctx, err)
 		http_helpers.BadRequest(ctx, w, "invalid json")
@@ -35,6 +35,11 @@ func Spreadsheet(w http.ResponseWriter, r *http.Request) {
 			http_helpers.InternalServerError(ctx, w)
 			return
 		}
+		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
+			Status:    models.StatusOk,
+			Type:      models.ResponseTypeCredits,
+
+		})
 		return
 
 	case http.MethodPost:

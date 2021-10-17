@@ -7,7 +7,7 @@ type CreditsTable []CreditsTopicRow
 
 // CreditsTopicRow represents either all performers or all crew.
 type CreditsTopicRow struct {
-	Name   string
+	Name   string `json:"name"`
 	Rows   []*CreditsTeamRow `json:"Rows,omitempty"`
 	rowMap map[string]*CreditsTeamRow
 }

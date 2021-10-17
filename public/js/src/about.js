@@ -5,7 +5,7 @@ import {useDirectors} from "./models";
 export const Entrypoint = (selectors) => Render(<About/>, selectors)
 
 const About = () => {
-    const directors = useDirectors()
+    const directors = useDirectors().Directors
     return <div className={'container'}>
         <Blurb/>
         <Leaders directors={directors}/>

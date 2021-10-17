@@ -6,7 +6,7 @@ import {Render} from "./render";
 export const Entrypoint = (selectors) => Render(<Index/>, selectors)
 
 const Index = (props) => {
-    const projects = useProjects()
+    const projects = useProjects().Projects
 
     const latest = latestProject(projects)
     return <div className="mt-2 container">
@@ -39,13 +39,13 @@ const Banner = (props) => {
     if (props.latest === undefined) return <div/>
 
     const latest = props.latest
-    const youtubeLink = latest.youtubeLink
-    const bannerLink = latest.bannerLink
+    const youtubeLink = latest.YoutubeLink
+    const bannerLink = latest.BannerLink
 
     const Banner = () => {
         if (bannerLink === "") return <div>
-            <h1 className="title">{latest.title}</h1>
-            <h2>{latest.sources}</h2>
+            <h1 className="title">{latest.Title}</h1>
+            <h2>{latest.Sources}</h2>
         </div>
         else return <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>
     }
@@ -64,15 +64,15 @@ const LatestProjects = (props) => {
         const project = props.project
         return <tr>
             <td>
-                <a href={project.partsPage} className="text-light">
-                    {project.title} <br/> {project.sources}
+                <a href={project.PartsPage} className="text-light">
+                    {project.Title} <br/> {project.Sources}
                 </a>
             </td>
         </tr>
     }
 
     return <table className="table text-light clickable">
-        {projects.map(project => <Row key={project.name} project={project}/>)}
+        {projects.map(project => <Row key={project.Name} project={project}/>)}
     </table>
 }
 

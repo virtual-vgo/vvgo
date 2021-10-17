@@ -2,10 +2,10 @@ package http_helpers
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
+	"github.com/virtual-vgo/vvgo/pkg/models"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers/test_helpers"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 )
 
@@ -43,82 +43,105 @@ func TestAcceptsType(t *testing.T) {
 }
 
 func TestBadRequest(t *testing.T) {
-
 	recorder := httptest.NewRecorder()
 	BadRequest(ctx, recorder, "some-reason")
-	wantBody := "some-reason"
-	wantCode := http.StatusBadRequest
-
-	assert.Equal(t, wantCode, recorder.Code, "response code")
-	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+	test_helpers.AssertEqualResponse(t, models.ApiResponse{
+		Status: models.StatusError,
+		Type:   models.ResponseTypeError,
+		Error: &models.ErrorResponse{
+			Code:  http.StatusBadRequest,
+			Error: "some-reason",
+		},
+	}, recorder.Result())
 }
 
 func TestInternalServerError(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	InternalServerError(ctx, recorder)
-	wantBody := ""
-	wantCode := http.StatusInternalServerError
-
-	assert.Equal(t, wantCode, recorder.Code, "response code")
-	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+	test_helpers.AssertEqualResponse(t, models.ApiResponse{
+		Status: models.StatusError,
+		Type:   models.ResponseTypeError,
+		Error: &models.ErrorResponse{
+			Code:  http.StatusInternalServerError,
+			Error: "internal server error",
+		},
+	}, recorder.Result())
 }
 
-func TestInvalidContent(t *testing.T) {
+func TestUnsupportedFile(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	InvalidContent(recorder)
-	wantBody := ""
-	wantCode := http.StatusUnsupportedMediaType
-
-	assert.Equal(t, wantCode, recorder.Code, "response code")
-	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+	UnsupportedFile(ctx, recorder)
+	test_helpers.AssertEqualResponse(t, models.ApiResponse{
+		Status: models.StatusError,
+		Type:   models.ResponseTypeError,
+		Error: &models.ErrorResponse{
+			Code:  http.StatusUnsupportedMediaType,
+			Error: "unsupported file",
+		},
+	}, recorder.Result())
 }
 
 func TestMethodNotAllowed(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	MethodNotAllowed(ctx, recorder)
-	wantBody := ""
-	wantCode := http.StatusMethodNotAllowed
-
-	assert.Equal(t, wantCode, recorder.Code, "response code")
-	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+	test_helpers.AssertEqualResponse(t, models.ApiResponse{
+		Status: models.StatusError,
+		Type:   models.ResponseTypeError,
+		Error: &models.ErrorResponse{
+			Code:  http.StatusMethodNotAllowed,
+			Error: "method not allowed",
+		},
+	}, recorder.Result())
 }
 
 func TestNotFound(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	NotFound(recorder)
-	wantBody := "404 page not found"
-	wantCode := http.StatusNotFound
-
-	assert.Equal(t, wantCode, recorder.Code, "response code")
-	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+	NotFound(ctx, recorder)
+	test_helpers.AssertEqualResponse(t, models.ApiResponse{
+		Status: models.StatusError,
+		Type:   models.ResponseTypeError,
+		Error: &models.ErrorResponse{
+			Code:  http.StatusNotFound,
+			Error: "not found",
+		},
+	}, recorder.Result())
 }
 
 func TestTooManyBytes(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	TooManyBytes(recorder)
-	wantBody := ""
-	wantCode := http.StatusRequestEntityTooLarge
-
-	assert.Equal(t, wantCode, recorder.Code, "response code")
-	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+	TooManyBytes(ctx, recorder)
+	test_helpers.AssertEqualResponse(t, models.ApiResponse{
+		Status: models.StatusError,
+		Type:   models.ResponseTypeError,
+		Error: &models.ErrorResponse{
+			Code:  http.StatusRequestEntityTooLarge,
+			Error: "request too chonk",
+		},
+	}, recorder.Result())
 }
 
 func TestUnauthorized(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Unauthorized(ctx, recorder)
-	wantBody := "authorization failed"
-	wantCode := http.StatusUnauthorized
-
-	assert.Equal(t, wantCode, recorder.Code, "response code")
-	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+	test_helpers.AssertEqualResponse(t, models.ApiResponse{
+		Status: models.StatusError,
+		Type:   models.ResponseTypeError,
+		Error: &models.ErrorResponse{
+			Code:  http.StatusUnauthorized,
+			Error: "unauthorized",
+		},
+	}, recorder.Result())
 }
 
 func TestNotImplemented(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	NotImplemented(recorder)
-	wantBody := ""
-	wantCode := http.StatusNotImplemented
-
-	assert.Equal(t, wantCode, recorder.Code, "response code")
-	assert.Equal(t, wantBody, strings.TrimSpace(recorder.Body.String()), "response body")
+	NotImplemented(ctx, recorder)
+	test_helpers.AssertEqualResponse(t, models.ApiResponse{
+		Status: models.StatusError,
+		Type:   models.ResponseTypeError,
+		Error: &models.ErrorResponse{
+			Code:  http.StatusNotImplemented,
+			Error: "not implemented",
+		},
+	}, recorder.Result())
 }

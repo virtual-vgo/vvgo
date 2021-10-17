@@ -87,6 +87,7 @@ func NewCookieValue() string {
 // NewSession returns a new session with a crypto-rand session id.
 func NewSession(ctx context.Context, identity *models.Identity, expires time.Duration) (string, error) {
 	identity.Key = NewCookieValue()
+	identity.ExpiresAt = time.Now().Add(expires)
 	key := "sessions:" + identity.Key
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
 	srcBytes, _ := json.Marshal(identity)

@@ -53,14 +53,39 @@ func InternalServerError(ctx context.Context, w http.ResponseWriter) {
 }
 
 func WriteErrorResponse(ctx context.Context, w http.ResponseWriter, error models.ErrorResponse) {
-	WriteAPIResponse(ctx, w, models.Response{
+	WriteAPIResponse(ctx, w, models.ApiResponse{
 		Status: models.StatusError,
 		Type:   models.ResponseTypeError,
 		Error:  &error,
 	})
 }
 
-func WriteAPIResponse(_ context.Context, w http.ResponseWriter, resp models.Response) {
+func TooManyBytes(ctx context.Context, w http.ResponseWriter) {
+	WriteErrorResponse(ctx, w, models.ErrorResponse{
+		Code:  http.StatusRequestEntityTooLarge,
+		Error: "request too chonk",
+	})
+}
+func UnsupportedFile(ctx context.Context, w http.ResponseWriter) {
+	WriteErrorResponse(ctx, w, models.ErrorResponse{
+		Code:  http.StatusUnsupportedMediaType,
+		Error: "unsupported file",
+	})
+}
+func NotFound(ctx context.Context, w http.ResponseWriter) {
+	WriteErrorResponse(ctx, w, models.ErrorResponse{
+		Code:  http.StatusNotFound,
+		Error: "not found",
+	})
+}
+func NotImplemented(ctx context.Context, w http.ResponseWriter) {
+	WriteErrorResponse(ctx, w, models.ErrorResponse{
+		Code:  http.StatusNotImplemented,
+		Error: "not implemented",
+	})
+}
+
+func WriteAPIResponse(_ context.Context, w http.ResponseWriter, resp models.ApiResponse) {
 	var code int
 	switch {
 	case resp.Status != models.StatusError:
@@ -94,7 +119,4 @@ func AcceptsType(r *http.Request, mediaType string) bool {
 	return false
 }
 
-func TooManyBytes(w http.ResponseWriter)   { http.Error(w, "", http.StatusRequestEntityTooLarge) }
-func InvalidContent(w http.ResponseWriter) { http.Error(w, "", http.StatusUnsupportedMediaType) }
-func NotFound(w http.ResponseWriter)       { http.Error(w, "404 page not found", http.StatusNotFound) }
-func NotImplemented(w http.ResponseWriter) { http.Error(w, "", http.StatusNotImplemented) }
+

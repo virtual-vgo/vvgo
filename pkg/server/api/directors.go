@@ -7,14 +7,17 @@ import (
 	"net/http"
 )
 
-func Leaders(w http.ResponseWriter, r *http.Request) {
+func Directors(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
-	leaders, err := models.ListLeaders(ctx)
+	directors, err := models.ListDirectors(ctx)
 	if err != nil {
 		logger.ListLeadersFailure(ctx, err)
 		http_helpers.InternalServerError(ctx, w)
 		return
 	}
-	http_helpers.JsonEncode(w, &leaders)
+	http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
+		Status:    models.StatusOk,
+		Type:      models.ResponseTypeDirectors,
+		Directors: &models.DirectorsResponse{Directors: directors},
+	})
 }
