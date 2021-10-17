@@ -24,16 +24,6 @@ type ErrorResponse struct {
 	Error string
 }
 
-type ProjectsResponse struct {
-	Total    int `json:"total"`
-	Projects `json:"projects"`
-}
-
-type PartsResponse struct {
-	Total int    `json:"total"`
-	Parts []Part `json:"parts"`
-}
-
 type CreateSessionsRequest struct {
 	Sessions []struct {
 		Kind    string   `json:"kind"`
@@ -46,9 +36,6 @@ type DeleteSessionsRequest struct {
 	Sessions []string `json:"sessions"`
 }
 
-type CreditsResponse struct {
-	Table CreditsTable `json:"table"`
-}
 type Spreadsheet struct {
 	SpreadsheetName string  `json:"spreadsheet_name"`
 	Sheets          []Sheet `json:"sheets"`
