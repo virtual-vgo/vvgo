@@ -10,7 +10,6 @@ import (
 const SpreadsheetWebsiteData = "website_data"
 const SheetDirectors = "Leaders"
 
-
 type Sheet struct {
 	Name   string
 	Values [][]interface{}
