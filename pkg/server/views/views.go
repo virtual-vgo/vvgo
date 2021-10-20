@@ -26,6 +26,7 @@ var (
 	ContactUs       = ServeHtml("Contact Us", "contact_us.html")
 	Voting          = ServeTemplate("voting.gohtml")
 	Sessions        = ServeJsPage("Manage Sessions", "dist/sessions.js")
+	Projects2       = ServeJsPage("projects", "dist/projects.js")
 )
 
 type Page struct {

@@ -1,19 +1,18 @@
-import React from 'react'
-import {Highlight, latestProject, useHighlights, useProjects} from "./models"
-import {YoutubeIframe} from "./components"
+import React = require('react');
+import {Highlight, latestProject, Project, projectIsOpenForSubmission, useHighlights, useProjects} from "./datasets"
+import {Container, YoutubeIframe} from "./components"
 import {Render} from "./render";
 
-export const Entrypoint = (selectors) => Render(<Index/>, selectors)
+export const Entrypoint = (selectors: string) => Render(<Index/>, selectors)
 
-const Index = (props) => {
-    const [highlights, setHighlights] = useHighlights()
-    const [projects, setProjects] = useProjects()
-    console.log(highlights)
+const Index = () => {
+    const highlights = useHighlights()
+    const projects = useProjects()
     const highlight = highlights && highlights.length > 0 ?
         highlights[Math.floor(Math.random() * highlights.length)] : new Highlight()
-    console.log(highlight)
+
     const latest = latestProject(projects)
-    return <div className="mt-2 container">
+    return <Container>
         <div className="row">
             <div className="col col-12 col-lg-7">
                 <Banner latest={latest}/>
@@ -35,10 +34,10 @@ const Index = (props) => {
                 </p>
             </div>
         </div>
-    </div>
+    </Container>
 }
 
-const Banner = (props) => {
+const Banner = (props: { latest: Project }) => {
     if (props.latest === undefined) return <div/>
 
     const latest = props.latest
@@ -60,10 +59,12 @@ const Banner = (props) => {
     </div>
 }
 
-const LatestProjects = (props) => {
-    const projects = props.projects.filter(project => project.isOpenForSubmission())
+const LatestProjects = (props: { projects: Project[] }) => {
+    const projects = props.projects.filter((project: Project): boolean => {
+        return projectIsOpenForSubmission(project)
+    })
 
-    const Row = (props) => {
+    const Row = (props: { project: Project }) => {
         const project = props.project
         return <tr>
             <td>
@@ -81,7 +82,7 @@ const LatestProjects = (props) => {
     </table>
 }
 
-const MemberHighlight = (props) => {
+const MemberHighlight = (props: { highlight: Highlight }) => {
     return <table className="table text-light">
         <tbody>
         <tr>

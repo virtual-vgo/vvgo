@@ -1,35 +1,49 @@
-import React, {useState} from "react";
+import {Dispatch, MutableRefObject, SetStateAction, useState} from "react";
 import {Render} from "./render";
-import {createSessions, deleteSessions, SessionKinds, useMySession, useSessions} from "./models";
-import _ from "lodash";
+import {
+    createSessions,
+    deleteSessions,
+    Session,
+    SessionKind,
+    SessionKinds,
+    useMySession,
+    useSessions
+} from "./datasets";
+import {Container} from "./components";
+import React = require('react');
 
-export const Entrypoint = (selectors) => Render(<Sessions/>, selectors)
+export const Entrypoint = (selectors: string) => Render(<Sessions/>, selectors)
 
 const Sessions = () => {
-    const [me, _] = useMySession()
+    const me = useMySession()
     const [sessions, setSessions] = useSessions()
     const [deleteButtonState, setDeleteButtonState] = useState(new Map())
     const [createButtonState, setCreateButtonState] = useState('new')
-    sessions.sort((a, b) => a.ExpiresAt - b.ExpiresAt)
+    sessions.sort((a, b) => new Date(a.ExpiresAt).getTime() - new Date(b.ExpiresAt).getTime())
 
-    const MySessions = () => {
-        return sessions
-            .filter(session => deleteButtonState.get(session.Key) !== 'deleted')
-            .filter(session => session.DiscordID === me.DiscordID)
-            .map(session => <SessionRow key={session.Key} session={session} buttonState={deleteButtonState}
-                                        setButtonState={setDeleteButtonState}/>)
-    }
+    const mySessions = sessions
+        .filter(session => deleteButtonState.get(session.Key) !== 'deleted')
+        .filter(session => session.DiscordID === me.DiscordID)
+        .map(session => <SessionRow
+            key={session.Key}
+            session={session}
+            buttonState={deleteButtonState}
+            setButtonState={setDeleteButtonState}
+        />)
 
-    const OtherSessions = () => {
-        return sessions
-            .filter(session => deleteButtonState.get(session.Key) !== 'deleted')
-            .filter(session => session.DiscordID !== me.DiscordID)
-            .map(session => <SessionRow className={'text-warning'} key={session.Key} session={session}
-                                        buttonState={deleteButtonState}
-                                        setButtonState={setDeleteButtonState}/>)
-    }
+    const otherSessions = sessions
+        .filter(session => deleteButtonState.get(session.Key) !== 'deleted')
+        .filter(session => session.DiscordID !== me.DiscordID)
+        .map(session => <SessionRow
+            className={'text-warning'}
+            key={session.Key}
+            session={session}
+            buttonState={deleteButtonState}
+            setButtonState={setDeleteButtonState}
+        />)
 
-    return <div className={'container mt-4'}>
+
+    return <Container>
         <div className={'row row-cols-1 mt-2'}>
             <div className={'col'}>
                 <h1>Sessions</h1>
@@ -46,16 +60,21 @@ const Sessions = () => {
                     <tbody>
                     <NewSession buttonState={createButtonState} setButtonState={setCreateButtonState}
                                 sessions={sessions} setSessions={setSessions}/>
-                    <MySessions/>
-                    <OtherSessions/>
+                    {mySessions}
+                    {otherSessions}
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
+    </Container>
 }
 
-const NewSession = (props) => {
+const NewSession = (props: {
+    sessions: Session[];
+    setSessions: (sessions: Session[]) => void;
+    buttonState: string;
+    setButtonState: Dispatch<SetStateAction<string>>;
+}): JSX.Element => {
     const inputKind = React.useRef()
     const inputRoles = React.useRef()
     const inputExpires = React.useRef()
@@ -64,15 +83,16 @@ const NewSession = (props) => {
     return <tr>
         <td>
             <select className="custom-select mr-sm-2" ref={inputKind}>
-                <option defaultValue>{SessionKinds.ApiToken}</option>
-                {_.keys(SessionKinds)
-                    .filter(k => k !== 'ApiToken')
-                    .map(k => <option key={k} value={SessionKinds[k]}>{SessionKinds[k]}</option>)}
+                <option>{SessionKinds.ApiToken}</option>
+                {}
+                {Object.entries(SessionKinds)
+                    .filter(([k]) => k !== 'ApiToken')
+                    .map(([k, v]) => <option key={k} value={v}>{v}</option>)}
             </select>
         </td>
         <td>
             <select className="custom-select mr-sm-2" ref={inputRoles}>
-                <option defaultValue>{roles[0]}</option>
+                <option>{roles[0]}</option>
                 {roles.slice(1, -1).map(k => <option key={k} value={k}>{k}</option>)}
             </select>
         </td>
@@ -86,13 +106,21 @@ const NewSession = (props) => {
     </tr>
 }
 
-const CreateButton = (props) => {
-    const buttonClick = (e) => {
+const CreateButton = (props: {
+    setButtonState: Dispatch<SetStateAction<string>>;
+    inputKind: MutableRefObject<HTMLSelectElement>;
+    inputRoles: MutableRefObject<HTMLSelectElement>;
+    inputExpires: MutableRefObject<HTMLInputElement>;
+    setSessions: (sessions: Session[]) => void;
+    sessions: Session[];
+    buttonState: string;
+}) => {
+    const buttonClick = () => {
         props.setButtonState('creating')
         new Promise(resolve => setTimeout(resolve, 500)
         ).then(() => createSessions([{
-                kind: props.inputKind.current.value,
-                roles: [props.inputRoles.current.value],
+                Kind: props.inputKind.current.value as SessionKind,
+                Roles: [props.inputRoles.current.value] as string[],
                 expires: Number(props.inputExpires.current.value)
             }])
         ).then(resp => {
@@ -112,13 +140,16 @@ const CreateButton = (props) => {
     </button>
 }
 
-const SessionRow = (props) => {
+const SessionRow = (props: {
+    session: Session;
+    buttonState: Map<string, string>;
+    className?: string;
+    setButtonState: Dispatch<SetStateAction<Map<string, string>>>;
+}) => {
     const session = props.session
     const expiresAt = () => {
         if (session.ExpiresAt) {
             const expiresAt = session.ExpiresAt
-            const date = expiresAt.toDateString()
-            const time = `${expiresAt.toLocaleTimeString()}`
             return expiresAt.toLocaleString()
         }
         return ""
@@ -135,11 +166,15 @@ const SessionRow = (props) => {
     </tr>
 }
 
-const DeleteButton = (props) => {
+const DeleteButton = (props: {
+    buttonState: Map<string, string>;
+    setButtonState: Dispatch<SetStateAction<Map<string, string>>>;
+    session: Session;
+}) => {
     const buttonState = props.buttonState
     const setButtonState = props.setButtonState
 
-    const buttonClick = (e) => {
+    const buttonClick = () => {
         const session = props.session
         const newState = new Map()
         buttonState.forEach((val, key) => newState.set(key, val))

@@ -2,12 +2,13 @@ const path = require('path')
 
 module.exports = {
     entry: {
-        index: './js/src/index.js',
-        about: './js/src/about.js',
-        sessions: './js/src/sessions.js'
+        index: './js/src/index.tsx',
+        about: './js/src/about.tsx',
+        sessions: './js/src/sessions.tsx',
+        projects: './js/src/projects.tsx'
     },
     mode: 'development',
-    devtool: false,
+    devtool: 'inline-source-map',
     module: {
         rules: [
             {
@@ -16,10 +17,15 @@ module.exports = {
                 loader: 'babel-loader',
                 options: {presets: ['@babel/preset-react']}
             },
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
             {test: /\.css$/, use: ['style-loader', 'css-loader']}
         ]
     },
-    resolve: {extensions: ['*', '.js']},
+    resolve: {extensions: ['*', '.js', '.ts', '.tsx']},
     output: {
         path: path.resolve(__dirname, 'dist/'),
         library: 'Bundle'

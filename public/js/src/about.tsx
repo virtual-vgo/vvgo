@@ -1,15 +1,17 @@
-import React from "react";
+import React = require("react");
 import {Render} from "./render";
-import {useDirectors} from "./models";
+import {Director, useDirectors} from "./datasets";
+import {Container} from "./components";
 
-export const Entrypoint = (selectors) => Render(<About/>, selectors)
+export const Entrypoint = (selectors: any) => Render(<About/>, selectors)
 
 const About = () => {
-    const [directors, _] = useDirectors()
-    return <div className={'container'}>
+    const directors = useDirectors()
+
+    return <Container>
         <Blurb/>
-        <Leaders directors={directors}/>
-    </div>
+        <Directors directors={directors}/>
+    </Container>
 }
 
 const Blurb = () => {
@@ -41,7 +43,7 @@ const Blurb = () => {
     </div>
 }
 
-const Leaders = (props) => {
+const Directors = (props: { directors: Director[] }) => {
     return <div className="row mt-3 border-bottom border-light">
         <div className="col col-lg-3 col-12 text-center">
             <h2>VVGO Leadership</h2>
@@ -52,15 +54,15 @@ const Leaders = (props) => {
     </div>
 }
 
-const ExecutiveDirectorTable = (props) => {
+const ExecutiveDirectorTable = (props: { directors: Director[] }) => {
     return <table id="leader-table" className="table table-responsive table-borderless text-light fs-6">
         <tbody>
-        {props.directors.map(director => <ExecutiveDirectorRow director={director}/>)}
+        {props.directors.map(director => <ExecutiveDirectorRow key={director.Name} director={director}/>)}
         </tbody>
     </table>
 }
 
-const ExecutiveDirectorRow = (props) => {
+const ExecutiveDirectorRow = (props: { director: Director }) => {
     return <tr className="border-bottom">
         <td><img src={props.director.Icon} alt={props.director.Name} height="100"/></td>
         <td><p className="text-light">{props.director.Name}<br/><small>{props.director.Epithet}</small>
@@ -69,3 +71,4 @@ const ExecutiveDirectorRow = (props) => {
             <p><i>{props.director.Affiliations}</i></p></td>
     </tr>
 }
+

@@ -13,10 +13,10 @@ const SheetCredits = "Credits"
 type Credit struct {
 	Project       string
 	Order         int
-	MajorCategory string `col_name:"Major Category"`
-	MinorCategory string `col_name:"Minor Category"`
+	MajorCategory string
+	MinorCategory string
 	Name          string
-	BottomText    string `col_name:"Bottom Text"`
+	BottomText    string
 }
 
 type Credits []Credit

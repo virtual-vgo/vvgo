@@ -16,6 +16,7 @@ func datasetIsAllowed(name string) bool {
 		"Leaders",
 		"Directors",
 		"Roster",
+		"Credits",
 	}
 	for _, dataset := range allowedDatasets {
 		if name == dataset {
@@ -51,7 +52,7 @@ func Dataset(w http.ResponseWriter, r *http.Request) {
 		}
 		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
 			Status:  models.StatusOk,
-			Dataset: &models.Dataset{Name: dataset.Name, Rows: models.ValuesToMap(sheetData)},
+			Dataset: models.ValuesToMap(sheetData),
 		})
 	}
 }

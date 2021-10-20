@@ -9,18 +9,18 @@ import (
 const SheetParts = "Parts"
 
 type Part struct {
-	Project            string `json:"project"`
-	PartName           string `json:"part_name"`
-	ScoreOrder         int    `json:"score_order"`
-	SheetMusicFile     string `json:"sheet_music_file"`
-	ClickTrackFile     string `json:"click_track_file"`
-	ConductorVideo     string `json:"conductor_video"`
-	PronunciationGuide string `json:"pronunciation_guide"`
+	Project            string
+	PartName           string
+	ScoreOrder         int
+	SheetMusicFile     string
+	ClickTrackFile     string
+	ConductorVideo     string
+	PronunciationGuide string
 
 	// Derived Columns
-	SheetMusicLink         string `json:"sheet_music_link"`
-	ClickTrackLink         string `json:"click_track_link"`
-	PronunciationGuideLink string `json:"pronunciation_guide_link"`
+	SheetMusicLink         string
+	ClickTrackLink         string
+	PronunciationGuideLink string
 }
 
 type Parts []Part
