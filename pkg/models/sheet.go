@@ -8,10 +8,12 @@ import (
 )
 
 const SpreadsheetWebsiteData = "website_data"
+const SheetDirectors = "Leaders"
+
 
 type Sheet struct {
-	Name   string          `json:"name"`
-	Values [][]interface{} `json:"values"`
+	Name   string
+	Values [][]interface{}
 }
 
 func ValuesToMap(rows [][]interface{}) []map[string]string {

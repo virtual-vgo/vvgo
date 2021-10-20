@@ -4,19 +4,14 @@ const StatusOk = "ok"
 const StatusError = "error"
 
 type ApiResponse struct {
-	Status      string         `json:"status"`
-	Error       *ErrorResponse `json:"error,omitempty"`
-	Projects    []Project      `json:"projects,omitempty"`
-	Parts       []Part         `json:"parts,omitempty"`
-	Sessions    []Identity     `json:"sessions,omitempty"`
-	Spreadsheet *Spreadsheet   `json:"spreadsheet,omitempty"`
-	Dataset     *Dataset       `json:"dataset,omitempty"`
-	Identity    *Identity      `json:"identity,omitempty"`
-}
-
-type Dataset struct {
-	Name string
-	Rows []map[string]string
+	Status      string
+	Error       *ErrorResponse      `json:"Error,omitempty"`
+	Projects    []Project           `json:"Projects,omitempty"`
+	Parts       []Part              `json:"Parts,omitempty"`
+	Sessions    []Identity          `json:"Sessions,omitempty"`
+	Spreadsheet *Spreadsheet        `json:"Spreadsheet,omitempty"`
+	Dataset     []map[string]string `json:"Dataset,omitempty"`
+	Identity    *Identity           `json:"Identity,omitempty"`
 }
 
 type ErrorResponse struct {

@@ -49,11 +49,11 @@ func Anonymous() Identity { return anonymous }
 
 // Identity A user identity.
 type Identity struct {
-	Key       string     `json:"key"`
-	Kind      Kind       `json:"kind"`
-	Roles     []Role     `json:"roles"`
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
-	DiscordID string     `json:"discord_id,omitempty"`
+	Key       string
+	Kind      Kind
+	Roles     []Role
+	ExpiresAt *time.Time `json:"ExpiresAt,omitempty"`
+	DiscordID string     `json:"DiscordID,omitempty"`
 }
 
 func ListSessions(ctx context.Context, identity Identity) ([]Identity, error) {
