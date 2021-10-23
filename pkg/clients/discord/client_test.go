@@ -38,7 +38,7 @@ func TestClient_QueryOAuth(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Config.Discord.Endpoint = ts.URL
-	gotToken, gotError := QueryOAuth(ctx, "test-code")
+	gotToken, gotError := GetOAuthToken(ctx, "test-code")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodPost, gotRequest.Method)
 	assert.Equal(t, "/oauth2/token", gotRequest.URL.String())
@@ -92,7 +92,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Config.Discord.Endpoint = ts.URL
-	gotUser, gotError := QueryIdentity(ctx, token)
+	gotUser, gotError := GetIdentity(ctx, token)
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
 	assert.Equal(t, "/users/@me", gotRequest.URL.String())
@@ -120,7 +120,7 @@ func TestClient_QueryGuildMember(t *testing.T) {
 	}))
 	defer ts.Close()
 	config.Config.Discord.Endpoint = ts.URL
-	gotMember, gotError := QueryGuildMember(ctx, "test-user-id")
+	gotMember, gotError := GetGuildMember(ctx, "test-user-id")
 	require.NoError(t, gotError)
 	assert.Equal(t, http.MethodGet, gotRequest.Method)
 	assert.Equal(t, "/guilds/690626216637497425/members/test-user-id", gotRequest.URL.String())

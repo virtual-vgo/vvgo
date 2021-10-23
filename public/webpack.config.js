@@ -5,7 +5,7 @@ module.exports = {
         index: './js/src/index.tsx',
         about: './js/src/about.tsx',
         sessions: './js/src/sessions.tsx',
-        projects: './js/src/projects.tsx'
+        mixtape: './js/src/mixtape.tsx'
     },
     mode: 'development',
     devtool: 'inline-source-map',

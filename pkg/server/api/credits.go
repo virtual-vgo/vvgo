@@ -14,27 +14,27 @@ func Credits(w http.ResponseWriter, r *http.Request) {
 
 	projectName := r.FormValue("project")
 	if projectName == "" {
-		http_helpers.BadRequest(ctx, w, "project is required")
+		http_helpers.WriteErrorBadRequest(ctx, w, "project is required")
 		return
 	}
 
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
 	project, ok := projects.Get(projectName)
 	if !ok {
-		http_helpers.BadRequest(ctx, w, "requested project does not exist")
+		http_helpers.WriteErrorBadRequest(ctx, w, "requested project does not exist")
 		return
 	}
 
 	credits, err := models.ListCredits(ctx)
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
@@ -43,6 +43,6 @@ func Credits(w http.ResponseWriter, r *http.Request) {
 	data := models.BuildCreditsTable(credits, project)
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		logger.JsonEncodeFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 	}
 }

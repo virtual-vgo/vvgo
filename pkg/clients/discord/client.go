@@ -38,9 +38,9 @@ func LoginURL(state string) string {
 	return "https://discord.com/api/oauth2/authorize?" + query.Encode()
 }
 
-// QueryOAuth Query oauth token from discord.
+// GetOAuthToken Query oauth token from discord.
 // We use the authorization code grant.
-func QueryOAuth(ctx context.Context, code string) (*OAuthToken, error) {
+func GetOAuthToken(ctx context.Context, code string) (*OAuthToken, error) {
 	req, err := newOAuthRequest(ctx, code)
 	if err != nil {
 		return nil, err
@@ -76,10 +76,10 @@ func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
 	return req, nil
 }
 
-// QueryIdentity Query discord for the token's identity.
+// GetIdentity Query discord for the token's identity.
 // This requires an oauth token with identity scope.
 // https://discordapp.com/developers/docs/resources/user#get-current-user
-func QueryIdentity(ctx context.Context, oauthToken *OAuthToken) (*User, error) {
+func GetIdentity(ctx context.Context, oauthToken *OAuthToken) (*User, error) {
 	req, err := newTokenRequest(ctx, oauthToken, "/users/@me")
 	if err != nil {
 		return nil, err
@@ -103,10 +103,10 @@ func newTokenRequest(ctx context.Context, oauthToken *OAuthToken, path string) (
 	return req, err
 }
 
-// QueryGuildMember Query discord for the guild member object of the guild id and user id.
+// GetGuildMember Query discord for the guild member object of the guild id and user id.
 // Here we use the server's own auth token.
 // https://discordapp.com/developers/docs/resources/guild#get-guild-member
-func QueryGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, error) {
+func GetGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, error) {
 	req, err := newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members/"+userID.String(), nil)
 	if err != nil {
 		logger.NewRequestFailure(ctx, err)
@@ -119,6 +119,25 @@ func QueryGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, erro
 		return nil, err
 	}
 	return &guildMember, nil
+}
+
+func SearchGuildMembers(ctx context.Context, query string, limit string) ([]GuildMember, error) {
+	params := make(url.Values)
+	params.Set("query", query)
+	params.Set("limit", limit)
+
+	req, err := newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members/search?"+params.Encode(), nil)
+	if err != nil {
+		logger.NewRequestFailure(ctx, err)
+		return nil, err
+	}
+
+	// unmarshal the response
+	var guildMembers []GuildMember
+	if _, err := doDiscordRequest(req, &guildMembers); err != nil {
+		return nil, err
+	}
+	return guildMembers, nil
 }
 
 func GetApplicationCommands(ctx context.Context) ([]ApplicationCommand, error) {

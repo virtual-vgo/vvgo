@@ -2,14 +2,14 @@ import React = require('react');
 import {Highlight, latestProject, Project, projectIsOpenForSubmission, useHighlights, useProjects} from "./datasets"
 import {Container, YoutubeIframe} from "./components"
 import {Render} from "./render";
+import {randElement} from "./utils";
 
 export const Entrypoint = (selectors: string) => Render(<Index/>, selectors)
 
 const Index = () => {
     const highlights = useHighlights()
     const projects = useProjects()
-    const highlight = highlights && highlights.length > 0 ?
-        highlights[Math.floor(Math.random() * highlights.length)] : new Highlight()
+    const highlight = highlights && highlights.length > 0 ? randElement(highlights) : new Highlight()
 
     const latest = latestProject(projects)
     return <Container>

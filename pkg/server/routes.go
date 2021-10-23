@@ -7,6 +7,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/devel"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
@@ -23,7 +24,7 @@ func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
 		identity := login.IdentityFromContext(r.Context())
 		fmt.Println(identity)
 		if !identity.HasRole(role) {
-			http_helpers.Unauthorized(ctx, w)
+			http_helpers.WriteUnauthorizedError(ctx, w)
 		}
 	}
 }
@@ -32,7 +33,7 @@ func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
 
 	// authorize
-	for _, role := range []models.Role{models.RoleVVGOMember, models.RoleVVGOTeams, models.RoleVVGOLeader} {
+	for _, role := range []models.Role{models.RoleVVGOMember, models.RoleVVGOTeams, models.RoleVVGOExecutiveDirector} {
 		mux.HandleFunc("/authorize/"+role.String(), authorize(role), models.RoleAnonymous)
 	}
 
@@ -52,19 +53,21 @@ func Routes() http.Handler {
 	mux.HandleFunc("/logout", login.Logout, models.RoleAnonymous)
 
 	// api endpoints
-	mux.HandleFunc("/api/v1/aboutme", api.Aboutme, models.RoleVVGOLeader)
-	mux.HandleFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOLeader)
+	mux.HandleFunc("/api/v1/aboutme", api.Aboutme, models.RoleVVGOExecutiveDirector)
+	mux.HandleFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOExecutiveDirector)
+	mux.HandleFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/download", api.Download, models.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/dataset", api.Dataset, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
+	mux.HandleFunc("/api/v1/guild_members", api.GuildMembers, models.RoleVVGOExecutiveDirector)
+	mux.HandleFunc("/api/v1/me", api.Me, models.RoleAnonymous)
+	mux.HandleApiFunc("/api/v1/mixtape", mixtape.Handler, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/parts", api.Parts, models.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/me", api.Me, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", api.Roles, models.RoleAnonymous)
+	mux.HandleFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOExecutiveDirector)
 	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, models.RoleVVGOTeams)
 	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, models.RoleVVGOTeams)
-	mux.HandleFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOLeader)
 	mux.HandleFunc("/api/v1/spreadsheet", api.Spreadsheet, models.RoleWriteSpreadsheet)
 	mux.HandleFunc("/api/v1/version", api.Version, models.RoleAnonymous)
 	mux.HandleFunc("/download", api.Download, models.RoleVVGOMember)
@@ -84,8 +87,8 @@ func Routes() http.Handler {
 		}, models.RoleVVGOMember)
 
 	// views
-	mux.HandleFunc("/voting", views.Voting, models.RoleVVGOLeader)
-	mux.HandleFunc("/voting/results", views.VotingResults, models.RoleVVGOLeader)
+	mux.HandleFunc("/voting", views.Voting, models.RoleVVGOExecutiveDirector)
+	mux.HandleFunc("/voting/results", views.VotingResults, models.RoleVVGOExecutiveDirector)
 	mux.HandleFunc("/parts", views.Parts, models.RoleVVGOMember)
 	mux.HandleFunc("/projects", views.Projects, models.RoleAnonymous)
 	mux.HandleFunc("/credits-maker", views.CreditsMaker, models.RoleVVGOTeams)
@@ -93,6 +96,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/contact_us", views.ContactUs, models.RoleAnonymous)
 	mux.HandleFunc("/feature", views.ServeTemplate("feature.gohtml"), models.RoleAnonymous)
 	mux.HandleFunc("/sessions", views.Sessions, models.RoleVVGOMember)
+	mux.HandleFunc("/mixtape", views.Mixtape, models.RoleVVGOMember)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

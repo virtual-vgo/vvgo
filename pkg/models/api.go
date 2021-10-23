@@ -1,20 +1,24 @@
 package models
 
+import "github.com/virtual-vgo/vvgo/pkg/clients/discord"
+
 const StatusOk = "ok"
 const StatusError = "error"
 
 type ApiResponse struct {
-	Status      string
-	Error       *ErrorResponse      `json:"Error,omitempty"`
-	Projects    []Project           `json:"Projects,omitempty"`
-	Parts       []Part              `json:"Parts,omitempty"`
-	Sessions    []Identity          `json:"Sessions,omitempty"`
-	Spreadsheet *Spreadsheet        `json:"Spreadsheet,omitempty"`
-	Dataset     []map[string]string `json:"Dataset,omitempty"`
-	Identity    *Identity           `json:"Identity,omitempty"`
+	Status          string
+	Error           *Error                `json:"Error,omitempty"`
+	Projects        []Project             `json:"Projects,omitempty"`
+	Parts           []Part                `json:"Parts,omitempty"`
+	Sessions        []Identity            `json:"Sessions,omitempty"`
+	Spreadsheet     *Spreadsheet          `json:"Spreadsheet,omitempty"`
+	Dataset         []map[string]string   `json:"Dataset,omitempty"`
+	Identity        *Identity             `json:"Identity,omitempty"`
+	GuildMembers    []discord.GuildMember `json:"GuildMembers,omitempty"`
+	MixtapeProjects []MixtapeProject      `json:"MixtapeProjects,omitempty"`
 }
 
-type ErrorResponse struct {
+type Error struct {
 	Code  int
 	Error string
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
@@ -22,6 +23,17 @@ type RBACMux struct {
 // HandleFunc registers the handler function for the given pattern.
 func (auth *RBACMux) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request), role models.Role) {
 	auth.Handle(pattern, http.HandlerFunc(handler), role)
+}
+
+// HandleApiFunc registers the handler function for the given pattern.
+func (auth *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) models.ApiResponse, role models.Role) {
+	auth.Handle(pattern, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		resp := handler(r)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			logger.JsonEncodeFailure(ctx, err)
+		}
+	}), role)
 }
 
 func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Role) {
@@ -62,7 +74,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Ro
 			http.Redirect(w, r, "/login?"+values.Encode(), http.StatusFound)
 			return
 		}
-		http_helpers.Unauthorized(ctx, w)
+		http_helpers.WriteUnauthorizedError(ctx, w)
 	})
 }
 

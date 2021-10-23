@@ -19,7 +19,7 @@ func VotingResults(w http.ResponseWriter, r *http.Request) {
 	if err := redis.Do(ctx, redis.Cmd(&data,
 		"HGETALL", "arrangements:"+arrangements.Season+":ballots")); err != nil {
 		logger.RedisFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
@@ -49,9 +49,9 @@ func nameBallots(ctx context.Context, data map[string]string) []namedBallot {
 	ballots := make([]namedBallot, 0, len(data))
 	for userID, ballotJSON := range data {
 		var nick string
-		guildMember, err := discord.QueryGuildMember(ctx, discord.Snowflake(userID))
+		guildMember, err := discord.GetGuildMember(ctx, discord.Snowflake(userID))
 		if err != nil {
-			logger.MethodFailure(ctx, "discord.QueryGuildMember", err)
+			logger.MethodFailure(ctx, "discord.GetGuildMember", err)
 		} else {
 			nick = guildMember.Nick
 		}

@@ -17,14 +17,14 @@ func FetchSpreadsheets(w http.ResponseWriter, r *http.Request) {
 		models.SheetCredits, models.SheetProjects, models.SheetParts, models.SheetDirectors, "Highlights", "Roster")
 	if err != nil {
 		logger.MethodFailure(ctx, "vvgo.GetSheets", err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
 	for _, sheet := range spreadsheet.Sheets {
 		if err := redis.WriteSheet(ctx, spreadsheet.SpreadsheetName, sheet.Name, sheet.Values); err != nil {
 			logger.RedisFailure(ctx, err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		}
 	}

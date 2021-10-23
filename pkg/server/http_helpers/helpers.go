@@ -19,66 +19,89 @@ func JsonEncode(w http.ResponseWriter, src interface{}) bool {
 	return true
 }
 
-func JsonDecodeFailure(ctx context.Context, w http.ResponseWriter, err error) {
-	logger.JsonDecodeFailure(ctx, err)
-	BadRequest(ctx, w, "invalid json: "+err.Error())
+func NewJsonDecodeError(err error) models.ApiResponse {
+	return NewBadRequestError("invalid json: " + err.Error())
 }
 
-func BadRequest(ctx context.Context, w http.ResponseWriter, reason string) {
-	WriteErrorResponse(ctx, w, models.ErrorResponse{
+func NewBadRequestError(reason string) models.ApiResponse {
+	return NewErrorResponse(models.Error{
 		Code:  http.StatusBadRequest,
 		Error: reason,
 	})
 }
 
-func MethodNotAllowed(ctx context.Context, w http.ResponseWriter) {
-	WriteErrorResponse(ctx, w, models.ErrorResponse{
+func NewMethodNotAllowedError() models.ApiResponse {
+	return NewErrorResponse(models.Error{
 		Code:  http.StatusMethodNotAllowed,
 		Error: "method not allowed",
 	})
 }
 
-func Unauthorized(ctx context.Context, w http.ResponseWriter) {
-	WriteErrorResponse(ctx, w, models.ErrorResponse{
+func NewUnauthorizedError() models.ApiResponse {
+	return NewErrorResponse(models.Error{
 		Code:  http.StatusUnauthorized,
 		Error: "unauthorized",
 	})
 }
 
-func InternalServerError(ctx context.Context, w http.ResponseWriter) {
-	WriteErrorResponse(ctx, w, models.ErrorResponse{
+func NewInternalServerError() models.ApiResponse {
+	return NewErrorResponse(models.Error{
 		Code:  http.StatusInternalServerError,
 		Error: "internal server error",
 	})
 }
 
-func WriteErrorResponse(ctx context.Context, w http.ResponseWriter, error models.ErrorResponse) {
-	WriteAPIResponse(ctx, w, models.ApiResponse{
-		Status: models.StatusError,
-		Error:  &error,
-	})
+func WriteErrorJsonDecodeFailure(ctx context.Context, w http.ResponseWriter, err error) {
+	logger.JsonDecodeFailure(ctx, err)
+	WriteAPIResponse(ctx, w, NewJsonDecodeError(err))
 }
 
-func TooManyBytes(ctx context.Context, w http.ResponseWriter) {
-	WriteErrorResponse(ctx, w, models.ErrorResponse{
+func WriteErrorBadRequest(ctx context.Context, w http.ResponseWriter, reason string) {
+	WriteAPIResponse(ctx, w, NewBadRequestError(reason))
+}
+
+func NewErrorResponse(error models.Error) models.ApiResponse {
+	return models.ApiResponse{Status: models.StatusError, Error: &error}
+}
+
+func WriteErrorMethodNotAllowed(ctx context.Context, w http.ResponseWriter) {
+	WriteAPIResponse(ctx, w, NewMethodNotAllowedError())
+}
+
+func WriteUnauthorizedError(ctx context.Context, w http.ResponseWriter) {
+	WriteAPIResponse(ctx, w, NewUnauthorizedError())
+}
+func WriteInternalServerError(ctx context.Context, w http.ResponseWriter) {
+	WriteAPIResponse(ctx, w, NewInternalServerError())
+}
+
+func WriteErrorResponse(ctx context.Context, w http.ResponseWriter, error models.Error) {
+	WriteAPIResponse(ctx, w, NewErrorResponse(error))
+}
+
+func WriteErrorTooManyBytes(ctx context.Context, w http.ResponseWriter) {
+	WriteErrorResponse(ctx, w, models.Error{
 		Code:  http.StatusRequestEntityTooLarge,
 		Error: "request too chonk",
 	})
 }
-func UnsupportedFile(ctx context.Context, w http.ResponseWriter) {
-	WriteErrorResponse(ctx, w, models.ErrorResponse{
+
+func WriteErrorUnsupportedFile(ctx context.Context, w http.ResponseWriter) {
+	WriteErrorResponse(ctx, w, models.Error{
 		Code:  http.StatusUnsupportedMediaType,
 		Error: "unsupported file",
 	})
 }
-func NotFound(ctx context.Context, w http.ResponseWriter) {
-	WriteErrorResponse(ctx, w, models.ErrorResponse{
+
+func WriteErrorNotFound(ctx context.Context, w http.ResponseWriter) {
+	WriteErrorResponse(ctx, w, models.Error{
 		Code:  http.StatusNotFound,
 		Error: "not found",
 	})
 }
-func NotImplemented(ctx context.Context, w http.ResponseWriter) {
-	WriteErrorResponse(ctx, w, models.ErrorResponse{
+
+func WriteErrorNotImplemented(ctx context.Context, w http.ResponseWriter) {
+	WriteErrorResponse(ctx, w, models.Error{
 		Code:  http.StatusNotImplemented,
 		Error: "not implemented",
 	})

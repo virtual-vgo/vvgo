@@ -1,6 +1,7 @@
 package http_wrappers
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
@@ -11,6 +12,8 @@ import (
 	"strings"
 	"time"
 )
+
+var DebugHTTP = false
 
 func NoFollow(client *http.Client) *http.Client {
 	if client == nil {
@@ -29,12 +32,12 @@ type ResponseWriter struct {
 	http.ResponseWriter
 }
 
-func (x ResponseWriter) WriteHeader(code int) {
+func (x *ResponseWriter) WriteHeader(code int) {
 	x.code = code
 	x.ResponseWriter.WriteHeader(code)
 }
 
-func (x ResponseWriter) Write(b []byte) (int, error) {
+func (x *ResponseWriter) Write(b []byte) (int, error) {
 	version.SetVersionHeaders(x)
 	n, err := x.ResponseWriter.Write(b)
 	x.size += n
@@ -47,7 +50,7 @@ func Handler(handler http.Handler) http.HandlerFunc {
 
 		writer := ResponseWriter{ResponseWriter: w, code: http.StatusOK} // this is the default status code
 		debugRequestIn(r)
-		handler.ServeHTTP(writer, r)
+		handler.ServeHTTP(&writer, r)
 
 		// submit results
 		logger.WithFields(logrus.Fields{
@@ -60,18 +63,39 @@ func Handler(handler http.Handler) http.HandlerFunc {
 			"response_size":      writer.size,
 			"start_time":         start,
 			"duration":           time.Since(start).Seconds(),
-		}).Info("incoming http server request completed")
+		}).Info("http server: request completed")
 	}
+}
+
+type Non200StatusError struct {
+	Code int
+	Body string
+}
+
+func (x Non200StatusError) Error() string {
+	return fmt.Sprintf("non-200 status code: (%d) %s", x.Code, x.Body)
 }
 
 func DoRequest(req *http.Request) (*http.Response, error) {
 	start := time.Now()
+	ctx := req.Context()
 
 	// do the request
 	debugRequestOut(req)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		var body bytes.Buffer
+		if _, err := body.ReadFrom(req.Body); err != nil {
+			logger.MethodFailure(ctx, "request.Body", err)
+			// log this error but don't return
+		}
+		return nil, Non200StatusError{
+			Code: resp.StatusCode,
+			Body: body.String(),
+		}
 	}
 	debugResponse(resp)
 
@@ -85,7 +109,7 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 		"response_size":   resp.ContentLength,
 		"start_time":      start,
 		"duration":        time.Since(start).Seconds(),
-	}).Info("outgoing http client request completed")
+	}).Info("http client: request completed")
 	return resp, err
 }
 
@@ -105,8 +129,6 @@ func PostForm(url string, data url.Values) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return DoRequest(req)
 }
-
-var DebugHTTP = false
 
 func debugRequestOut(r *http.Request) {
 	if DebugHTTP {

@@ -31,7 +31,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		Password(recorder, httptest.NewRequest(http.MethodPost, "/?"+urlValues.Encode(), nil))
 		test_helpers.AssertEqualResponse(t, models.ApiResponse{
 			Status: models.StatusError,
-			Error: &models.ErrorResponse{
+			Error: &models.Error{
 				Code:  http.StatusUnauthorized,
 				Error: "unauthorized",
 			},
