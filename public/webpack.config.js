@@ -3,9 +3,6 @@ const path = require('path')
 module.exports = {
     entry: {
         index: './js/src/index.tsx',
-        about: './js/src/about.tsx',
-        sessions: './js/src/sessions.tsx',
-        mixtape: './js/src/mixtape.tsx'
     },
     mode: 'development',
     devtool: 'inline-source-map',
@@ -28,6 +25,6 @@ module.exports = {
     resolve: {extensions: ['*', '.js', '.ts', '.tsx']},
     output: {
         path: path.resolve(__dirname, 'dist/'),
-        library: 'Bundle'
+        filename: 'index.js'
     }
 }

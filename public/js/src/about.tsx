@@ -1,11 +1,8 @@
 import React = require("react");
-import {Render} from "./render";
 import {Director, useDirectors} from "./datasets";
 import {Container} from "./components";
 
-export const Entrypoint = (selectors: any) => Render(<About/>, selectors)
-
-const About = () => {
+export const About = () => {
     const directors = useDirectors()
 
     return <Container>

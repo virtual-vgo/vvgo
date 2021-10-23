@@ -19,15 +19,16 @@ import (
 var PublicFiles = "public"
 
 var (
-	Index           = ServeJsPage("Virtual Video Game Orchestra", "dist/index.js")
-	ServePublicFile = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
-	Parts           = ServeTemplate("parts.gohtml")
-	About           = ServeJsPage("About", "dist/about.js")
-	ContactUs       = ServeHtml("Contact Us", "contact_us.html")
-	Voting          = ServeTemplate("voting.gohtml")
-	Sessions        = ServeJsPage("Manage Sessions", "dist/sessions.js")
-	Projects2       = ServeJsPage("projects", "dist/projects.js")
-	Mixtape         = ServeJsPage("Mixtape", "dist/mixtape.js")
+	Index              = ServeJsPage("Virtual Video Game Orchestra")
+	ServePublicFile    = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
+	Parts              = ServeTemplate("parts.gohtml")
+	About              = ServeJsPage("About")
+	ContactUs          = ServeHtml("Contact Us", "contact_us.html")
+	Voting             = ServeTemplate("voting.gohtml")
+	Sessions           = ServeJsPage("Manage Sessions")
+	Projects2          = ServeJsPage("projects")
+	Mixtape            = ServeJsPage("Mixtape")
+	NewProjectWorkflow = ServeJsPage("Mixtape | New Project Workflow")
 )
 
 type Page struct {
@@ -49,8 +50,8 @@ func ServeHtml(title, htmlSource string) http.HandlerFunc {
 	}
 }
 
-func ServeJsPage(title, jsSource string) http.HandlerFunc {
-	return Page{Title: "VVGO | " + title, JsSource: jsSource}.Render
+func ServeJsPage(title string) http.HandlerFunc {
+	return Page{Title: "VVGO | " + title, JsSource: "/dist/index.js"}.Render
 }
 
 func (x Page) Render(w http.ResponseWriter, r *http.Request) {

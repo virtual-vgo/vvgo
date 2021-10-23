@@ -6,9 +6,6 @@
     <meta name="description" content="">
     {{ template "header.gohtml" }}
 
-    {{ if .JsSource }}
-        <script type="text/javascript" src="{{.JsSource}}"></script>
-    {{ end }}
 </head>
 <body class="">
 {{ template "navbar.gohtml" }}
@@ -19,9 +16,10 @@
     </div>
 </main>
 
-{{ template "footer.gohtml" }}
-{{ if .JsSource}}
-    <script type="text/javascript">Bundle.Entrypoint("#entrypoint")</script>
+{{ if .JsSource }}
+    <script type="text/javascript" src="{{.JsSource}}"></script>
 {{ end }}
+
+{{ template "footer.gohtml" }}
 </body>
 </html>
