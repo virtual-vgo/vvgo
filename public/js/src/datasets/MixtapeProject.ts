@@ -1,6 +1,8 @@
 import {fetchApi} from "./hooks";
 
 export interface MixtapeProject {
+    Id: string;
+    Mixtape: string;
     Name: string;
     Blurb: string;
     Channel: string;
@@ -8,9 +10,16 @@ export interface MixtapeProject {
     Tags: string[];
 }
 
-export const saveMixtapeProject = (project: MixtapeProject) => {
+export const saveMixtapeProjects = (projects: MixtapeProject[]) => {
     return fetchApi("/mixtape", {
         method: "POST",
-        body: JSON.stringify([project]),
+        body: JSON.stringify(projects),
+    });
+};
+
+export const deleteMixtapeProjects = (projects: MixtapeProject[]) => {
+    return fetchApi("/mixtape", {
+        method: "DELETE",
+        body: JSON.stringify(projects.map(x => x.Id)),
     });
 };

@@ -10,6 +10,7 @@ import (
 )
 
 type MixtapeProject struct {
+	Id      string
 	Mixtape string
 	Name    string
 	Blurb   string
@@ -43,7 +44,7 @@ func WriteMixtapeProjects(ctx context.Context, projects []MixtapeProject) error 
 		if err != nil {
 			return errors.JsonEncodeFailure(err)
 		}
-		redisArgs = append(redisArgs, project.Name, string(projectJSON))
+		redisArgs = append(redisArgs, project.Id, string(projectJSON))
 	}
 
 	if err := redis.Do(ctx, redis.Cmd(nil, "HSET", redisArgs...)); err != nil {
