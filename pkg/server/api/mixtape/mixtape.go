@@ -8,6 +8,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 )
 
@@ -78,6 +79,7 @@ type ProjectsDeleteRequest []string
 
 func ProjectsHandler(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
+	identity := login.IdentityFromContext(ctx)
 	switch r.Method {
 	case http.MethodGet:
 		projects, err := models.ListMixtapeProjects(ctx)
@@ -92,13 +94,27 @@ func ProjectsHandler(r *http.Request) models.ApiResponse {
 		if err := json.NewDecoder(r.Body).Decode(&projects); err != nil {
 			return http_helpers.NewJsonDecodeError(err)
 		}
-		if err := models.WriteMixtapeProjects(ctx, projects); err != nil {
+		var allowedProject []models.MixtapeProject
+		for _, project := range projects {
+			for _, owner := range project.Owners {
+				if identity.HasRole(models.RoleVVGOExecutiveDirector) || owner == identity.DiscordID {
+					allowedProject = append(allowedProject, project)
+					break
+				}
+			}
+
+		}
+
+		if err := models.WriteMixtapeProjects(ctx, allowedProject); err != nil {
 			logger.MethodFailure(ctx, "models.WriteMixtapeProjects", err)
 			return http_helpers.NewInternalServerError()
 		}
-		return models.ApiResponse{Status: models.StatusOk}
+		return models.ApiResponse{Status: models.StatusOk, MixtapeProjects: allowedProject}
 
 	case http.MethodDelete:
+		if !identity.HasRole(models.RoleVVGOExecutiveDirector) {
+			return http_helpers.NewUnauthorizedError()
+		}
 		var args []string
 		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 			return http_helpers.NewJsonDecodeError(err)

@@ -2,13 +2,13 @@ import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import {Container} from "../components";
-import {fetchApi, Session, useMixtapeProjects, useMySession} from "../datasets";
+import {fetchApi, Roles, Session, useMixtapeProjects, useMySession} from "../datasets";
 import {MixtapeProject} from "../datasets/MixtapeProject";
 import _ = require("lodash");
 import React = require("react");
 
 export const MemberDashboard = () => {
-    const [projects] = useMixtapeProjects()
+    const [projects] = useMixtapeProjects();
     const shuffleProjects = _.shuffle(projects).map(p => {
         const tags = p.Tags ? p.Tags : [];
         const owners = p.Owners ? p.Owners : [];
@@ -39,6 +39,8 @@ const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
     const [showEdit, setShowEdit] = useState(false);
     const blurbRef = useRef({} as HTMLTextAreaElement);
     const tagsRef = useRef({} as HTMLInputElement);
+    const canEdit = (me.DiscordID && project.Owners.includes(me.DiscordID)) ||
+        (me.Roles && me.Roles.includes(Roles.ExecutiveDirector));
 
     const buttonOnClick = () => {
         setShowEdit(false);
@@ -62,7 +64,9 @@ const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
                     <FormControl
                         ref={blurbRef}
                         as={"textarea"}
-                        defaultValue={project.Blurb}/>
+                        defaultValue={project.Blurb}
+                        placeholder={"Description"}
+                    />
                 </InputGroup> :
                 <ReactMarkdown>
                     {project.Blurb}
@@ -74,27 +78,30 @@ const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
                             <InputGroup.Text children={"#"}/>
                             <FormControl
                                 ref={tagsRef}
-                                defaultValue={project.Tags.join(", ")}/>
+                                defaultValue={project.Tags.join(", ")}
+                                placeholder={"tags"}
+                            />
                         </InputGroup> :
                         <Card.Text>
                             <i># {project.Tags.join(", ")}</i>
                         </Card.Text>}
                 </Col>
-                <Col className={"d-flex justify-content-end"}>
-                    {showEdit ?
-                        <Button
-                            type={"button"}
-                            variant={"outline-secondary"}
-                            size={"sm"}
-                            onClick={buttonOnClick}
-                            children={"Submit"}/> :
-                        <Button
-                            type={"button"}
-                            variant={"outline-secondary"}
-                            size={"sm"}
-                            onClick={() => setShowEdit(true)}
-                            children={"Edit"}/>}
-                </Col>
+                {canEdit ?
+                    <Col className={"d-flex justify-content-end"}>
+                        {showEdit ?
+                            <Button
+                                type={"button"}
+                                variant={"outline-secondary"}
+                                size={"sm"}
+                                onClick={buttonOnClick}
+                                children={"Submit"}/> :
+                            <Button
+                                type={"button"}
+                                variant={"outline-secondary"}
+                                size={"sm"}
+                                onClick={() => setShowEdit(true)}
+                                children={"Edit"}/>}
+                    </Col> : ""}
             </Row>
         </Card.Body>
     </Card>;

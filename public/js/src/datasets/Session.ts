@@ -1,5 +1,9 @@
 import {fetchApi} from "./hooks";
 
+export enum Roles {
+    ExecutiveDirector = "vvgo-leader"
+}
+
 export enum SessionKind {
     Bearer = "bearer",
     Basic = "basic",

@@ -88,7 +88,7 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 	}
 	if resp.StatusCode != 200 {
 		var body bytes.Buffer
-		if _, err := body.ReadFrom(req.Body); err != nil {
+		if _, err := body.ReadFrom(resp.Body); err != nil {
 			logger.MethodFailure(ctx, "request.Body", err)
 			// log this error but don't return
 		}
