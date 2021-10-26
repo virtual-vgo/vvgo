@@ -1,6 +1,6 @@
 import {Credit} from "./Credit";
 import {Director} from "./Director";
-import {GuildMember} from "./guildMember";
+import {GuildMember} from "./GuildMember";
 import {Highlight} from "./Highlight";
 import {MixtapeProject} from "./MixtapeProject";
 import {Part} from "./Part";
