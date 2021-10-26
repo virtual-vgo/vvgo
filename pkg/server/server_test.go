@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
@@ -96,25 +95,6 @@ func TestServer(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", models.RoleAnonymous)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		})
-	})
-
-	t.Run("roles", func(t *testing.T) {
-		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/api/v1/roles")
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			var got []models.Role
-			assert.NoError(t, json.NewDecoder(resp.Body).Decode(&got))
-			assert.Equal(t, []models.Role{models.RoleAnonymous}, got)
-		})
-		t.Run("vvgo-uploader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/api/v1/roles", models.RoleVVGOTeams, models.RoleVVGOMember)
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			var got []models.Role
-			assert.NoError(t, json.NewDecoder(resp.Body).Decode(&got))
-			assert.Equal(t, []models.Role{models.RoleVVGOTeams, models.RoleVVGOMember}, got)
 		})
 	})
 

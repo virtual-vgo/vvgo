@@ -1,13 +1,17 @@
 package models
 
-import "github.com/virtual-vgo/vvgo/pkg/clients/discord"
+import (
+	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
+	"github.com/virtual-vgo/vvgo/pkg/version"
+)
 
 const StatusOk = "ok"
 const StatusError = "error"
 
 type ApiResponse struct {
 	Status          string
-	Error           *Error                `json:"Error,omitempty"`
+	Version         version.Version
+	Error           *ApiError             `json:"Error,omitempty"`
 	Projects        []Project             `json:"Projects,omitempty"`
 	Parts           []Part                `json:"Parts,omitempty"`
 	Sessions        []Identity            `json:"Sessions,omitempty"`
@@ -17,23 +21,13 @@ type ApiResponse struct {
 	GuildMembers    []discord.GuildMember `json:"GuildMembers,omitempty"`
 	MixtapeProjects []MixtapeProject      `json:"MixtapeProjects,omitempty"`
 	WorkflowResult  []WorkflowTaskResult  `json:"WorkflowResult,omitempty"`
+	Credits         []CreditsTopicRow     `json:"Credits,omitempty"`
+	Ballot          ArrangementsBallot    `json:"Ballot,omitempty"`
 }
 
-type Error struct {
+type ApiError struct {
 	Code  int
 	Error string
-}
-
-type CreateSessionsRequest struct {
-	Sessions []struct {
-		Kind    string   `json:"kind"`
-		Roles   []string `json:"roles"`
-		Expires int      `json:"expires"`
-	} `json:"sessions"`
-}
-
-type DeleteSessionsRequest struct {
-	Sessions []string `json:"sessions"`
 }
 
 type Spreadsheet struct {
@@ -41,7 +35,4 @@ type Spreadsheet struct {
 	Sheets          []Sheet `json:"sheets"`
 }
 
-type GetSpreadsheetRequest struct {
-	SpreadsheetName string  `json:"spreadsheet_name"`
-	Sheets          []Sheet `json:"sheets"`
-}
+type ArrangementsBallot []string

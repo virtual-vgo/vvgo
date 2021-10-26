@@ -10,6 +10,20 @@ import (
 	"testing"
 )
 
+func AssertEqualApiResponses(t *testing.T, want, got models.ApiResponse) {
+	t.Helper()
+
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetIndent("", "  ")
+	assert.NoError(t, encoder.Encode(got))
+	gotJSON := buf.String()
+	buf.Reset()
+	assert.NoError(t, encoder.Encode(want))
+	wantJSON := buf.String()
+	assert.Equal(t, wantJSON, gotJSON)
+}
+
 func AssertEqualResponse(t *testing.T, want models.ApiResponse, got *http.Response) {
 	t.Helper()
 	require.NotNil(t, got, "got response is nil")

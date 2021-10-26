@@ -28,18 +28,15 @@ func datasetIsAllowed(name string) bool {
 
 type DatasetRequest struct{ Name string }
 
-func Dataset(w http.ResponseWriter, r *http.Request) {
+func Dataset(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 	var dataset DatasetRequest
 	dataset.Name = r.URL.Query().Get("name")
 	switch {
 	case dataset.Name == "":
-		http_helpers.WriteErrorResponse(ctx, w, models.Error{
-			Code:  http.StatusBadRequest,
-			Error: "name cannot be empty",
-		})
+		return http_helpers.NewBadRequestError("name cannot be empty")
 	case datasetIsAllowed(dataset.Name) == false:
-		http_helpers.WriteErrorResponse(ctx, w, models.Error{
+		return http_helpers.NewErrorResponse(models.ApiError{
 			Code:  http.StatusForbidden,
 			Error: fmt.Sprintf("sheet `%s` is not allowed", dataset.Name),
 		})
@@ -47,52 +44,41 @@ func Dataset(w http.ResponseWriter, r *http.Request) {
 		sheetData, err := redis.ReadSheet(ctx, models.SpreadsheetWebsiteData, dataset.Name)
 		if err != nil {
 			logger.RedisFailure(ctx, err)
-			http_helpers.WriteInternalServerError(ctx, w)
-			return
+			return http_helpers.NewInternalServerError()
 		}
-		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
+		return models.ApiResponse{
 			Status:  models.StatusOk,
 			Dataset: models.ValuesToMap(sheetData),
-		})
+		}
 	}
 }
 
-func Projects(w http.ResponseWriter, r *http.Request) {
+func Projects(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		http_helpers.WriteInternalServerError(ctx, w)
-		return
+		return http_helpers.NewInternalServerError()
 	}
 
 	if projects == nil {
 		projects = []models.Project{}
 	}
-	projects = projects.Sort()
-	http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
-		Status:   models.StatusOk,
-		Projects: projects,
-	})
+	return models.ApiResponse{Status: models.StatusOk, Projects: projects.Sort()}
 }
 
-func Parts(w http.ResponseWriter, r *http.Request) {
+func Parts(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 	identity := login.IdentityFromContext(ctx)
 
 	parts, err := models.ListParts(ctx, identity)
 	if err != nil {
 		logger.ListPartsFailure(ctx, err)
-		http_helpers.WriteInternalServerError(ctx, w)
-		return
+		return http_helpers.NewInternalServerError()
 	}
 
 	if parts == nil {
 		parts = []models.Part{}
 	}
-	parts = parts.Sort()
-	http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
-		Status: models.StatusOk,
-		Parts:  parts,
-	})
+	return models.ApiResponse{Status: models.StatusOk, Parts: parts.Sort()}
 }
