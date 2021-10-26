@@ -22,6 +22,7 @@ func init() {
 	}
 }
 
+func Get() Version          { return version }
 func Set(ver Version)       { version = ver }
 func String() string        { return version.String() }
 func JSON() json.RawMessage { return version.JSON() }

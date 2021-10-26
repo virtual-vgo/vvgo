@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
@@ -9,40 +9,31 @@ import (
 	"net/http"
 )
 
-func Credits(w http.ResponseWriter, r *http.Request) {
+func Credits(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 
 	projectName := r.FormValue("project")
 	if projectName == "" {
-		http_helpers.WriteErrorBadRequest(ctx, w, "project is required")
-		return
+		return http_helpers.NewBadRequestError("project is requited")
 	}
 
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		http_helpers.WriteInternalServerError(ctx, w)
-		return
+		return http_helpers.NewInternalServerError()
 	}
 
 	project, ok := projects.Get(projectName)
 	if !ok {
-		http_helpers.WriteErrorBadRequest(ctx, w, "requested project does not exist")
-		return
+		return http_helpers.NewNotFoundError(fmt.Sprintf("project %s does not exist", projectName))
 	}
 
 	credits, err := models.ListCredits(ctx)
 	if err != nil {
-		logger.ListProjectsFailure(ctx, err)
-		http_helpers.WriteInternalServerError(ctx, w)
-		return
+		logger.ListCreditsFailure(ctx, err)
+		return http_helpers.NewInternalServerError()
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
 	data := models.BuildCreditsTable(credits, project)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		logger.JsonEncodeFailure(ctx, err)
-		http_helpers.WriteInternalServerError(ctx, w)
-	}
+	return models.ApiResponse{Status: models.StatusOk, Credits: data}
 }

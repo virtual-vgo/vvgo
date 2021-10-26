@@ -1,58 +1,66 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
+	"io"
 	"net/http"
 )
 
-func Spreadsheet(w http.ResponseWriter, r *http.Request) {
+func Spreadsheet(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 
 	var data models.Spreadsheet
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		logger.JsonDecodeFailure(ctx, err)
-		http_helpers.WriteErrorBadRequest(ctx, w, "invalid json")
-		return
+		return http_helpers.NewJsonDecodeError(err)
 	}
 
 	switch r.Method {
 	case http.MethodGet:
-		for i := range data.Sheets {
-			values, err := redis.ReadSheet(ctx, data.SpreadsheetName, data.Sheets[i].Name)
-			if err != nil {
-				logger.RedisFailure(ctx, err)
-				http_helpers.WriteInternalServerError(ctx, w)
-				return
-			}
-			data.Sheets[i].Values = values
-		}
-		if err := json.NewEncoder(w).Encode(data); err != nil {
-			logger.JsonEncodeFailure(ctx, err)
-			http_helpers.WriteInternalServerError(ctx, w)
-			return
-		}
-		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
-			Status: models.StatusOk,
-		})
-		return
-
+		return handleGetSpreadsheet(ctx, r.Body)
 	case http.MethodPost:
-		for _, sheet := range data.Sheets {
-			if err := redis.WriteSheet(ctx, data.SpreadsheetName, sheet.Name, sheet.Values); err != nil {
-				logger.RedisFailure(ctx, err)
-				http_helpers.WriteInternalServerError(ctx, w)
-				return
-			}
-		}
-		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{Status: models.StatusOk})
-		return
-
+		return handlePostSpreadsheet(data, ctx)
 	default:
-		http_helpers.WriteErrorMethodNotAllowed(ctx, w)
-		return
+		return http_helpers.NewMethodNotAllowedError()
 	}
+}
+
+type GetSpreadsheetRequest struct {
+	SpreadsheetName string
+	SheetNames      []string
+}
+
+func handleGetSpreadsheet(ctx context.Context, body io.Reader) models.ApiResponse {
+	var data GetSpreadsheetRequest
+	if err := json.NewDecoder(body).Decode(&data); err != nil {
+		return http_helpers.NewJsonDecodeError(err)
+	}
+
+	var sheets []models.Sheet
+	for _, sheetName := range data.SheetNames {
+		values, err := redis.ReadSheet(ctx, data.SpreadsheetName, sheetName)
+		if err != nil {
+			logger.RedisFailure(ctx, err)
+			return http_helpers.NewInternalServerError()
+		}
+		sheets = append(sheets, models.Sheet{Name: sheetName, Values: values})
+	}
+	return models.ApiResponse{Status: models.StatusOk, Spreadsheet: &models.Spreadsheet{
+		SpreadsheetName: data.SpreadsheetName,
+		Sheets:          sheets,
+	}}
+}
+
+func handlePostSpreadsheet(data models.Spreadsheet, ctx context.Context) models.ApiResponse {
+	for _, sheet := range data.Sheets {
+		if err := redis.WriteSheet(ctx, data.SpreadsheetName, sheet.Name, sheet.Values); err != nil {
+			logger.RedisFailure(ctx, err)
+			return http_helpers.NewInternalServerError()
+		}
+	}
+	return http_helpers.NewOkResponse()
 }

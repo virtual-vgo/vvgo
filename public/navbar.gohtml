@@ -34,13 +34,6 @@
                     <a class="nav-link"
                        href="/store">Store</a>
                 </li>
-                {{ if user_is_member }}
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="/browser">Parts Browser <small>(alpha)</small>
-                        </a>
-                    </li>
-                {{ end }}
                 {{ if user_on_teams }}
                     <li class="nav-item">
                         <a class="{{if eq template_file "credits-maker.gohtml" }}alert-warning text-dark{{ else }}text-warning{{ end }} nav-link"

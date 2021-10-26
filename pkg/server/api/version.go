@@ -1,17 +1,17 @@
 package api
 
 import (
+	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 )
 
-func Version(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	if r.Method != http.MethodGet {
-		http_helpers.WriteErrorMethodNotAllowed(ctx, w)
-		return
+func Version(r *http.Request) models.ApiResponse {
+	switch r.Method {
+	case http.MethodGet:
+		return models.ApiResponse{Status: models.StatusOk, Version: version.Get()}
+	default:
+		return http_helpers.NewMethodNotAllowedError()
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(version.JSON())
 }

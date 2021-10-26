@@ -22,10 +22,6 @@ RUN go build -o vvgo ./cmd/vvgo
 COPY .git .git
 RUN go run ./tools/version
 
-FROM node:13.12 as parts_browser
-COPY parts_browser .
-RUN npm install && npm run-script build
-
 FROM alpine:3.4 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils
 WORKDIR /app
@@ -33,7 +29,6 @@ COPY LICENSE .
 COPY --from=node /wrk ./public
 COPY --from=builder /go/src/app/vvgo ./vvgo
 COPY --from=builder /go/src/app/version.json ./version.json
-COPY --from=parts_browser build ./parts_browser/build
 EXPOSE 8080
 CMD ["./vvgo"]
 ENTRYPOINT ["./vvgo"]
