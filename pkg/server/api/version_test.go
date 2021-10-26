@@ -14,7 +14,7 @@ func TestVersion(t *testing.T) {
 	got := Version(req)
 
 	test_helpers.AssertEqualApiResponses(t, models.ApiResponse{
-		Status: models.StatusOk,
+		Status:  models.StatusOk,
 		Version: version.Get(),
 	}, got)
 }
