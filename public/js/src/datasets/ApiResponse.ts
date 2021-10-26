@@ -3,9 +3,9 @@ import {Director} from "./Director";
 import {GuildMember} from "./guildMember";
 import {Highlight} from "./Highlight";
 import {MixtapeProject} from "./MixtapeProject";
-import {Part} from "./part";
-import {Project} from "./project";
-import {Session} from "./session";
+import {Part} from "./Part";
+import {Project} from "./Project";
+import {Session} from "./Session";
 
 export const Endpoint = "/api/v1";
 

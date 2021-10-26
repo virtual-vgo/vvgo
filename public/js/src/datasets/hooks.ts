@@ -1,13 +1,13 @@
 import {useEffect, useState} from "react";
 import {ApiDataset, ApiResponse, ApiStatus, Endpoint, ErrorResponse} from "./ApiResponse";
-import {Credit} from "./credit";
-import {Director} from "./director";
-import {GuildMember} from "./guildMember";
-import {Highlight} from "./highlight";
+import {Credit} from "./Credit";
+import {Director} from "./Director";
+import {GuildMember} from "./GuildMember";
+import {Highlight} from "./Highlight";
 import {MixtapeProject} from "./MixtapeProject";
-import {Part} from "./part";
-import {Project} from "./project";
-import {Session} from "./session";
+import {Part} from "./Part";
+import {Project} from "./Project";
+import {Session} from "./Session";
 import _ = require("lodash");
 
 export const useCredits = (): Credit[] => useDataset("Credits");
