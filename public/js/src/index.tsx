@@ -7,7 +7,6 @@ import {Mixtape} from "./mixtape";
 import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
 import {Sessions} from "./sessions";
 
-
 ReactDOM.render(<Router>
     <Switch>
         <Route path="/sessions"><Sessions/></Route>

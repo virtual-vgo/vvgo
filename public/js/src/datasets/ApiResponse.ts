@@ -19,7 +19,7 @@ export type ApiDataset = Highlight[] | Director[] | Credit[]
 export interface ApiResponse {
     Status: string;
     Error: ErrorResponse;
-    Dataset: Array<Object>;
+    Dataset: ApiDataset;
     Parts: Part[];
     Projects: Project[];
     Sessions: Session[];

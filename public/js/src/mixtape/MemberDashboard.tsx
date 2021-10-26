@@ -15,7 +15,6 @@ export const MemberDashboard = () => {
         return {...p, Tags: tags, Owners: owners} as MixtapeProject;
     });
     const me = useMySession();
-    const myProjects = shuffleProjects.filter(p => p.Owners.includes(me.DiscordID));
     return <Container>
         <Row className={"row-cols-1"}>
             <Col>
@@ -75,7 +74,7 @@ const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
                 <Col>
                     {showEdit ?
                         <InputGroup className="mb-3">
-                            <InputGroup.Text children={"#"}/>
+                            <InputGroup.Text>#</InputGroup.Text>
                             <FormControl
                                 ref={tagsRef}
                                 defaultValue={project.Tags.join(", ")}
@@ -93,14 +92,16 @@ const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
                                 type={"button"}
                                 variant={"outline-secondary"}
                                 size={"sm"}
-                                onClick={buttonOnClick}
-                                children={"Submit"}/> :
+                                onClick={buttonOnClick}>
+                                Submit
+                            </Button> :
                             <Button
                                 type={"button"}
                                 variant={"outline-secondary"}
                                 size={"sm"}
-                                onClick={() => setShowEdit(true)}
-                                children={"Edit"}/>}
+                                onClick={() => setShowEdit(true)}>
+                                Edit
+                            </Button>}
                     </Col> : ""}
             </Row>
         </Card.Body>

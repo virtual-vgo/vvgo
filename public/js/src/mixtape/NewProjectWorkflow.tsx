@@ -137,14 +137,15 @@ const SubmitNameButton = (props: {
     return name && name != "" ?
         <Button
             variant={"outline-secondary"}
-            children={"Submit"}
-            onClick={() => props.saveProject({...props.current, Name: name, Id: id})}
-        /> :
+            onClick={() => props.saveProject({...props.current, Name: name, Id: id})}>
+            Submit
+        </Button> :
         <Button
             disabled
-            variant={"outline-warning"}
-            children={"required"}
-        />;
+            variant={"outline-warning"}>
+            required
+        </Button>;
+
 };
 
 const OwnersCard = (props: {
@@ -196,9 +197,9 @@ const EditMembers = (props: {
             <Button
                 key={owner.nick}
                 variant={"outline-primary"}
-                children={owner.nick}
-                onClick={() => props.setOwners(props.owners.filter(x => x.user != owner.user))}
-            />,
+                onClick={() => props.setOwners(props.owners.filter(x => x.user != owner.user))}>
+                {owner.nick}
+            </Button>,
         )}
     </InputGroup>;
 };
@@ -221,9 +222,9 @@ const SearchMembers = (props: {
         />
         <Button
             variant={"outline-secondary"}
-            children={"Submit"}
-            onClick={() => props.saveProject({...props.curProject, Owners: props.owners.map(x => x.user.id)})}
-        />
+            onClick={() => props.saveProject({...props.curProject, Owners: props.owners.map(x => x.user.id)})}>
+            Submit
+        </Button>
     </InputGroup>;
 };
 
@@ -243,9 +244,9 @@ const MembersToast = (props: {
                 .filter(m => !props.owners.includes(m))
                 .map(m => <Dropdown.Item
                     key={m.nick}
-                    children={m.nick}
-                    onClick={() => props.setOwners([...props.owners, m])}
-                />)}
+                    onClick={() => props.setOwners([...props.owners, m])}>
+                    {m.nick}
+                </Dropdown.Item>)}
     </Toast>;
 };
 
@@ -290,9 +291,9 @@ const SubmitChannelButton = (props: {
     };
     return <Button
         variant={"outline-secondary"}
-        onClick={handleClick}
-        children={"Submit"}
-    />;
+        onClick={handleClick}>
+        Submit
+    </Button>;
 };
 
 const nameToId = (name: string): string =>
