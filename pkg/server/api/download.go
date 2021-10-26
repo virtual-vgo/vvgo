@@ -14,20 +14,20 @@ const ProtectedLinkExpiry = 24 * 3600 * time.Second // 1 Day for protect links
 func Download(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
-		http_helpers.MethodNotAllowed(ctx, w)
+		http_helpers.WriteErrorMethodNotAllowed(ctx, w)
 		return
 	}
 
 	object := r.URL.Query().Get("object")
 	if object == "" {
-		http_helpers.BadRequest(ctx, w, "object required")
+		http_helpers.WriteErrorBadRequest(ctx, w, "object required")
 		return
 	}
 
 	minioClient, err := minio.NewClient()
 	if err != nil {
 		logger.MethodFailure(ctx, "minio.New", err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
@@ -35,7 +35,7 @@ func Download(w http.ResponseWriter, r *http.Request) {
 	downloadUrl, err := minioClient.PresignedGetObject(distroBucket, object, ProtectedLinkExpiry, nil)
 	if err != nil {
 		logger.MethodFailure(ctx, "minio.StatObject", err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 	http.Redirect(w, r, downloadUrl.String(), http.StatusFound)

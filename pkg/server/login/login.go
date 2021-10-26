@@ -46,7 +46,7 @@ func loginSuccess(w http.ResponseWriter, r *http.Request, identity *models.Ident
 	cookie, err := NewCookie(ctx, identity, SessionCookieDuration)
 	if err != nil {
 		logger.NewCookieFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
@@ -115,7 +115,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 	if err := DeleteSessionFromRequest(ctx, r); err != nil {
 		logger.MethodFailure(ctx, "login.DeleteSessionFromRequest", err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 	} else {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}

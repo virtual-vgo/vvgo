@@ -21,7 +21,7 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 		sessions, err := models.ListSessions(ctx, identity)
 		if err != nil {
 			logger.MethodFailure(ctx, "models.ListSessions", err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		}
 		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
@@ -32,12 +32,12 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		var data models.DeleteSessionsRequest
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-			http_helpers.JsonDecodeFailure(ctx, w, err)
+			http_helpers.WriteErrorJsonDecodeFailure(ctx, w, err)
 			return
 		}
 
 		if len(data.Sessions) == 0 {
-			http_helpers.BadRequest(ctx, w, "sessions must not be empty")
+			http_helpers.WriteErrorBadRequest(ctx, w, "sessions must not be empty")
 			return
 		}
 
@@ -47,7 +47,7 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := redis.Do(ctx, redis.Cmd(nil, "DEL", sessionIds...)); err != nil {
 			logger.RedisFailure(ctx, err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 		}
 
 		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
@@ -57,7 +57,7 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var data models.CreateSessionsRequest
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-			http_helpers.JsonDecodeFailure(ctx, w, err)
+			http_helpers.WriteErrorJsonDecodeFailure(ctx, w, err)
 			return
 		}
 
@@ -79,7 +79,7 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 		for i, sessionData := range data.Sessions {
 			newIdentity := newSessionId(sessionData.Roles)
 			if len(newIdentity.Roles) == 0 {
-				http_helpers.BadRequest(ctx, w, fmt.Sprintf("session %d has no usable roles", i))
+				http_helpers.WriteErrorBadRequest(ctx, w, fmt.Sprintf("session %d has no usable roles", i))
 				return
 			}
 
@@ -97,7 +97,7 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 			_, err = login.NewSession(ctx, &newIdentity, expires)
 			if err != nil {
 				logger.MethodFailure(ctx, "login.NewSession", err)
-				http_helpers.InternalServerError(ctx, w)
+				http_helpers.WriteInternalServerError(ctx, w)
 				return
 			}
 			results = append(results, newIdentity)
@@ -109,6 +109,6 @@ func Sessions(w http.ResponseWriter, r *http.Request) {
 		})
 
 	default:
-		http_helpers.MethodNotAllowed(ctx, w)
+		http_helpers.WriteErrorMethodNotAllowed(ctx, w)
 	}
 }

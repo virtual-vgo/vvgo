@@ -68,7 +68,7 @@ func TestServer(t *testing.T) {
 
 	t.Run("authorize", func(t *testing.T) {
 		t.Run("ok /authorize/vvgo-leader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", models.RoleVVGOLeader)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", models.RoleVVGOExecutiveDirector)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})

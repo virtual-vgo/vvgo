@@ -16,7 +16,7 @@ func Password(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method != http.MethodPost {
-		http_helpers.MethodNotAllowed(ctx, w)
+		http_helpers.WriteErrorMethodNotAllowed(ctx, w)
 		return
 	}
 
@@ -45,7 +45,7 @@ func Password(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		logger.WithError(err).WithField("user", user).Error("password authentication failed")
-		http_helpers.Unauthorized(ctx, w)
+		http_helpers.WriteUnauthorizedError(ctx, w)
 		return
 	}
 

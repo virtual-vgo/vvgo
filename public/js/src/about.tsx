@@ -1,18 +1,15 @@
 import React = require("react");
-import {Render} from "./render";
-import {Director, useDirectors} from "./datasets";
 import {Container} from "./components";
+import {Director, useDirectors} from "./datasets";
 
-export const Entrypoint = (selectors: any) => Render(<About/>, selectors)
-
-const About = () => {
-    const directors = useDirectors()
+export const About = () => {
+    const directors = useDirectors();
 
     return <Container>
         <Blurb/>
         <Directors directors={directors}/>
-    </Container>
-}
+    </Container>;
+};
 
 const Blurb = () => {
     return <div className="row mt-4 border-bottom border-light">
@@ -21,7 +18,7 @@ const Blurb = () => {
         </div>
         <div className="col col-lg-9 col-12 text-justify fs-6">
             <p className="">
-                Formed in March 2020, <strong>Virtual Video Game Orchestra</strong> (VVGO, "vee-vee-go") is an
+                Formed in March 2020, <strong>Virtual Video Game Orchestra</strong> (VVGO, &quot;vee-vee-go&quot;) is an
                 online
                 volunteer-run music ensemble predicated on providing a musical performance outlet for musicians
                 whose
@@ -36,12 +33,12 @@ const Blurb = () => {
             </p>
             <p className="">
                 We are always accepting new members into our community. If you would like to join our orchestra or
-                get more information about our current performance opportunities, please join us on
-                <a href="https://discord.gg/9RVUJMQ" className="text-info">Discord</a>!
+                get more information about our current performance opportunities, please join us on <a
+                href="https://discord.gg/9RVUJMQ" className="text-info">Discord</a>!
             </p>
         </div>
-    </div>
-}
+    </div>;
+};
 
 const Directors = (props: { directors: Director[] }) => {
     return <div className="row mt-3 border-bottom border-light">
@@ -51,16 +48,16 @@ const Directors = (props: { directors: Director[] }) => {
         <div className="col col-lg-9 col-12 text-center mt-2">
             <ExecutiveDirectorTable directors={props.directors}/>
         </div>
-    </div>
-}
+    </div>;
+};
 
 const ExecutiveDirectorTable = (props: { directors: Director[] }) => {
     return <table id="leader-table" className="table table-responsive table-borderless text-light fs-6">
         <tbody>
         {props.directors.map(director => <ExecutiveDirectorRow key={director.Name} director={director}/>)}
         </tbody>
-    </table>
-}
+    </table>;
+};
 
 const ExecutiveDirectorRow = (props: { director: Director }) => {
     return <tr className="border-bottom">
@@ -69,6 +66,6 @@ const ExecutiveDirectorRow = (props: { director: Director }) => {
         </p></td>
         <td><p>{props.director.Blurb}</p>
             <p><i>{props.director.Affiliations}</i></p></td>
-    </tr>
-}
+    </tr>;
+};
 

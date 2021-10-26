@@ -90,7 +90,7 @@ func (x Projects) ForIdentity(identity Identity) Projects {
 			want = append(want, project)
 		case identity.HasRole(RoleVVGOTeams):
 			want = append(want, project)
-		case identity.HasRole(RoleVVGOLeader):
+		case identity.HasRole(RoleVVGOExecutiveDirector):
 			want = append(want, project)
 		}
 	}

@@ -44,10 +44,10 @@ func TestAcceptsType(t *testing.T) {
 
 func TestBadRequest(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	BadRequest(ctx, recorder, "some-reason")
+	WriteErrorBadRequest(ctx, recorder, "some-reason")
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Error: &models.ErrorResponse{
+		Error: &models.Error{
 			Code:  http.StatusBadRequest,
 			Error: "some-reason",
 		},
@@ -56,10 +56,10 @@ func TestBadRequest(t *testing.T) {
 
 func TestInternalServerError(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	InternalServerError(ctx, recorder)
+	WriteInternalServerError(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Error: &models.ErrorResponse{
+		Error: &models.Error{
 			Code:  http.StatusInternalServerError,
 			Error: "internal server error",
 		},
@@ -68,10 +68,10 @@ func TestInternalServerError(t *testing.T) {
 
 func TestUnsupportedFile(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	UnsupportedFile(ctx, recorder)
+	WriteErrorUnsupportedFile(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Error: &models.ErrorResponse{
+		Error: &models.Error{
 			Code:  http.StatusUnsupportedMediaType,
 			Error: "unsupported file",
 		},
@@ -80,10 +80,10 @@ func TestUnsupportedFile(t *testing.T) {
 
 func TestMethodNotAllowed(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	MethodNotAllowed(ctx, recorder)
+	WriteErrorMethodNotAllowed(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Error: &models.ErrorResponse{
+		Error: &models.Error{
 			Code:  http.StatusMethodNotAllowed,
 			Error: "method not allowed",
 		},
@@ -92,10 +92,10 @@ func TestMethodNotAllowed(t *testing.T) {
 
 func TestNotFound(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	NotFound(ctx, recorder)
+	WriteErrorNotFound(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Error: &models.ErrorResponse{
+		Error: &models.Error{
 			Code:  http.StatusNotFound,
 			Error: "not found",
 		},
@@ -104,10 +104,10 @@ func TestNotFound(t *testing.T) {
 
 func TestTooManyBytes(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	TooManyBytes(ctx, recorder)
+	WriteErrorTooManyBytes(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Error: &models.ErrorResponse{
+		Error: &models.Error{
 			Code:  http.StatusRequestEntityTooLarge,
 			Error: "request too chonk",
 		},
@@ -116,10 +116,10 @@ func TestTooManyBytes(t *testing.T) {
 
 func TestUnauthorized(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	Unauthorized(ctx, recorder)
+	WriteUnauthorizedError(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Error: &models.ErrorResponse{
+		Error: &models.Error{
 			Code:  http.StatusUnauthorized,
 			Error: "unauthorized",
 		},
@@ -128,10 +128,10 @@ func TestUnauthorized(t *testing.T) {
 
 func TestNotImplemented(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	NotImplemented(ctx, recorder)
+	WriteErrorNotImplemented(ctx, recorder)
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
-		Error: &models.ErrorResponse{
+		Error: &models.Error{
 			Code:  http.StatusNotImplemented,
 			Error: "not implemented",
 		},

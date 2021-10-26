@@ -19,14 +19,16 @@ import (
 var PublicFiles = "public"
 
 var (
-	Index           = ServeJsPage("Virtual Video Game Orchestra", "dist/index.js")
-	ServePublicFile = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
-	Parts           = ServeTemplate("parts.gohtml")
-	About           = ServeJsPage("About", "dist/about.js")
-	ContactUs       = ServeHtml("Contact Us", "contact_us.html")
-	Voting          = ServeTemplate("voting.gohtml")
-	Sessions        = ServeJsPage("Manage Sessions", "dist/sessions.js")
-	Projects2       = ServeJsPage("projects", "dist/projects.js")
+	Index              = ServeJsPage("Virtual Video Game Orchestra")
+	ServePublicFile    = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
+	Parts              = ServeTemplate("parts.gohtml")
+	About              = ServeJsPage("About")
+	ContactUs          = ServeHtml("Contact Us", "contact_us.html")
+	Voting             = ServeTemplate("voting.gohtml")
+	Sessions           = ServeJsPage("Manage Sessions")
+	Projects2          = ServeJsPage("projects")
+	Mixtape            = ServeJsPage("Mixtape")
+	NewProjectWorkflow = ServeJsPage("Mixtape | New Project Workflow")
 )
 
 type Page struct {
@@ -41,15 +43,15 @@ func ServeHtml(title, htmlSource string) http.HandlerFunc {
 		content, err := ioutil.ReadFile(PublicFiles + "/" + htmlSource)
 		if err != nil {
 			logger.MethodFailure(ctx, "file.Read", err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		}
 		Page{Title: "VVGO | " + title, Content: template.HTML(content)}.Render(w, r)
 	}
 }
 
-func ServeJsPage(title, jsSource string) http.HandlerFunc {
-	return Page{Title: "VVGO | " + title, JsSource: jsSource}.Render
+func ServeJsPage(title string) http.HandlerFunc {
+	return Page{Title: "VVGO | " + title, JsSource: "/dist/index.js"}.Render
 }
 
 func (x Page) Render(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +77,7 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"form_value":       func(key string) string { return r.FormValue(key) },
 		"user_logged_in":   func() bool { return identity.IsAnonymous() == false },
 		"user_is_member":   func() bool { return identity.HasRole(models.RoleVVGOMember) },
-		"user_is_leader":   func() bool { return identity.HasRole(models.RoleVVGOLeader) },
+		"user_is_leader":   func() bool { return identity.HasRole(models.RoleVVGOExecutiveDirector) },
 		"user_on_teams":    func() bool { return identity.HasRole(models.RoleVVGOTeams) },
 		"download_link":    func(obj string) string { return downloadLink(obj) },
 		"projects":         func() (models.Projects, error) { return models.ListProjects(ctx, identity) },
@@ -93,14 +95,14 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		logger.MethodFailure(ctx, "template.ParseFiles", err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
 	var buffer bytes.Buffer
 	if err := tmpl.Execute(&buffer, &data); err != nil {
 		logger.MethodFailure(ctx, "template.Execute", err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 	_, _ = buffer.WriteTo(w)

@@ -18,11 +18,11 @@ func Aboutme(w http.ResponseWriter, r *http.Request) {
 		entries, err := aboutme.ReadEntries(ctx, nil)
 		if err != nil {
 			logger.MethodFailure(ctx, "aboutme.ReadEntries", err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		}
 		var showEntries []aboutme.Entry
-		isLeader := login.IdentityFromContext(ctx).HasRole(models.RoleVVGOLeader)
+		isLeader := login.IdentityFromContext(ctx).HasRole(models.RoleVVGOExecutiveDirector)
 		for _, entry := range entries {
 			if entry.Show {
 				if isLeader == false {
@@ -34,15 +34,15 @@ func Aboutme(w http.ResponseWriter, r *http.Request) {
 		http_helpers.JsonEncode(w, showEntries)
 
 	case http.MethodPost:
-		if login.IdentityFromContext(ctx).HasRole(models.RoleVVGOLeader) == false {
-			http_helpers.Unauthorized(ctx, w)
+		if login.IdentityFromContext(ctx).HasRole(models.RoleVVGOExecutiveDirector) == false {
+			http_helpers.WriteUnauthorizedError(ctx, w)
 			return
 		}
 
 		var newEntries []aboutme.Entry
 		if err := json.NewDecoder(r.Body).Decode(&newEntries); err != nil {
 			logger.JsonDecodeFailure(ctx, err)
-			http_helpers.BadRequest(ctx, w, "invalid json")
+			http_helpers.WriteErrorBadRequest(ctx, w, "invalid json")
 			return
 		}
 		if len(newEntries) == 0 {
@@ -58,20 +58,20 @@ func Aboutme(w http.ResponseWriter, r *http.Request) {
 
 		if err := aboutme.WriteEntries(ctx, entriesMap); err != nil {
 			logger.MethodFailure(ctx, "aboutme.WriteEntries", err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		}
 
 	case http.MethodDelete:
-		if login.IdentityFromContext(ctx).HasRole(models.RoleVVGOLeader) == false {
-			http_helpers.Unauthorized(ctx, w)
+		if login.IdentityFromContext(ctx).HasRole(models.RoleVVGOExecutiveDirector) == false {
+			http_helpers.WriteUnauthorizedError(ctx, w)
 			return
 		}
 
 		var keys []string
 		if err := json.NewDecoder(r.Body).Decode(&keys); err != nil {
 			logger.JsonDecodeFailure(ctx, err)
-			http_helpers.BadRequest(ctx, w, "invalid json")
+			http_helpers.WriteErrorBadRequest(ctx, w, "invalid json")
 			return
 		}
 		if len(keys) == 0 {
@@ -80,7 +80,7 @@ func Aboutme(w http.ResponseWriter, r *http.Request) {
 
 		if err := aboutme.DeleteEntries(ctx, keys); err != nil {
 			logger.MethodFailure(ctx, "aboutme.DeleteEntries", err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		}
 	}

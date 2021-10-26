@@ -31,10 +31,10 @@ type Role string
 func (x Role) String() string { return string(x) }
 
 const (
-	RoleAnonymous  Role = "anonymous"   // anonymous/unauthenticated access to the site
-	RoleVVGOMember Role = "vvgo-member" // password login or has the vvgo-member discord role
-	RoleVVGOTeams  Role = "vvgo-teams"  // has the teams discord role
-	RoleVVGOLeader Role = "vvgo-leader" // has the leader discord role
+	RoleAnonymous             Role = "anonymous"   // anonymous/unauthenticated access to the site
+	RoleVVGOMember            Role = "vvgo-member" // password login or has the vvgo-member discord role
+	RoleVVGOTeams             Role = "vvgo-teams"  // has the teams discord role
+	RoleVVGOExecutiveDirector Role = "vvgo-leader" // has the leader discord role
 
 	RoleWriteSpreadsheet Role = "write_spreadsheet"
 	RoleReadConfig       Role = "read_config"
@@ -74,7 +74,7 @@ func ListSessions(ctx context.Context, identity Identity) ([]Identity, error) {
 	var want []Identity
 	for _, session := range sessions {
 		switch {
-		case identity.HasRole(RoleVVGOLeader):
+		case identity.HasRole(RoleVVGOExecutiveDirector):
 			want = append(want, session)
 		case session.DiscordID == identity.DiscordID:
 			want = append(want, session)

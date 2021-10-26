@@ -9,7 +9,7 @@ import (
 func Version(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
-		http_helpers.MethodNotAllowed(ctx, w)
+		http_helpers.WriteErrorMethodNotAllowed(ctx, w)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

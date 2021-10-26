@@ -20,7 +20,7 @@ func Discord(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("state") == "" {
 		state, ok := oauthRedirect(w, r)
 		if !ok {
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		}
 		http.Redirect(w, r, discord.LoginURL(state), http.StatusFound)
@@ -35,7 +35,7 @@ func Discord(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			if err != nil {
 				logger.WithField("file_name", fileName).OpenFileFailure(ctx, err)
-				http_helpers.Unauthorized(ctx, w)
+				http_helpers.WriteUnauthorizedError(ctx, w)
 			}
 			defer file.Close()
 			_, _ = io.Copy(w, file)
@@ -50,19 +50,19 @@ func Discord(w http.ResponseWriter, r *http.Request) {
 
 	// get an oauth token from discord
 	code := r.FormValue("code")
-	oauthToken, err := discord.QueryOAuth(ctx, code)
+	oauthToken, err := discord.GetOAuthToken(ctx, code)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// get the user id
-	discordUser, err := discord.QueryIdentity(ctx, oauthToken)
+	discordUser, err := discord.GetIdentity(ctx, oauthToken)
 	if ok := handleError(err); !ok {
 		return
 	}
 
 	// check if this user is in our guild
-	guildMember, err := discord.QueryGuildMember(ctx, discordUser.ID)
+	guildMember, err := discord.GetGuildMember(ctx, discordUser.ID)
 	if ok := handleError(err); !ok {
 		return
 	}
@@ -74,7 +74,7 @@ func Discord(w http.ResponseWriter, r *http.Request) {
 		case "": // ignore empty strings
 			continue
 		case discord.VVGOExecutiveDirectorRoleID:
-			loginRoles = append(loginRoles, models.RoleVVGOLeader)
+			loginRoles = append(loginRoles, models.RoleVVGOExecutiveDirector)
 		case discord.VVGOProductionTeamRoleID:
 			loginRoles = append(loginRoles, models.RoleVVGOTeams)
 		case discord.VVGOVerifiedMemberRoleID:

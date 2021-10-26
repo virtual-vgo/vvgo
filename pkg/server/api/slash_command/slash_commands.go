@@ -63,7 +63,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		<-timer.C
 		if err := command.Create(ctx); err != nil {
 			logger.MethodFailure(ctx, "SlashCommand.Create", err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		} else {
 			logger.Info(command.Name, "command created")
@@ -77,7 +77,7 @@ func List(w http.ResponseWriter, r *http.Request) {
 	commands, err := discord.GetApplicationCommands(ctx)
 	if err != nil {
 		logger.MethodFailure(ctx, "discord.GetApplicationCommands", err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(commands); err != nil {
@@ -94,37 +94,37 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	publicKey, _ := hex.DecodeString(discord.ClientPublicKey)
 	if len(publicKey) == 0 {
 		logger.Error("invalid discord public key")
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
 	signature, _ := hex.DecodeString(r.Header.Get("X-Signature-Ed25519"))
 	if len(signature) == 0 {
-		http_helpers.BadRequest(ctx, w, "invalid signature")
+		http_helpers.WriteErrorBadRequest(ctx, w, "invalid signature")
 		return
 	}
 
 	timestamp := r.Header.Get("X-Signature-Timestamp")
 	if len(timestamp) == 0 {
-		http_helpers.BadRequest(ctx, w, "invalid signature timestamp")
+		http_helpers.WriteErrorBadRequest(ctx, w, "invalid signature timestamp")
 		return
 	}
 
 	if ed25519.Verify(publicKey, []byte(timestamp+body.String()), signature) == false {
-		http_helpers.Unauthorized(ctx, w)
+		http_helpers.WriteUnauthorizedError(ctx, w)
 		return
 	}
 
 	var interaction discord.Interaction
 	if err := json.NewDecoder(&body).Decode(&interaction); err != nil {
 		logger.JsonDecodeFailure(ctx, err)
-		http_helpers.BadRequest(ctx, w, "invalid request body: "+err.Error())
+		http_helpers.WriteErrorBadRequest(ctx, w, "invalid request body: "+err.Error())
 		return
 	}
 
 	response, ok := HandleInteraction(ctx, interaction)
 	if !ok {
-		http_helpers.BadRequest(ctx, w, "unsupported interaction type")
+		http_helpers.WriteErrorBadRequest(ctx, w, "unsupported interaction type")
 		return
 	}
 

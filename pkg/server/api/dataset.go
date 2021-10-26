@@ -34,12 +34,12 @@ func Dataset(w http.ResponseWriter, r *http.Request) {
 	dataset.Name = r.URL.Query().Get("name")
 	switch {
 	case dataset.Name == "":
-		http_helpers.WriteErrorResponse(ctx, w, models.ErrorResponse{
+		http_helpers.WriteErrorResponse(ctx, w, models.Error{
 			Code:  http.StatusBadRequest,
 			Error: "name cannot be empty",
 		})
 	case datasetIsAllowed(dataset.Name) == false:
-		http_helpers.WriteErrorResponse(ctx, w, models.ErrorResponse{
+		http_helpers.WriteErrorResponse(ctx, w, models.Error{
 			Code:  http.StatusForbidden,
 			Error: fmt.Sprintf("sheet `%s` is not allowed", dataset.Name),
 		})
@@ -47,7 +47,7 @@ func Dataset(w http.ResponseWriter, r *http.Request) {
 		sheetData, err := redis.ReadSheet(ctx, models.SpreadsheetWebsiteData, dataset.Name)
 		if err != nil {
 			logger.RedisFailure(ctx, err)
-			http_helpers.InternalServerError(ctx, w)
+			http_helpers.WriteInternalServerError(ctx, w)
 			return
 		}
 		http_helpers.WriteAPIResponse(ctx, w, models.ApiResponse{
@@ -62,7 +62,7 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
@@ -83,7 +83,7 @@ func Parts(w http.ResponseWriter, r *http.Request) {
 	parts, err := models.ListParts(ctx, identity)
 	if err != nil {
 		logger.ListPartsFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 

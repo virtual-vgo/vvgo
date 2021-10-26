@@ -13,7 +13,7 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 	projects, err := models.ListProjects(ctx, login.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
@@ -29,14 +29,14 @@ func Projects(w http.ResponseWriter, r *http.Request) {
 func serveProject(w http.ResponseWriter, r *http.Request, project models.Project) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
-		http_helpers.MethodNotAllowed(ctx, w)
+		http_helpers.WriteErrorMethodNotAllowed(ctx, w)
 		return
 	}
 
 	credits, err := models.ListCredits(ctx)
 	if err != nil {
 		logger.ListCreditsFailure(ctx, err)
-		http_helpers.InternalServerError(ctx, w)
+		http_helpers.WriteInternalServerError(ctx, w)
 		return
 	}
 
