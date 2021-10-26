@@ -1,6 +1,6 @@
 import {fetchApi} from "./hooks";
 
-export interface MixtapeProject {
+export type MixtapeProject = {
     Id: string;
     Mixtape: string;
     Name: string;

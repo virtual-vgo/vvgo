@@ -16,6 +16,7 @@ type ApiResponse struct {
 	Identity        *Identity             `json:"Identity,omitempty"`
 	GuildMembers    []discord.GuildMember `json:"GuildMembers,omitempty"`
 	MixtapeProjects []MixtapeProject      `json:"MixtapeProjects,omitempty"`
+	WorkflowResult  []WorkflowTaskResult  `json:"WorkflowResult,omitempty"`
 }
 
 type Error struct {

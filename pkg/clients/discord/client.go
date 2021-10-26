@@ -140,6 +140,11 @@ func SearchGuildMembers(ctx context.Context, query string, limit string) ([]Guil
 	return guildMembers, nil
 }
 
+func CreateGuildChannel(ctx context.Context, params CreateGuildChannelParams) error {
+	const path = "/guilds/" + VVGOGuildID + "/channels"
+	return doDiscordBotRequestWithJsonParams(ctx, http.MethodPost, path, params, nil)
+}
+
 func GetApplicationCommands(ctx context.Context) ([]ApplicationCommand, error) {
 	req, err := newSlashCommandRequest(ctx, http.MethodGet, nil)
 	if err != nil {
@@ -185,7 +190,7 @@ func CreateMessage(ctx context.Context, channelId Snowflake, params CreateMessag
 	path := "/channels/" + channelId.String() + "/messages"
 
 	var message Message
-	err := doDiscordBotRequestWithJsonParams(ctx, path, http.MethodPost, &params, &message)
+	err := doDiscordBotRequestWithJsonParams(ctx, http.MethodPost, path, &params, &message)
 	return &message, err
 }
 
@@ -193,13 +198,13 @@ func EditMessage(ctx context.Context, channelId Snowflake, messageId Snowflake, 
 	path := "/channels/" + channelId.String() + "/messages/" + messageId.String()
 
 	var message Message
-	err := doDiscordBotRequestWithJsonParams(ctx, path, http.MethodPatch, &params, &message)
+	err := doDiscordBotRequestWithJsonParams(ctx, http.MethodPatch, path, &params, &message)
 	return &message, err
 }
 
 func BulkDeleteMessages(ctx context.Context, channelId Snowflake, params BulkDeleteMessagesParams) error {
 	path := "/channels/" + channelId.String() + "/messages/bulk-delete"
-	return doDiscordBotRequestWithJsonParams(ctx, path, http.MethodPost, &params, nil)
+	return doDiscordBotRequestWithJsonParams(ctx, http.MethodPost, path, &params, nil)
 }
 
 func newSlashCommandRequest(ctx context.Context, method string, body io.Reader) (*http.Request, error) {
@@ -207,7 +212,7 @@ func newSlashCommandRequest(ctx context.Context, method string, body io.Reader) 
 	return newBotRequest(ctx, method, path, body)
 }
 
-func doDiscordBotRequestWithJsonParams(ctx context.Context, path, method string, params interface{}, dest interface{}) error {
+func doDiscordBotRequestWithJsonParams(ctx context.Context, method, path string, params interface{}, dest interface{}) error {
 	var paramsBytes bytes.Buffer
 	if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
 		return fmt.Errorf("json.Encode() failed: %w", err)

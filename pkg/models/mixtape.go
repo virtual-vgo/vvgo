@@ -14,14 +14,17 @@ type MixtapeProject struct {
 	Mixtape string
 	Name    string
 	Blurb   string
+	Channel string
 	Owners  []string
 	Links   []string
 	Tags    []string
 }
 
+const MixtapeRedisKey = "mixtape_projects"
+
 func ListMixtapeProjects(ctx context.Context) ([]MixtapeProject, error) {
 	var projectsJSON []string
-	if err := redis.Do(ctx, redis.Cmd(&projectsJSON, "HVALS", "mixtape_projects")); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(&projectsJSON, "HVALS", MixtapeRedisKey)); err != nil {
 		return nil, errors.RedisFailure(err)
 	}
 
@@ -38,7 +41,7 @@ func ListMixtapeProjects(ctx context.Context) ([]MixtapeProject, error) {
 }
 
 func WriteMixtapeProjects(ctx context.Context, projects []MixtapeProject) error {
-	redisArgs := []string{"mixtape_projects"}
+	redisArgs := []string{MixtapeRedisKey}
 	for _, project := range projects {
 		projectJSON, err := json.Marshal(project)
 		if err != nil {

@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {ApiResponse, ApiStatuses, Endpoint, ErrorResponse} from "./ApiResponse";
+import {ApiDataset, ApiResponse, ApiStatus, Endpoint, ErrorResponse} from "./ApiResponse";
 import {Credit} from "./credit";
 import {Director} from "./director";
 import {GuildMember} from "./guildMember";
@@ -13,8 +13,7 @@ import _ = require("lodash");
 export const useCredits = (): Credit[] => useDataset("Credits");
 export const useDirectors = (): Director[] => useDataset("Leaders");
 export const useGuildMembers = (query: string, limit: number): GuildMember[] => {
-    const [data, setData] = useState(new ApiResponse());
-
+    const [data, setData] = useState({} as ApiResponse);
     const url = `/guild_members?query=${query}&limit=${limit}`;
     useEffect(() => {
         if (query !== "")
@@ -24,28 +23,32 @@ export const useGuildMembers = (query: string, limit: number): GuildMember[] => 
     return data.GuildMembers ? data.GuildMembers : [] as GuildMember[];
 };
 export const useHighlights = (): Highlight[] => useDataset("Highlights");
-export const useMixtapeProjects = (): MixtapeProject[] => useApiData("/mixtape", "MixtapeProjects", []);
-export const useMySession = (): Session => useApiData("/me", "Identity", {} as Session);
-export const useParts = (): Part[] => useApiData("/parts", "Parts", []);
-export const useProjects = (): Project[] => useApiData("/projects", "Projects", []);
+export const useMixtapeProjects = (): [MixtapeProject[], (projects: MixtapeProject[]) => void] =>
+    useAndSetApiData("/mixtape", (p) => _.defaultTo(p.MixtapeProjects, []));
+export const useMySession = (): Session =>
+    useApiData("/me", (p) => _.defaultTo(p.Identity, {} as Session));
+export const useParts = (): Part[] =>
+    useApiData("/parts", (p) => _.defaultTo(p.Parts, []));
+export const useProjects = (): Project[] =>
+    useApiData("/projects", (p) => _.defaultTo(p.Projects, []));
 export const useSessions = (): [Session[], (sessions: Session[]) => void] =>
-    useAndSetApiData("/sessions", "Sessions", []);
+    useAndSetApiData("/sessions", (p) => _.defaultTo(p.Sessions, []));
 
-export function useDataset<T>(name: string): T[] {
-    return useApiData("/dataset?name=" + name, "Dataset", []);
+export function useDataset<T extends ApiDataset>(name: string): T {
+    return useApiData("/dataset?name=" + name, (p) => _.defaultTo(p.Dataset, [])) as T;
 }
 
-export function useApiData<T>(url: RequestInfo, key: string, defaultValue: T): T {
-    const [data] = useAndSetApiData(url, key, defaultValue);
+export function useApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): T {
+    const [data] = useAndSetApiData(url, getData);
     return data as T;
 }
 
-export function useAndSetApiData<T>(url: RequestInfo, key: string, defaultValue: T): [T, (t: T) => void] {
-    const [data, setData] = useState(new ApiResponse());
+export function useAndSetApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): [T, (t: T) => void] {
+    const [data, setData] = useState(getData({} as ApiResponse));
     useEffect(() => {
-        fetchApi(url, {method: "GET"}).then(resp => setData(resp));
+        fetchApi(url, {method: "GET"}).then(resp => setData(getData(resp)));
     }, [url]);
-    return [_.get(data, key, defaultValue) as T, (t: T) => setData(_.set(data, key, t))];
+    return [data, setData];
 }
 
 export const fetchApi = async (url: RequestInfo, init: RequestInit): Promise<ApiResponse> => {
@@ -55,13 +58,13 @@ export const fetchApi = async (url: RequestInfo, init: RequestInit): Promise<Api
         .then(obj => {
             const resp = obj as ApiResponse;
             console.log("Api Response:", resp);
-            if (resp.Status === ApiStatuses.Error) {
+            if (resp.Status === ApiStatus.Error) {
                 const error = _.get(resp, "Error", {Error: "unknown", Code: 0}) as ErrorResponse;
                 throw `vvgo error [${error.Code}]: ${error.Error}`;
             }
             return resp;
         }).catch(err => {
             console.log(err);
-            return new ApiResponse();
+            return {} as ApiResponse;
         });
 };

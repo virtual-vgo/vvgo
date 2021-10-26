@@ -5,7 +5,6 @@ import {
     deleteSessions,
     Session,
     SessionKind,
-    SessionKinds,
     useMySession,
     useSessions,
 } from "./datasets";
@@ -80,9 +79,9 @@ const NewSession = (props: {
     return <tr>
         <td>
             <select className="custom-select mr-sm-2" ref={inputKind}>
-                <option>{SessionKinds.ApiToken}</option>
+                <option>{SessionKind.ApiToken}</option>
                 {}
-                {Object.entries(SessionKinds)
+                {Object.entries(SessionKind)
                     .filter(([k]) => k !== "ApiToken")
                     .map(([k, v]) => <option key={k} value={v}>{v}</option>)}
             </select>

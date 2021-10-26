@@ -9,31 +9,46 @@ const GuildMemberToastLimit = 5;
 const WintryMixChannelPrefix = "jackson-testing-";
 
 export const NewProjectWorkflow = () => {
-    const projects = useMixtapeProjects();
+    const [projects, setProjects] = useMixtapeProjects();
     return <Container>
         <h1>Winter Mixtape</h1>
-        <h2>Existing Projects</h2>
-        <Table className={"text-light"}>
-            <tbody>
-            {projects.map(x => <tr key={x.Id}>
-                <td>{x.Mixtape}</td>
-                <td>{x.Id}</td>
-                <td>{x.Name}</td>
-                <td>{x.Channel}</td>
-                <td>{x.Owners.join(", ")}</td>
-                <td><Button onClick={() => deleteMixtapeProjects([x])}>Delete</Button></td>
-            </tr>)}
-            </tbody>
-        </Table>
         <h2>New Project Workflow</h2>
-        <WorkflowApp/>
+        <WorkflowApp projects={projects} setProjects={setProjects}/>
+        <h2>Existing Projects</h2>
+        <ProjectTable projects={projects} setProjects={setProjects}/>
     </Container>;
 };
 
-const WorkflowApp = () => {
-    const [curProject, setCurProject] = useState({Owners: []} as MixtapeProject);
+const ProjectTable = (props: {
+    projects: MixtapeProject[];
+    setProjects: (projects: MixtapeProject[]) => void;
+}) => {
+    const onClickDelete = (project: MixtapeProject) => {
+        console.log("deleting", project);
+        props.setProjects(props.projects.filter(x => project.Id != x.Id));
+        deleteMixtapeProjects([project]).catch(err => console.log(err));
+    };
+    return <Table className={"text-light"}>
+        <tbody>
+        {props.projects.map(x => <tr key={x.Id}>
+            <td>{x.Mixtape}</td>
+            <td>{x.Id}</td>
+            <td>{x.Name}</td>
+            <td>{x.Channel}</td>
+            <td>{x.Owners.join(", ")}</td>
+            <td><Button onClick={() => onClickDelete(x)}>Delete</Button></td>
+        </tr>)}
+        </tbody>
+    </Table>;
+};
 
+const WorkflowApp = (props: {
+    setProjects: (projects: MixtapeProject[]) => void;
+    projects: MixtapeProject[];
+}) => {
+    const [curProject, setCurProject] = useState({Owners: []} as MixtapeProject);
     const saveProject = (project: MixtapeProject) => {
+        props.setProjects([...props.projects.filter(p => p.Id != project.Id), project]);
         saveMixtapeProjects([project])
             .then(() => setCurProject(project))
             .catch(err => console.log(err));
@@ -55,7 +70,7 @@ const WorkflowApp = () => {
                     title={"2. Choose project owners."}
                     saveProject={saveProject}
                     curProject={curProject}
-                    limitResults={5}
+                    limitResults={GuildMemberToastLimit}
                     completed={curProject.Owners && curProject.Owners.length > 0}
                 /> : <div/>}
         </Col>
@@ -70,50 +85,13 @@ const WorkflowApp = () => {
     </Row>;
 };
 
-const ChannelCard = (props: {
-    curProject: MixtapeProject;
-    saveProject: (project: MixtapeProject) => void;
-    completed: boolean;
-}) => {
-    const channelInputRef = useRef({} as HTMLInputElement);
-    return <Card>
-        <Card.Title className={"m-2 text-dark"}>
-            3. Create a channel. <CheckMark completed={props.completed}/>
-        </Card.Title>
-        <InputGroup>
-            <InputGroup.Text>Channel</InputGroup.Text>
-            <FormControl
-                ref={channelInputRef}
-                defaultValue={WintryMixChannelPrefix + props.curProject.Id}
-            />
-            <SubmitChannelButton
-                channelInputRef={channelInputRef}
-                curProject={props.curProject}
-                saveProject={props.saveProject}
-            />
-        </InputGroup>
-    </Card>;
-};
-
-const SubmitChannelButton = (props: {
-    channelInputRef: MutableRefObject<HTMLInputElement>
-    curProject: MixtapeProject;
-    saveProject: (project: MixtapeProject) => void;
-}) => {
-    const handleClick = () => {
-        const channel = props.channelInputRef.current.value;
-        props.saveProject({...props.curProject, Channel: channel});
-    };
-    return <Button
-        variant={"outline-secondary"}
-        onClick={handleClick}
-        children={"Submit"}
-    />;
-};
-
-const CheckMark = (props: { completed: boolean }) => <div>
-    {props.completed ? "✔️" : ""}
-</div>;
+const CheckMark = (props: {
+    children: JSX.Element[] | JSX.Element | string;
+    completed: boolean
+}) => <Row>
+    <Col>{props.children}</Col>
+    <Col md={"auto"} className={"text-end"}>{props.completed ? "✔️" : ""}</Col>
+</Row>;
 
 const NameCard = (props: {
     title: string
@@ -126,7 +104,7 @@ const NameCard = (props: {
 
     return <Card>
         <Card.Title className={"m-2 text-dark"}>
-            {props.title} <CheckMark completed={props.completed}/>
+            <CheckMark completed={props.completed}>{props.title}</CheckMark>
         </Card.Title>
         <InputGroup>
             <InputGroup.Text>Name</InputGroup.Text>
@@ -182,7 +160,7 @@ const OwnersCard = (props: {
 
     return <Card>
         <Card.Title className={"m-2 text-dark"}>
-            {props.title} <CheckMark completed={props.completed}/>
+            <CheckMark completed={props.completed}>{props.title}</CheckMark>
         </Card.Title>
         <EditMembers
             owners={owners}
@@ -269,6 +247,52 @@ const MembersToast = (props: {
                     onClick={() => props.setOwners([...props.owners, m])}
                 />)}
     </Toast>;
+};
+
+const ChannelCard = (props: {
+    curProject: MixtapeProject;
+    saveProject: (project: MixtapeProject) => void;
+    completed: boolean;
+}) => {
+    const channelInputRef = useRef({} as HTMLInputElement);
+    return <Card>
+        <Card.Title className={"m-2 text-dark"}>
+            <Row>
+                <Col className={"col-md-auto"}>3. Create a channel.</Col>
+                <Col><CheckMark completed={props.completed}>3. Create a channel.</CheckMark>
+                </Col>
+            </Row>
+
+        </Card.Title>
+        <InputGroup>
+            <InputGroup.Text>Channel</InputGroup.Text>
+            <FormControl
+                ref={channelInputRef}
+                defaultValue={WintryMixChannelPrefix + props.curProject.Id}
+            />
+            <SubmitChannelButton
+                channelInputRef={channelInputRef}
+                curProject={props.curProject}
+                saveProject={props.saveProject}
+            />
+        </InputGroup>
+    </Card>;
+};
+
+const SubmitChannelButton = (props: {
+    channelInputRef: MutableRefObject<HTMLInputElement>
+    curProject: MixtapeProject;
+    saveProject: (project: MixtapeProject) => void;
+}) => {
+    const handleClick = () => {
+        const channel = props.channelInputRef.current.value;
+        props.saveProject({...props.curProject, Channel: channel});
+    };
+    return <Button
+        variant={"outline-secondary"}
+        onClick={handleClick}
+        children={"Submit"}
+    />;
 };
 
 const nameToId = (name: string): string =>

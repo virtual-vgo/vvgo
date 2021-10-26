@@ -8,10 +8,14 @@ import _ = require("lodash");
 import React = require("react");
 
 export const MemberDashboard = () => {
-    const projects = _.shuffle(useMixtapeProjects());
+    const [projects] = useMixtapeProjects()
+    const shuffleProjects = _.shuffle(projects).map(p => {
+        const tags = p.Tags ? p.Tags : [];
+        const owners = p.Owners ? p.Owners : [];
+        return {...p, Tags: tags, Owners: owners} as MixtapeProject;
+    });
     const me = useMySession();
-    const myProjects = useMixtapeProjects().filter(p => p.Owners.includes(me.DiscordID));
-
+    const myProjects = shuffleProjects.filter(p => p.Owners.includes(me.DiscordID));
     return <Container>
         <Row className={"row-cols-1"}>
             <Col>
@@ -19,7 +23,7 @@ export const MemberDashboard = () => {
             </Col>
             <Col className={"mt-3"}>
                 <Row md={2} sm={1}>
-                    {projects.map((p, i) =>
+                    {shuffleProjects.map((p, i) =>
                         <Col key={i.toString()} className={"mt-3"}>
                             <ProjectCard me={me} project={p}/>
                         </Col>)}

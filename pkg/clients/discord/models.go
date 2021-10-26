@@ -237,3 +237,20 @@ type Message struct {
 type BulkDeleteMessagesParams struct {
 	Messages []string `json:"messages"`
 }
+
+// https://discord.com/developers/docs/resources/channel#channel-object-channel-types
+type ChannelType int
+
+const (
+	ChannelTypeGuildText     ChannelType = 0
+	ChannelTypeDM            ChannelType = 1
+	ChannelTypeGuildVoice    ChannelType = 2
+	ChannelTypeGroupDM       ChannelType = 3
+	ChannelTypeGuildCategory ChannelType = 4
+)
+
+type CreateGuildChannelParams struct {
+	Name  string      `json:"name"`
+	Type  ChannelType `json:"type,omitempty"`
+	Topic string      `json:"topic,omitempty"`
+}

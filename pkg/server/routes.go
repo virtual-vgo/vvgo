@@ -60,7 +60,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/dataset", api.Dataset, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/guild_members", api.GuildMembers, models.RoleVVGOExecutiveDirector)
 	mux.HandleFunc("/api/v1/me", api.Me, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/mixtape", mixtape.Handler, models.RoleAnonymous)
+	mux.HandleApiFunc("/api/v1/mixtape", mixtape.ProjectsHandler, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/parts", api.Parts, models.RoleVVGOMember)
 	mux.HandleFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
 	mux.HandleFunc("/api/v1/roles", api.Roles, models.RoleAnonymous)

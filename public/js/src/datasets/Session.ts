@@ -1,14 +1,11 @@
 import {fetchApi} from "./hooks";
 
-export const SessionKinds = Object.freeze({
-    Password: "password",
-    Bearer: "bearer",
-    Basic: "basic",
-    Discord: "discord",
-    ApiToken: "api_token",
-});
-
-export type SessionKind = "password" | "bearer" | "basic" | "discord" | "api_token";
+export enum SessionKind {
+    Bearer = "bearer",
+    Basic = "basic",
+    Discord = "discord",
+    ApiToken = "api_token",
+}
 
 export interface Session {
     Key: string;
