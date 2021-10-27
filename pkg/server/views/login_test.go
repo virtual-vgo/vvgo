@@ -25,11 +25,11 @@ func TestLoginView_ServeHTTP(t *testing.T) {
 	t.Run("logged in", func(t *testing.T) {
 		ctx := context.Background()
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			Login(w, r.Clone(context.WithValue(ctx, login2.CtxKeyVVGOIdentity, &models.Identity{Roles: []models.Role{models.RoleVVGOMember}})))
+			Login(w, r.Clone(context.WithValue(ctx, login2.CtxKeyVVGOIdentity, &models.Identity{Roles: []models.Role{models.RoleVVGOVerifiedMember}})))
 		}))
 		defer ts.Close()
 
-		cookie, err := login2.NewCookie(ctx, &models.Identity{Roles: []models.Role{models.RoleVVGOMember}}, 600*time.Second)
+		cookie, err := login2.NewCookie(ctx, &models.Identity{Roles: []models.Role{models.RoleVVGOVerifiedMember}}, 600*time.Second)
 		require.NoError(t, err, "sessions.NewCookie()")
 
 		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)

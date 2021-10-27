@@ -10,7 +10,7 @@ const StatusError = "error"
 
 type ApiResponse struct {
 	Status          string
-	Version         version.Version
+	Version         *version.Version      `json:"version,omitempty"`
 	Error           *ApiError             `json:"Error,omitempty"`
 	Projects        []Project             `json:"Projects,omitempty"`
 	Parts           []Part                `json:"Parts,omitempty"`
@@ -23,6 +23,7 @@ type ApiResponse struct {
 	WorkflowResult  []WorkflowTaskResult  `json:"WorkflowResult,omitempty"`
 	Credits         []CreditsTopicRow     `json:"Credits,omitempty"`
 	Ballot          ArrangementsBallot    `json:"Ballot,omitempty"`
+	OAuthRedirect   *OAuthRedirect        `json:"OAuthRedirect,omitempty"`
 }
 
 type ApiError struct {
@@ -36,3 +37,9 @@ type Spreadsheet struct {
 }
 
 type ArrangementsBallot []string
+
+type OAuthRedirect struct {
+	DiscordURL string
+	State      string
+	Secret string
+}

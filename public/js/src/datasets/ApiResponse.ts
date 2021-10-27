@@ -26,6 +26,13 @@ export interface ApiResponse {
     Identity: Session;
     GuildMembers: GuildMember[];
     MixtapeProjects: MixtapeProject[];
+    OAuthRedirect: OAuthRedirect;
+}
+
+export interface OAuthRedirect {
+    DiscordURL: string;
+    State: string;
+    Secret: string;
 }
 
 export interface ErrorResponse {

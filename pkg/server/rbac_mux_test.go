@@ -22,7 +22,7 @@ func TestRBACMux_Handle(t *testing.T) {
 
 	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		// do nothing
-	}, models.RoleVVGOTeams)
+	}, models.RoleVVGOProductionTeam)
 	ts := httptest.NewServer(mux)
 	defer ts.Close()
 
@@ -37,8 +37,8 @@ func TestRBACMux_Handle(t *testing.T) {
 
 	t.Run("basic auth", func(t *testing.T) {
 		mux.Basic = map[[2]string][]models.Role{
-			{"uploader", "uploader"}: {models.RoleVVGOTeams},
-			{"member", "member"}:     {models.RoleVVGOMember},
+			{"uploader", "uploader"}: {models.RoleVVGOProductionTeam},
+			{"member", "member"}:     {models.RoleVVGOVerifiedMember},
 		}
 
 		newAuthRequest := func(t *testing.T, user, pass string) *http.Request {
@@ -78,8 +78,8 @@ func TestRBACMux_Handle(t *testing.T) {
 
 	t.Run("token auth", func(t *testing.T) {
 		mux.Bearer = map[string][]models.Role{
-			"uploader": {models.RoleVVGOTeams},
-			"member":   {models.RoleVVGOMember},
+			"uploader": {models.RoleVVGOProductionTeam},
+			"member":   {models.RoleVVGOVerifiedMember},
 		}
 		newAuthRequest := func(t *testing.T, token string) *http.Request {
 			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
@@ -121,7 +121,7 @@ func TestRBACMux_Handle(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			req := newAuthRequest(t, &models.Identity{
-				Roles: []models.Role{models.RoleVVGOTeams},
+				Roles: []models.Role{models.RoleVVGOProductionTeam},
 			})
 			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")
@@ -129,7 +129,7 @@ func TestRBACMux_Handle(t *testing.T) {
 		})
 		t.Run("incorrect role", func(t *testing.T) {
 			req := newAuthRequest(t, &models.Identity{
-				Roles: []models.Role{models.RoleVVGOMember},
+				Roles: []models.Role{models.RoleVVGOVerifiedMember},
 			})
 			resp, err := http_wrappers.NoFollow(nil).Do(req)
 			require.NoError(t, err, "http.Do()")

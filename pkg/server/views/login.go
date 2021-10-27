@@ -12,7 +12,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if target := r.FormValue("target"); target != "" {
-		value := login.NewCookieValue()
+		value := login.NewSessionKey()
 		if err := redis.Do(ctx, redis.Cmd(nil, "SETEX", "vvgo_login_redirect"+":"+value, "3600", target)); err != nil {
 			logger.RedisFailure(ctx, err)
 		} else {

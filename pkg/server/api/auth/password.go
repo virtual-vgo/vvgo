@@ -1,4 +1,4 @@
-package login
+package auth
 
 import (
 	"errors"
@@ -6,28 +6,24 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
 
-// Password authenticates requests using form values user and pass and a static map of valid combinations.
-// If the user pass combo exists in the map, then a login cookie with the mapped roles is sent in the response.
-func Password(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+type PostPasswordRequest struct {
+	User string
+	Pass string
+}
 
+func Password(r *http.Request) models.ApiResponse {
+	ctx := r.Context()
 	if r.Method != http.MethodPost {
-		http_helpers.WriteErrorMethodNotAllowed(ctx, w)
-		return
+		return http_helpers.NewMethodNotAllowedError()
 	}
 
 	passwords := make(map[string]string)
 	passwords["vvgo-member"] = config.Config.VVGO.MemberPasswordHash
-
-	var identity models.Identity
-	if err := ReadSessionFromRequest(ctx, r, &identity); err == nil {
-		http.Redirect(w, r, "/parts", http.StatusFound)
-		return
-	}
 
 	user := r.FormValue("user")
 	pass := r.FormValue("pass")
@@ -45,12 +41,17 @@ func Password(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		logger.WithError(err).WithField("user", user).Error("password authentication failed")
-		http_helpers.WriteUnauthorizedError(ctx, w)
-		return
+		return http_helpers.NewUnauthorizedError()
 	}
 
-	loginSuccess(w, r.WithContext(ctx), &models.Identity{
+	identity := models.Identity{
 		Kind:  models.KindPassword,
 		Roles: []models.Role{models.RoleVVGOVerifiedMember},
-	})
+	}
+	if _, err := login.NewSession(ctx, &identity, SessionDuration); err != nil {
+		logger.MethodFailure(ctx, "login.NewSession", err)
+		return http_helpers.NewInternalServerError()
+	}
+
+	return models.ApiResponse{Status: models.StatusOk, Identity: &identity}
 }

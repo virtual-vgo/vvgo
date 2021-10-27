@@ -19,12 +19,11 @@ import (
 var PublicFiles = "public"
 
 var (
-	Index              = ServeJsPage("Virtual Video Game Orchestra")
-	ServePublicFile    = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
+	ReactUI         = ServeJsPage("Virtual Video Game Orchestra")
+	ServePublicFile = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
 	Parts              = ServeTemplate("parts.gohtml")
 	About              = ServeJsPage("About")
 	ContactUs          = ServeHtml("Contact Us", "contact_us.html")
-	Voting             = ServeTemplate("voting.gohtml")
 	Sessions           = ServeJsPage("Manage Sessions")
 	Projects2          = ServeJsPage("projects")
 	Mixtape            = ServeJsPage("Mixtape")
@@ -76,9 +75,9 @@ func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request
 		"title":            strings.Title,
 		"form_value":       func(key string) string { return r.FormValue(key) },
 		"user_logged_in":   func() bool { return identity.IsAnonymous() == false },
-		"user_is_member":   func() bool { return identity.HasRole(models.RoleVVGOMember) },
+		"user_is_member":   func() bool { return identity.HasRole(models.RoleVVGOVerifiedMember) },
 		"user_is_leader":   func() bool { return identity.HasRole(models.RoleVVGOExecutiveDirector) },
-		"user_on_teams":    func() bool { return identity.HasRole(models.RoleVVGOTeams) },
+		"user_on_teams":    func() bool { return identity.HasRole(models.RoleVVGOProductionTeam) },
 		"download_link":    func(obj string) string { return downloadLink(obj) },
 		"projects":         func() (models.Projects, error) { return models.ListProjects(ctx, identity) },
 		"parts":            func() (models.Parts, error) { return models.ListParts(ctx, identity) },

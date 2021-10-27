@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import {getSession} from "../auth";
 import {ApiDataset, ApiResponse, ApiStatus, Endpoint, ErrorResponse} from "./ApiResponse";
 import {Credit} from "./Credit";
 import {Director} from "./Director";
@@ -25,8 +26,6 @@ export const useGuildMembers = (query: string, limit: number): GuildMember[] => 
 export const useHighlights = (): Highlight[] => useDataset("Highlights");
 export const useMixtapeProjects = (): [MixtapeProject[], (projects: MixtapeProject[]) => void] =>
     useAndSetApiData("/mixtape", (p) => _.defaultTo(p.MixtapeProjects, []));
-export const useMySession = (): Session =>
-    useApiData("/me", (p) => _.defaultTo(p.Identity, {} as Session));
 export const useParts = (): Part[] =>
     useApiData("/parts", (p) => _.defaultTo(p.Parts, []));
 export const useProjects = (): Project[] =>
@@ -47,11 +46,12 @@ export function useAndSetApiData<T>(url: RequestInfo, getData: (r: ApiResponse) 
     const [data, setData] = useState(getData({} as ApiResponse));
     useEffect(() => {
         fetchApi(url, {method: "GET"}).then(resp => setData(getData(resp)));
-    }, [url]);
+    }, [url, getSession().Key]);
     return [data, setData];
 }
 
 export const fetchApi = async (url: RequestInfo, init: RequestInit): Promise<ApiResponse> => {
+    init.headers = {...init.headers, Authorization: "Bearer " + getSession().Key};
     console.log("Api Request:", init.method, url);
     return fetch(Endpoint + url, init)
         .then(response => response.json())
@@ -63,8 +63,5 @@ export const fetchApi = async (url: RequestInfo, init: RequestInit): Promise<Api
                 throw `vvgo error [${error.Code}]: ${error.Error}`;
             }
             return resp;
-        }).catch(err => {
-            console.log(err);
-            return {} as ApiResponse;
         });
 };

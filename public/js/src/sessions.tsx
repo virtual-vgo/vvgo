@@ -1,17 +1,11 @@
 import {Dispatch, MutableRefObject, SetStateAction, useState} from "react";
-import {Container} from "./components";
-import {
-    createSessions,
-    deleteSessions,
-    Session,
-    SessionKind,
-    useMySession,
-    useSessions,
-} from "./datasets";
+import {getSession} from "./auth";
+import {RootContainer} from "./components";
+import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "./datasets";
 import React = require("react");
 
 export const Sessions = () => {
-    const me = useMySession();
+    const me = getSession();
     const [sessions, setSessions] = useSessions();
     const [deleteButtonState, setDeleteButtonState] = useState(new Map());
     const [createButtonState, setCreateButtonState] = useState("new");
@@ -38,8 +32,7 @@ export const Sessions = () => {
             setButtonState={setDeleteButtonState}
         />);
 
-
-    return <Container>
+    return <RootContainer>
         <div className={"row row-cols-1 mt-2"}>
             <div className={"col"}>
                 <h1>Sessions</h1>
@@ -62,7 +55,7 @@ export const Sessions = () => {
                 </table>
             </div>
         </div>
-    </Container>;
+    </RootContainer>;
 };
 
 const NewSession = (props: {
@@ -150,9 +143,10 @@ const SessionRow = (props: {
         }
         return "";
     };
+
     return <tr className={props.className}>
         <td>{session.Kind}</td>
-        <td>{session.Roles.reduce((a, b) => a + ", " + b)}</td>
+        <td>{session.Roles ? session.Roles.reduce((a, b) => a + ", " + b) : "none"}</td>
         <td>{session.DiscordID}</td>
         <td>{expiresAt()}</td>
         <td width={120}>

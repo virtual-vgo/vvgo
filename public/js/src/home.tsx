@@ -1,4 +1,4 @@
-import {Container, YoutubeIframe} from "./components";
+import {RootContainer, YoutubeIframe} from "./components";
 import {Highlight, latestProject, Project, projectIsOpenForSubmission, useHighlights, useProjects} from "./datasets";
 import {randElement} from "./utils";
 import React = require("react");
@@ -9,7 +9,7 @@ export const Home = () => {
     const highlight = randElement(highlights);
 
     const latest = latestProject(projects);
-    return <Container>
+    return <RootContainer>
         <div className="row">
             <div className="col col-12 col-lg-7">
                 <Banner latest={latest}/>
@@ -31,7 +31,7 @@ export const Home = () => {
                 </p>
             </div>
         </div>
-    </Container>;
+    </RootContainer>;
 };
 
 const Banner = (props: { latest: Project }) => {

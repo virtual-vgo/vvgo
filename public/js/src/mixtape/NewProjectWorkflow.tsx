@@ -1,6 +1,6 @@
 import {MutableRefObject, useRef, useState} from "react";
 import {Button, Card, Col, Dropdown, FormControl, InputGroup, Row, Table, Toast} from "react-bootstrap";
-import {Container} from "../components";
+import {RootContainer} from "../components";
 import {GuildMember, useGuildMembers, useMixtapeProjects} from "../datasets";
 import {deleteMixtapeProjects, MixtapeProject, saveMixtapeProjects} from "../datasets/MixtapeProject";
 import React = require("react");
@@ -10,13 +10,13 @@ const WintryMixChannelPrefix = "jackson-testing-";
 
 export const NewProjectWorkflow = () => {
     const [projects, setProjects] = useMixtapeProjects();
-    return <Container>
+    return <RootContainer>
         <h1>Winter Mixtape</h1>
         <h2>New Project Workflow</h2>
         <WorkflowApp projects={projects} setProjects={setProjects}/>
         <h2>Existing Projects</h2>
         <ProjectTable projects={projects} setProjects={setProjects}/>
-    </Container>;
+    </RootContainer>;
 };
 
 const ProjectTable = (props: {

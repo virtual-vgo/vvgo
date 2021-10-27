@@ -1,14 +1,14 @@
 import React = require("react");
-import {Container} from "./components";
+import {RootContainer} from "./components";
 import {Director, useDirectors} from "./datasets";
 
 export const About = () => {
     const directors = useDirectors();
 
-    return <Container>
+    return <RootContainer>
         <Blurb/>
         <Directors directors={directors}/>
-    </Container>;
+    </RootContainer>;
 };
 
 const Blurb = () => {

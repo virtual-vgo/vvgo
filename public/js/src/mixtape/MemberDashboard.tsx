@@ -1,8 +1,9 @@
 import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
-import {Container} from "../components";
-import {fetchApi, Roles, Session, useMixtapeProjects, useMySession} from "../datasets";
+import {getSession} from "../auth";
+import {RootContainer} from "../components";
+import {fetchApi, Roles, Session, useMixtapeProjects} from "../datasets";
 import {MixtapeProject} from "../datasets/MixtapeProject";
 import _ = require("lodash");
 import React = require("react");
@@ -14,8 +15,8 @@ export const MemberDashboard = () => {
         const owners = p.Owners ? p.Owners : [];
         return {...p, Tags: tags, Owners: owners} as MixtapeProject;
     });
-    const me = useMySession();
-    return <Container>
+    const me = getSession();
+    return <RootContainer>
         <Row className={"row-cols-1"}>
             <Col>
                 <h1 className={"title"} style={{textAlign: "left"}}>Wintry Mix | Members Dashboard</h1>
@@ -29,7 +30,7 @@ export const MemberDashboard = () => {
                 </Row>
             </Col>
         </Row>
-    </Container>;
+    </RootContainer>;
 };
 
 const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {

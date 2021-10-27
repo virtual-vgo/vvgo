@@ -32,8 +32,8 @@ func (x Role) String() string { return string(x) }
 
 const (
 	RoleAnonymous             Role = "anonymous"   // anonymous/unauthenticated access to the site
-	RoleVVGOMember            Role = "vvgo-member" // password login or has the vvgo-member discord role
-	RoleVVGOTeams             Role = "vvgo-teams"  // has the teams discord role
+	RoleVVGOVerifiedMember    Role = "vvgo-member" // password login or has the vvgo-member discord role
+	RoleVVGOProductionTeam    Role = "vvgo-teams"  // has the teams discord role
 	RoleVVGOExecutiveDirector Role = "vvgo-leader" // has the leader discord role
 
 	RoleWriteSpreadsheet Role = "write_spreadsheet"
@@ -52,8 +52,9 @@ type Identity struct {
 	Key       string
 	Kind      Kind
 	Roles     []Role
-	ExpiresAt *time.Time `json:"ExpiresAt,omitempty"`
-	DiscordID string     `json:"DiscordID,omitempty"`
+	ExpiresAt time.Time `json:"ExpiresAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+	DiscordID string    `json:"DiscordID,omitempty"`
 }
 
 func ListSessions(ctx context.Context, identity Identity) ([]Identity, error) {
@@ -108,12 +109,12 @@ func (x Identity) IsAnonymous() bool {
 }
 
 func (x Identity) AssumeRoles(roles ...Role) Identity {
-	var new []Role
+	var newRoles []Role
 	for _, role := range roles {
 		if x.HasRole(role) {
-			new = append(new, role)
+			newRoles = append(newRoles, role)
 		}
 	}
-	x.Roles = new
+	x.Roles = newRoles
 	return x
 }

@@ -59,7 +59,7 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, "/login?target=%2Fdownload", resp.Header.Get("Location"))
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/download", models.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/download", models.RoleVVGOVerifiedMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
@@ -72,22 +72,22 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("fail /authorize/vvgo-leader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", models.RoleVVGOTeams)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", models.RoleVVGOProductionTeam)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
 		t.Run("ok /authorize/vvgo-teams", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOTeams)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOProductionTeam)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("fail /authorize/vvgo-teams", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOVerifiedMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
 		t.Run("ok /authorize/vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", models.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", models.RoleVVGOVerifiedMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})

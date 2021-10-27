@@ -88,7 +88,7 @@ func (x Projects) ForIdentity(identity Identity) Projects {
 		switch {
 		case project.PartsReleased == true:
 			want = append(want, project)
-		case identity.HasRole(RoleVVGOTeams):
+		case identity.HasRole(RoleVVGOProductionTeam):
 			want = append(want, project)
 		case identity.HasRole(RoleVVGOExecutiveDirector):
 			want = append(want, project)
