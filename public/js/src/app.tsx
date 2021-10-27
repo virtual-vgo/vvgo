@@ -12,10 +12,7 @@ import {MemberDashboard} from "./mixtape/MemberDashboard";
 import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
 
 export const App = () => {
-    const me = getSession();
-
     return <BrowserRouter>
-        <p>Logged in as {me.Key} | {me.DiscordID} | {me.Roles ? me.Roles.join(", ") : UserRoles.Anonymous}</p>
         <Switch>
             <PrivateRoute
                 path="/sessions"

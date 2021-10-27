@@ -1,6 +1,8 @@
 import React = require("react");
-import {RootContainer} from "./components";
+import Col from "react-bootstrap/Col";
+import Row from "react-bootstrap/Row";
 import {Director, useDirectors} from "../datasets";
+import {RootContainer} from "./components";
 
 export const About = () => {
     const directors = useDirectors();
@@ -12,11 +14,11 @@ export const About = () => {
 };
 
 const Blurb = () => {
-    return <div className="row mt-4 border-bottom border-light">
-        <div className="col col-lg-3 col-12 text-justify">
+    return <Row className="border-light row-cols-2">
+        <Col lg={3}>
             <h2 className="text-center">About Us</h2>
-        </div>
-        <div className="col col-lg-9 col-12 text-justify fs-6">
+        </Col>
+        <div className="col col-lg-9 col-12 text-justify">
             <p className="">
                 Formed in March 2020, <strong>Virtual Video Game Orchestra</strong> (VVGO, &quot;vee-vee-go&quot;) is an
                 online
@@ -37,30 +39,36 @@ const Blurb = () => {
                 href="https://discord.gg/9RVUJMQ" className="text-info">Discord</a>!
             </p>
         </div>
-    </div>;
+    </Row>;
 };
 
 const Directors = (props: { directors: Director[] }) => {
-    return <div className="row mt-3 border-bottom border-light">
-        <div className="col col-lg-3 col-12 text-center">
-            <h2>VVGO Leadership</h2>
-        </div>
-        <div className="col col-lg-9 col-12 text-center mt-2">
-            <ExecutiveDirectorTable directors={props.directors}/>
-        </div>
+    return <div className="text-center">
+        <Row className="mt-3 row-cols-2">
+            <Col lg={3}>
+                <h2>VVGO Leadership</h2>
+            </Col>
+            <Col lg={9} md={12}>
+                <ExecutiveDirectorTable directors={props.directors}/>
+            </Col>
+        </Row>
     </div>;
 };
 
 const ExecutiveDirectorTable = (props: { directors: Director[] }) => {
-    return <table id="leader-table" className="table table-responsive table-borderless text-light fs-6">
+    return <table id="leader-table" className="table table-responsive table-borderless text-light">
         <tbody>
-        {props.directors.map(director => <ExecutiveDirectorRow key={director.Name} director={director}/>)}
+        {props.directors.map((director, i) =>
+            <ExecutiveDirectorRow
+                key={director.Name}
+                director={director}
+                bottom={props.directors.length == i+1}/>)}
         </tbody>
     </table>;
 };
 
-const ExecutiveDirectorRow = (props: { director: Director }) => {
-    return <tr className="border-bottom">
+const ExecutiveDirectorRow = (props: { director: Director, bottom: boolean }) => {
+    return <tr className={props.bottom ? "" : "border-bottom"}>
         <td><img src={props.director.Icon} alt={props.director.Name} height="100"/></td>
         <td><p className="text-light">{props.director.Name}<br/><small>{props.director.Epithet}</small>
         </p></td>

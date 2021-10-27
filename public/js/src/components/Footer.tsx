@@ -1,7 +1,7 @@
 import React = require("react");
 
-export const Footer = () => <footer className="footer">
-    <div className="row mb-3 text-center">
+export const Footer = () => <div className="mt-4 d-flex align-items-end">
+    <div className="row text-center navbar">
         <div className="col">
             <a className="text-light"
                href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
@@ -29,4 +29,5 @@ export const Footer = () => <footer className="footer">
             </a>
         </div>
     </div>
-</footer>;
+</div>;
+

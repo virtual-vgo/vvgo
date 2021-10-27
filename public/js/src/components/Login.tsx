@@ -1,7 +1,10 @@
 import _ = require("lodash");
 import React = require("react");
-import {Button, ButtonGroup, Col, Row} from "react-bootstrap";
+import Button from "react-bootstrap/Button";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
+import Row from "react-bootstrap/Row";
 import {Redirect} from "react-router";
 import {Link} from "react-router-dom";
 import {discordLogin, oauthRedirect, passwordLogin} from "../auth";
