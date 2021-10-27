@@ -72,9 +72,9 @@ func Routes() http.Handler {
 	}
 
 	// views
-	mux.HandleFunc("/parts", views.Parts, models.RoleVVGOVerifiedMember)
-	mux.HandleFunc("/projects", views.Projects, models.RoleAnonymous)
-	mux.HandleFunc("/credits-maker", views.CreditsMaker, models.RoleVVGOProductionTeam)
+	mux.HandleFunc("/parts/", views.ReactUI, models.RoleVVGOVerifiedMember)
+	mux.HandleFunc("/projects/", views.ReactUI, models.RoleAnonymous)
+	mux.HandleFunc("/credits-maker/", views.ReactUI, models.RoleVVGOProductionTeam)
 	mux.HandleFunc("/about/", views.ReactUI, models.RoleAnonymous)
 	mux.HandleFunc("/contact/", views.ReactUI, models.RoleAnonymous)
 	mux.HandleFunc("/sessions/", views.ReactUI, models.RoleAnonymous)

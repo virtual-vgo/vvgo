@@ -1,7 +1,7 @@
 import React = require("react");
 import {Link, NavLink as RouterNavLink} from "react-router-dom";
 import {getSession} from "../auth";
-import {sessionIsAnonymous, UserRoles} from "../datasets";
+import {fetchApi, sessionIsAnonymous, UserRoles} from "../datasets";
 
 export const Navbar = () => {
     const me = getSession();
@@ -45,10 +45,10 @@ export const Navbar = () => {
         <div className="collapse navbar-collapse" id="navbarCollapse">
             <ul className="navbar-nav me-auto">
                 <li className="nav-item">
-                    <MemberNavLink to="/parts">Parts</MemberNavLink>
+                    <MemberNavLink to="/parts/">Parts</MemberNavLink>
                 </li>
                 <li className="nav-item">
-                    <NavLink to="/projects">Projects</NavLink>
+                    <NavLink to="/projects/">Projects</NavLink>
                 </li>
                 <li className="nav-item">
                     <NavLink to="/about/">About</NavLink>
@@ -67,12 +67,17 @@ export const Navbar = () => {
                     </PrivateNavLink>
                 </li>
             </ul>
-            <ul className="navbar-nav mr-2">
+            <ul className="navbar-nav me-3">
                 <li className="nav-item">{
                     sessionIsAnonymous(me) ?
                         <NavLink to="/login">Login</NavLink> :
                         <NavLink to="/logout">Logout</NavLink>
                 }
+                </li>
+
+                <li className="nav-item">
+                    <a className="nav-link"
+                       onClick={() => fetchApi("/devel/fetch_spreadsheets", {method: "GET"})}>🔁</a>
                 </li>
             </ul>
         </div>

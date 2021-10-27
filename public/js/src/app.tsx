@@ -1,11 +1,11 @@
 import React = require("react");
-import ReactDOM = require("react-dom");
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession} from "./auth";
 import {About} from "./components/About";
 import {Contact} from "./components/Contact";
 import {Home} from "./components/Home";
 import {Login, LoginDiscord, LoginFailure, LoginSuccess} from "./components/Login";
+import {Parts} from "./components/Parts";
 import {Sessions} from "./components/Sessions";
 import {sessionIsAnonymous, UserRoles} from "./datasets";
 import {MemberDashboard} from "./mixtape/MemberDashboard";
@@ -30,6 +30,12 @@ export const App = () => {
                 path="/mixtape/"
                 requireRole={UserRoles.VerifiedMember}>
                 <MemberDashboard/>
+            </PrivateRoute>
+
+            <PrivateRoute
+                path="/parts/"
+                requireRole={UserRoles.VerifiedMember}>
+                <Parts/>
             </PrivateRoute>
 
             <Route path="/login/failure"><LoginFailure/></Route>
@@ -62,6 +68,3 @@ const PrivateRoute = (props: {
     };
     return <Route path={props.path} render={children}/>;
 };
-
-ReactDOM.render(<App/>, document.querySelector("#entrypoint"));
-
