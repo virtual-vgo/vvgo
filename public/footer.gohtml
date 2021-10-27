@@ -28,34 +28,5 @@
                 </a>
             </div>
         </div>
-        {{ if or user_on_teams user_is_leader }}
-            <div class="row mb-3 text-muted">
-                <div class="col">
-                    <a href="{{ link_to_template }}">View Template on Github</a>
-                </div>
-                <div class="col">
-                    <div class="dropdown">
-                        <a class="dropdown-toggle" href="#" role="button" data-toggle="dropdown">
-                            View With Roles
-                        </a>
-                        <div class="dropdown-menu">
-                            <form class="px-2">
-                                {{ range user_roles }}
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" name="roles" value="{{.}}">
-                                        <label class="form-check-label" for="role">{{.}}</label>
-                                    </div>
-                                {{ end }}
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" name="roles" value="anonymous">
-                                    <label class="form-check-label" for="role">anonymous</label>
-                                </div>
-                                <button type="submit" class="btn-sm btn-secondary">Submit</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        {{ end }}
     </div>
 </footer>

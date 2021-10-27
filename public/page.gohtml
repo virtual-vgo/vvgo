@@ -2,24 +2,14 @@
 <html lang="en">
 
 <head>
-    <title>{{.Title}}</title>
+    <title>VVGO | Virtual Video Game Orchestra</title>
     <meta name="description" content="">
-    {{ template "header.gohtml" }}
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Virtual Video Game Orchestra">
+    <link rel="icon" href="/images/favicons/favicon-2020-11-26-thomas.png" sizes="32x32" type="image/png">
 </head>
-<body class="">
-{{ template "navbar.gohtml" }}
-
-<main role="main">
-    <div id="entrypoint">
-        {{ .Content }}
-    </div>
-</main>
-
-{{ if .JsSource }}
-    <script type="text/javascript" src="{{.JsSource}}"></script>
-{{ end }}
-
-{{ template "footer.gohtml" }}
+<body>
+<div id="entrypoint"></div>
 </body>
+<script type="text/javascript" src="/dist/index.js"></script>
 </html>

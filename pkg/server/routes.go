@@ -76,7 +76,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/projects", views.Projects, models.RoleAnonymous)
 	mux.HandleFunc("/credits-maker", views.CreditsMaker, models.RoleVVGOProductionTeam)
 	mux.HandleFunc("/about/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/contact_us", views.ContactUs, models.RoleAnonymous)
+	mux.HandleFunc("/contact/", views.ReactUI, models.RoleAnonymous)
 	mux.HandleFunc("/sessions/", views.ReactUI, models.RoleAnonymous)
 	mux.HandleFunc("/mixtape/", views.ReactUI, models.RoleAnonymous)
 	mux.HandleFunc("/login/", views.ReactUI, models.RoleAnonymous)

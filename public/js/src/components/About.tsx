@@ -1,6 +1,6 @@
 import React = require("react");
 import {RootContainer} from "./components";
-import {Director, useDirectors} from "./datasets";
+import {Director, useDirectors} from "../datasets";
 
 export const About = () => {
     const directors = useDirectors();

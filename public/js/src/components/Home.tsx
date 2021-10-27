@@ -1,6 +1,6 @@
+import {Highlight, latestProject, Project, projectIsOpenForSubmission, useHighlights, useProjects} from "../datasets";
+import {randElement} from "../utils";
 import {RootContainer, YoutubeIframe} from "./components";
-import {Highlight, latestProject, Project, projectIsOpenForSubmission, useHighlights, useProjects} from "./datasets";
-import {randElement} from "./utils";
 import React = require("react");
 
 export const Home = () => {

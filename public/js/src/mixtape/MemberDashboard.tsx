@@ -2,8 +2,8 @@ import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import {getSession} from "../auth";
-import {RootContainer} from "../components";
-import {fetchApi, Roles, Session, useMixtapeProjects} from "../datasets";
+import {RootContainer} from "../components/components";
+import {fetchApi, UserRoles, Session, useMixtapeProjects} from "../datasets";
 import {MixtapeProject} from "../datasets/MixtapeProject";
 import _ = require("lodash");
 import React = require("react");
@@ -40,7 +40,7 @@ const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
     const blurbRef = useRef({} as HTMLTextAreaElement);
     const tagsRef = useRef({} as HTMLInputElement);
     const canEdit = (me.DiscordID && project.Owners.includes(me.DiscordID)) ||
-        (me.Roles && me.Roles.includes(Roles.ExecutiveDirector));
+        (me.Roles && me.Roles.includes(UserRoles.ExecutiveDirector));
 
     const buttonOnClick = () => {
         setShowEdit(false);

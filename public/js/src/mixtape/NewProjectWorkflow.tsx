@@ -1,6 +1,6 @@
 import {MutableRefObject, useRef, useState} from "react";
 import {Button, Card, Col, Dropdown, FormControl, InputGroup, Row, Table, Toast} from "react-bootstrap";
-import {RootContainer} from "../components";
+import {RootContainer} from "../components/components";
 import {GuildMember, useGuildMembers, useMixtapeProjects} from "../datasets";
 import {deleteMixtapeProjects, MixtapeProject, saveMixtapeProjects} from "../datasets/MixtapeProject";
 import React = require("react");

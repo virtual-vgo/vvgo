@@ -4,7 +4,7 @@ import {Button, ButtonGroup, Col, Row} from "react-bootstrap";
 import Form from "react-bootstrap/Form";
 import {Redirect} from "react-router";
 import {Link} from "react-router-dom";
-import {discordLogin, oauthRedirect, passwordLogin} from "./auth";
+import {discordLogin, oauthRedirect, passwordLogin} from "../auth";
 import {GeekSquad, RootContainer} from "./components";
 
 const styles = {
@@ -89,10 +89,10 @@ export const Login = () => {
 
     const onClickDiscordLogin = () =>
         oauthRedirect()
-            .then(data => {
+            .then((data: { DiscordURL: string; }) => {
                 document.location.href = data.DiscordURL;
             })
-            .catch(err => {
+            .catch((err: unknown) => {
                 console.log("api error", err);
             });
 

@@ -1,8 +1,9 @@
 import {fetchApi} from "./hooks";
 
-export enum Roles {
+export enum UserRoles {
     ExecutiveDirector = "vvgo-leader",
-    Member = "vvgo-member",
+    VerifiedMember = "vvgo-member",
+    ProductionTeam = "vvgo-teams",
     Anonymous = "anonymous"
 }
 
@@ -30,7 +31,7 @@ export const sessionIsAnonymous = (session: Session): boolean => {
             return true;
         case session.Roles.length == 0:
             return true;
-        case session.Roles.length == 1 && session.Roles[0] == Roles.Anonymous:
+        case session.Roles.length == 1 && session.Roles[0] == UserRoles.Anonymous:
             return true;
         default:
             return false;

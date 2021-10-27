@@ -1,8 +1,17 @@
-import {Project} from "./datasets";
+import {Project} from "../datasets";
+import {Footer} from "./footer";
+import {Navbar} from "./navbar";
 import React = require("react");
 
-export const RootContainer = (props: { children: JSX.Element | JSX.Element[] }) =>
-    <div className={"mt-4 container"}>{props.children}</div>;
+export const RootContainer = (props: { title?: string, children: JSX.Element | JSX.Element[] }) => {
+    if (props.title && props.title.length > 0) document.title = "VVGO | " + props.title;
+
+    return <div className={"container"}>
+        <Navbar/>
+        {props.children}
+        <Footer/>
+    </div>;
+};
 
 // export const Visualization = (props: { drawSVG: (arg0: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>, arg1: any) => void; }) => {
 //     const ref = useRef();

@@ -1,48 +1,49 @@
 import React = require("react");
 import ReactDOM = require("react-dom");
-import {BrowserRouter as Router, Redirect, Route, Switch} from "react-router-dom";
-import {About} from "./about";
+import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession} from "./auth";
-import {Roles, sessionIsAnonymous} from "./datasets";
-import {Home} from "./home";
-import {Login, LoginDiscord, LoginFailure, LoginSuccess} from "./login";
+import {About} from "./components/About";
+import {Contact} from "./components/Contact";
+import {Home} from "./components/Home";
+import {Login, LoginDiscord, LoginFailure, LoginSuccess} from "./components/Login";
+import {Sessions} from "./components/Sessions";
+import {sessionIsAnonymous, UserRoles} from "./datasets";
 import {MemberDashboard} from "./mixtape/MemberDashboard";
 import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
-import {Sessions} from "./sessions";
 
-const Routes = () => {
+export const App = () => {
     const me = getSession();
 
-    return <Router>
-        <p>Logged in as {me.Key} | {me.DiscordID} | {me.Roles ? me.Roles.join(", ") : Roles.Anonymous}</p>
+    return <BrowserRouter>
+        <p>Logged in as {me.Key} | {me.DiscordID} | {me.Roles ? me.Roles.join(", ") : UserRoles.Anonymous}</p>
         <Switch>
-            {/*<PrivateRoute*/}
-            {/*    path="/sessions"*/}
-            {/*    requireRole={Roles.ExecutiveDirector}>*/}
-            {/*    <Sessions/>*/}
-            {/*</PrivateRoute>*/}
-            <Route path={"/sessions/"}><Sessions/></Route>
+            <PrivateRoute
+                path="/sessions"
+                requireRole={UserRoles.ExecutiveDirector}>
+                <Sessions/>
+            </PrivateRoute>
 
             <PrivateRoute
                 path="/mixtape/NewProjectWorkflow"
-                requireRole={Roles.ExecutiveDirector}>
+                requireRole={UserRoles.ExecutiveDirector}>
                 <NewProjectWorkflow/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/mixtape/"
-                requireRole={Roles.Member}>
+                requireRole={UserRoles.VerifiedMember}>
                 <MemberDashboard/>
             </PrivateRoute>
 
             <Route path="/login/failure"><LoginFailure/></Route>
             <Route path="/login/success"><LoginSuccess/></Route>
             <Route path="/login/discord"><LoginDiscord/></Route>
-            <Route path="/login"><Login/></Route>
-            <Route path="/about"><About/></Route>
+            <Route path="/login/"><Login/></Route>
+            <Route path="/about/"><About/></Route>
+            <Route path="/contact/"><Contact/></Route>
             <Route path="/"><Home/></Route>
         </Switch>
-    </Router>;
+    </BrowserRouter>;
 };
 
 const PrivateRoute = (props: {
@@ -65,5 +66,5 @@ const PrivateRoute = (props: {
     return <Route path={props.path} render={children}/>;
 };
 
-ReactDOM.render(<Routes/>, document.querySelector("#entrypoint"));
+ReactDOM.render(<App/>, document.querySelector("#entrypoint"));
 
