@@ -18,7 +18,7 @@ const styles = {
 };
 
 export const RedirectLogin = () => <Redirect to="/login/"/>
-export const RedirectLoginSuccess = () => <Redirect to="/login/success"/>;
+export const RedirectLoginSuccess = () => <Redirect to="/parts"/>;
 export const RedirectLoginFailure = () => <Redirect to="/login/failure"/>;
 
 export const Login = () => {

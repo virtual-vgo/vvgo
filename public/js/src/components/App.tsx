@@ -8,7 +8,6 @@ import {Home} from "./Home";
 import {Login} from "./login/Login";
 import {LoginDiscord} from "./login/LoginDiscord";
 import {LoginFailure} from "./login/LoginFailure";
-import {LoginSuccess} from "./login/LoginSuccess";
 import {Logout} from "./login/Logout";
 import {MemberDashboard} from "./mixtape/MemberDashboard";
 import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
@@ -44,7 +43,6 @@ export const App = () => {
             </PrivateRoute>
 
             <Route path="/login/failure"><LoginFailure/></Route>
-            <Route path="/login/success"><LoginSuccess/></Route>
             <Route path="/login/discord"><LoginDiscord/></Route>
             <Route path="/logout"><Logout/></Route>
             <Route path="/login/"><Login/></Route>
