@@ -5,7 +5,10 @@ import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
 import {Part, Project, useParts, useProjects} from "../datasets";
-import {RootContainer} from "./components";
+import {LoadingText} from "./shared/LoadingText";
+import {RootContainer} from "./shared/RootContainer";
+
+const recordingInstructions = "https://cdn.discordapp.com/attachments/741188776088436748/799697926661210212/VVGO_RecordingInstructions_Season2.png";
 
 export const Parts = () => {
     const allProjects = useProjects()
@@ -21,22 +24,28 @@ export const Parts = () => {
 
     const project = allProjects.filter(r => r.Name == showProject).pop();
 
+    if (allProjects.length == 0)
+        return <RootContainer>
+            <LoadingText/>
+        </RootContainer>;
+
     return <RootContainer>
         <Row>
             <Col lg={3}>
                 <ButtonGroup vertical>
                     {allProjects.map(project =>
                         <Button
-                            className="text-light"
+                            variant="outline-light"
+                            className={"bg-transparent text-light"}
                             key={project.Name}
-                            onClick={() => setShowProject(project.Name)}
-                            variant="outline-primary">
+                            onClick={() => setShowProject(project.Name)}>
                             {project.Title}
                         </Button>)}
                 </ButtonGroup>
             </Col>
             <Col>
                 <ProjectInfo project={project}/>
+                <PartsTopLinks project={project}/>
                 <PartsTable projectName={showProject} parts={parts}/>
             </Col>
         </Row>
@@ -47,6 +56,29 @@ const ProjectInfo = (props: { project: Project }) =>
     props.project ? <div>
         <h1>{props.project.Title}</h1>
     </div> : <div/>;
+
+export const PartsTopLinks = (props: { project: Project }) => {
+    const Card = (props: {
+        to: string,
+        children: (string | JSX.Element)[]
+    }) => <Button
+        variant="outline-light"
+        className="btn-lnk"
+        href={props.to}>
+        {props.children}</Button>;
+
+    return <ButtonGroup>
+        <Card to={recordingInstructions}>
+            <i className="far fa-image"/> Recording Instructions
+        </Card>
+        <Card to={props.project.ReferenceTrackLink}>
+            <i className="far fa-file-audio"/> Reference Track
+        </Card>
+        <Card to={props.project.SubmissionLink}>
+            <i className="fab fa-dropbox"/> Submit Recordings
+        </Card>
+    </ButtonGroup>;
+};
 
 const PartsTable = (props: { projectName: string, parts: Part[] }) =>
     <Table className="text-light">

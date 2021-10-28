@@ -8,7 +8,8 @@ import Row from "react-bootstrap/Row";
 import {Redirect} from "react-router";
 import {Link} from "react-router-dom";
 import {discordLogin, oauthRedirect, passwordLogin} from "../auth";
-import {GeekSquad, RootContainer} from "./components";
+import {GeekSquad} from "./shared/GeekSquad";
+import {RootContainer} from "./shared/RootContainer";
 
 const styles = {
     Form: {

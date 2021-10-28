@@ -1,6 +1,6 @@
 import React = require("react");
 import Button from "react-bootstrap/Button";
-import {RootContainer} from "./components";
+import {RootContainer} from "./shared/RootContainer";
 
 const styles = {
     Form: {

@@ -2,7 +2,7 @@ import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import {getSession} from "../auth";
-import {RootContainer} from "../components/components";
+import {RootContainer} from "../components/shared/RootContainer";
 import {fetchApi, UserRoles, Session, useMixtapeProjects} from "../datasets";
 import {MixtapeProject} from "../datasets/MixtapeProject";
 import _ = require("lodash");

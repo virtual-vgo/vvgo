@@ -1,7 +1,7 @@
 import React = require("react");
 import {Link, NavLink as RouterNavLink} from "react-router-dom";
-import {getSession} from "../auth";
-import {fetchApi, sessionIsAnonymous, UserRoles} from "../datasets";
+import {getSession} from "../../auth";
+import {fetchApi, sessionIsAnonymous, UserRoles} from "../../datasets";
 
 export const Navbar = () => {
     const me = getSession();

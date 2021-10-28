@@ -1,17 +1,29 @@
 export interface Project {
     Name: string;
     Title: string;
+    Season: string;
+    Hidden: boolean;
+    PartsReleased: boolean;
+    PartsArchived: boolean;
     VideoReleased: boolean;
-    YoutubeLink: string;
-    YoutubeEmbed: string;
-    BannerLink: string;
+    Sources: string;
     Composers: string;
     Arrangers: string;
-    PartsPage: string;
-    Sources: string;
-    PartsArchived: boolean;
-    PartsReleased: boolean;
-    Hidden: boolean;
+    Editors: string;
+    Transcribers: string;
+    Preparers: string;
+    ClixBy: string;
+    Reviewers: string;
+    Lyricists: string;
+    AdditionalContent: string;
+    ReferenceTrack: string;
+    ChoirPronunciationGuide: string;
+    BannerLink: string;
+    YoutubeLink: string;
+    YoutubeEmbed: string;
+    SubmissionDeadline: string;
+    SubmissionLink: string;
+    ReferenceTrackLink: string;
 }
 
 export const projectIsOpenForSubmission = (project: Project): boolean => {

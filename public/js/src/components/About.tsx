@@ -2,7 +2,7 @@ import React = require("react");
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {Director, useDirectors} from "../datasets";
-import {RootContainer} from "./components";
+import {RootContainer} from "./shared/RootContainer";
 
 export const About = () => {
     const directors = useDirectors();

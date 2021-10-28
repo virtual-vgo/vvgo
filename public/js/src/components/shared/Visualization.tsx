@@ -1,21 +1,41 @@
-import {useCredits} from "./datasets";
+import _ = require("lodash");
+import React = require("react");
 import * as d3 from "d3";
-import _ from "lodash";
+import {MutableRefObject, useEffect, useRef} from "react";
+import {Part} from "../../datasets";
 
-export const ExampleVegaLite = (props) => {
+export const Visualization = (props: {
+    parts: Part[],
+    title: string;
+    height: number;
+    width: number;
+    margin: { left: number, right: number, top: number, bottom: number };
+}) => {
+    const ref = useRef({} as HTMLDivElement);
+    const div = <div ref={ref}/>;
+    useEffect(() => drawBarChart(ref, props));
+    return div;
+};
 
-}
-
-export const drawBarChart = (svg, props) => {
-    const {parts, title, height, width, margin} = props
+export const drawBarChart = (
+    parentRef: MutableRefObject<HTMLDivElement>,
+    props: {
+        parts: Part[],
+        title: string;
+        height: number;
+        width: number;
+        margin: { left: number, right: number, top: number, bottom: number };
+    },
+) => {
+    const svg = d3.select(parentRef.current).append("svg");
+    const {title, height, width, margin} = props;
     const insideWidth = width - margin.left - margin.right;
     const insideHeight = height - margin.top - margin.bottom;
-    svg.attr("viewBox", [0, 0, width, height])
+    svg.attr("viewBox", `0, 0, ${width}, ${height}`);
 
-
-    const data = d3.flatRollup(parts, v => v.length, d => d.Project)
-        .map(([Project, Count]) => ({Project, Count}))
-    data.sort((a, b) => a.Project > b.Project ? 1 : -1)
+    const data = d3.flatRollup(props.parts, v => v.length, d => d.Project)
+        .map(([Project, Count]) => ({Project, Count}));
+    data.sort((a, b) => a.Project > b.Project ? 1 : -1);
     const xAttr = "Project";
     const yAttr = "Count";
 
@@ -30,11 +50,6 @@ export const drawBarChart = (svg, props) => {
         .domain(d3.extent(data, p => p.Count))
         .range([insideHeight, 0]);
 
-    const line = d3
-        .line()
-        .x((d) => x(d[xAttr]) + x.bandwidth() / 2)
-        .y((d) => y(d[yAttr]));
-
     const g = svg.append("g")
         .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
@@ -47,7 +62,7 @@ export const drawBarChart = (svg, props) => {
         .data(data)
         .join("rect")
         .attr("x", (d) => x(d[xAttr]))
-        .attr("width", (d) => x.bandwidth())
+        .attr("width", () => x.bandwidth())
         .attr("y", (d) => y(d[yAttr]))
         .attr("height", (d) => insideHeight - y(d[yAttr]))
         .attr("fill", "#adc2eb");
@@ -60,14 +75,6 @@ export const drawBarChart = (svg, props) => {
         .attr("cy", (d) => y(d[yAttr]))
         .attr("r", 2)
         .attr("fill", "black");
-
-    g.append("path")
-        .datum(data)
-        .attr("d", (d) => line(d))
-        .attr("fill", "none")
-        .attr("class", "line")
-        .attr("stroke", "steelblue")
-        .attr("stroke-width", 1.5);
 
     g.selectAll(".countText")
         .data(data)
@@ -83,5 +90,9 @@ export const drawBarChart = (svg, props) => {
         .style("font-size", "xx-small")
         .call(d3.axisBottom(x)).selectAll("text")
         .attr("transform", "translate(-10,0)rotate(-60)")
-        .style("text-anchor", "end")
-}
+        .style("text-anchor", "end");
+
+    return () => {
+        svg.remove();
+    };
+};

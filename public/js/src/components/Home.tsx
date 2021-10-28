@@ -1,6 +1,8 @@
+import {Link} from "react-router-dom";
 import {Highlight, latestProject, Project, projectIsOpenForSubmission, useHighlights, useProjects} from "../datasets";
 import {randElement} from "../utils";
-import {RootContainer, YoutubeIframe} from "./components";
+import {RootContainer} from "./shared/RootContainer";
+import {YoutubeIframe} from "./shared/YoutubeIframe";
 import React = require("react");
 
 export const Home = () => {
@@ -65,9 +67,9 @@ const LatestProjects = (props: { projects: Project[] }) => {
         const project = props.project;
         return <tr>
             <td>
-                <a href={project.PartsPage} className="text-light">
+                <Link to="/parts/" className="text-light">
                     {project.Title} <br/> {project.Sources}
-                </a>
+                </Link>
             </td>
         </tr>;
     };

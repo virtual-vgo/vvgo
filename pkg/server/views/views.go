@@ -9,9 +9,10 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -19,15 +20,8 @@ import (
 var PublicFiles = "public"
 
 var (
-	ReactUI         = ServeJsPage("Virtual Video Game Orchestra")
-	ServePublicFile = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
-	Parts              = ServeTemplate("parts.gohtml")
-	About              = ServeJsPage("About")
-	ContactUs          = ServeHtml("Contact Us", "contact_us.html")
-	Sessions           = ServeJsPage("Manage Sessions")
-	Projects2          = ServeJsPage("projects")
-	Mixtape            = ServeJsPage("Mixtape")
-	NewProjectWorkflow = ServeJsPage("Mixtape | New Project Workflow")
+	ReactUI            = ServeUI
+	ServePublicFile    = http.FileServer(http.Dir(PublicFiles)).ServeHTTP
 )
 
 type Page struct {
@@ -36,31 +30,21 @@ type Page struct {
 	Content  template.HTML
 }
 
-func ServeHtml(title, htmlSource string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		content, err := ioutil.ReadFile(PublicFiles + "/" + htmlSource)
-		if err != nil {
-			logger.MethodFailure(ctx, "file.Read", err)
-			http_helpers.WriteInternalServerError(ctx, w)
-			return
-		}
-		Page{Title: "VVGO | " + title, Content: template.HTML(content)}.Render(w, r)
+func ServeUI(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	file, err := os.Open("public/index.html")
+	if err != nil {
+		logger.OpenFileFailure(ctx, err)
+		http_helpers.WriteInternalServerError(ctx, w)
+		return
 	}
-}
-
-func ServeJsPage(title string) http.HandlerFunc {
-	return Page{Title: "VVGO | " + title, JsSource: "/dist/index.js"}.Render
+	if _, err := io.Copy(w, file); err != nil {
+		logger.MethodFailure(ctx, "io.Copy", err)
+	}
 }
 
 func (x Page) Render(w http.ResponseWriter, r *http.Request) {
 	ParseAndExecute(r.Context(), w, r, x, "page.gohtml")
-}
-
-func ServeTemplate(templateFile string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ParseAndExecute(r.Context(), w, r, nil, templateFile)
-	}
 }
 
 func ParseAndExecute(ctx context.Context, w http.ResponseWriter, r *http.Request, data interface{}, templateFile string) {

@@ -1,7 +1,7 @@
 import {Dispatch, MutableRefObject, SetStateAction, useState} from "react";
 import {getSession} from "../auth";
 import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "../datasets";
-import {RootContainer} from "./components";
+import {RootContainer} from "./shared/RootContainer";
 import React = require("react");
 
 export const Sessions = () => {
