@@ -10,29 +10,9 @@ import {RecordingInstructions} from "../data/downloadLinks";
 import {Part, Project, projectIsOpenForSubmission, useParts, useProjects, UserRoles} from "../datasets";
 import {LinkChannel} from "./shared/LinkChannel";
 import {LoadingText} from "./shared/LoadingText";
+import {ProjectBanner} from "./shared/ProjectBanner";
 import {RootContainer} from "./shared/RootContainer";
-
-export const SliderToggle = (props: { title: string, state: boolean, setState: (x: boolean) => void }) => {
-    return <div className={"m-2"}>
-        <strong>{props.title}</strong><br/>
-        <ButtonGroup>
-            <Button
-                size={"sm"}
-                className={"text-light"}
-                onClick={() => props.setState(true)}
-                variant={props.state ? "warning" : ""}>
-                Show
-            </Button>
-            <Button
-                size={"sm"}
-                className={"text-light"}
-                onClick={() => props.setState(false)}
-                variant={props.state ? "" : "primary"}>
-                Hide
-            </Button>
-        </ButtonGroup>
-    </div>;
-};
+import {ShowHideToggle} from "./shared/ShowHideToggle";
 
 export const Parts = () => {
     const me = getSession();
@@ -57,14 +37,14 @@ export const Parts = () => {
                 <Row>
                     <Col>
                         {me.Roles.includes(UserRoles.ProductionTeam) ?
-                            <SliderToggle
+                            <ShowHideToggle
                                 title="Unreleased"
                                 state={showUnreleased}
                                 setState={setShowUnreleased}/> : ""}
                     </Col>
                     <Col>
                         {me.Roles.includes(UserRoles.ExecutiveDirector) ?
-                            <SliderToggle
+                            <ShowHideToggle
                                 title="Archived"
                                 state={showArchived}
                                 setState={setShowArchived}/> : ""}
@@ -84,7 +64,7 @@ export const Parts = () => {
             </Col>
             {project ?
                 <Col>
-                    <ProjectInfo project={project}/>
+                    <ProjectHeader project={project}/>
                     <PartsTopLinks project={project}/>
                     <PartsTable projectName={project.Name} parts={parts}/>
                 </Col> :
@@ -96,10 +76,32 @@ export const Parts = () => {
     </RootContainer>;
 };
 
-const ProjectInfo = (props: { project: Project }) =>
-    props.project ? <div>
-        <h1>{props.project.Title}</h1>
-    </div> : <div/>;
+const ProjectHeader = (props: { project: Project }) => {
+    return <Row className="row-cols-1">
+        <Col>
+            {props.project.PartsArchived ?
+                <div className="alert alert-warning">
+                    This project has been archived. Parts are only visible to executive directors.
+                </div> : <div/>}
+        </Col>
+        <Col>
+            {props.project.PartsReleased == false ?
+                <div className="alert alert-warning">
+                    This project is unreleased and invisible to members!
+                </div> : <div/>}
+        </Col>
+        <Col className="text-center">
+            <ProjectBanner project={props.project}/>
+            <h3>{props.project.Sources}</h3>
+            {props.project.Composers}
+            <br/><small>{props.project.Arrangers}</small>
+            <div className="m-2">
+                <h4><strong>Submission Deadline:</strong>
+                    <em>{props.project.SubmissionDeadline} (Hawaii Time)</em></h4>
+            </div>
+        </Col>
+    </Row>;
+};
 
 const ButtonGroupBreakPoint = 800;
 

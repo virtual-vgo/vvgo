@@ -3,6 +3,7 @@ import Row from "react-bootstrap/Row";
 import {Link} from "react-router-dom";
 import {Highlight, latestProject, Project, projectIsOpenForSubmission, useHighlights, useProjects} from "../datasets";
 import {randElement} from "../utils";
+import {ProjectBanner} from "./shared/ProjectBanner";
 import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
 import React = require("react");
@@ -16,7 +17,7 @@ export const Home = () => {
     return <RootContainer>
         <Row>
             <Col lg={7} md={12}>
-                <Banner latest={latest}/>
+                <ProjectBanner project={latest}/>
                 <YoutubeIframe latest={latest}/>
             </Col>
             <Col>
@@ -37,28 +38,6 @@ export const Home = () => {
             </Col>
         </Row>
     </RootContainer>;
-};
-
-const Banner = (props: { latest: Project }) => {
-    if (!props.latest) return <div/>;
-
-    const latest = props.latest;
-    const youtubeLink = latest.YoutubeLink;
-    const bannerLink = latest.BannerLink;
-
-    const Banner = () => {
-        if (bannerLink === "") return <div>
-            <h1 className="title">{latest.Title}</h1>
-            <h2>{latest.Sources}</h2>
-        </div>;
-        else return <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>;
-    };
-
-    return <div id="banner" className={"col"}>
-        <a href={youtubeLink} className="text-light text-center">
-            <Banner/>
-        </a>
-    </div>;
 };
 
 const LatestProjects = (props: { projects: Project[] }) => {

@@ -12,6 +12,7 @@ import {Logout} from "./login/Logout";
 import {MemberDashboard} from "./mixtape/MemberDashboard";
 import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
 import {Parts} from "./Parts";
+import {Projects} from "./Projects";
 import {Sessions} from "./Sessions";
 
 export const App = () => {
@@ -46,6 +47,7 @@ export const App = () => {
             <Route path="/login/discord"><LoginDiscord/></Route>
             <Route path="/logout"><Logout/></Route>
             <Route path="/login/"><Login/></Route>
+            <Route path="/projects/"><Projects/></Route>
             <Route path="/about/"><About/></Route>
             <Route path="/contact/"><Contact/></Route>
             <Route path="/"><Home/></Route>
