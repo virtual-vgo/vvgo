@@ -35,5 +35,5 @@ func Credits(r *http.Request) models.ApiResponse {
 	}
 
 	data := models.BuildCreditsTable(credits, project)
-	return models.ApiResponse{Status: models.StatusOk, Credits: data}
+	return models.ApiResponse{Status: models.StatusOk, CreditsTable: data}
 }

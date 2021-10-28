@@ -7,15 +7,15 @@ type CreditsTable []CreditsTopicRow
 
 // CreditsTopicRow represents either all performers or all crew.
 type CreditsTopicRow struct {
-	Name   string            `json:"name"`
-	Rows   []*CreditsTeamRow `json:"Rows,omitempty"`
+	Name   string
+	Rows   []*CreditsTeamRow
 	rowMap map[string]*CreditsTeamRow
 }
 
 // CreditsTeamRow represents either a production team or instrument section.
 type CreditsTeamRow struct {
 	Name string
-	Rows []Credit `json:"Rows,omitempty"`
+	Rows []Credit
 }
 
 func BuildCreditsTable(credits Credits, project Project) CreditsTable {

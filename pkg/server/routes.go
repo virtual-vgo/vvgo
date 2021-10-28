@@ -49,6 +49,7 @@ func Routes() http.Handler {
 	mux.HandleApiFunc("/api/v1/auth/logout", auth.Logout, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth.OAuthRedirect, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
+	mux.HandleApiFunc("/api/v1/credits_table", api.CreditsTable, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/dataset", api.Dataset, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/guild_members", api.GuildMembers, models.RoleVVGOExecutiveDirector)
 	mux.HandleApiFunc("/api/v1/auth/password", auth.Password, models.RoleAnonymous)

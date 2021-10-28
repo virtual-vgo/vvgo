@@ -1,4 +1,5 @@
 import {Credit} from "./Credit";
+import {CreditsTable} from "./CreditsTable";
 import {Director} from "./Director";
 import {GuildMember} from "./GuildMember";
 import {Highlight} from "./Highlight";
@@ -27,7 +28,9 @@ export interface ApiResponse {
     GuildMembers: GuildMember[];
     MixtapeProjects: MixtapeProject[];
     OAuthRedirect: OAuthRedirect;
+    CreditsTable: CreditsTable;
 }
+
 
 export interface OAuthRedirect {
     DiscordURL: string;

@@ -8,9 +8,11 @@ import {getSession} from "../auth";
 import {Channels} from "../data/discord";
 import {RecordingInstructions} from "../data/downloadLinks";
 import {Part, Project, projectIsOpenForSubmission, useParts, useProjects, UserRoles} from "../datasets";
+import {AlertArchivedParts} from "./shared/AlertArchivedParts";
+import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
 import {LinkChannel} from "./shared/LinkChannel";
 import {LoadingText} from "./shared/LoadingText";
-import {ProjectBanner} from "./shared/ProjectBanner";
+import {ProjectHeader} from "./shared/ProjectHeader";
 import {RootContainer} from "./shared/RootContainer";
 import {ShowHideToggle} from "./shared/ShowHideToggle";
 
@@ -31,9 +33,10 @@ export const Parts = () => {
         .filter(r => showArchived || r.PartsArchived == false);
 
     if (project == null && wantProjects.length > 0) setProject(wantProjects[0]);
-    return <RootContainer>
+    return <RootContainer title="Parts">
         <Row>
             <Col lg={3}>
+                <h2>Projects</h2>
                 <Row>
                     <Col>
                         {me.Roles.includes(UserRoles.ProductionTeam) ?
@@ -64,6 +67,8 @@ export const Parts = () => {
             </Col>
             {project ?
                 <Col>
+                    <AlertArchivedParts project={project}/>
+                    <AlertUnreleasedProject project={project}/>
                     <ProjectHeader project={project}/>
                     <PartsTopLinks project={project}/>
                     <PartsTable projectName={project.Name} parts={parts}/>
@@ -74,33 +79,6 @@ export const Parts = () => {
                 </Col>}
         </Row>
     </RootContainer>;
-};
-
-const ProjectHeader = (props: { project: Project }) => {
-    return <Row className="row-cols-1">
-        <Col>
-            {props.project.PartsArchived ?
-                <div className="alert alert-warning">
-                    This project has been archived. Parts are only visible to executive directors.
-                </div> : <div/>}
-        </Col>
-        <Col>
-            {props.project.PartsReleased == false ?
-                <div className="alert alert-warning">
-                    This project is unreleased and invisible to members!
-                </div> : <div/>}
-        </Col>
-        <Col className="text-center">
-            <ProjectBanner project={props.project}/>
-            <h3>{props.project.Sources}</h3>
-            {props.project.Composers}
-            <br/><small>{props.project.Arrangers}</small>
-            <div className="m-2">
-                <h4><strong>Submission Deadline:</strong>
-                    <em>{props.project.SubmissionDeadline} (Hawaii Time)</em></h4>
-            </div>
-        </Col>
-    </Row>;
 };
 
 const ButtonGroupBreakPoint = 800;

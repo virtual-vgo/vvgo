@@ -16,12 +16,13 @@ type ApiResponse struct {
 	Parts           []Part                `json:"Parts,omitempty"`
 	Sessions        []Identity            `json:"Sessions,omitempty"`
 	Spreadsheet     *Spreadsheet          `json:"Spreadsheet,omitempty"`
+	Credits         []Credit              `json:"credits,omitempty"`
 	Dataset         []map[string]string   `json:"Dataset,omitempty"`
 	Identity        *Identity             `json:"Identity,omitempty"`
 	GuildMembers    []discord.GuildMember `json:"GuildMembers,omitempty"`
 	MixtapeProjects []MixtapeProject      `json:"MixtapeProjects,omitempty"`
 	WorkflowResult  []WorkflowTaskResult  `json:"WorkflowResult,omitempty"`
-	Credits         []CreditsTopicRow     `json:"Credits,omitempty"`
+	CreditsTable    CreditsTable          `json:"CreditsTable,omitempty"`
 	Ballot          ArrangementsBallot    `json:"Ballot,omitempty"`
 	OAuthRedirect   *OAuthRedirect        `json:"OAuthRedirect,omitempty"`
 }
@@ -41,5 +42,5 @@ type ArrangementsBallot []string
 type OAuthRedirect struct {
 	DiscordURL string
 	State      string
-	Secret string
+	Secret     string
 }

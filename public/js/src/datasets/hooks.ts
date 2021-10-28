@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {getSession} from "../auth";
 import {ApiDataset, ApiResponse, ApiStatus, Endpoint, ErrorResponse} from "./ApiResponse";
 import {Credit} from "./Credit";
+import {CreditsTable} from "./CreditsTable";
 import {Director} from "./Director";
 import {GuildMember} from "./GuildMember";
 import {Highlight} from "./Highlight";
@@ -12,7 +13,15 @@ import {Session} from "./Session";
 import _ = require("lodash");
 
 export const useCredits = (): Credit[] => useDataset("Credits");
+
+export const useCreditsTable = (project: Project): CreditsTable => {
+    const params = new URLSearchParams({projectName: project.Name});
+    const url = "/credits_table?" + params.toString();
+    return useApiData(url, (p) => _.defaultTo(p.CreditsTable, []));
+};
+
 export const useDirectors = (): Director[] => useDataset("Leaders");
+
 export const useGuildMembers = (query: string, limit: number): GuildMember[] => {
     const [data, setData] = useState({} as ApiResponse);
     const url = `/guild_members?query=${query}&limit=${limit}`;
@@ -23,13 +32,18 @@ export const useGuildMembers = (query: string, limit: number): GuildMember[] => 
 
     return data.GuildMembers ? data.GuildMembers : [] as GuildMember[];
 };
+
 export const useHighlights = (): Highlight[] => useDataset("Highlights");
+
 export const useMixtapeProjects = (): [MixtapeProject[], (projects: MixtapeProject[]) => void] =>
     useAndSetApiData("/mixtape", (p) => _.defaultTo(p.MixtapeProjects, []));
+
 export const useParts = (): Part[] =>
     useApiData("/parts", (p) => _.defaultTo(p.Parts, []));
+
 export const useProjects = (): Project[] =>
     useApiData("/projects", (p) => _.defaultTo(p.Projects, []));
+
 export const useSessions = (): [Session[], (sessions: Session[]) => void] =>
     useAndSetApiData("/sessions", (p) => _.defaultTo(p.Sessions, []));
 

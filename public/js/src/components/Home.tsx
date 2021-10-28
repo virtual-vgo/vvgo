@@ -18,7 +18,7 @@ export const Home = () => {
         <Row>
             <Col lg={7} md={12}>
                 <ProjectBanner project={latest}/>
-                <YoutubeIframe latest={latest}/>
+                <YoutubeIframe project={latest}/>
             </Col>
             <Col>
                 <div className={"col mt-2"}>
