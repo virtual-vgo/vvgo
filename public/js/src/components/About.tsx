@@ -2,6 +2,7 @@ import React = require("react");
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {Director, useDirectors} from "../datasets";
+import {LoadingText} from "./shared/LoadingText";
 import {RootContainer} from "./shared/RootContainer";
 
 export const About = () => {
@@ -49,7 +50,9 @@ const Directors = (props: { directors: Director[] }) => {
                 <h2>VVGO Leadership</h2>
             </Col>
             <Col lg={9} md={12}>
-                <ExecutiveDirectorTable directors={props.directors}/>
+                {props.directors ?
+                    <ExecutiveDirectorTable directors={props.directors}/> :
+                    <LoadingText/>}
             </Col>
         </Row>
     </div>;
@@ -62,7 +65,7 @@ const ExecutiveDirectorTable = (props: { directors: Director[] }) => {
             <ExecutiveDirectorRow
                 key={director.Name}
                 director={director}
-                bottom={props.directors.length == i+1}/>)}
+                bottom={props.directors.length == i + 1}/>)}
         </tbody>
     </table>;
 };

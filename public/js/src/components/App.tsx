@@ -1,15 +1,19 @@
 import React = require("react");
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
-import {getSession} from "./auth";
-import {About} from "./components/About";
-import {Contact} from "./components/Contact";
-import {Home} from "./components/Home";
-import {Login, LoginDiscord, LoginFailure, LoginSuccess} from "./components/Login";
-import {Parts} from "./components/Parts";
-import {Sessions} from "./components/Sessions";
-import {sessionIsAnonymous, UserRoles} from "./datasets";
+import {getSession} from "../auth";
+import {sessionIsAnonymous, UserRoles} from "../datasets";
+import {About} from "./About";
+import {Contact} from "./Contact";
+import {Home} from "./Home";
+import {Login} from "./login/Login";
+import {LoginDiscord} from "./login/LoginDiscord";
+import {LoginFailure} from "./login/LoginFailure";
+import {LoginSuccess} from "./login/LoginSuccess";
+import {Logout} from "./login/Logout";
 import {MemberDashboard} from "./mixtape/MemberDashboard";
 import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
+import {Parts} from "./Parts";
+import {Sessions} from "./Sessions";
 
 export const App = () => {
     return <BrowserRouter>
@@ -42,6 +46,7 @@ export const App = () => {
             <Route path="/login/failure"><LoginFailure/></Route>
             <Route path="/login/success"><LoginSuccess/></Route>
             <Route path="/login/discord"><LoginDiscord/></Route>
+            <Route path="/logout"><Logout/></Route>
             <Route path="/login/"><Login/></Route>
             <Route path="/about/"><About/></Route>
             <Route path="/contact/"><Contact/></Route>

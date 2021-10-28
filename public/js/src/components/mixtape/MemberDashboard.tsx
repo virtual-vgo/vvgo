@@ -1,10 +1,10 @@
 import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
-import {getSession} from "../auth";
-import {RootContainer} from "../components/shared/RootContainer";
-import {fetchApi, UserRoles, Session, useMixtapeProjects} from "../datasets";
-import {MixtapeProject} from "../datasets/MixtapeProject";
+import {getSession} from "../../auth";
+import {fetchApi, Session, useMixtapeProjects, UserRoles} from "../../datasets";
+import {MixtapeProject} from "../../datasets/MixtapeProject";
+import {RootContainer} from "../shared/RootContainer";
 import _ = require("lodash");
 import React = require("react");
 

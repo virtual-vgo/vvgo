@@ -43,18 +43,15 @@ func Routes() http.Handler {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, models.RoleVVGOProductionTeam)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, models.RoleVVGOProductionTeam)
 
-	// login
-	mux.HandleFunc("/login/redirect", login.Redirect, models.RoleAnonymous)
-	mux.HandleFunc("/logout", login.Logout, models.RoleAnonymous)
-
 	// api endpoints
 	mux.HandleApiFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOExecutiveDirector)
+	mux.HandleApiFunc("/api/v1/auth/discord", auth.Discord, models.RoleAnonymous)
+	mux.HandleApiFunc("/api/v1/auth/logout", auth.Logout, models.RoleAnonymous)
+	mux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth.OAuthRedirect, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/dataset", api.Dataset, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/guild_members", api.GuildMembers, models.RoleVVGOExecutiveDirector)
 	mux.HandleApiFunc("/api/v1/auth/password", auth.Password, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/auth/discord", auth.Discord, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth.OAuthRedirect, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/me", api.Me, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/mixtape", mixtape.ProjectsHandler, models.RoleVVGOVerifiedMember)
 	mux.HandleApiFunc("/api/v1/parts", api.Parts, models.RoleVVGOVerifiedMember)
@@ -80,6 +77,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/sessions/", views.ReactUI, models.RoleAnonymous)
 	mux.HandleFunc("/mixtape/", views.ReactUI, models.RoleAnonymous)
 	mux.HandleFunc("/login/", views.ReactUI, models.RoleAnonymous)
+	mux.HandleFunc("/logout/", views.ReactUI, models.RoleAnonymous)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

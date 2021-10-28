@@ -1,3 +1,5 @@
+import Col from "react-bootstrap/Col";
+import Row from "react-bootstrap/Row";
 import {Link} from "react-router-dom";
 import {Highlight, latestProject, Project, projectIsOpenForSubmission, useHighlights, useProjects} from "../datasets";
 import {randElement} from "../utils";
@@ -12,32 +14,33 @@ export const Home = () => {
 
     const latest = latestProject(projects);
     return <RootContainer>
-        <div className="row">
-            <div className="col col-12 col-lg-7">
+        <Row>
+            <Col lg={7} md={12}>
                 <Banner latest={latest}/>
                 <YoutubeIframe latest={latest}/>
-            </div>
-
-            <div className={"col mt-2"}>
-                <h3>Latest Projects</h3>
-                <LatestProjects projects={projects}/>
-                <h3>Member Highlights</h3>
-                <MemberHighlight highlight={highlight}/>
-            </div>
-        </div>
-        <div className="row justify-content-md-center text-center m-2">
-            <div className="col text-center mt-2">
-                <p>
-                    If you would like to join our orchestra or get more information about our current projects,
-                    please join us on <a href="https://discord.gg/9RVUJMQ">Discord!</a>
-                </p>
-            </div>
-        </div>
+            </Col>
+            <Col>
+                <div className={"col mt-2"}>
+                    <h3>Latest Projects</h3>
+                    <LatestProjects projects={projects}/>
+                    <h3>Member Highlights</h3>
+                    <MemberHighlight highlight={highlight}/>
+                </div>
+                <div className="row justify-content-md-center text-center m-2">
+                    <div className="col text-center mt-2">
+                        <p>
+                            If you would like to join our orchestra or get more information about our current projects,
+                            please join us on <a href="https://discord.gg/9RVUJMQ">Discord!</a>
+                        </p>
+                    </div>
+                </div>
+            </Col>
+        </Row>
     </RootContainer>;
 };
 
 const Banner = (props: { latest: Project }) => {
-    if (props.latest === undefined) return <div/>;
+    if (!props.latest) return <div/>;
 
     const latest = props.latest;
     const youtubeLink = latest.YoutubeLink;
@@ -59,6 +62,7 @@ const Banner = (props: { latest: Project }) => {
 };
 
 const LatestProjects = (props: { projects: Project[] }) => {
+    if (!props.projects) return <div/>;
     const projects = props.projects.filter((project: Project): boolean => {
         return projectIsOpenForSubmission(project);
     });
@@ -82,6 +86,7 @@ const LatestProjects = (props: { projects: Project[] }) => {
 };
 
 const MemberHighlight = (props: { highlight: Highlight }) => {
+    if (!props.highlight) return <div/>;
     const {Source, Alt} = props.highlight;
     return <table className="table text-light">
         <tbody>

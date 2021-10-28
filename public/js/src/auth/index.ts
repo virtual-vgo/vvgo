@@ -2,6 +2,11 @@ import {fetchApi, OAuthRedirect, Session} from "../datasets";
 
 const SessionItemKey = "session";
 
+export const logout = () => {
+    return fetchApi("/auth/logout", {method: "GET"})
+        .then(() => setSession({} as Session));
+};
+
 const setSession = (session: Session) => {
     const sessionJSON = JSON.stringify(session);
     localStorage.setItem(SessionItemKey, sessionJSON);
@@ -26,7 +31,7 @@ export const oauthRedirect = async (): Promise<OAuthRedirect> => {
         .then(resp => {
             const itemKey = "oauth_redirect_secret:" + resp.OAuthRedirect.State;
             localStorage.setItem(itemKey, resp.OAuthRedirect.Secret);
-            return resp.OAuthRedirect
+            return resp.OAuthRedirect;
         });
 };
 

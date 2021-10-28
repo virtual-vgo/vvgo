@@ -1,4 +1,3 @@
-import _ = require("lodash");
 import React = require("react");
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
@@ -6,10 +5,8 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import {Redirect} from "react-router";
-import {Link} from "react-router-dom";
-import {discordLogin, oauthRedirect, passwordLogin} from "../auth";
-import {GeekSquad} from "./shared/GeekSquad";
-import {RootContainer} from "./shared/RootContainer";
+import {oauthRedirect, passwordLogin} from "../../auth";
+import {RootContainer} from "../shared/RootContainer";
 
 const styles = {
     Form: {
@@ -20,59 +17,9 @@ const styles = {
     } as React.CSSProperties,
 };
 
+export const RedirectLogin = () => <Redirect to="/login/"/>
 export const RedirectLoginSuccess = () => <Redirect to="/login/success"/>;
 export const RedirectLoginFailure = () => <Redirect to="/login/failure"/>;
-
-export const LoginSuccess = () => {
-    return <RootContainer>
-        <div className="row-cols-1">
-            <h1>Success!</h1>
-            <h2><a href="/login/redirect" className="btn btn-link text-light">Continue to parts...</a></h2>
-        </div>
-    </RootContainer>;
-};
-
-export const LoginDiscord = () => {
-    const [success, setSuccess] = React.useState(false);
-    const [failed, setFailed] = React.useState(false);
-
-    const params = new URLSearchParams(window.location.search);
-    const code = _.defaultTo(params.get("code"), "");
-    const state = _.defaultTo(params.get("state"), "");
-
-    React.useEffect(() => {
-        discordLogin(code, state)
-            .then(me => {
-                setSuccess(true);
-                console.log("login successful", me);
-            })
-            .catch(err => {
-                setFailed(true);
-                console.log("login failed", err);
-            });
-    });
-
-    switch (true) {
-        case success:
-            return <RedirectLoginSuccess/>;
-        case failed:
-            return <RedirectLoginFailure/>;
-        default:
-            return <div>Loading...</div>;
-    }
-};
-
-export const LoginFailure = () => {
-    return <p>
-        Please join our <a href="https://discord.gg/vvgo">Discord server</a> and accept the rules before logging in with
-        Discord.
-        <br/>
-        If you think you should be able to login, please check <GeekSquad/>.
-        <br/>
-        <br/>
-        <Link to="/login">Return to the login page.</Link>
-    </p>;
-};
 
 export const Login = () => {
     const [success, setSuccess] = React.useState(false);

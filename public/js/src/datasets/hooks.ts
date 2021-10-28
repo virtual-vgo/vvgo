@@ -43,7 +43,7 @@ export function useApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T):
 }
 
 export function useAndSetApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): [T, (t: T) => void] {
-    const [data, setData] = useState(getData({} as ApiResponse));
+    const [data, setData] = useState(null as T);
     useEffect(() => {
         fetchApi(url, {method: "GET"}).then(resp => setData(getData(resp)));
     }, [url, getSession().Key]);

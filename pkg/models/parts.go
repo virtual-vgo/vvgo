@@ -43,8 +43,15 @@ func ListParts(ctx context.Context, identity Identity) (Parts, error) {
 
 	var allowed []Part
 	for _, part := range parts {
-		if projects.Has(part.Project) {
-			allowed = append(allowed, part)
+		if project, ok := projects.Get(part.Project); ok {
+			switch {
+			case project.PartsReleased == true && project.PartsArchived == false:
+				allowed = append(allowed, part)
+			case identity.HasRole(RoleVVGOProductionTeam) && project.PartsArchived == false:
+				allowed = append(allowed, part)
+			case identity.HasRole(RoleVVGOExecutiveDirector):
+				allowed = append(allowed, part)
+			}
 		}
 	}
 	return allowed, nil

@@ -4,31 +4,32 @@ import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
+import {Channels} from "../data/discord";
+import {RecordingInstructions} from "../data/downloadLinks";
 import {Part, Project, useParts, useProjects} from "../datasets";
+import {LinkChannel} from "./shared/LinkChannel";
 import {LoadingText} from "./shared/LoadingText";
 import {RootContainer} from "./shared/RootContainer";
 
-const recordingInstructions = "https://cdn.discordapp.com/attachments/741188776088436748/799697926661210212/VVGO_RecordingInstructions_Season2.png";
-
 export const Parts = () => {
-    const allProjects = useProjects()
-        .filter(r => r.Name && r.Name.length > 0)
-        .filter(r => r.Title && r.Title.length > 0)
-        .sort((a, b) => -a.Name.localeCompare(b.Name));
+    const allProjects = useProjects();
     const parts = useParts();
 
-    const [showProject, setShowProject] = React.useState("");
+    const [showProject, setShowProject] = React.useState(null as string);
 
-    if (showProject == "" && allProjects.length > 0)
-        setShowProject(allProjects[0].Name);
-
-    const project = allProjects.filter(r => r.Name == showProject).pop();
+    if (!(allProjects && parts))
+        return <RootContainer><LoadingText/></RootContainer>;
 
     if (allProjects.length == 0)
         return <RootContainer>
-            <LoadingText/>
+            <p>
+                There are no projects currently accepting submissions, but we are working hard to bring you some!<br/>
+                Please check <LinkChannel channel={Channels.NextProjectHints}/> for updates.
+            </p>
         </RootContainer>;
 
+    if (!showProject) setShowProject(allProjects[0].Name);
+    const project = allProjects.filter(r => r.Name == showProject).pop();
     return <RootContainer>
         <Row>
             <Col lg={3}>
@@ -68,7 +69,7 @@ export const PartsTopLinks = (props: { project: Project }) => {
         {props.children}</Button>;
 
     return <ButtonGroup>
-        <Card to={recordingInstructions}>
+        <Card to={RecordingInstructions}>
             <i className="far fa-image"/> Recording Instructions
         </Card>
         <Card to={props.project.ReferenceTrackLink}>

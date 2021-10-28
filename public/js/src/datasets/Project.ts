@@ -32,11 +32,13 @@ export const projectIsOpenForSubmission = (project: Project): boolean => {
     if (project.PartsArchived) return false;
     return project.PartsReleased;
 };
+
 export const projectIsPostProduction = (project: Project): boolean => {
     if (project.Hidden) return false;
     if (project.VideoReleased) return false;
     return project.PartsArchived;
 };
+
 export const projectIsReleased = (project: Project): boolean => {
     if (project.Hidden) return false;
     return project.VideoReleased;
@@ -48,5 +50,5 @@ export const latestProject = (projects: Project[]): Project => {
         released.sort();
         return released.pop();
     }
+    return null;
 };
-

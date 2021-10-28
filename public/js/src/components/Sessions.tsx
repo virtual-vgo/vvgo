@@ -1,6 +1,7 @@
 import {Dispatch, MutableRefObject, SetStateAction, useState} from "react";
 import {getSession} from "../auth";
 import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "../datasets";
+import {LoadingText} from "./shared/LoadingText";
 import {RootContainer} from "./shared/RootContainer";
 import React = require("react");
 
@@ -9,6 +10,8 @@ export const Sessions = () => {
     const [sessions, setSessions] = useSessions();
     const [deleteButtonState, setDeleteButtonState] = useState(new Map());
     const [createButtonState, setCreateButtonState] = useState("new");
+
+    if (!sessions) return <RootContainer><LoadingText/></RootContainer>;
     sessions.sort((a, b) => new Date(a.ExpiresAt).getTime() - new Date(b.ExpiresAt).getTime());
 
     const mySessions = sessions
