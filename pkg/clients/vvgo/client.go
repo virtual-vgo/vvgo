@@ -6,45 +6,48 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/errors"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
+	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"net/http"
 )
 
 const Endpoint = "https://vvgo.org/api/v1"
 
 func GetSheets(spreadsheet string, sheets ...string) (models.Spreadsheet, error) {
-	data := models.Spreadsheet{
-		SpreadsheetName: spreadsheet,
-	}
-	for _, sheet := range sheets {
-		data.Sheets = append(data.Sheets, models.Sheet{Name: sheet})
-	}
-
-	req, err := NewRequest(http.MethodGet, Endpoint+"/spreadsheet", data)
+	req, err := NewRequest(http.MethodGet, Endpoint+"/spreadsheet",
+		&api.GetSpreadsheetRequest{SpreadsheetName: spreadsheet, SheetNames: sheets})
 	if err != nil {
 		return models.Spreadsheet{}, errors.NewRequestFailure(err)
 	}
 
-	if err := DoRequest(req, &data); err != nil {
+	data, err := DoRequest(req)
+
+	switch {
+	case err != nil:
 		return models.Spreadsheet{}, err
+	case data.Error != nil:
+		return models.Spreadsheet{}, errors.New(data.Error.Error)
+	case data.Spreadsheet == nil:
+		return models.Spreadsheet{}, errors.New("invalid api response data")
+	default:
+		return *data.Spreadsheet, nil
 	}
-	return data, nil
 }
 
-func DoRequest(req *http.Request, dest interface{}) error {
-	resp, err := http_wrappers.DoRequest(req)
+func DoRequest(r *http.Request) (models.ApiResponse, error) {
+	ctx := r.Context()
+	resp, err := http_wrappers.DoRequest(r)
 	if err != nil {
-		return errors.HttpDoFailure(err)
+		return models.ApiResponse{}, errors.HttpDoFailure(err)
 	}
 
-	if resp.StatusCode != 200 {
-		return errors.Non200StatusCode()
+	var data models.ApiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		logger.JsonDecodeFailure(ctx, err)
+		return models.ApiResponse{}, errors.New("invalid response from api")
 	}
-
-	if err := json.NewDecoder(resp.Body).Decode(dest); err != nil {
-		return errors.JsonDecodeFailure(err)
-	}
-	return nil
+	return data, nil
 }
 
 func NewRequest(method, url string, body interface{}) (*http.Request, error) {

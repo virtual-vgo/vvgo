@@ -13,6 +13,7 @@ import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
 
 export const App = () => {
     return <BrowserRouter>
+        {JSON.stringify(getSession())}
         <Switch>
             <PrivateRoute
                 path="/sessions"
