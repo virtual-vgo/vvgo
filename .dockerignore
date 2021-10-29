@@ -2,7 +2,6 @@
 .dockerignore
 .google_api_credentials.json
 Dockerfile
-public/node_modules
+ui/node_modules
 public/dist
-parts_browser/node_modules
-parts_browser/build
+

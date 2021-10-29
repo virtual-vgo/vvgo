@@ -1,10 +1,10 @@
 FROM node:14.5 as node
-WORKDIR /wrk
-COPY public/package.json .
-COPY public/package-lock.json .
+WORKDIR /wrk/ui
+COPY ui/package.json .
+COPY ui/package-lock.json .
 RUN npm install
 
-COPY public .
+COPY ui .
 RUN npx webpack --mode=production
 
 FROM golang:1.16 as builder
@@ -26,7 +26,8 @@ FROM alpine:3.4 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils
 WORKDIR /app
 COPY LICENSE .
-COPY --from=node /wrk ./public
+COPY public .
+COPY --from=node /wrk/public/dist ./public/dist
 COPY --from=builder /go/src/app/vvgo ./vvgo
 COPY --from=builder /go/src/app/version.json ./version.json
 EXPOSE 8080
