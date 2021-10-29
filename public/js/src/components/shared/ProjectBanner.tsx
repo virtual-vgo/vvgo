@@ -6,17 +6,16 @@ export const ProjectBanner = (props: { project: Project }) => {
     const youtubeLink = props.project.YoutubeLink;
     const bannerLink = props.project.BannerLink;
 
-    const Banner = () => {
-        if (bannerLink === "") return <div>
-            <h1 className="title">{props.project.Title}</h1>
-            <h2>{props.project.Sources}</h2>
-        </div>;
-        else return <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>;
-    };
-
-    return <div id="banner" className={"d-flex justify-content-center"}>
-        <a href={youtubeLink} className="text-light text-center">
-            <Banner/>
-        </a>
+    return <div className={"d-flex justify-content-center mb-2"}>
+        {bannerLink == "" ?
+            <div>
+                <a href={youtubeLink} className="text-light text-center">
+                    <h1 className="title">{props.project.Title}</h1>
+                </a>
+                <h3>{props.project.Sources}</h3>
+            </div> :
+            <a href={youtubeLink} className="text-light text-center">
+                <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>
+            </a>}
     </div>;
 };

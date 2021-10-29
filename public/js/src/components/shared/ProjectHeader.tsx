@@ -8,7 +8,6 @@ export const ProjectHeader = (props: { project: Project }) =>
     <Row className="row-cols-1">
         <Col className="text-center">
             <ProjectBanner project={props.project}/>
-            <h3>{props.project.Sources}</h3>
             {props.project.Composers}
             <br/><small>{props.project.Arrangers}</small>
             <div className="m-2">

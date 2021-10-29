@@ -47,8 +47,7 @@ export const projectIsReleased = (project: Project): boolean => {
 export const latestProject = (projects: Project[]): Project => {
     if (projects) {
         const released = projects.filter(proj => proj.VideoReleased === true);
-        released.sort();
-        return released.pop();
+        return released.sort((a, b) => a.Name.localeCompare(b.Name)).pop();
     }
     return null;
 };

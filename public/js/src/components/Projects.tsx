@@ -4,7 +4,7 @@ import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
 import FormControl from "react-bootstrap/FormControl";
 import Row from "react-bootstrap/Row";
-import {Project, useCreditsTable, useProjects} from "../datasets";
+import {latestProject, Project, useCreditsTable, useProjects} from "../datasets";
 import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
@@ -22,34 +22,42 @@ export const Projects = () => {
         <LoadingText/>
     </RootContainer>;
 
-    const wantProjects = allProjects
-        .filter(r => r.Name.toLowerCase().includes(searchInput) || r.Title.toLowerCase().includes(searchInput));
+    const wantProjects = allProjects.filter(r =>
+        r.Name.toLowerCase().includes(searchInput) ||
+        r.Title.toLowerCase().includes(searchInput) ||
+        r.Sources.toLowerCase().includes(searchInput));
+
+    const latest = latestProject(wantProjects);
+    if (latest && !project) setProject(latest);
 
     return <RootContainer>
         <Row>
             <Col lg={3}>
-                <h2>Projects</h2>
-                <FormControl
-                    className="m-2"
-                    ref={searchInputRef}
-                    placeholder="search"
-                    onChange={() => setSearchInput(searchInputRef.current.value.toLowerCase())}/>
-                <ButtonGroup vertical className="m-2">
-                    {wantProjects.map(want =>
-                        <Button
-                            variant={"outline-light"}
-                            key={want.Name}
-                            onClick={() => setProject(want)}>
-                            {want.Title}
-                            {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
-                            {want.VideoReleased == false ? <em><small><br/>In Production</small></em> : ""}
-                            {want.VideoReleased == true ? <em><small><br/>Completed</small></em> : ""}
-                        </Button>)}
-                </ButtonGroup>
+                <div className="d-flex flex-row justify-content-center">
+                    <FormControl
+                        className="m-2"
+                        ref={searchInputRef}
+                        placeholder="search projects"
+                        onChange={() => setSearchInput(searchInputRef.current.value.toLowerCase())}/>
+                </div>
+                <div className="d-flex flex-row justify-content-center">
+                    <ButtonGroup vertical className="m-2">
+                        {wantProjects.map(want =>
+                            <Button
+                                variant={project && project.Name == want.Name ? "light" : "outline-light"}
+                                key={want.Name}
+                                onClick={() => setProject(want)}>
+                                {want.Title}
+                                {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
+                                {want.VideoReleased == false ? <em><small><br/>In Production</small></em> : ""}
+                                {want.VideoReleased == true ? <em><small><br/>Completed</small></em> : ""}
+                            </Button>)}
+                    </ButtonGroup>
+                </div>
             </Col>
             <Col>
                 {project ?
-                    <div>
+                    <div className="mx-4">
                         <AlertUnreleasedProject project={project}/>
                         <ProjectHeader project={project}/>
                         {project.YoutubeEmbed ?

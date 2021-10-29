@@ -27,7 +27,7 @@ export const Contact = () => <RootContainer title={"Contact"}>
             <textarea className="form-control mb-1" id="message" name="message"
                       placeholder="But actually the earth is flat." rows={3}/>
             <div className="d-grid">
-                <Button type="submit" variant={'info'}>Submit</Button>
+                <Button type="submit" variant={'primary'}>Submit</Button>
             </div>
         </div>
     </form>

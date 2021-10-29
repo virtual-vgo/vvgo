@@ -1,7 +1,9 @@
+import _ = require("lodash");
 import React = require("react");
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
+import FormControl from "react-bootstrap/FormControl";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
 import {getSession} from "../auth";
@@ -33,40 +35,42 @@ export const Parts = () => {
         .filter(r => showArchived || r.PartsArchived == false);
 
     if (project == null && wantProjects.length > 0) setProject(wantProjects[0]);
+
     return <RootContainer title="Parts">
         <Row>
             <Col lg={3}>
-                <h2>Projects</h2>
-                <Row>
-                    <Col>
-                        {me.Roles.includes(UserRoles.ProductionTeam) ?
-                            <ShowHideToggle
-                                title="Unreleased"
-                                state={showUnreleased}
-                                setState={setShowUnreleased}/> : ""}
-                    </Col>
-                    <Col>
-                        {me.Roles.includes(UserRoles.ExecutiveDirector) ?
-                            <ShowHideToggle
-                                title="Archived"
-                                state={showArchived}
-                                setState={setShowArchived}/> : ""}
-                    </Col>
-                </Row>
-                <ButtonGroup vertical className="m-2">
-                    {wantProjects.map(want =>
-                        <Button
-                            variant={projectIsOpenForSubmission(want) ? "outline-light" : "outline-warning"}
-                            key={want.Name}
-                            onClick={() => setProject(want)}>
-                            {want.Title}
-                            {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
-                            {want.PartsArchived == true ? <em><small><br/>Archived</small></em> : ""}
-                        </Button>)}
-                </ButtonGroup>
+                <div className={"d-flex flex-row justify-content-center"}>
+                    {me.Roles.includes(UserRoles.ProductionTeam) ?
+                        <ShowHideToggle
+                            title="Unreleased"
+                            state={showUnreleased}
+                            setState={setShowUnreleased}/> : ""}
+
+                    {me.Roles.includes(UserRoles.ExecutiveDirector) ?
+                        <ShowHideToggle
+                            title="Archived"
+                            state={showArchived}
+                            setState={setShowArchived}/> : ""}
+                </div>
+                <div className="d-flex justify-content-center">
+                    <ButtonGroup vertical className="m-2">
+                        {wantProjects.map(want =>
+                            <Button
+                                variant={project && project.Name == want.Name ?
+                                    projectIsOpenForSubmission(want) ? "light" : "warning" :
+                                    projectIsOpenForSubmission(want) ? "outline-light" : "outline-warning"
+                                }
+                                key={want.Name}
+                                onClick={() => setProject(want)}>
+                                {want.Title}
+                                {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
+                                {want.PartsArchived == true ? <em><small><br/>Archived</small></em> : ""}
+                            </Button>)}
+                    </ButtonGroup>
+                </div>
             </Col>
             {project ?
-                <Col>
+                <Col className="mx-4">
                     <AlertArchivedParts project={project}/>
                     <AlertUnreleasedProject project={project}/>
                     <ProjectHeader project={project}/>
@@ -93,52 +97,104 @@ export const PartsTopLinks = (props: { project: Project }) => {
         href={props.to}>
         {props.children}</Button>;
 
-    return <ButtonGroup vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
-        <Card to={RecordingInstructions}>
-            <i className="far fa-image"/> Recording Instructions
-        </Card>
-        <Card to={props.project.ReferenceTrackLink}>
-            <i className="far fa-file-audio"/> Reference Track
-        </Card>
-        <Card to={props.project.SubmissionLink}>
-            <i className="fab fa-dropbox"/> Submit Recordings
-        </Card>
-    </ButtonGroup>;
+    return <div className="d-flex justify-content-center">
+        <ButtonGroup vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
+            <Card to={RecordingInstructions}>
+                <i className="far fa-image"/> Recording Instructions
+            </Card>
+            <Card to={props.project.ReferenceTrackLink}>
+                <i className="far fa-file-audio"/> Reference Track
+            </Card>
+            <Card to={props.project.SubmissionLink}>
+                <i className="fab fa-dropbox"/> Submit Recordings
+            </Card>
+        </ButtonGroup>
+    </div>;
 };
 
-const PartsTable = (props: { projectName: string, parts: Part[] }) =>
-    <Table className="text-light">
-        <thead>
-        <tr>
-            <th>Part</th>
-            <th>Downloads</th>
-        </tr>
-        </thead>
-        <tbody>
-        {props.parts.filter(part => props.projectName == part.Project)
-            .map(part => <tr key={part.PartName}>
-                <td>{part.PartName}</td>
-                <td><PartDownloads part={part}/></td>
-            </tr>)}
-        </tbody>
-    </Table>;
+const PartsTable = (props: { projectName: string, parts: Part[] }) => {
+    const [searchInput, setSearchInput] = React.useState("");
+    const searchInputRef = React.useRef({} as HTMLInputElement);
+
+    const wantParts = props.parts
+        .filter(p => p.PartName.toLowerCase().includes(searchInput))
+        .filter(p => p.Project == props.projectName);
+
+    const searchBoxStyle = {maxWidth: 250} as React.CSSProperties;
+    // This width gives enough space to have all the download buttons on one line
+    const partNameStyle = {width: 220} as React.CSSProperties;
+
+    return <div className="d-flex justify-content-center">
+        <div className="d-flex flex-column flex-fill justify-content-center">
+            <FormControl
+                className="mt-4"
+                style={searchBoxStyle}
+                ref={searchInputRef}
+                placeholder="Search Parts"
+                onChange={() => setSearchInput(searchInputRef.current.value.toLowerCase())}/>
+            <Table className="text-light">
+                <thead>
+                <tr>
+                    <th>Part</th>
+                    <th>Downloads</th>
+                </tr>
+                </thead>
+                <tbody>
+                {wantParts.map(part =>
+                    <tr key={part.PartName}>
+                        <td style={partNameStyle}>{part.PartName}</td>
+                        <td><PartDownloads part={part}/></td>
+                    </tr>)}
+                </tbody>
+            </Table>
+        </div>
+    </div>;
+};
 
 const PartDownloads = (props: { part: Part }) => {
-    const Link = (props: {
+    const DownloadButton = (props: {
         to: string,
         children: string | (string | JSX.Element)[]
-    }) => props.to && props.to.length > 0 ?
-        <Button href={props.to} className="btn-sm btn-link btn-outline-light bg-dark text-light">
-            {props.children}
-        </Button> :
-        <div/>;
+    }) => <Button
+        className="btn-link text-light"
+        variant="outline-light"
+        size={"sm"}
+        href={props.to}>
+        {props.children}
+    </Button>;
+
+    const buttons = [] as Array<JSX.Element>;
+    if (_.isEmpty(props.part.SheetMusicLink) == false)
+        buttons.push(<DownloadButton
+            key={props.part.SheetMusicLink}
+            to={props.part.SheetMusicLink}>
+            <i className="far fa-file-pdf"/> sheet music
+        </DownloadButton>);
+
+    if (_.isEmpty(props.part.ClickTrackLink) == false)
+        buttons.push(<DownloadButton
+            key={props.part.ClickTrackLink}
+            to={props.part.ClickTrackLink}>
+            <i className="far fa-file-audio"/> click track
+        </DownloadButton>);
+
+    if (_.isEmpty(props.part.ConductorVideo) == false)
+        buttons.push(<DownloadButton
+            key={props.part.ConductorVideo}
+            to={props.part.ConductorVideo}>
+            <i className="far fa-file-video"/> conductor video
+        </DownloadButton>);
+
+    if (_.isEmpty(props.part.PronunciationGuideLink) == false)
+        buttons.push(<DownloadButton
+            key={props.part.PronunciationGuideLink}
+            to={props.part.PronunciationGuideLink}>
+            <i className="fas fa-language"/> pronunciation guide
+        </DownloadButton>);
 
     return <ButtonGroup
         className="justify-content-start"
         vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
-        <Link to={props.part.SheetMusicLink}><i className="far fa-file-pdf"/> sheet music</Link>
-        <Link to={props.part.ClickTrackLink}><i className="far fa-file-audio"/> click track</Link>
-        <Link to={props.part.ConductorVideo}><i className="far fa-file-video"/> conductor video</Link>
-        <Link to={props.part.PronunciationGuideLink}><i className="fas fa-language"/> pronunciation guide</Link>
+        {buttons}
     </ButtonGroup>;
 };

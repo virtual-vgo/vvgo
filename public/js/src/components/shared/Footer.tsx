@@ -2,7 +2,7 @@ import React = require("react");
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 
-export const Footer = () => <Row className="text-center mt-4">
+export const Footer = () => <Row className="text-center m-4">
     <Col>
         <a className="text-light"
            href="https://www.youtube.com/channel/UCeipEtsfjAA_8ATsd7SNAaQ">
