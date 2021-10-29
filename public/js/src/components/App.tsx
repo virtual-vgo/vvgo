@@ -18,7 +18,6 @@ import {Sessions} from "./Sessions";
 
 export const App = () => {
     return <BrowserRouter>
-        {JSON.stringify(getSession())}
         <Switch>
             <PrivateRoute
                 path="/credits-maker"

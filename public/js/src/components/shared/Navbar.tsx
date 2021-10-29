@@ -1,6 +1,8 @@
 import React = require("react");
+import {NavDropdown} from "react-bootstrap";
 import {Link, NavLink as RouterNavLink} from "react-router-dom";
 import {getSession} from "../../auth";
+import {links} from "../../data/links";
 import {fetchApi, sessionIsAnonymous, UserRoles} from "../../datasets";
 
 export const Navbar = () => {
@@ -15,6 +17,11 @@ export const Navbar = () => {
         className="nav-link">
         {props.children}
     </RouterNavLink>;
+
+    const ExternalLink = (props: {
+        to: string,
+        children: string | (JSX.Element | string)[]
+    }) => <a href={props.to} className="nav-link">{props.children}</a>;
 
     const MemberNavLink = (props: {
         to: string,
@@ -57,7 +64,10 @@ export const Navbar = () => {
                     <NavLink to="/contact/">Contact</NavLink>
                 </li>
                 <li className="nav-item">
-                    <NavLink to="/store">Store</NavLink>
+                    <NavDropdown className="bg-transparent text-light" title="Store">
+                        <NavDropdown.Item href={links.BandCamp}>Music</NavDropdown.Item>
+                        <NavDropdown.Item href="/store">Merch</NavDropdown.Item>
+                    </NavDropdown>
                 </li>
                 <li className="nav-item">
                     <PrivateNavLink
@@ -73,11 +83,6 @@ export const Navbar = () => {
                         <NavLink to="/login">Login</NavLink> :
                         <NavLink to="/logout">Logout</NavLink>
                 }
-                </li>
-
-                <li className="nav-item">
-                    <a className="nav-link"
-                       onClick={() => fetchApi("/devel/fetch_spreadsheets", {method: "GET"})}>🔁</a>
                 </li>
             </ul>
         </div>

@@ -10,5 +10,5 @@ export const LoadingText = () => {
         "🐏  🎀  𝒯𝐻𝐸 𝐸𝒜𝑅𝒯𝐻 𝐼𝒮 𝐹𝐿𝒜𝒯  🎀  🐏",
     ]);
 
-    return <div>{loadingText}</div>;
+    return <h1 className="text-center">{loadingText}</h1>;
 };
