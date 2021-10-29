@@ -1,4 +1,5 @@
 import {fetchApi, OAuthRedirect, Session} from "../datasets";
+import _ = require("lodash");
 
 const SessionItemKey = "session";
 
@@ -14,7 +15,7 @@ const setSession = (session: Session) => {
 
 export const getSession = (): Session => {
     const sessionJSON = localStorage.getItem(SessionItemKey);
-    return JSON.parse(sessionJSON);
+    return _.isEmpty(sessionJSON) ? {} : JSON.parse(sessionJSON);
 };
 
 export const passwordLogin = async (user: string, pass: string): Promise<Session> => {
