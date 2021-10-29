@@ -29,8 +29,14 @@ export interface ApiResponse {
     MixtapeProjects: MixtapeProject[];
     OAuthRedirect: OAuthRedirect;
     CreditsTable: CreditsTable;
+    CreditsPasta: CreditsPasta;
 }
 
+export interface CreditsPasta {
+    WebsitePasta: string;
+    VideoPasta: string;
+    YoutubePasta: string;
+}
 
 export interface OAuthRedirect {
     DiscordURL: string;

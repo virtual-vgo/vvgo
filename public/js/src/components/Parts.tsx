@@ -8,7 +8,7 @@ import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
 import {getSession} from "../auth";
 import {Channels} from "../data/discord";
-import {RecordingInstructions} from "../data/downloadLinks";
+import {links} from "../data/links";
 import {Part, Project, projectIsOpenForSubmission, useParts, useProjects, UserRoles} from "../datasets";
 import {AlertArchivedParts} from "./shared/AlertArchivedParts";
 import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
@@ -99,7 +99,7 @@ export const PartsTopLinks = (props: { project: Project }) => {
 
     return <div className="d-flex justify-content-center">
         <ButtonGroup vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
-            <Card to={RecordingInstructions}>
+            <Card to={links.RecordingInstructions}>
                 <i className="far fa-image"/> Recording Instructions
             </Card>
             <Card to={props.project.ReferenceTrackLink}>

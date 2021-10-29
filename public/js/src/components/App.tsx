@@ -4,6 +4,7 @@ import {getSession} from "../auth";
 import {sessionIsAnonymous, UserRoles} from "../datasets";
 import {About} from "./About";
 import {Contact} from "./Contact";
+import {CreditsMaker} from "./CreditsMaker";
 import {Home} from "./Home";
 import {Login} from "./login/Login";
 import {LoginDiscord} from "./login/LoginDiscord";
@@ -19,6 +20,12 @@ export const App = () => {
     return <BrowserRouter>
         {JSON.stringify(getSession())}
         <Switch>
+            <PrivateRoute
+                path="/credits-maker"
+                requireRole={UserRoles.ProductionTeam}>
+                <CreditsMaker/>
+            </PrivateRoute>
+
             <PrivateRoute
                 path="/sessions"
                 requireRole={UserRoles.ExecutiveDirector}>

@@ -33,13 +33,13 @@ func valuesToSubmissionRecords(values [][]interface{}) Submissions {
 	return submissionRecords
 }
 
-func (x Submissions) ToCredits(project string) Credits {
+func (x Submissions) ToCredits(projectName string) Credits {
 	creditsMap := make(map[string]*Credit)
 	for i, record := range x {
 		submissionCredit := creditsMap[record.Instrument+record.CreditedName]
 		if submissionCredit == nil {
 			submissionCredit = &Credit{
-				Project:       project,
+				Project:       projectName,
 				Order:         i,
 				MajorCategory: "PERFORMERS",
 				MinorCategory: strings.ToUpper(record.Instrument),

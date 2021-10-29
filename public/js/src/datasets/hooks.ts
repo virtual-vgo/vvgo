@@ -16,7 +16,7 @@ export const useCredits = (): Credit[] => useDataset("Credits");
 
 export const useCreditsTable = (project: Project): CreditsTable => {
     const params = new URLSearchParams({projectName: project.Name});
-    const url = "/credits_table?" + params.toString();
+    const url = "/credits/table?" + params.toString();
     return useApiData(url, (p) => _.defaultTo(p.CreditsTable, []));
 };
 

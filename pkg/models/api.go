@@ -25,11 +25,18 @@ type ApiResponse struct {
 	CreditsTable    CreditsTable          `json:"CreditsTable,omitempty"`
 	Ballot          ArrangementsBallot    `json:"Ballot,omitempty"`
 	OAuthRedirect   *OAuthRedirect        `json:"OAuthRedirect,omitempty"`
+	CreditsPasta    *CreditsPasta         `json:"CreditsPasta,omitempty"`
 }
 
 type ApiError struct {
-	Code  int
-	Error string
+	Code  int    `json:"Code"`
+	Error string `json:"Error"`
+}
+
+type CreditsPasta struct {
+	WebsitePasta string
+	VideoPasta   string
+	YoutubePasta string
 }
 
 type Spreadsheet struct {
