@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
@@ -12,21 +13,11 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
-	"github.com/virtual-vgo/vvgo/pkg/server/views"
+	"io"
 	"net/http"
 	"net/http/pprof"
+	"os"
 )
-
-func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		identity := login.IdentityFromContext(r.Context())
-		fmt.Println(identity)
-		if !identity.HasRole(role) {
-			http_helpers.WriteUnauthorizedError(ctx, w)
-		}
-	}
-}
 
 func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
@@ -71,22 +62,46 @@ func Routes() http.Handler {
 	}
 
 	// views
-	mux.HandleFunc("/parts/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/projects/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/credits-maker/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/about/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/contact/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/sessions/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/mixtape/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/login/", views.ReactUI, models.RoleAnonymous)
-	mux.HandleFunc("/logout/", views.ReactUI, models.RoleAnonymous)
+	mux.HandleFunc("/parts/", serveUI, models.RoleAnonymous)
+	mux.HandleFunc("/projects/", serveUI, models.RoleAnonymous)
+	mux.HandleFunc("/credits-maker/", serveUI, models.RoleAnonymous)
+	mux.HandleFunc("/about/", serveUI, models.RoleAnonymous)
+	mux.HandleFunc("/contact/", serveUI, models.RoleAnonymous)
+	mux.HandleFunc("/sessions/", serveUI, models.RoleAnonymous)
+	mux.HandleFunc("/mixtape/", serveUI, models.RoleAnonymous)
+	mux.HandleFunc("/login/", serveUI, models.RoleAnonymous)
+	mux.HandleFunc("/logout/", serveUI, models.RoleAnonymous)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			views.ReactUI(w, r)
+			serveUI(w, r)
 		} else {
-			views.ServePublicFile(w, r)
+			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
 		}
 	}, models.RoleAnonymous)
 	return &mux
+}
+
+func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		identity := login.IdentityFromContext(r.Context())
+		fmt.Println(identity)
+		if !identity.HasRole(role) {
+			http_helpers.WriteUnauthorizedError(ctx, w)
+		}
+	}
+}
+
+func serveUI(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	file, err := os.Open("public/index.html")
+	if err != nil {
+		logger.OpenFileFailure(ctx, err)
+		http_helpers.WriteInternalServerError(ctx, w)
+		return
+	}
+	if _, err := io.Copy(w, file); err != nil {
+		logger.MethodFailure(ctx, "io.Copy", err)
+	}
 }

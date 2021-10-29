@@ -121,4 +121,3 @@ func WriteAPIResponse(_ context.Context, w http.ResponseWriter, resp models.ApiR
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(&resp)
 }
-

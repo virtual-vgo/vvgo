@@ -1,4 +1,4 @@
-package views
+package voting
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func VotingResults(w http.ResponseWriter, r *http.Request) {
+func Results(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := make(map[string]string)
 	if err := redis.Do(ctx, redis.Cmd(&data,
@@ -37,7 +37,7 @@ func VotingResults(w http.ResponseWriter, r *http.Request) {
 		Results: results,
 		Ballots: nameBallots(ctx, data),
 	}
-	ParseAndExecute(ctx, w, r, &page, "voting_results.gohtml")
+	_ = page
 }
 
 type namedBallot struct {

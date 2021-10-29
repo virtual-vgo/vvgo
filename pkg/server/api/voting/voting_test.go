@@ -1,4 +1,4 @@
-package views
+package voting
 
 import (
 	"github.com/stretchr/testify/assert"

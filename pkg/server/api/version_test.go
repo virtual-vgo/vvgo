@@ -13,8 +13,9 @@ func TestVersion(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/version", nil)
 	got := Version(req)
 
+	wantVersion := version.Get()
 	test_helpers.AssertEqualApiResponses(t, models.ApiResponse{
 		Status:  models.StatusOk,
-		Version: version.Get(),
+		Version: &wantVersion,
 	}, got)
 }
