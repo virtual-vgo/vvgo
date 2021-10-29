@@ -44,12 +44,6 @@ var SlashCommands = []SlashCommand{
 		Options:     When2meetCommandOptions,
 		Handler:     when2meetInteractionHandler,
 	},
-	{
-		Name:        "aboutme",
-		Description: "Manage your about me blurb on the vvgo website.",
-		Options:     AboutmeCommandOptions,
-		Handler:     AboutmeInteractionHandler,
-	},
 }
 
 var InteractionResponseOof = InteractionResponseMessage("oof please try again 😅", true)

@@ -19,3 +19,4 @@ public/npm
 .run
 bootstrap.lua
 version.json
+dump.rdb

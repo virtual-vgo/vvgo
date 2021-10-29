@@ -23,6 +23,7 @@ func TestStore_GetIdentity(t *testing.T) {
 			Kind:      "Testing",
 			Roles:     []models.Role{"Tester"},
 			ExpiresAt: gotIdentity.ExpiresAt, // TODO: implement a better test
+			CreatedAt: gotIdentity.CreatedAt, // TODO: implement a better test
 		}, gotIdentity)
 	})
 
@@ -74,6 +75,7 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 			Kind:      "Testing",
 			Roles:     []models.Role{"Tester"},
 			ExpiresAt: got.ExpiresAt, // TODO: Implement a better test here.
+			CreatedAt: got.CreatedAt, // TODO: Implement a better test here.
 		}, got)
 	})
 }

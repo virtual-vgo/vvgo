@@ -57,7 +57,7 @@ func TestLoginHandler_ServeHTTP(t *testing.T) {
 		var dest models.Identity
 		assert.NoError(t, GetSession(ctx, cookies[0].Value, &dest))
 		assert.Equal(t, models.KindPassword, dest.Kind, "identity.Kind")
-		assert.Equal(t, []models.Role{models.RoleVVGOMember}, dest.Roles, "identity.Roles")
+		assert.Equal(t, []models.Role{models.RoleVVGOVerifiedMember}, dest.Roles, "identity.Roles")
 	})
 }
 
@@ -205,7 +205,7 @@ func TestDiscordLoginHandler_ServeHTTP(t *testing.T) {
 		var dest models.Identity
 		assert.NoError(t, GetSession(context.Background(), cookies[0].Value, &dest))
 		assert.Equal(t, models.KindDiscord, dest.Kind, "identity.Kind")
-		assert.Equal(t, []models.Role{models.RoleVVGOMember}, dest.Roles, "identity.Roles")
+		assert.Equal(t, []models.Role{models.RoleVVGOVerifiedMember}, dest.Roles, "identity.Roles")
 	})
 
 	t.Run("no state", func(t *testing.T) {

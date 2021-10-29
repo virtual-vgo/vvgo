@@ -74,7 +74,7 @@ func NewCookie(ctx context.Context, src *models.Identity, expires time.Duration)
 	}, nil
 }
 
-func NewCookieValue() string {
+func NewSessionKey() string {
 	buf := make([]byte, 8)
 	result := "V-i-r-t-u-a-l--V-G-O--"
 	for i := 0; i < 4; i++ {
@@ -86,9 +86,10 @@ func NewCookieValue() string {
 
 // NewSession returns a new session with a crypto-rand session id.
 func NewSession(ctx context.Context, identity *models.Identity, expires time.Duration) (string, error) {
-	identity.Key = NewCookieValue()
+	identity.Key = NewSessionKey()
 	expiresAt := time.Now().Add(expires)
-	identity.ExpiresAt = &expiresAt
+	identity.ExpiresAt = expiresAt
+	identity.CreatedAt = time.Now()
 	key := "sessions:" + identity.Key
 	stringExpires := strconv.Itoa(int(expires.Seconds()))
 	srcBytes, _ := json.Marshal(identity)

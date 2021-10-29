@@ -76,9 +76,9 @@ func Discord(w http.ResponseWriter, r *http.Request) {
 		case discord.VVGOExecutiveDirectorRoleID:
 			loginRoles = append(loginRoles, models.RoleVVGOExecutiveDirector)
 		case discord.VVGOProductionTeamRoleID:
-			loginRoles = append(loginRoles, models.RoleVVGOTeams)
+			loginRoles = append(loginRoles, models.RoleVVGOProductionTeam)
 		case discord.VVGOVerifiedMemberRoleID:
-			loginRoles = append(loginRoles, models.RoleVVGOMember)
+			loginRoles = append(loginRoles, models.RoleVVGOVerifiedMember)
 		}
 	}
 	if len(loginRoles) == 0 {

@@ -55,14 +55,30 @@ func ValuesToProjects(values [][]interface{}) Projects {
 	if len(values) < 1 {
 		return nil
 	}
-	var projects []Project // ignore the header row
+	var projects Projects
 	UnmarshalSheet(values, &projects)
+	projects = projects.prune()
 	for i := range projects {
 		if projects[i].ReferenceTrackLink == "" {
 			projects[i].ReferenceTrackLink = downloadLink(projects[i].ReferenceTrack)
 		}
 	}
 	return projects
+}
+
+func (x Projects) prune() Projects {
+	want := make(Projects, 0, len(x))
+	for _, project := range x {
+		switch {
+		case project.Name == "":
+			continue
+		case project.Title == "":
+			continue
+		default:
+			want = append(want, project)
+		}
+	}
+	return want[:]
 }
 
 func (x Projects) Current() Projects {
@@ -88,7 +104,7 @@ func (x Projects) ForIdentity(identity Identity) Projects {
 		switch {
 		case project.PartsReleased == true:
 			want = append(want, project)
-		case identity.HasRole(RoleVVGOTeams):
+		case identity.HasRole(RoleVVGOProductionTeam):
 			want = append(want, project)
 		case identity.HasRole(RoleVVGOExecutiveDirector):
 			want = append(want, project)

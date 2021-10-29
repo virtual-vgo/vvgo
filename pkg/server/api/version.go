@@ -8,9 +8,10 @@ import (
 )
 
 func Version(r *http.Request) models.ApiResponse {
+	v := version.Get()
 	switch r.Method {
 	case http.MethodGet:
-		return models.ApiResponse{Status: models.StatusOk, Version: version.Get()}
+		return models.ApiResponse{Status: models.StatusOk, Version: &v}
 	default:
 		return http_helpers.NewMethodNotAllowedError()
 	}

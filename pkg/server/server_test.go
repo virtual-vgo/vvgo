@@ -6,15 +6,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
-	"github.com/virtual-vgo/vvgo/pkg/server/views"
+	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 )
-
-func init() { views.PublicFiles = "../../public" }
 
 func TestServer(t *testing.T) {
 	ctx := context.Background()
@@ -27,7 +24,7 @@ func TestServer(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err, "http.NewRequest")
 		if len(roles) != 0 {
-			cookie, err := login2.NewCookie(context.Background(), &models.Identity{
+			cookie, err := login.NewCookie(context.Background(), &models.Identity{
 				Roles: roles,
 			}, 3600*time.Second)
 			require.NoError(t, err, "sessions.NewCookie")
@@ -42,15 +39,6 @@ func TestServer(t *testing.T) {
 		return resp
 	}
 
-	t.Run("parts", func(t *testing.T) {
-		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/parts")
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login?target=%2Fparts", resp.Header.Get("Location"))
-		})
-	})
-
 	t.Run("download", func(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/download")
@@ -59,7 +47,7 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, "/login?target=%2Fdownload", resp.Header.Get("Location"))
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/download", models.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/download", models.RoleVVGOVerifiedMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
@@ -72,22 +60,22 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("fail /authorize/vvgo-leader", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", models.RoleVVGOTeams)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-leader", models.RoleVVGOProductionTeam)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
 		t.Run("ok /authorize/vvgo-teams", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOTeams)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOProductionTeam)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 		t.Run("fail /authorize/vvgo-teams", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-teams", models.RoleVVGOVerifiedMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
 		t.Run("ok /authorize/vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", models.RoleVVGOMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", models.RoleVVGOVerifiedMember)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
@@ -95,23 +83,6 @@ func TestServer(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/authorize/vvgo-member", models.RoleAnonymous)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		})
-	})
-
-	t.Run("login", func(t *testing.T) {
-		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/login")
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-		})
-	})
-
-	t.Run("logout", func(t *testing.T) {
-		t.Run("anonymous", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/logout")
-			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/", resp.Header.Get("Location"))
 		})
 	})
 }

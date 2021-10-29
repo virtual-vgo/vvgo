@@ -51,6 +51,6 @@ func Password(w http.ResponseWriter, r *http.Request) {
 
 	loginSuccess(w, r.WithContext(ctx), &models.Identity{
 		Kind:  models.KindPassword,
-		Roles: []models.Role{models.RoleVVGOMember},
+		Roles: []models.Role{models.RoleVVGOVerifiedMember},
 	})
 }
