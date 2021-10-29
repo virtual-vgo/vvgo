@@ -61,7 +61,6 @@ func Routes() http.Handler {
 		mux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)
 	}
 
-	// views
 	mux.HandleFunc("/parts/", serveUI, models.RoleAnonymous)
 	mux.HandleFunc("/projects/", serveUI, models.RoleAnonymous)
 	mux.HandleFunc("/credits-maker/", serveUI, models.RoleAnonymous)

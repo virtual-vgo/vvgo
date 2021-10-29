@@ -38,25 +38,25 @@ export const App = () => {
             </PrivateRoute>
 
             <PrivateRoute
-                path="/mixtape/"
+                path="/mixtape"
                 requireRole={UserRoles.VerifiedMember}>
                 <MemberDashboard/>
             </PrivateRoute>
 
             <PrivateRoute
-                path="/parts/"
+                path="/parts"
                 requireRole={UserRoles.VerifiedMember}>
                 <Parts/>
             </PrivateRoute>
 
             <Route path="/login/failure"><LoginFailure/></Route>
             <Route path="/login/discord"><LoginDiscord/></Route>
-            <Route path="/logout"><Logout/></Route>
+            <Route path="/logout/"><Logout/></Route>
             <Route path="/login/"><Login/></Route>
             <Route path="/projects/"><Projects/></Route>
             <Route path="/about/"><About/></Route>
             <Route path="/contact/"><Contact/></Route>
-            <Route path="/"><Home/></Route>
+            <Route exact path="/"><Home/></Route>
         </Switch>
     </BrowserRouter>;
 };

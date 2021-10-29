@@ -126,6 +126,12 @@ const ProjectDropdown = (props: { projectName: string, setProjectName: (name: st
 };
 
 const PastaResult = (props: { title: string, content: string }) => {
+    const textAreaStyle = ({
+        whiteSpace: "pre",
+        overflowWrap: "normal",
+        overflowX: "scroll",
+    } as React.CSSProperties);
+
     return <Row className="row-cols-1">
         <Col className="mt-4"><h3 className="text-center">{props.title}</h3></Col>
         <Col>
@@ -133,6 +139,7 @@ const PastaResult = (props: { title: string, content: string }) => {
                 readOnly
                 className="text-monospace form-control"
                 rows={10}
+                style={textAreaStyle}
                 value={props.content}/>
         </Col>
         <Col className="mt-2">

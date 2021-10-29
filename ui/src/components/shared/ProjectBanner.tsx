@@ -12,7 +12,7 @@ export const ProjectBanner = (props: { project: Project }) => {
                 <a href={youtubeLink} className="text-light text-center">
                     <h1 className="title">{props.project.Title}</h1>
                 </a>
-                <h3>{props.project.Sources}</h3>
+                <h3 className="text-center">{props.project.Sources}</h3>
             </div> :
             <a href={youtubeLink} className="text-light text-center">
                 <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>

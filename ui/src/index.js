@@ -1,8 +1,8 @@
+import React from "react";
 import * as ReactDOM from "react-dom";
 import {App} from "./components/App";
-import "./style.scss";
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import '../../css/theme.css';
-import React from "react";
+import "@fontsource/montserrat";
+import "./style.scss";
 
 ReactDOM.render(React.createElement(App), document.querySelector("#entrypoint"));
