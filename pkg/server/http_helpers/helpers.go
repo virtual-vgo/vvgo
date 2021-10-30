@@ -3,7 +3,6 @@ package http_helpers
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 )
@@ -49,11 +48,6 @@ func NewInternalServerError() models.ApiResponse {
 		Code:  http.StatusInternalServerError,
 		Error: "internal server error",
 	})
-}
-
-func WriteErrorJsonDecodeFailure(ctx context.Context, w http.ResponseWriter, err error) {
-	logger.JsonDecodeFailure(ctx, err)
-	WriteAPIResponse(ctx, w, NewJsonDecodeError(err))
 }
 
 func WriteErrorBadRequest(ctx context.Context, w http.ResponseWriter, reason string) {

@@ -6,12 +6,6 @@
 
 :wave: We are the Virtual Video Game Orchestra (VVGO for short). Our mission is to provide a fun and accessible virtual community of musicians from around the world through performing video game music.
 
-## Changing HTML pages
-
-HTML pages are generated from [go templates](https://golang.org/pkg/text/template/).
-These are affectionately reffered to as _views_.
-Views, along with all public files are found in [here](https://github.com/virtual-vgo/vvgo/tree/master/public).
-
 ## Run VVGO locally
 
 ### 1. Install build tools
@@ -56,12 +50,14 @@ These service can be started using the `docker-compose` command:
 docker-compose up -d minio redis
 ```
 
-### 3. Download javascript dependencies
+### 3. Build the frontend
 ```sh
-cd public && npm install
+cd ui
+npm install
+npx webpack serve
 ```
 
-### 4. Build and run the app!
+### 4. Build the backend
 ```sh
 go run ./tools/version
 go generate ./...

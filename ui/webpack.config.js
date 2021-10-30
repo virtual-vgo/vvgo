@@ -48,7 +48,7 @@ module.exports = {
         hot: true,
         liveReload: false,
         static: false,
-        proxy: {'/api': vvgoApi, '/images': vvgoApi},
+        proxy: {'/api': vvgoApi, '/images': vvgoApi, '/download': vvgoApi},
         host: 'localhost',
         port: 8080,
         historyApiFallback: true,

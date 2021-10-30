@@ -69,6 +69,7 @@ func Routes() http.Handler {
 	mux.HandleApiFunc("/api/v1/credits/pasta", api.CreditsPasta, models.RoleVVGOProductionTeam)
 	mux.HandleApiFunc("/api/v1/credits/table", api.CreditsTable, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/dataset", api.Dataset, models.RoleAnonymous)
+	mux.HandleApiFunc("/api/v1/download", api.Download, models.RoleVVGOVerifiedMember)
 	mux.HandleApiFunc("/api/v1/guild_members", api.GuildMembers, models.RoleVVGOExecutiveDirector)
 	mux.HandleApiFunc("/api/v1/auth/password", auth.Password, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/me", api.Me, models.RoleAnonymous)
@@ -81,7 +82,7 @@ func Routes() http.Handler {
 	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, models.RoleVVGOProductionTeam)
 	mux.HandleApiFunc("/api/v1/spreadsheet", api.Spreadsheet, models.RoleWriteSpreadsheet)
 	mux.HandleApiFunc("/api/v1/version", api.Version, models.RoleAnonymous)
-	mux.HandleFunc("/download", api.Download, models.RoleVVGOVerifiedMember)
+	mux.HandleApiFunc("/download", api.Download, models.RoleVVGOVerifiedMember)
 
 	if config.Config.Development {
 		mux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)

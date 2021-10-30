@@ -1,3 +1,4 @@
+import _ = require("lodash");
 import React = require("react");
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
@@ -10,9 +11,10 @@ export const ProjectHeader = (props: { project: Project }) =>
             <ProjectBanner project={props.project}/>
             {props.project.Composers}
             <br/><small>{props.project.Arrangers}</small>
-            <div className="m-2">
-                <h4><strong>Submission Deadline:</strong>
-                    <em>{props.project.SubmissionDeadline} (Hawaii Time)</em></h4>
-            </div>
+            {props.project.PartsArchived || _.isEmpty(props.project.SubmissionDeadline) ? <div/> :
+                <div className="m-2">
+                    <h4><strong>Submission Deadline:</strong>
+                        <em>{props.project.SubmissionDeadline} (Hawaii Time)</em></h4>
+                </div>}
         </Col>
     </Row>;

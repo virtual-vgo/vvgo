@@ -1,5 +1,5 @@
-import _ = require("lodash");
 import React = require("react");
+import * as _ from "lodash";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
@@ -151,44 +151,48 @@ const PartsTable = (props: { projectName: string, parts: Part[] }) => {
     </div>;
 };
 
-const PartDownloads = (props: { part: Part }) => {
-    const DownloadButton = (props: {
-        to: string,
-        children: string | (string | JSX.Element)[]
-    }) => <Button
-        className="btn-link text-light"
+const DownloadButton = (props: {
+    fileName: string,
+    children: string | (string | JSX.Element)[]
+}) => {
+    const params = new URLSearchParams({fileName: props.fileName, token: getSession().Key});
+    return <Button
+        href={"/download?" + params.toString()}
         variant="outline-light"
-        size={"sm"}
-        href={props.to}>
+        size={"sm"}>
         {props.children}
     </Button>;
+};
 
+const PartDownloads = (props: { part: Part }) => {
     const buttons = [] as Array<JSX.Element>;
-    if (_.isEmpty(props.part.SheetMusicLink) == false)
+    if (_.isEmpty(props.part.SheetMusicFile) == false)
         buttons.push(<DownloadButton
-            key={props.part.SheetMusicLink}
-            to={props.part.SheetMusicLink}>
+            key={props.part.SheetMusicFile}
+            fileName={props.part.SheetMusicFile}>
             <i className="far fa-file-pdf"/> sheet music
         </DownloadButton>);
 
-    if (_.isEmpty(props.part.ClickTrackLink) == false)
+    if (_.isEmpty(props.part.ClickTrackFile) == false)
         buttons.push(<DownloadButton
-            key={props.part.ClickTrackLink}
-            to={props.part.ClickTrackLink}>
+            key={props.part.ClickTrackFile}
+            fileName={props.part.ClickTrackFile}>
             <i className="far fa-file-audio"/> click track
         </DownloadButton>);
 
     if (_.isEmpty(props.part.ConductorVideo) == false)
-        buttons.push(<DownloadButton
+        buttons.push(<Button
             key={props.part.ConductorVideo}
-            to={props.part.ConductorVideo}>
+            href={props.part.ConductorVideo}
+            variant="outline-light"
+            size={"sm"}>
             <i className="far fa-file-video"/> conductor video
-        </DownloadButton>);
+        </Button>);
 
-    if (_.isEmpty(props.part.PronunciationGuideLink) == false)
+    if (_.isEmpty(props.part.PronunciationGuide) == false)
         buttons.push(<DownloadButton
-            key={props.part.PronunciationGuideLink}
-            to={props.part.PronunciationGuideLink}>
+            key={props.part.PronunciationGuide}
+            fileName={props.part.PronunciationGuide}>
             <i className="fas fa-language"/> pronunciation guide
         </DownloadButton>);
 

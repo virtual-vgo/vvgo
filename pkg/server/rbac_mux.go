@@ -8,15 +8,11 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
-	"net/url"
-	"strings"
 )
 
 // RBACMux Authenticate http requests using session based authentication.
 // If the request has a valid session or token with the required role, it is allowed access.
 type RBACMux struct {
-	Basic  map[[2]string][]models.Role
-	Bearer map[string][]models.Role
 	*http.ServeMux
 }
 
@@ -30,6 +26,19 @@ func (auth *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) m
 	auth.Handle(pattern, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		resp := handler(r)
+
+		switch resp.Status {
+		case models.StatusFound:
+			http.Redirect(w, r, resp.Location, http.StatusFound)
+
+		case models.StatusError:
+			if resp.Error != nil {
+				w.WriteHeader(resp.Error.Code)
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}
+
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			logger.JsonEncodeFailure(ctx, err)
 		}
@@ -40,24 +49,7 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Ro
 	auth.ServeMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		var identity models.Identity
-		switch {
-		case auth.readBasicAuth(r, &identity):
-			break
-		case auth.readBearer(r, &identity):
-			break
-		case auth.readSession(ctx, r, &identity):
-			break
-		default:
-			identity = models.Anonymous()
-		}
-
-		if values := r.URL.Query(); len(values["roles"]) != 0 {
-			wantRoles := make([]models.Role, len(values["roles"]))
-			for i := range values["roles"] {
-				wantRoles[i] = models.Role(values["roles"][i])
-			}
-			identity = identity.AssumeRoles(wantRoles...)
-		}
+		login.ReadSessionFromRequest(ctx, r, &identity)
 
 		if identity.HasRole(role) {
 			if role != models.RoleAnonymous {
@@ -67,58 +59,6 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Ro
 			return
 		}
 		logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
-
-		if identity.IsAnonymous() && strings.HasPrefix(r.URL.Path, "/api") == false {
-			values := make(url.Values)
-			values.Set("target", r.RequestURI)
-			http.Redirect(w, r, "/login?"+values.Encode(), http.StatusFound)
-			return
-		}
 		http_helpers.WriteUnauthorizedError(ctx, w)
 	})
-}
-
-func (auth *RBACMux) readBasicAuth(r *http.Request, dest *models.Identity) bool {
-	if auth.Basic == nil {
-		return false
-	}
-
-	user, pass, _ := r.BasicAuth()
-	gotRoles, ok := auth.Basic[[2]string{user, pass}]
-	if !ok {
-		return false
-	}
-
-	*dest = models.Identity{
-		Kind:  models.KindBasic,
-		Roles: gotRoles,
-	}
-	return true
-}
-
-func (auth *RBACMux) readBearer(r *http.Request, dest *models.Identity) bool {
-	if auth.Bearer == nil {
-		return false
-	}
-
-	bearer := strings.TrimSpace(r.Header.Get("Authorization"))
-	if !strings.HasPrefix(bearer, "Bearer ") {
-		return false
-	}
-	bearer = bearer[len("Bearer "):]
-
-	gotRoles, ok := auth.Bearer[bearer]
-	if !ok {
-		return false
-	}
-
-	*dest = models.Identity{
-		Kind:  models.KindBearer,
-		Roles: gotRoles,
-	}
-	return true
-}
-
-func (auth *RBACMux) readSession(ctx context.Context, r *http.Request, identity *models.Identity) bool {
-	return login.ReadSessionFromRequest(ctx, r, identity) == nil
 }
