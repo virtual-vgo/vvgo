@@ -20,6 +20,7 @@ import {Projects} from "./Projects";
 import {Sessions} from "./Sessions";
 
 export const App = () => {
+    document.documentElement.lang = "en";
     return <BrowserRouter>
         <Switch>
             <PrivateRoute

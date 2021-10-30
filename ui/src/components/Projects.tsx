@@ -1,3 +1,4 @@
+import _ = require("lodash");
 import React = require("react");
 import Masonry from "@mui/lab/Masonry";
 import Button from "react-bootstrap/Button";
@@ -74,9 +75,9 @@ export const Projects = () => {
 const ProjectCredits = (props: { project: Project }) => {
     const creditsTable = useCreditsTable(props.project);
 
-    if (creditsTable == null) return <div/>;
+    if (_.isEmpty(creditsTable)) return <div/>;
     return <div>
-        {creditsTable.map(topic => <Row>
+        {creditsTable.map(topic => <Row key={topic.Name}>
             <Row>
                 <Col className="text-center">
                     <h2><strong>— {topic.Name} —</strong></h2>
@@ -89,15 +90,15 @@ const ProjectCredits = (props: { project: Project }) => {
                     defaultHeight={450}
                     defaultColumns={3}
                     defaultSpacing={1}>
-                    {topic.Rows.map(team => <Col lg={4}>
-                        <h5>{team.Name}</h5>
-                        <ul className="list-unstyled">
-                            {team.Rows.map(credit =>
-                                <li>{credit.Name} <small>{credit.BottomText}</small></li>)}
-                        </ul>
-                    </Col>)}
+                    {_.isEmpty(topic.Rows) ? <div/> : topic.Rows.map(team =>
+                        <Col key={team.Name} lg={4}>
+                            <h5>{team.Name}</h5>
+                            <ul className="list-unstyled">
+                                {team.Rows.map(credit =>
+                                    <li key={credit.Name}>{credit.Name} <small>{credit.BottomText}</small></li>)}
+                            </ul>
+                        </Col>)}
                 </Masonry>
-
             </Row>
         </Row>)}
     </div>;
