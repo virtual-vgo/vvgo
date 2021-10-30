@@ -1,7 +1,9 @@
 package api
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/clients/minio"
+	"fmt"
+	"github.com/minio/minio-go/v6"
+	minio_wrapper "github.com/virtual-vgo/vvgo/pkg/clients/minio"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
@@ -22,19 +24,34 @@ func Download(r *http.Request) models.ApiResponse {
 		return http_helpers.NewMethodNotAllowedError()
 	}
 
-	object := r.URL.Query().Get("fileName")
-	if object == "" {
+	fileName := r.URL.Query().Get("fileName")
+	if fileName == "" {
 		return http_helpers.NewBadRequestError("fileName is required")
 	}
 
-	minioClient, err := minio.NewClient()
+	minioClient, err := minio_wrapper.NewClient()
 	if err != nil {
 		logger.MethodFailure(ctx, "minio.New", err)
 		return http_helpers.NewInternalServerError()
 	}
 
 	distroBucket := config.Config.VVGO.DistroBucket
-	downloadUrl, err := minioClient.PresignedGetObject(distroBucket, object, ProtectedLinkExpiry, nil)
+
+	_, err = minioClient.StatObject(distroBucket, fileName, minio.StatObjectOptions{})
+	if err != nil {
+		logger.MethodFailure(ctx, "minio.StatObject", err)
+		if _, ok := err.(minio.ErrorResponse); !ok {
+			return http_helpers.NewInternalServerError()
+		}
+		switch err.(minio.ErrorResponse).StatusCode {
+		case http.StatusNotFound:
+			return http_helpers.NewNotFoundError(fmt.Sprintf("file `%s` not found", fileName))
+		default:
+			return http_helpers.NewInternalServerError()
+		}
+	}
+
+	downloadUrl, err := minioClient.PresignedGetObject(distroBucket, fileName, ProtectedLinkExpiry, nil)
 	if err != nil {
 		logger.MethodFailure(ctx, "minio.StatObject", err)
 		return http_helpers.NewInternalServerError()

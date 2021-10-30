@@ -16,6 +16,8 @@ type RBACMux struct {
 	*http.ServeMux
 }
 
+func NewRBACMux() RBACMux { return RBACMux{ServeMux: http.NewServeMux()} }
+
 // HandleFunc registers the handler function for the given pattern.
 func (auth *RBACMux) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request), role models.Role) {
 	auth.Handle(pattern, http.HandlerFunc(handler), role)

@@ -7,11 +7,12 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 )
 
-func TestStore_GetIdentity(t *testing.T) {
+func TestGetSession(t *testing.T) {
 	t.Run("exists", func(t *testing.T) {
 		ctx := context.Background()
 		session, err := NewSession(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
@@ -34,7 +35,7 @@ func TestStore_GetIdentity(t *testing.T) {
 	})
 }
 
-func TestStore_DeleteIdentity(t *testing.T) {
+func TestDeleteSession(t *testing.T) {
 	ctx := context.Background()
 
 	session1, err := NewSession(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
@@ -44,18 +45,15 @@ func TestStore_DeleteIdentity(t *testing.T) {
 	assert.Equal(t, ErrSessionNotFound, GetSession(ctx, session1, &gotIdentity))
 }
 
-func TestStore_ReadSessionFromRequest(t *testing.T) {
+func TestReadSessionFromRequest(t *testing.T) {
 	t.Run("no session", func(t *testing.T) {
 		ctx := context.Background()
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.AddCookie(&http.Cookie{
-			Name:  SessionCookieName,
-			Value: "cheese",
-		})
 		var got models.Identity
-		require.Equal(t, ErrSessionNotFound, ReadSessionFromRequest(ctx, req, &got))
+		ReadSessionFromRequest(ctx, req, &got)
+		require.Equal(t, models.Anonymous(), got)
 	})
-	t.Run("cookie", func(t *testing.T) {
+	t.Run("Bearer", func(t *testing.T) {
 		ctx := context.Background()
 		session, err := NewSession(ctx, &models.Identity{
 			Kind:  "Testing",
@@ -64,12 +62,10 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.AddCookie(&http.Cookie{
-			Name:  SessionCookieName,
-			Value: session,
-		})
+		req.Header.Set("Authorization", "Bearer "+session)
+
 		var got models.Identity
-		require.NoError(t, ReadSessionFromRequest(ctx, req, &got))
+		ReadSessionFromRequest(ctx, req, &got)
 		assert.Equal(t, models.Identity{
 			Key:       session,
 			Kind:      "Testing",
@@ -78,39 +74,26 @@ func TestStore_ReadSessionFromRequest(t *testing.T) {
 			CreatedAt: got.CreatedAt, // TODO: Implement a better test here.
 		}, got)
 	})
-}
-
-func TestStore_DeleteSessionFromRequest(t *testing.T) {
-	t.Run("no session", func(t *testing.T) {
+	t.Run("Token", func(t *testing.T) {
 		ctx := context.Background()
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		require.NoError(t, DeleteSessionFromRequest(ctx, req))
-	})
-	t.Run("cookie", func(t *testing.T) {
-		ctx := context.Background()
-		session, err := NewSession(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
+		session, err := NewSession(ctx, &models.Identity{
+			Kind:  "Testing",
+			Roles: []models.Role{"Tester"},
+		}, 30*time.Second)
 		require.NoError(t, err)
 
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.AddCookie(&http.Cookie{
-			Name:  SessionCookieName,
-			Value: session,
-		})
-		require.NoError(t, DeleteSessionFromRequest(ctx, req))
-		var gotIdentity models.Identity
-		assert.Equal(t, ErrSessionNotFound, GetSession(ctx, session, &gotIdentity))
+		params := make(url.Values)
+		params.Set("token", session)
+		req := httptest.NewRequest(http.MethodGet, "/?"+params.Encode(), nil)
+
+		var got models.Identity
+		ReadSessionFromRequest(ctx, req, &got)
+		assert.Equal(t, models.Identity{
+			Key:       session,
+			Kind:      "Testing",
+			Roles:     []models.Role{"Tester"},
+			ExpiresAt: got.ExpiresAt, // TODO: Implement a better test here.
+			CreatedAt: got.CreatedAt, // TODO: Implement a better test here.
+		}, got)
 	})
-}
-
-func TestStore_NewCookie(t *testing.T) {
-	ctx := context.Background()
-	gotCookie, err := NewCookie(ctx, &models.Identity{Kind: "Testing", Roles: []models.Role{"Tester"}}, 30*time.Second)
-	require.NoError(t, err)
-
-	assert.Equal(t, SessionCookieName, gotCookie.Name, "cookie.Name")
-	assert.NotEmpty(t, gotCookie.Value, "cookie.Value")
-	assert.Equal(t, SessionCookiePath, gotCookie.Path, "cookie.Path")
-	assert.Equal(t, ".vvgo.org", gotCookie.Domain, "cookie.Domain")
-	assert.Equal(t, true, gotCookie.HttpOnly, "cookie.HttpOnly")
-	assert.Equal(t, http.SameSiteStrictMode, gotCookie.SameSite, "cookie.SameSite")
 }

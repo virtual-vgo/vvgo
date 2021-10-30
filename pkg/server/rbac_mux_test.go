@@ -4,136 +4,99 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/models"
-	login2 "github.com/virtual-vgo/vvgo/pkg/server/login"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 	"net/http/httptest"
-	"strings"
+	"net/url"
 	"testing"
 	"time"
 )
 
 func TestRBACMux_Handle(t *testing.T) {
 	ctx := context.Background()
-	mux := RBACMux{
-		ServeMux: http.NewServeMux(),
+	okHandler := func(r *http.Request) models.ApiResponse { return http_helpers.NewOkResponse() }
+
+	newAnonymousRequest := func() *http.Request {
+		return httptest.NewRequest(http.MethodGet, "/", nil)
 	}
 
-	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		// do nothing
-	}, models.RoleVVGOProductionTeam)
-	ts := httptest.NewServer(mux)
-	defer ts.Close()
+	newBearerRequest := func(t *testing.T, identity *models.Identity) *http.Request {
+		t.Helper()
+		session, err := login.NewSession(ctx, identity, 3600*time.Second)
+		require.NoError(t, err, "login.NewSession()")
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Authorization", "Bearer "+session)
+		return req
+	}
+
+	newTokenRequest := func(t *testing.T, identity *models.Identity) *http.Request {
+		t.Helper()
+		session, err := login.NewSession(ctx, identity, 3600*time.Second)
+		require.NoError(t, err, "login.NewSession()")
+		params := make(url.Values)
+		params.Set("token", session)
+		req := httptest.NewRequest(http.MethodGet, "/?"+params.Encode(), nil)
+		return req
+	}
+
+	assertSuccess := func(t *testing.T, mux RBACMux, req *http.Request) {
+		t.Helper()
+		recorder := httptest.NewRecorder()
+		mux.ServeHTTP(recorder, req)
+		resp := recorder.Result()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	}
+
+	assertUnauthorized := func(t *testing.T, mux RBACMux, req *http.Request) {
+		t.Helper()
+		recorder := httptest.NewRecorder()
+		mux.ServeHTTP(recorder, req)
+		resp := recorder.Result()
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	}
 
 	t.Run("no auth", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
-		require.NoError(t, err, "http.NewRequest()")
-		resp, err := http_wrappers.NoFollow(nil).Do(req)
-		require.NoError(t, err, "http.Do()")
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
-	})
-
-	t.Run("basic auth", func(t *testing.T) {
-		mux.Basic = map[[2]string][]models.Role{
-			{"uploader", "uploader"}: {models.RoleVVGOProductionTeam},
-			{"member", "member"}:     {models.RoleVVGOVerifiedMember},
-		}
-
-		newAuthRequest := func(t *testing.T, user, pass string) *http.Request {
-			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
-			require.NoError(t, err, "http.NewRequest")
-			req.SetBasicAuth(user, pass)
-			return req
-		}
-
 		t.Run("success", func(t *testing.T) {
-			req := newAuthRequest(t, "uploader", "uploader")
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-		})
-		t.Run("incorrect user", func(t *testing.T) {
-			req := newAuthRequest(t, "", "uploader")
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
-		})
-		t.Run("incorrect pass", func(t *testing.T) {
-			req := newAuthRequest(t, "uploader", "")
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
+			mux := NewRBACMux()
+			mux.HandleApiFunc("/", okHandler, models.RoleAnonymous)
+			assertSuccess(t, mux, newAnonymousRequest())
 		})
 		t.Run("incorrect role", func(t *testing.T) {
-			req := newAuthRequest(t, "member", "member")
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			mux := NewRBACMux()
+			mux.HandleApiFunc("/", okHandler, models.RoleVVGOProductionTeam)
+			assertUnauthorized(t, mux, newAnonymousRequest())
 		})
 	})
 
-	t.Run("token auth", func(t *testing.T) {
-		mux.Bearer = map[string][]models.Role{
-			"uploader": {models.RoleVVGOProductionTeam},
-			"member":   {models.RoleVVGOVerifiedMember},
-		}
-		newAuthRequest := func(t *testing.T, token string) *http.Request {
-			req, err := http.NewRequest(http.MethodGet, ts.URL, strings.NewReader(""))
-			require.NoError(t, err, "http.NewRequest")
-			req.Header.Set("Authorization", "Bearer "+token)
-			return req
-		}
-
+	t.Run("bearer", func(t *testing.T) {
+		mux := NewRBACMux()
+		mux.HandleApiFunc("/", okHandler, models.RoleVVGOProductionTeam)
 		t.Run("success", func(t *testing.T) {
-			req := newAuthRequest(t, "uploader")
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-		})
-		t.Run("incorrect token", func(t *testing.T) {
-			req := newAuthRequest(t, "asdfa")
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login?target=%2F", resp.Header.Get("Location"))
-		})
-		t.Run("incorrect role", func(t *testing.T) {
-			req := newAuthRequest(t, "member")
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-		})
-	})
-
-	t.Run("login session", func(t *testing.T) {
-		newAuthRequest := func(t *testing.T, identity *models.Identity) *http.Request {
-			cookie, err := login2.NewCookie(ctx, identity, 3600*time.Second)
-			require.NoError(t, err, "NewCookie()")
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL, strings.NewReader(""))
-			require.NoError(t, err, "http.NewRequest")
-			req.AddCookie(cookie)
-			return req
-		}
-
-		t.Run("success", func(t *testing.T) {
-			req := newAuthRequest(t, &models.Identity{
+			assertSuccess(t, mux, newBearerRequest(t, &models.Identity{
 				Roles: []models.Role{models.RoleVVGOProductionTeam},
-			})
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			}))
 		})
 		t.Run("incorrect role", func(t *testing.T) {
-			req := newAuthRequest(t, &models.Identity{
+			assertUnauthorized(t, mux, newBearerRequest(t, &models.Identity{
 				Roles: []models.Role{models.RoleVVGOVerifiedMember},
-			})
-			resp, err := http_wrappers.NoFollow(nil).Do(req)
-			require.NoError(t, err, "http.Do()")
-			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+			}))
+		})
+	})
+
+	t.Run("token", func(t *testing.T) {
+		mux := NewRBACMux()
+		mux.HandleApiFunc("/", okHandler, models.RoleVVGOProductionTeam)
+		t.Run("success", func(t *testing.T) {
+			assertSuccess(t, mux, newTokenRequest(t, &models.Identity{
+				Roles: []models.Role{models.RoleVVGOProductionTeam},
+			}))
+		})
+		t.Run("incorrect role", func(t *testing.T) {
+			assertUnauthorized(t, mux, newTokenRequest(t, &models.Identity{
+				Roles: []models.Role{models.RoleVVGOVerifiedMember},
+			}))
 		})
 	})
 }

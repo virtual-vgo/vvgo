@@ -24,11 +24,11 @@ func TestServer(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err, "http.NewRequest")
 		if len(roles) != 0 {
-			cookie, err := login.NewCookie(context.Background(), &models.Identity{
+			session, err := login.NewSession(context.Background(), &models.Identity{
 				Roles: roles,
 			}, 3600*time.Second)
-			require.NoError(t, err, "sessions.NewCookie")
-			req.AddCookie(cookie)
+			require.NoError(t, err, "login.NewSession")
+			req.Header.Set("Authorization", "Bearer "+session)
 		}
 		return req
 	}
@@ -43,11 +43,10 @@ func TestServer(t *testing.T) {
 		t.Run("anonymous", func(t *testing.T) {
 			req := newRequest(t, http.MethodGet, ts.URL+"/download")
 			resp := doRequest(t, req)
-			assert.Equal(t, http.StatusFound, resp.StatusCode)
-			assert.Equal(t, "/login?target=%2Fdownload", resp.Header.Get("Location"))
+			assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		})
 		t.Run("vvgo-member", func(t *testing.T) {
-			req := newRequest(t, http.MethodGet, ts.URL+"/download", models.RoleVVGOVerifiedMember)
+			req := newRequest(t, http.MethodGet, ts.URL+"/download", models.RoleDownload)
 			resp := doRequest(t, req)
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
