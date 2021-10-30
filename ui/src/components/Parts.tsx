@@ -29,7 +29,7 @@ import {RootContainer} from "./shared/RootContainer";
 import {ShowHideToggle} from "./shared/ShowHideToggle";
 
 export const Parts = () => {
-    const documentTitle = "Parts"
+    const documentTitle = "Parts";
     const me = getSession();
     const allProjects = useProjects();
     const parts = useParts();
@@ -206,9 +206,10 @@ const DownloadButton = (props: {
     children: string | (string | JSX.Element)[]
     size?: "sm" | "lg"
 }) => {
-    const params = new URLSearchParams({fileName: props.fileName, token: props.downloadSession.Key});
+    const sessionKey = props.downloadSession ? props.downloadSession.Key : "";
+    const params = new URLSearchParams({fileName: props.fileName, token: sessionKey});
     return <Button
-        disabled={_.isEmpty(props.downloadSession)}
+        disabled={_.isEmpty(sessionKey)}
         href={"/download?" + params.toString()}
         variant="outline-light"
         size={props.size}>
