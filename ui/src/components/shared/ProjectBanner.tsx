@@ -1,21 +1,34 @@
+import _ = require("lodash");
 import React = require("react");
+import {Link} from "react-router-dom";
 import {Project} from "../../datasets";
 
 export const ProjectBanner = (props: { project: Project }) => {
     if (!props.project) return <div/>;
-    const youtubeLink = props.project.YoutubeLink;
-    const bannerLink = props.project.BannerLink;
-
     return <div className={"d-flex justify-content-center mb-2"}>
-        {bannerLink == "" ?
+        {_.isEmpty(props.project.BannerLink) ?
             <div>
-                <a href={youtubeLink} className="text-light text-center">
+                <BannerLink project={props.project}>
                     <h1 className="title">{props.project.Title}</h1>
-                </a>
+                </BannerLink>
                 <h3 className="text-center">{props.project.Sources}</h3>
             </div> :
-            <a href={youtubeLink} className="text-light text-center">
-                <img src={bannerLink} className="mx-auto img-fluid" alt="banner"/>
-            </a>}
+            <BannerLink project={props.project}>
+                <img src={props.project.BannerLink} className="mx-auto img-fluid" alt="banner"/>
+            </BannerLink>
+        }
     </div>;
 };
+
+const BannerLink = (props: { project: Project, children: JSX.Element }) =>
+    _.isEmpty(props.project.YoutubeLink) ?
+        <Link
+            className="text-light text-center"
+            to={"/projects?" + new URLSearchParams({name: props.project.Name})}>
+            {props.children}
+        </Link> :
+        <a
+            className="text-light text-center"
+            href={props.project.YoutubeLink}>
+            {props.children}
+        </a>;

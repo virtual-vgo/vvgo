@@ -16,7 +16,6 @@ import {YoutubeIframe} from "./shared/YoutubeIframe";
 export const Projects = () => {
     const documentTitle = "Projects";
     const allProjects = useProjects();
-
     const [project, setProject] = React.useState(null as Project);
     const [searchInput, setSearchInput] = React.useState("");
     const searchInputRef = React.useRef({} as HTMLInputElement);
@@ -25,13 +24,35 @@ export const Projects = () => {
         <LoadingText/>
     </RootContainer>;
 
-    const wantProjects = allProjects.filter(r =>
-        r.Name.toLowerCase().includes(searchInput) ||
-        r.Title.toLowerCase().includes(searchInput) ||
-        r.Sources.toLowerCase().includes(searchInput));
+    const wantProjects = allProjects
+        .filter(r => r.Hidden == false)
+        .filter(r => r.Name.toLowerCase().includes(searchInput) ||
+            r.Title.toLowerCase().includes(searchInput) ||
+            r.Sources.toLowerCase().includes(searchInput));
 
-    const latest = latestProject(wantProjects);
-    if (latest && !project) setProject(latest);
+    window.onpopstate = (e) => {
+        const params = new URLSearchParams(e.state);
+        const want = wantProjects.filter(r => r.Name == params.get("name")).pop();
+        if (want) setProject(want);
+    };
+
+    if (!project) { // initialize from url query or from latest project
+        const params = new URLSearchParams(document.location.search);
+        if (!_.isEmpty(params.get("name"))) {
+            const want = wantProjects.filter(r => r.Name == params.get("name")).pop();
+            if (want) setProject(want);
+            window.history.pushState(params, "", "/projects?" + params.toString());
+        } else {
+            const latest = latestProject(wantProjects);
+            if (latest) setProject(latest);
+        }
+    }
+
+    const onClickProject = (want: Project) => {
+        const params = new URLSearchParams({name: want.Name});
+        window.history.pushState(params, "", "/projects?" + params.toString());
+        setProject(want);
+    };
 
     return <RootContainer title={documentTitle}>
         <Row>
@@ -49,7 +70,7 @@ export const Projects = () => {
                             <Button
                                 variant={project && project.Name == want.Name ? "light" : "outline-light"}
                                 key={want.Name}
-                                onClick={() => setProject(want)}>
+                                onClick={() => onClickProject(want)}>
                                 {want.Title}
                                 {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
                                 {want.VideoReleased == false ? <em><small><br/>In Production</small></em> : ""}
