@@ -9,7 +9,17 @@ import Table from "react-bootstrap/Table";
 import {getSession} from "../auth";
 import {Channels} from "../data/discord";
 import {links} from "../data/links";
-import {Part, Project, projectIsOpenForSubmission, useParts, useProjects, UserRoles} from "../datasets";
+import {
+    ApiRole,
+    Part,
+    Project,
+    projectIsOpenForSubmission,
+    Session,
+    useNewApiSession,
+    useParts,
+    useProjects,
+    UserRole,
+} from "../datasets";
 import {AlertArchivedParts} from "./shared/AlertArchivedParts";
 import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
 import {LinkChannel} from "./shared/LinkChannel";
@@ -22,6 +32,7 @@ export const Parts = () => {
     const me = getSession();
     const allProjects = useProjects();
     const parts = useParts();
+    const downloadSession = useNewApiSession(4 * 3600, [ApiRole.Download]);
 
     const [project, setProject] = React.useState(null as Project);
     const [showUnreleased, setShowUnreleased] = React.useState(false);
@@ -40,13 +51,13 @@ export const Parts = () => {
         <Row>
             <Col lg={3}>
                 <div className={"d-flex flex-row justify-content-center"}>
-                    {me.Roles.includes(UserRoles.ProductionTeam) ?
+                    {me.Roles.includes(UserRole.ProductionTeam) ?
                         <ShowHideToggle
                             title="Unreleased"
                             state={showUnreleased}
                             setState={setShowUnreleased}/> : ""}
 
-                    {me.Roles.includes(UserRoles.ExecutiveDirector) ?
+                    {me.Roles.includes(UserRole.ExecutiveDirector) ?
                         <ShowHideToggle
                             title="Archived"
                             state={showArchived}
@@ -74,8 +85,8 @@ export const Parts = () => {
                     <AlertArchivedParts project={project}/>
                     <AlertUnreleasedProject project={project}/>
                     <ProjectHeader project={project}/>
-                    <PartsTopLinks project={project}/>
-                    <PartsTable projectName={project.Name} parts={parts}/>
+                    <PartsTopLinks downloadSession={downloadSession} project={project}/>
+                    <PartsTable downloadSession={downloadSession} projectName={project.Name} parts={parts}/>
                 </Col> :
                 <Col>
                     <p>There are no projects currently accepting submissions, but we are working hard to bring you some!
@@ -87,32 +98,25 @@ export const Parts = () => {
 
 const ButtonGroupBreakPoint = 800;
 
-export const PartsTopLinks = (props: { project: Project }) => {
-    const Card = (props: {
-        to: string,
-        children: (string | JSX.Element)[]
-    }) => <Button
-        variant="outline-light"
-        className="btn-lnk"
-        href={props.to}>
-        {props.children}</Button>;
-
+export const PartsTopLinks = (props: { downloadSession: Session, project: Project }) => {
     return <div className="d-flex justify-content-center">
         <ButtonGroup vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
-            <Card to={links.RecordingInstructions}>
+            <LinkButton to={links.RecordingInstructions}>
                 <i className="far fa-image"/> Recording Instructions
-            </Card>
-            <Card to={props.project.ReferenceTrackLink}>
+            </LinkButton>
+            <DownloadButton
+                fileName={props.project.ReferenceTrack}
+                downloadSession={props.downloadSession}>
                 <i className="far fa-file-audio"/> Reference Track
-            </Card>
-            <Card to={props.project.SubmissionLink}>
+            </DownloadButton>
+            <LinkButton to={props.project.SubmissionLink}>
                 <i className="fab fa-dropbox"/> Submit Recordings
-            </Card>
+            </LinkButton>
         </ButtonGroup>
     </div>;
 };
 
-const PartsTable = (props: { projectName: string, parts: Part[] }) => {
+const PartsTable = (props: { downloadSession: Session, projectName: string, parts: Part[] }) => {
     const [searchInput, setSearchInput] = React.useState("");
     const searchInputRef = React.useRef({} as HTMLInputElement);
 
@@ -143,7 +147,7 @@ const PartsTable = (props: { projectName: string, parts: Part[] }) => {
                 {wantParts.map(part =>
                     <tr key={part.PartName}>
                         <td style={partNameStyle}>{part.PartName}</td>
-                        <td><PartDownloads part={part}/></td>
+                        <td><PartDownloads downloadSession={props.downloadSession} part={part}/></td>
                     </tr>)}
                 </tbody>
             </Table>
@@ -151,48 +155,40 @@ const PartsTable = (props: { projectName: string, parts: Part[] }) => {
     </div>;
 };
 
-const DownloadButton = (props: {
-    fileName: string,
-    children: string | (string | JSX.Element)[]
-}) => {
-    const params = new URLSearchParams({fileName: props.fileName, token: getSession().Key});
-    return <Button
-        href={"/download?" + params.toString()}
-        variant="outline-light"
-        size={"sm"}>
-        {props.children}
-    </Button>;
-};
-
-const PartDownloads = (props: { part: Part }) => {
+const PartDownloads = (props: { downloadSession: Session, part: Part }) => {
     const buttons = [] as Array<JSX.Element>;
     if (_.isEmpty(props.part.SheetMusicFile) == false)
         buttons.push(<DownloadButton
             key={props.part.SheetMusicFile}
-            fileName={props.part.SheetMusicFile}>
+            fileName={props.part.SheetMusicFile}
+            downloadSession={props.downloadSession}
+            size={"sm"}>
             <i className="far fa-file-pdf"/> sheet music
         </DownloadButton>);
 
     if (_.isEmpty(props.part.ClickTrackFile) == false)
         buttons.push(<DownloadButton
             key={props.part.ClickTrackFile}
-            fileName={props.part.ClickTrackFile}>
+            fileName={props.part.ClickTrackFile}
+            downloadSession={props.downloadSession}
+            size={"sm"}>
             <i className="far fa-file-audio"/> click track
         </DownloadButton>);
 
     if (_.isEmpty(props.part.ConductorVideo) == false)
-        buttons.push(<Button
+        buttons.push(<LinkButton
             key={props.part.ConductorVideo}
-            href={props.part.ConductorVideo}
-            variant="outline-light"
+            to={props.part.ConductorVideo}
             size={"sm"}>
             <i className="far fa-file-video"/> conductor video
-        </Button>);
+        </LinkButton>);
 
     if (_.isEmpty(props.part.PronunciationGuide) == false)
         buttons.push(<DownloadButton
             key={props.part.PronunciationGuide}
-            fileName={props.part.PronunciationGuide}>
+            fileName={props.part.PronunciationGuide}
+            downloadSession={props.downloadSession}
+            size={"sm"}>
             <i className="fas fa-language"/> pronunciation guide
         </DownloadButton>);
 
@@ -201,4 +197,33 @@ const PartDownloads = (props: { part: Part }) => {
         vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
         {buttons}
     </ButtonGroup>;
+};
+
+const DownloadButton = (props: {
+    downloadSession: Session,
+    fileName: string,
+    children: string | (string | JSX.Element)[]
+    size?: "sm" | "lg"
+}) => {
+    const params = new URLSearchParams({fileName: props.fileName, token: props.downloadSession.Key});
+    return <Button
+        disabled={_.isEmpty(props.downloadSession)}
+        href={"/download?" + params.toString()}
+        variant="outline-light"
+        size={props.size}>
+        {props.children}
+    </Button>;
+};
+
+const LinkButton = (props: {
+    to: string
+    children: string | (string | JSX.Element)[]
+    size?: "sm" | "lg"
+}) => {
+    return <Button
+        href={props.to}
+        variant="outline-light"
+        size={props.size}>
+        {props.children}
+    </Button>;
 };

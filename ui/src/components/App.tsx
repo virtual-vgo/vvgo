@@ -1,7 +1,7 @@
 import React = require("react");
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession} from "../auth";
-import {sessionIsAnonymous, UserRoles} from "../datasets";
+import {sessionIsAnonymous, UserRole} from "../datasets";
 import {About} from "./About";
 import {Contact} from "./Contact";
 import {CreditsMaker} from "./CreditsMaker";
@@ -25,31 +25,31 @@ export const App = () => {
         <Switch>
             <PrivateRoute
                 path="/credits-maker"
-                requireRole={UserRoles.ProductionTeam}>
+                requireRole={UserRole.ProductionTeam}>
                 <CreditsMaker/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/sessions"
-                requireRole={UserRoles.ExecutiveDirector}>
+                requireRole={UserRole.ExecutiveDirector}>
                 <Sessions/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/mixtape/NewProjectWorkflow"
-                requireRole={UserRoles.ExecutiveDirector}>
+                requireRole={UserRole.ExecutiveDirector}>
                 <NewProjectWorkflow/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/mixtape"
-                requireRole={UserRoles.VerifiedMember}>
+                requireRole={UserRole.VerifiedMember}>
                 <MemberDashboard/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/parts"
-                requireRole={UserRoles.VerifiedMember}>
+                requireRole={UserRole.VerifiedMember}>
                 <Parts/>
             </PrivateRoute>
 

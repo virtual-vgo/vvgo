@@ -37,7 +37,8 @@ const (
 	RoleVVGOExecutiveDirector Role = "vvgo-leader" // has the leader discord role
 
 	RoleWriteSpreadsheet Role = "write_spreadsheet"
-	RoleReadConfig       Role = "read_config"
+	RoleReadSpreadsheet  Role = "read_spreadsheet"
+	RoleDownload         Role = "download"
 )
 
 var anonymous = Identity{

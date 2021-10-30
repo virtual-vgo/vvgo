@@ -4,6 +4,7 @@ import {createSessions, deleteSessions, Session, SessionKind, useSessions} from 
 import {LoadingText} from "./shared/LoadingText";
 import {RootContainer} from "./shared/RootContainer";
 import React = require("react");
+import _ = require("lodash");
 
 export const Sessions = () => {
     const me = getSession();
@@ -139,19 +140,11 @@ const SessionRow = (props: {
     setButtonState: Dispatch<SetStateAction<Map<string, string>>>;
 }) => {
     const session = props.session;
-    const expiresAt = () => {
-        if (session.ExpiresAt) {
-            const expiresAt = session.ExpiresAt;
-            return expiresAt.toLocaleString();
-        }
-        return "";
-    };
-
     return <tr className={props.className}>
         <td>{session.Kind}</td>
         <td>{session.Roles ? session.Roles.reduce((a, b) => a + ", " + b) : "none"}</td>
         <td>{session.DiscordID}</td>
-        <td>{expiresAt()}</td>
+        <td>{_.isEmpty(session.ExpiresAt) ? "" : new Date(session.ExpiresAt).toLocaleString()}</td>
         <td width={120}>
             <DeleteButton session={props.session} buttonState={props.buttonState}
                           setButtonState={props.setButtonState}/>
@@ -174,9 +167,7 @@ const DeleteButton = (props: {
         newState.set(session.Key, "deleting");
         setButtonState(newState);
 
-        new Promise(resolve => setTimeout(resolve, 500),
-        ).then(() => deleteSessions([session.Key]),
-        ).then(() => {
+        deleteSessions([session.Key]).then(() => {
             const state = new Map();
             buttonState.forEach((val, key) => state.set(key, val));
             state.set(session.Key, "deleted");
