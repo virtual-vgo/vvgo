@@ -1,7 +1,7 @@
 const path = require('path')
 const ESLintPlugin = require('eslint-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const vvgoApi = 'http://localhost:8080'
+const vvgoApi = 'http://localhost:42069'
 
 module.exports = {
     entry: {index: './src/index.js'},
@@ -39,7 +39,7 @@ module.exports = {
         })],
     resolve: {extensions: ['.ts', '.tsx', '...']},
     output: {
-        path: path.resolve(__dirname, './dist'),
+        path: path.resolve(__dirname, '../public/dist'),
         filename: './index.js',
         clean: true,
         publicPath: "/"
@@ -49,7 +49,8 @@ module.exports = {
         liveReload: false,
         static: false,
         proxy: {'/api': vvgoApi, '/images': vvgoApi},
-        port: 8081,
+        host: 'localhost',
+        port: 8080,
         historyApiFallback: true,
     },
 }

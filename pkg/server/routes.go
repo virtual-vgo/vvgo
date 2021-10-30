@@ -27,9 +27,9 @@ var ServeUI = http.FileServer(http.FS(Filesystem("public")))
 type Filesystem string
 
 func (fs Filesystem) Open(name string) (fs.File, error) {
-	file, err := os.Open(path.Join(PublicFiles, name))
+	file, err := os.Open(path.Join(PublicFiles, "dist", name))
 	if errors.Is(err, os.ErrNotExist) {
-		return os.Open(path.Join(PublicFiles, "dist/index.html"))
+		return os.Open(path.Join(PublicFiles, "dist", "index.html"))
 	}
 	return file, err
 }
@@ -87,6 +87,7 @@ func Routes() http.Handler {
 		mux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)
 	}
 
-	mux.Handle("/", http.FileServer(http.Dir("public")), models.RoleAnonymous)
+	mux.Handle("/images/", http.FileServer(http.Dir(PublicFiles)), models.RoleAnonymous)
+	mux.Handle("/", ServeUI, models.RoleAnonymous)
 	return &mux
 }
