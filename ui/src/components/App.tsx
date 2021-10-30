@@ -5,6 +5,9 @@ import {sessionIsAnonymous, UserRoles} from "../datasets";
 import {About} from "./About";
 import {Contact} from "./Contact";
 import {CreditsMaker} from "./CreditsMaker";
+import {AccessDenied} from "./errors/AccessDenied";
+import {InternalOopsie} from "./errors/InternalOopsie";
+import {NotFound} from "./errors/NotFound";
 import {Home} from "./Home";
 import {Login} from "./login/Login";
 import {LoginDiscord} from "./login/LoginDiscord";
@@ -56,7 +59,11 @@ export const App = () => {
             <Route path="/projects/"><Projects/></Route>
             <Route path="/about/"><About/></Route>
             <Route path="/contact/"><Contact/></Route>
+            <Route exact path="/401.html"><AccessDenied/></Route>
+            <Route exact path="/404.html"><NotFound/></Route>
+            <Route exact path="/500.html"><InternalOopsie/></Route>
             <Route exact path="/"><Home/></Route>
+            <Route path="*"><NotFound/></Route>
         </Switch>
     </BrowserRouter>;
 };
@@ -75,7 +82,7 @@ const PrivateRoute = (props: {
             case sessionIsAnonymous(me):
                 return <Redirect to={"/login"}/>;
             default:
-                return <Redirect to={"/401.html"}/>;
+                return <AccessDenied/>;
         }
     };
     return <Route path={props.path} render={children}/>;

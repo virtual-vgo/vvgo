@@ -1,9 +1,9 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/config"
-	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
@@ -13,11 +13,37 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"github.com/virtual-vgo/vvgo/pkg/server/login"
-	"io"
+	"io/fs"
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"path"
 )
+
+const PublicFiles = "public"
+
+var ServeUI = http.FileServer(http.FS(Filesystem("public")))
+
+type Filesystem string
+
+func (fs Filesystem) Open(name string) (fs.File, error) {
+	file, err := os.Open(path.Join(PublicFiles, name))
+	if errors.Is(err, os.ErrNotExist) {
+		return os.Open(path.Join(PublicFiles, "index.html"))
+	}
+	return file, err
+}
+
+func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		identity := login.IdentityFromContext(r.Context())
+		fmt.Println(identity)
+		if !identity.HasRole(role) {
+			http_helpers.WriteUnauthorizedError(ctx, w)
+		}
+	}
+}
 
 func Routes() http.Handler {
 	mux := RBACMux{ServeMux: http.NewServeMux()}
@@ -61,46 +87,6 @@ func Routes() http.Handler {
 		mux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)
 	}
 
-	mux.HandleFunc("/parts/", serveUI, models.RoleAnonymous)
-	mux.HandleFunc("/projects/", serveUI, models.RoleAnonymous)
-	mux.HandleFunc("/credits-maker/", serveUI, models.RoleAnonymous)
-	mux.HandleFunc("/about/", serveUI, models.RoleAnonymous)
-	mux.HandleFunc("/contact/", serveUI, models.RoleAnonymous)
-	mux.HandleFunc("/sessions/", serveUI, models.RoleAnonymous)
-	mux.HandleFunc("/mixtape/", serveUI, models.RoleAnonymous)
-	mux.HandleFunc("/login/", serveUI, models.RoleAnonymous)
-	mux.HandleFunc("/logout/", serveUI, models.RoleAnonymous)
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			serveUI(w, r)
-		} else {
-			http.FileServer(http.Dir("public")).ServeHTTP(w, r)
-		}
-	}, models.RoleAnonymous)
+	mux.Handle("/", ServeUI, models.RoleAnonymous)
 	return &mux
-}
-
-func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		identity := login.IdentityFromContext(r.Context())
-		fmt.Println(identity)
-		if !identity.HasRole(role) {
-			http_helpers.WriteUnauthorizedError(ctx, w)
-		}
-	}
-}
-
-func serveUI(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	file, err := os.Open("public/index.html")
-	if err != nil {
-		logger.OpenFileFailure(ctx, err)
-		http_helpers.WriteInternalServerError(ctx, w)
-		return
-	}
-	if _, err := io.Copy(w, file); err != nil {
-		logger.MethodFailure(ctx, "io.Copy", err)
-	}
 }
