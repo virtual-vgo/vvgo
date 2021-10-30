@@ -12,7 +12,7 @@ export const Sessions = () => {
     const [deleteButtonState, setDeleteButtonState] = useState(new Map());
     const [createButtonState, setCreateButtonState] = useState("new");
 
-    if (!sessions) return <RootContainer><LoadingText/></RootContainer>;
+    if (!sessions) return <RootContainer title="Sessions"><LoadingText/></RootContainer>;
     sessions.sort((a, b) => new Date(a.ExpiresAt).getTime() - new Date(b.ExpiresAt).getTime());
 
     const mySessions = sessions
@@ -36,7 +36,7 @@ export const Sessions = () => {
             setButtonState={setDeleteButtonState}
         />);
 
-    return <RootContainer>
+    return <RootContainer title="Sessions">
         <div className={"row row-cols-1 mt-2"}>
             <div className={"col"}>
                 <h1>Sessions</h1>

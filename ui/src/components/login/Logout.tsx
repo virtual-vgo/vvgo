@@ -7,7 +7,7 @@ import {RedirectLogin} from "./Login";
 export const Logout = () => {
     const [done, setDone] = React.useState(false);
     logout().then(() => setDone(true));
-    return <RootContainer>
+    return <RootContainer title="Logout">
         {done ? <RedirectLogin/> : <LoadingText/>}
     </RootContainer>;
 };

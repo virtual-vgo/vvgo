@@ -29,6 +29,7 @@ import {RootContainer} from "./shared/RootContainer";
 import {ShowHideToggle} from "./shared/ShowHideToggle";
 
 export const Parts = () => {
+    const documentTitle = "Parts"
     const me = getSession();
     const allProjects = useProjects();
     const parts = useParts();
@@ -39,7 +40,7 @@ export const Parts = () => {
     const [showArchived, setShowArchived] = React.useState(false);
 
     if (!(allProjects && parts))
-        return <RootContainer><LoadingText/></RootContainer>;
+        return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
 
     const wantProjects = allProjects
         .filter(r => showUnreleased || r.PartsReleased == true)
@@ -47,7 +48,7 @@ export const Parts = () => {
 
     if (project == null && wantProjects.length > 0) setProject(wantProjects[0]);
 
-    return <RootContainer title="Parts">
+    return <RootContainer title={documentTitle}>
         <Row>
             <Col lg={3}>
                 <div className={"d-flex flex-row justify-content-center"}>

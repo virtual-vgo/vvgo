@@ -14,13 +14,14 @@ import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
 
 export const Projects = () => {
+    const documentTitle = "Projects";
     const allProjects = useProjects();
 
     const [project, setProject] = React.useState(null as Project);
     const [searchInput, setSearchInput] = React.useState("");
     const searchInputRef = React.useRef({} as HTMLInputElement);
 
-    if (!allProjects) return <RootContainer>
+    if (!allProjects) return <RootContainer title={documentTitle}>
         <LoadingText/>
     </RootContainer>;
 
@@ -32,7 +33,7 @@ export const Projects = () => {
     const latest = latestProject(wantProjects);
     if (latest && !project) setProject(latest);
 
-    return <RootContainer>
+    return <RootContainer title={documentTitle}>
         <Row>
             <Col lg={3}>
                 <div className="d-flex flex-row justify-content-center">

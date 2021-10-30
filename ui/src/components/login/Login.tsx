@@ -50,7 +50,7 @@ export const Login = () => {
     if (success) return <RedirectLoginSuccess/>;
 
     // noinspection HtmlUnknownTarget
-    return <RootContainer>
+    return <RootContainer title="Login">
         <Row className="justify-content-md-center">
             <Col style={styles.Form}>
                 <Form>

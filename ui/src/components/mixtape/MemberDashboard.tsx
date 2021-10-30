@@ -16,7 +16,7 @@ export const MemberDashboard = () => {
         return {...p, Tags: tags, Owners: owners} as MixtapeProject;
     });
     const me = getSession();
-    return <RootContainer>
+    return <RootContainer title="Member Dashboard">
         <Row className={"row-cols-1"}>
             <Col>
                 <h1 className={"title"} style={{textAlign: "left"}}>Wintry Mix | Members Dashboard</h1>
