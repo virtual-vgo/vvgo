@@ -1,11 +1,14 @@
 package api
 
 import (
-	"context"
 	"github.com/minio/minio-go/v6"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	vvgo_minio "github.com/virtual-vgo/vvgo/pkg/clients/minio"
 	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/models"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
+	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers/test_helpers"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,41 +16,34 @@ import (
 )
 
 func TestDownload(t *testing.T) {
-	ctx := context.Background()
-	type wants struct{ code int }
-
 	minioClient, err := vvgo_minio.NewClient()
 	require.NoError(t, err, "minio.New() failed")
 	bucketName, err := minioClient.NewRandomBucket()
 	require.NoError(t, err, "minioClient.MakeBucket() failed")
 	_, err = minioClient.PutObject(bucketName, "danish", strings.NewReader(""), -1, minio.PutObjectOptions{})
 	require.NoError(t, err, "minioClient.PutObject() failed")
-
 	config.Config.VVGO.DistroBucket = bucketName
 
-	for _, tt := range []struct {
-		name    string
-		request *http.Request
-		wants   wants
-	}{
-		{
-			name:    "post",
-			request: httptest.NewRequest(http.MethodPost, "/download?object=danish", strings.NewReader("")),
-			wants:   wants{code: http.StatusMethodNotAllowed},
-		},
-		{
-			name:    "success",
-			request: httptest.NewRequest(http.MethodGet, "/download?object=danish", strings.NewReader("")),
-			wants:   wants{code: http.StatusFound},
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			recorder := httptest.NewRecorder()
-			Download(recorder, tt.request.WithContext(ctx))
-			gotResp := recorder.Result()
-			if expected, got := tt.wants.code, gotResp.StatusCode; expected != got {
-				t.Errorf("expected code %v, got %v", expected, got)
-			}
-		})
-	}
+	t.Run("invalid method", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/download?fileName=danish", nil)
+		test_helpers.AssertEqualApiResponses(t, http_helpers.NewMethodNotAllowedError(), Download(req))
+	})
+
+	t.Run("fileName is empty", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/download", nil)
+		test_helpers.AssertEqualApiResponses(t, http_helpers.NewBadRequestError("fileName is required"), Download(req))
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/download?fileName=danishxx", nil)
+		test_helpers.AssertEqualApiResponses(t, http_helpers.NewNotFoundError("file `danishxx` not found"), Download(req))
+	})
+
+	t.Run("success", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/download?fileName=danish", nil)
+		resp := Download(req)
+		assert.NotEmpty(t, resp.Location, "location")
+		assert.Equal(t, models.StatusFound, resp.Status, "status")
+		assert.Nil(t, resp.Error)
+	})
 }

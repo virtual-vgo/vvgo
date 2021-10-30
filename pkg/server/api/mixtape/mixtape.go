@@ -56,7 +56,7 @@ func WorkflowHandler(r *http.Request) models.ApiResponse {
 	workflow := buildCreateNewMixtapeProjectWorkflow(*wantProject)
 	var results []models.WorkflowTaskResult
 	for _, task := range workflow.Tasks {
-		var status string
+		var status models.ApiResponseStatus
 		var message string
 		if err := task.Do(ctx); err != nil {
 			message = err.Error()

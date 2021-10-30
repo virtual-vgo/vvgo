@@ -10,6 +10,7 @@ export const logout = () => {
 
 const setSession = (session: Session) => {
     const sessionJSON = JSON.stringify(session);
+    localStorage.clear();
     localStorage.setItem(SessionItemKey, sessionJSON);
 };
 
@@ -39,6 +40,7 @@ export const oauthRedirect = async (): Promise<OAuthRedirect> => {
 export const discordLogin = async (code: string, state: string): Promise<Session> => {
     const itemKey = "oauth_redirect_secret:" + state;
     const secret = localStorage.getItem(itemKey);
+    localStorage.removeItem(itemKey);
     const data = {code, state, secret};
     return fetchApi("/auth/discord", {method: "POST", body: JSON.stringify(data)})
         .then(resp => {

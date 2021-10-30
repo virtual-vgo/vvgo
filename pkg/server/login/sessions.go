@@ -9,10 +9,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
-	"github.com/virtual-vgo/vvgo/pkg/config"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -20,10 +19,7 @@ import (
 
 var ErrSessionNotFound = errors.New("session not found")
 
-func CookieDomain() string {
-	x, _ := url.Parse(config.Config.VVGO.ServerUrl)
-	return "." + x.Hostname()
-}
+const CtxKeyVVGOIdentity = "vvgo_identity"
 
 func IdentityFromContext(ctx context.Context) models.Identity {
 	ctxIdentity := ctx.Value(CtxKeyVVGOIdentity)
@@ -36,42 +32,23 @@ func IdentityFromContext(ctx context.Context) models.Identity {
 }
 
 // ReadSessionFromRequest reads the identity from the sessions db based on the request data.
-func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *models.Identity) error {
+func ReadSessionFromRequest(ctx context.Context, r *http.Request, dest *models.Identity) {
 	bearer := strings.TrimSpace(r.Header.Get("Authorization"))
-	if strings.HasPrefix(bearer, "Bearer ") {
-		return GetSession(ctx, bearer[len("Bearer "):], dest)
+	token := r.URL.Query().Get("token")
+
+	var err error
+	switch {
+	case strings.HasPrefix(bearer, "Bearer "):
+		err = GetSession(ctx, bearer[len("Bearer "):], dest)
+	case token != "":
+		err = GetSession(ctx, token, dest)
+	default:
+		*dest = models.Anonymous()
 	}
 
-	cookie, err := r.Cookie(SessionCookieName)
 	if err != nil {
-		return err
+		logger.MethodFailure(ctx, "login.GetSession", err)
 	}
-	return GetSession(ctx, cookie.Value, dest)
-}
-
-func DeleteSessionFromRequest(ctx context.Context, r *http.Request) error {
-	cookie, err := r.Cookie(SessionCookieName)
-	if err != nil {
-		return nil
-	}
-	return DeleteSession(ctx, cookie.Value)
-}
-
-// NewCookie returns cookie with a crypto-rand session id.
-func NewCookie(ctx context.Context, src *models.Identity, expires time.Duration) (*http.Cookie, error) {
-	session, err := NewSession(ctx, src, expires)
-	if err != nil {
-		return nil, err
-	}
-	return &http.Cookie{
-		Name:     SessionCookieName,
-		Value:    session,
-		Expires:  time.Now().Add(expires),
-		Domain:   CookieDomain(),
-		Path:     SessionCookiePath,
-		SameSite: http.SameSiteStrictMode,
-		HttpOnly: true,
-	}, nil
 }
 
 func NewSessionKey() string {

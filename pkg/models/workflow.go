@@ -24,6 +24,6 @@ type WorkflowTask struct {
 
 type WorkflowTaskResult struct {
 	Name    string
-	Status  string
+	Status  ApiResponseStatus
 	Message string
 }

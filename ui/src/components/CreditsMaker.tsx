@@ -13,7 +13,7 @@ import {RootContainer} from "./shared/RootContainer";
 export const CreditsMaker = () => {
     const [pasta, setPasta] = React.useState({} as CreditsPasta);
 
-    return <RootContainer>
+    return <RootContainer title="Credits Maker">
         <Row>
             <Col><InputForm setPasta={setPasta}/></Col>
         </Row>

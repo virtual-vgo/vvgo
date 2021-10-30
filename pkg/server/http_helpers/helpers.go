@@ -3,7 +3,6 @@ package http_helpers
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 )
@@ -30,6 +29,10 @@ func NewMethodNotAllowedError() models.ApiResponse {
 	})
 }
 
+func NewRedirect(location string) models.ApiResponse {
+	return models.ApiResponse{Status: models.StatusFound, Location: location}
+}
+
 func NewUnauthorizedError() models.ApiResponse {
 	return NewErrorResponse(models.ApiError{
 		Code:  http.StatusUnauthorized,
@@ -49,11 +52,6 @@ func NewInternalServerError() models.ApiResponse {
 		Code:  http.StatusInternalServerError,
 		Error: "internal server error",
 	})
-}
-
-func WriteErrorJsonDecodeFailure(ctx context.Context, w http.ResponseWriter, err error) {
-	logger.JsonDecodeFailure(ctx, err)
-	WriteAPIResponse(ctx, w, NewJsonDecodeError(err))
 }
 
 func WriteErrorBadRequest(ctx context.Context, w http.ResponseWriter, reason string) {

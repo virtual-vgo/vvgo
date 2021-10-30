@@ -2,7 +2,7 @@ import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import {getSession} from "../../auth";
-import {fetchApi, Session, useMixtapeProjects, UserRoles} from "../../datasets";
+import {fetchApi, Session, useMixtapeProjects, UserRole} from "../../datasets";
 import {MixtapeProject} from "../../datasets/MixtapeProject";
 import {RootContainer} from "../shared/RootContainer";
 import _ = require("lodash");
@@ -16,7 +16,7 @@ export const MemberDashboard = () => {
         return {...p, Tags: tags, Owners: owners} as MixtapeProject;
     });
     const me = getSession();
-    return <RootContainer>
+    return <RootContainer title="Member Dashboard">
         <Row className={"row-cols-1"}>
             <Col>
                 <h1 className={"title"} style={{textAlign: "left"}}>Wintry Mix | Members Dashboard</h1>
@@ -40,7 +40,7 @@ const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
     const blurbRef = useRef({} as HTMLTextAreaElement);
     const tagsRef = useRef({} as HTMLInputElement);
     const canEdit = (me.DiscordID && project.Owners.includes(me.DiscordID)) ||
-        (me.Roles && me.Roles.includes(UserRoles.ExecutiveDirector));
+        (me.Roles && me.Roles.includes(UserRole.ExecutiveDirector));
 
     const buttonOnClick = () => {
         setShowEdit(false);

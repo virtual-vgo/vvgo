@@ -3,7 +3,8 @@ import NavDropdown from "react-bootstrap/NavDropdown";
 import {Link, NavLink as RouterNavLink} from "react-router-dom";
 import {getSession} from "../../auth";
 import {links} from "../../data/links";
-import {sessionIsAnonymous, UserRoles} from "../../datasets";
+import {sessionIsAnonymous, UserRole} from "../../datasets";
+import {Favicon} from "./Favicon";
 
 export const Navbar = () => {
     const me = getSession();
@@ -21,12 +22,12 @@ export const Navbar = () => {
     const MemberNavLink = (props: {
         to: string,
         children: string | (JSX.Element | string)[]
-    }) => (me.Roles && me.Roles.includes(UserRoles.VerifiedMember)) ?
+    }) => (me.Roles && me.Roles.includes(UserRole.VerifiedMember)) ?
         <NavLink {...props}>{props.children}</NavLink> : <div/>;
 
     const PrivateNavLink = (props: {
         to: string,
-        requireRole: UserRoles
+        requireRole: UserRole
         children: string | (JSX.Element | string)[]
     }) => (me.Roles && me.Roles.includes(props.requireRole)) ?
         <RouterNavLink
@@ -38,7 +39,7 @@ export const Navbar = () => {
 
     return <nav className="top-nav navbar navbar-expand-md navbar-dark fa-border mb-4">
         <Link className="nav-link text-light navbar-brand" to="/">
-            <img src="/images/favicons/favicon-2020-11-26-thomas.png" alt="favicon"/>
+            <Favicon/>
         </Link>
         <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +68,7 @@ export const Navbar = () => {
                 <li className="nav-item">
                     <PrivateNavLink
                         to="/credits-maker"
-                        requireRole={UserRoles.ProductionTeam}>
+                        requireRole={UserRole.ProductionTeam}>
                         Credits Maker <i className="fas fa-lock"/>
                     </PrivateNavLink>
                 </li>

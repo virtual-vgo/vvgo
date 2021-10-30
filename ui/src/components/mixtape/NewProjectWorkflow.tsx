@@ -10,7 +10,7 @@ const WintryMixChannelPrefix = "jackson-testing-";
 
 export const NewProjectWorkflow = () => {
     const [projects, setProjects] = useMixtapeProjects();
-    return <RootContainer>
+    return <RootContainer title="New Project Workflow">
         <h1>Winter Mixtape</h1>
         <h2>New Project Workflow</h2>
         <WorkflowApp projects={projects} setProjects={setProjects}/>

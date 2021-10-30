@@ -12,7 +12,8 @@ export const Endpoint = "/api/v1";
 
 export enum ApiStatus {
     Ok = "ok",
-    Error = "error"
+    Error = "error",
+    Found = "found"
 }
 
 export type ApiDataset = Highlight[] | Director[] | Credit[]

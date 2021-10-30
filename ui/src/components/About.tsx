@@ -8,7 +8,7 @@ import {RootContainer} from "./shared/RootContainer";
 export const About = () => {
     const directors = useDirectors();
 
-    return <RootContainer>
+    return <RootContainer title="About">
         <Blurb/>
         <Directors directors={directors}/>
     </RootContainer>;

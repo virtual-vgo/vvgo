@@ -9,7 +9,7 @@ import {Highlight} from "./Highlight";
 import {MixtapeProject} from "./MixtapeProject";
 import {Part} from "./Part";
 import {Project} from "./Project";
-import {Session} from "./Session";
+import {ApiRole, createSessions, Session, SessionKind} from "./Session";
 import _ = require("lodash");
 
 export const useCredits = (): Credit[] => useDataset("Credits");
@@ -46,6 +46,15 @@ export const useProjects = (): Project[] =>
 
 export const useSessions = (): [Session[], (sessions: Session[]) => void] =>
     useAndSetApiData("/sessions", (p) => _.defaultTo(p.Sessions, []));
+
+export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Session => {
+    const [session, setSession] = useState(null as Session);
+    useEffect(() => {
+        createSessions([{expires: expires, Kind: SessionKind.ApiToken, Roles: roles}])
+            .then(sessions => _.isEmpty(sessions) ? setSession({} as Session) : setSession(sessions[0]));
+    }, [roles.toString()]);
+    return session;
+};
 
 export function useDataset<T extends ApiDataset>(name: string): T {
     return useApiData("/dataset?name=" + name, (p) => _.defaultTo(p.Dataset, [])) as T;

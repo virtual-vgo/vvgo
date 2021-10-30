@@ -79,14 +79,16 @@ func handlePostSessions(body io.Reader, identity models.Identity, ctx context.Co
 	}
 
 	newSessionId := func(roles []string) models.Identity {
-		allowedRoles := map[models.Role]bool{
-			models.RoleReadConfig:       true,
-			models.RoleWriteSpreadsheet: true,
+		roleForRole := map[models.Role]models.Role{
+			models.RoleWriteSpreadsheet: models.RoleVVGOExecutiveDirector,
+			models.RoleReadSpreadsheet:  models.RoleVVGOProductionTeam,
+			models.RoleDownload:         models.RoleVVGOVerifiedMember,
 		}
 		var allowed []models.Role
-		for _, role := range roles {
-			if allowedRoles[models.Role(role)] {
-				allowed = append(allowed, models.Role(role))
+		for i := range roles {
+			role := models.Role(roles[i])
+			if identity.HasRole(roleForRole[role]) {
+				allowed = append(allowed, role)
 			}
 		}
 		return models.Identity{Kind: models.KindApiToken, Roles: allowed, DiscordID: identity.DiscordID}

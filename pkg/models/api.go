@@ -5,12 +5,16 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/version"
 )
 
-const StatusOk = "ok"
-const StatusError = "error"
+type ApiResponseStatus string
+
+const StatusOk ApiResponseStatus = "ok"
+const StatusFound ApiResponseStatus = "found"
+const StatusError ApiResponseStatus = "error"
 
 type ApiResponse struct {
-	Status          string
-	Version         *version.Version      `json:"version,omitempty"`
+	Status          ApiResponseStatus
+	Location        string                `json:"Location,omitempty"`
+	Version         *version.Version      `json:"Version,omitempty"`
 	Error           *ApiError             `json:"Error,omitempty"`
 	Projects        []Project             `json:"Projects,omitempty"`
 	Parts           []Part                `json:"Parts,omitempty"`

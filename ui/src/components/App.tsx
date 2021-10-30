@@ -1,10 +1,13 @@
 import React = require("react");
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession} from "../auth";
-import {sessionIsAnonymous, UserRoles} from "../datasets";
+import {sessionIsAnonymous, UserRole} from "../datasets";
 import {About} from "./About";
 import {Contact} from "./Contact";
 import {CreditsMaker} from "./CreditsMaker";
+import {AccessDenied} from "./errors/AccessDenied";
+import {InternalOopsie} from "./errors/InternalOopsie";
+import {NotFound} from "./errors/NotFound";
 import {Home} from "./Home";
 import {Login} from "./login/Login";
 import {LoginDiscord} from "./login/LoginDiscord";
@@ -17,35 +20,36 @@ import {Projects} from "./Projects";
 import {Sessions} from "./Sessions";
 
 export const App = () => {
+    document.documentElement.lang = "en";
     return <BrowserRouter>
         <Switch>
             <PrivateRoute
                 path="/credits-maker"
-                requireRole={UserRoles.ProductionTeam}>
+                requireRole={UserRole.ProductionTeam}>
                 <CreditsMaker/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/sessions"
-                requireRole={UserRoles.ExecutiveDirector}>
+                requireRole={UserRole.ExecutiveDirector}>
                 <Sessions/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/mixtape/NewProjectWorkflow"
-                requireRole={UserRoles.ExecutiveDirector}>
+                requireRole={UserRole.ExecutiveDirector}>
                 <NewProjectWorkflow/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/mixtape"
-                requireRole={UserRoles.VerifiedMember}>
+                requireRole={UserRole.VerifiedMember}>
                 <MemberDashboard/>
             </PrivateRoute>
 
             <PrivateRoute
                 path="/parts"
-                requireRole={UserRoles.VerifiedMember}>
+                requireRole={UserRole.VerifiedMember}>
                 <Parts/>
             </PrivateRoute>
 
@@ -56,7 +60,11 @@ export const App = () => {
             <Route path="/projects/"><Projects/></Route>
             <Route path="/about/"><About/></Route>
             <Route path="/contact/"><Contact/></Route>
+            <Route exact path="/401.html"><AccessDenied/></Route>
+            <Route exact path="/404.html"><NotFound/></Route>
+            <Route exact path="/500.html"><InternalOopsie/></Route>
             <Route exact path="/"><Home/></Route>
+            <Route path="*"><NotFound/></Route>
         </Switch>
     </BrowserRouter>;
 };
@@ -75,7 +83,7 @@ const PrivateRoute = (props: {
             case sessionIsAnonymous(me):
                 return <Redirect to={"/login"}/>;
             default:
-                return <Redirect to={"/401.html"}/>;
+                return <AccessDenied/>;
         }
     };
     return <Route path={props.path} render={children}/>;
