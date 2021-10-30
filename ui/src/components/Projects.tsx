@@ -1,4 +1,5 @@
 import React = require("react");
+import Masonry from "@mui/lab/Masonry";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
@@ -82,13 +83,21 @@ const ProjectCredits = (props: { project: Project }) => {
                 </Col>
             </Row>
             <Row>
-                {topic.Rows.map(team => <Col lg={4}>
-                    <h5>{team.Name}</h5>
-                    <ul className="list-unstyled">
-                        {team.Rows.map(credit =>
-                            <li>{credit.Name} <small>{credit.BottomText}</small></li>)}
-                    </ul>
-                </Col>)}
+                <Masonry
+                    columns={3}
+                    spacing={1}
+                    defaultHeight={450}
+                    defaultColumns={3}
+                    defaultSpacing={1}>
+                    {topic.Rows.map(team => <Col lg={4}>
+                        <h5>{team.Name}</h5>
+                        <ul className="list-unstyled">
+                            {team.Rows.map(credit =>
+                                <li>{credit.Name} <small>{credit.BottomText}</small></li>)}
+                        </ul>
+                    </Col>)}
+                </Masonry>
+
             </Row>
         </Row>)}
     </div>;
