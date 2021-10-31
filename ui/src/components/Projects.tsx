@@ -13,7 +13,7 @@ import {ProjectHeader} from "./shared/ProjectHeader";
 import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
 
-export const searchProjects = (query: string, projects: Project[]): Project[] => {
+const searchProjects = (query: string, projects: Project[]): Project[] => {
     return _.defaultTo(projects, []).filter(r =>
         r.Name.toLowerCase().includes(query) ||
         r.Title.toLowerCase().includes(query) ||

@@ -14,6 +14,7 @@ import {LoginDiscord} from "./login/LoginDiscord";
 import {LoginFailure} from "./login/LoginFailure";
 import {Logout} from "./login/Logout";
 import {MemberDashboard} from "./mixtape/MemberDashboard";
+import {NewProjectFormResponses} from "./mixtape/NewProjectFormResponses";
 import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
 import {Parts} from "./Parts";
 import {Projects} from "./Projects";
@@ -39,6 +40,12 @@ export const App = () => {
                 path="/mixtape/NewProjectWorkflow"
                 requireRole={UserRole.ExecutiveDirector}>
                 <NewProjectWorkflow/>
+            </PrivateRoute>
+
+            <PrivateRoute
+                path="/mixtape/NewProjectFormResponses"
+                requireRole={UserRole.ExecutiveDirector}>
+                <NewProjectFormResponses/>
             </PrivateRoute>
 
             <PrivateRoute

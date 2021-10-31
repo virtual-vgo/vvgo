@@ -1,5 +1,6 @@
 import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ReactMarkdown from "react-markdown";
 import {getSession} from "../../auth";
 import {fetchApi, Session, useMixtapeProjects, UserRole} from "../../datasets";
@@ -7,6 +8,15 @@ import {MixtapeProject} from "../../datasets/MixtapeProject";
 import {RootContainer} from "../shared/RootContainer";
 import _ = require("lodash");
 import React = require("react");
+
+const searchProjects = (query: string, projects: MixtapeProject[]): MixtapeProject[] => {
+    return _.defaultTo(projects, []).filter(project =>
+        project.Name.toLowerCase().includes(query) ||
+        project.Channel.toLowerCase().includes(query) ||
+        project.Owners.map(x => x.toLowerCase()).includes(query) ||
+        project.Tags.map(x => x.toLowerCase()).includes(query),
+    );
+};
 
 export const MemberDashboard = () => {
     const [projects] = useMixtapeProjects();
@@ -31,6 +41,43 @@ export const MemberDashboard = () => {
             </Col>
         </Row>
     </RootContainer>;
+};
+
+const ProjectMenu = (props: {
+    projects: MixtapeProject[],
+    setSelected: (p: MixtapeProject) => void,
+    selected: MixtapeProject,
+}) => {
+    const [searchInput, setSearchInput] = React.useState("");
+    const searchInputRef = React.useRef({} as HTMLInputElement);
+    const wantProjects = searchProjects(searchInput, props.projects);
+    const onClickProject = (want: MixtapeProject) => {
+        const params = new URLSearchParams({name: want.Name});
+        window.history.pushState(params, "", "/projects?" + params.toString());
+        props.setSelected(want);
+    };
+
+    return <div>
+        <div className="d-flex flex-row justify-content-center">
+            <FormControl
+                className="m-2"
+                ref={searchInputRef}
+                placeholder="search projects"
+                onChange={() => setSearchInput(searchInputRef.current.value.toLowerCase())}/>
+        </div>
+        <div className="d-grid">
+            <ButtonGroup vertical className="m-2">
+                {wantProjects.map(want =>
+                    <Button
+                        variant={props.selected && props.selected.Name == want.Name ? "light" : "outline-light"}
+                        key={want.Name}
+                        onClick={() => onClickProject(want)}>
+                        {want.Name}
+                        <em><small><br/>{want.Owners.sort().join(", ")}</small></em>
+                    </Button>)}
+            </ButtonGroup>
+        </div>
+    </div>;
 };
 
 const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {

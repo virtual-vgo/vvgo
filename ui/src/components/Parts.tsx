@@ -29,6 +29,13 @@ import {ProjectHeader} from "./shared/ProjectHeader";
 import {RootContainer} from "./shared/RootContainer";
 import {ShowHideToggle} from "./shared/ShowHideToggle";
 
+const searchParts = (query: string, parts: Part[]): Part[] => {
+    return _.defaultTo(parts, []).filter(part =>
+        part.PartName.toLowerCase().includes(query) ||
+        part.Project.toLowerCase().includes(query),
+    );
+};
+
 export const Parts = () => {
     const documentTitle = "Parts";
     const allProjects = useProjects();
@@ -89,14 +96,7 @@ const initializeSelected = (selected: Project, setSelected: (p: Project) => void
     }
 };
 
-const searchParts = (query: string, parts: Part[]): Part[] => {
-    return _.defaultTo(parts, []).filter(part =>
-        part.PartName.toLowerCase().includes(query) ||
-        part.Project.toLowerCase().includes(query),
-    );
-};
-
-export const ProjectMenu = (props: {
+const ProjectMenu = (props: {
     selected: Project,
     setSelected: (p: Project) => void,
     projects: Project[]
@@ -125,7 +125,7 @@ export const ProjectMenu = (props: {
     </div>;
 };
 
-export const ProjectToggles = (props: {
+const ProjectToggles = (props: {
     me: Session,
     showArchived: boolean,
     setShowArchived: (b: boolean) => void,
@@ -147,7 +147,7 @@ export const ProjectToggles = (props: {
     </div>;
 };
 
-export const ProjectButtons = (props: {
+const ProjectButtons = (props: {
     me: Session,
     projects: Project[],
     selected: Project,
@@ -177,7 +177,7 @@ export const ProjectButtons = (props: {
 
 const ButtonGroupBreakPoint = 800;
 
-export const PartsTopLinks = (props: { downloadSession: Session, project: Project }) => {
+const PartsTopLinks = (props: { downloadSession: Session, project: Project }) => {
     return <div className="d-flex justify-content-center">
         <ButtonGroup vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
             <LinkButton to={links.RecordingInstructions}>

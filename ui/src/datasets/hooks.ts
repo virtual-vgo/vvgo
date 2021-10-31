@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {getSession} from "../auth";
-import {ApiDataset, ApiResponse, ApiStatus, Endpoint, ErrorResponse} from "./ApiResponse";
+import {ApiDataset, ApiResponse, ApiStatus, Endpoint, ErrorResponse, Sheet, Spreadsheet} from "./ApiResponse";
 import {Credit} from "./Credit";
 import {CreditsTable} from "./CreditsTable";
 import {Director} from "./Director";
@@ -54,6 +54,15 @@ export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Sessio
             .then(sessions => _.isEmpty(sessions) ? setSession({} as Session) : setSession(sessions[0]));
     }, [roles.toString()]);
     return session;
+};
+
+export const useSheet = (spreadsheetName: string, sheetName: string): Sheet =>
+    _.defaultTo(_.defaultTo(useSpreadsheet(spreadsheetName, [sheetName]), {} as Spreadsheet).sheets, [])
+        .filter(sheet => sheet.Name == sheetName).pop();
+
+export const useSpreadsheet = (spreadsheetName: string, sheetNames: string[]): Spreadsheet => {
+    const params = new URLSearchParams({spreadsheetName: spreadsheetName, sheetNames: sheetNames.join(",")});
+    return useApiData("/spreadsheet?" + params.toString(), (p) => _.defaultTo(p.Spreadsheet, {} as Spreadsheet));
 };
 
 export function useDataset<T extends ApiDataset>(name: string): T {

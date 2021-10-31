@@ -31,6 +31,17 @@ export interface ApiResponse {
     OAuthRedirect: OAuthRedirect;
     CreditsTable: CreditsTable;
     CreditsPasta: CreditsPasta;
+    Spreadsheet: Spreadsheet;
+}
+
+export interface Spreadsheet {
+    SpreadsheetName: string;
+    sheets: Sheet[];
+}
+
+export interface Sheet {
+    Name: string;
+    Values: string[][];
 }
 
 export interface CreditsPasta {
