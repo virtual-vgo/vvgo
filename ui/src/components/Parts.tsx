@@ -6,28 +6,20 @@ import Col from "react-bootstrap/Col";
 import FormControl from "react-bootstrap/FormControl";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
-import {getSession} from "../auth";
 import {Channels} from "../data/discord";
 import {links} from "../data/links";
-import {
-    ApiRole,
-    latestProject,
-    Part,
-    Project,
-    projectIsOpenForSubmission,
-    Session,
-    useNewApiSession,
-    useParts,
-    useProjects,
-    UserRole,
-} from "../datasets";
+import {ApiRole, latestProject, Part, Project, Session, useNewApiSession, useParts, useProjects} from "../datasets";
 import {AlertArchivedParts} from "./shared/AlertArchivedParts";
 import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
 import {LinkChannel} from "./shared/LinkChannel";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
+import {FancyProjectMenu, useMenuSelection} from "./shared/ProjectsMenu";
 import {RootContainer} from "./shared/RootContainer";
-import {ShowHideToggle} from "./shared/ShowHideToggle";
+
+const documentTitle = "Parts";
+const permaLink = (project: Project) => `/parts/${project.Name}`;
+const pathMatcher = /\/parts\/(.+)\/?/;
 
 const searchParts = (query: string, parts: Part[]): Part[] => {
     return _.defaultTo(parts, []).filter(part =>
@@ -37,23 +29,41 @@ const searchParts = (query: string, parts: Part[]): Part[] => {
 };
 
 export const Parts = () => {
-    const documentTitle = "Parts";
     const allProjects = useProjects();
     const parts = useParts();
     const downloadSession = useNewApiSession(4 * 3600, [ApiRole.Download]);
-    const [selected, setSelected] = React.useState(null as Project);
+    const [selected, setSelected] = useMenuSelection(allProjects, pathMatcher, permaLink,
+        latestProject(_.defaultTo(allProjects, [])
+            .filter(r => r.PartsReleased == true)
+            .filter(r => r.PartsArchived == false)),
+    );
+
     if (!(allProjects && parts))
         return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
 
-    initializeSelected(selected, setSelected, allProjects);
     return <RootContainer title={documentTitle}>
         <Row>
             <Col lg={3}>
-                <ProjectMenu
+                <FancyProjectMenu
                     selected={selected}
                     setSelected={setSelected}
-                    projects={allProjects}
-                    parts={parts}/>
+                    choices={allProjects}
+                    permaLink={permaLink}
+                    toggles={[{
+                        title: "Unreleased",
+                        hidden: allProjects.filter(x => x.PartsReleased == false).length > 0,
+                        filter: (on: boolean, x: Project) => on || x.PartsReleased == true,
+                    }, {
+                        title: "Archived",
+                        hidden: allProjects.filter(x => x.PartsArchived == true).length > 0,
+                        filter: (on: boolean, x: Project) => on || x.PartsArchived == false,
+                    }]}
+                    buttonContent={(proj) =>
+                        <div>
+                            {proj.Title}
+                            {proj.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
+                            {proj.PartsArchived == true ? <em><small><br/>Archived</small></em> : ""}
+                        </div>}/>
             </Col>
             {selected ?
                 <Col className="mx-4">
@@ -72,107 +82,6 @@ export const Parts = () => {
                 </Col>}
         </Row>
     </RootContainer>;
-};
-
-const initializeSelected = (selected: Project, setSelected: (p: Project) => void, projects: Project[]) => {
-    window.onpopstate = (e) => {
-        const params = new URLSearchParams(e.state);
-        const want = projects.filter(r => r.Name == params.get("projectName")).pop();
-        if (want) setSelected(want);
-    };
-
-    if (!selected) { // initialize from url query or from latest project
-        const params = new URLSearchParams(document.location.search);
-        if (!_.isEmpty(params.get("name"))) {
-            const want = projects.filter(r => r.Name == params.get("projectName")).pop();
-            if (want) setSelected(want);
-            window.history.pushState(params, "", "/parts?" + params.toString());
-        } else {
-            const latest = latestProject(projects
-                .filter(r => r.PartsReleased == true)
-                .filter(r => r.PartsArchived == false));
-            if (latest) setSelected(latest);
-        }
-    }
-};
-
-const ProjectMenu = (props: {
-    selected: Project,
-    setSelected: (p: Project) => void,
-    projects: Project[]
-    parts: Part[]
-}) => {
-    const me = getSession();
-    const [showUnreleased, setShowUnreleased] = React.useState(false);
-    const [showArchived, setShowArchived] = React.useState(false);
-
-    const wantProjects = props.projects
-        .filter(r => showUnreleased || r.PartsReleased == true)
-        .filter(r => showArchived || r.PartsArchived == false);
-
-    return <div>
-        <ProjectToggles
-            me={me}
-            showArchived={showArchived}
-            setShowArchived={setShowArchived}
-            showUnreleased={showUnreleased}
-            setShowUnreleased={setShowUnreleased}/>
-        <ProjectButtons
-            me={me}
-            projects={wantProjects}
-            selected={props.selected}
-            setSelected={props.setSelected}/>
-    </div>;
-};
-
-const ProjectToggles = (props: {
-    me: Session,
-    showArchived: boolean,
-    setShowArchived: (b: boolean) => void,
-    showUnreleased: boolean,
-    setShowUnreleased: (b: boolean) => void
-}) => {
-    return <div className={"d-flex flex-row justify-content-center"}>
-        {props.me.Roles.includes(UserRole.ProductionTeam) ?
-            <ShowHideToggle
-                title="Unreleased"
-                state={props.showUnreleased}
-                setState={props.setShowUnreleased}/> : ""}
-
-        {props.me.Roles.includes(UserRole.ExecutiveDirector) ?
-            <ShowHideToggle
-                title="Archived"
-                state={props.showArchived}
-                setState={props.setShowArchived}/> : ""}
-    </div>;
-};
-
-const ProjectButtons = (props: {
-    me: Session,
-    projects: Project[],
-    selected: Project,
-    setSelected: (x: Project) => void
-}) => {
-    const onClickProject = (want: Project) => {
-        const params = new URLSearchParams({projectName: want.Name});
-        window.history.pushState(params, "", "/parts?" + params.toString());
-        props.setSelected(want);
-    };
-    return <div className="d-grid">
-        <ButtonGroup vertical className="m-2">
-            {props.projects.map(want =>
-                <Button
-                    key={want.Name}
-                    variant={props.selected && (props.selected.Name == want.Name) ?
-                        projectIsOpenForSubmission(want) ? "light" : "warning" :
-                        projectIsOpenForSubmission(want) ? "outline-light" : "outline-warning"}
-                    onClick={() => onClickProject(want)}>
-                    {want.Title}
-                    {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
-                    {want.PartsArchived == true ? <em><small><br/>Archived</small></em> : ""}
-                </Button>)}
-        </ButtonGroup>
-    </div>;
 };
 
 const ButtonGroupBreakPoint = 800;

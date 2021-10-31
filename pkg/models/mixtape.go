@@ -41,6 +41,11 @@ func ListMixtapeProjects(ctx context.Context) ([]MixtapeProject, error) {
 }
 
 func WriteMixtapeProjects(ctx context.Context, projects []MixtapeProject) error {
+	if len(projects) == 0 {
+		logger.Infof("skipping empty write to %s", MixtapeRedisKey)
+		return nil
+	}
+
 	redisArgs := []string{MixtapeRedisKey}
 	for _, project := range projects {
 		projectJSON, err := json.Marshal(project)
