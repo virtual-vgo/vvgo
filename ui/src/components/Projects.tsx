@@ -13,85 +13,109 @@ import {ProjectHeader} from "./shared/ProjectHeader";
 import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
 
+export const searchProjects = (query: string, projects: Project[]): Project[] => {
+    return _.defaultTo(projects, []).filter(r =>
+        r.Name.toLowerCase().includes(query) ||
+        r.Title.toLowerCase().includes(query) ||
+        r.Sources.toLowerCase().includes(query));
+};
+
 export const Projects = () => {
     const documentTitle = "Projects";
     const allProjects = useProjects();
-    const [project, setProject] = React.useState(null as Project);
-    const [searchInput, setSearchInput] = React.useState("");
-    const searchInputRef = React.useRef({} as HTMLInputElement);
+    const [selected, setSelected] = React.useState(null as Project);
 
     if (!allProjects) return <RootContainer title={documentTitle}>
         <LoadingText/>
     </RootContainer>;
 
-    const wantProjects = allProjects
-        .filter(r => r.Hidden == false)
-        .filter(r => r.Name.toLowerCase().includes(searchInput) ||
-            r.Title.toLowerCase().includes(searchInput) ||
-            r.Sources.toLowerCase().includes(searchInput));
-
-    window.onpopstate = (e) => {
-        const params = new URLSearchParams(e.state);
-        const want = wantProjects.filter(r => r.Name == params.get("name")).pop();
-        if (want) setProject(want);
-    };
-
-    if (!project) { // initialize from url query or from latest project
-        const params = new URLSearchParams(document.location.search);
-        if (!_.isEmpty(params.get("name"))) {
-            const want = wantProjects.filter(r => r.Name == params.get("name")).pop();
-            if (want) setProject(want);
-            window.history.pushState(params, "", "/projects?" + params.toString());
-        } else {
-            const latest = latestProject(wantProjects);
-            if (latest) setProject(latest);
-        }
-    }
-
-    const onClickProject = (want: Project) => {
-        const params = new URLSearchParams({name: want.Name});
-        window.history.pushState(params, "", "/projects?" + params.toString());
-        setProject(want);
-    };
-
+    const allowedProjects = allProjects.filter(r => r.Hidden == false);
+    initializeSelected(selected, setSelected, allowedProjects);
     return <RootContainer title={documentTitle}>
         <Row>
             <Col lg={3}>
-                <div className="d-flex flex-row justify-content-center">
-                    <FormControl
-                        className="m-2"
-                        ref={searchInputRef}
-                        placeholder="search projects"
-                        onChange={() => setSearchInput(searchInputRef.current.value.toLowerCase())}/>
-                </div>
-                <div className="d-flex flex-row justify-content-center">
-                    <ButtonGroup vertical className="m-2">
-                        {wantProjects.map(want =>
-                            <Button
-                                variant={project && project.Name == want.Name ? "light" : "outline-light"}
-                                key={want.Name}
-                                onClick={() => onClickProject(want)}>
-                                {want.Title}
-                                {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
-                                {want.VideoReleased == false ? <em><small><br/>In Production</small></em> : ""}
-                                {want.VideoReleased == true ? <em><small><br/>Completed</small></em> : ""}
-                            </Button>)}
-                    </ButtonGroup>
-                </div>
+                <ProjectMenu
+                    projects={allowedProjects}
+                    setSelected={setSelected}
+                    selected={selected}/>
             </Col>
             <Col>
-                {project ?
+                {selected ?
                     <div className="mx-4">
-                        <AlertUnreleasedProject project={project}/>
-                        <ProjectHeader project={project}/>
-                        {project.YoutubeEmbed ?
-                            <YoutubeIframe project={project}/> :
-                            <div className="text-center">Video coming soon!</div>}
-                        <ProjectCredits project={project}/>
-                    </div> : <div/>}
+                        <AlertUnreleasedProject project={selected}/>
+                        <ProjectHeader project={selected}/>
+                        {selected.PartsArchived ?
+                            selected.YoutubeEmbed ?
+                                <YoutubeIframe project={selected}/> :
+                                <div className="text-center text-info">
+                                    <em>Video coming soon!</em>
+                                </div> :
+                            <div/>}
+                        <ProjectCredits project={selected}/>
+                    </div> :
+                    <div/>}
             </Col>
         </Row>
     </RootContainer>;
+};
+
+const initializeSelected = (selected: Project, setSelected: (p: Project) => void, projects: Project[]) => {
+    window.onpopstate = (e) => {
+        const params = new URLSearchParams(e.state);
+        const want = projects.filter(r => r.Name == params.get("name")).pop();
+        if (want) setSelected(want);
+    };
+
+    if (!selected) { // initialize from url query or from latest project
+        const params = new URLSearchParams(document.location.search);
+        if (!_.isEmpty(params.get("name"))) {
+            const want = projects.filter(r => r.Name == params.get("name")).pop();
+            if (want) setSelected(want);
+            window.history.pushState(params, "", "/projects?" + params.toString());
+        } else {
+            const latest = latestProject(projects);
+            if (latest) setSelected(latest);
+        }
+    }
+};
+
+const ProjectMenu = (props: {
+    projects: Project[],
+    setSelected: (p: Project) => void,
+    selected: Project,
+}) => {
+    const [searchInput, setSearchInput] = React.useState("");
+    const searchInputRef = React.useRef({} as HTMLInputElement);
+    const wantProjects = searchProjects(searchInput, props.projects);
+    const onClickProject = (want: Project) => {
+        const params = new URLSearchParams({name: want.Name});
+        window.history.pushState(params, "", "/projects?" + params.toString());
+        props.setSelected(want);
+    };
+
+    return <div>
+        <div className="d-flex flex-row justify-content-center">
+            <FormControl
+                className="m-2"
+                ref={searchInputRef}
+                placeholder="search projects"
+                onChange={() => setSearchInput(searchInputRef.current.value.toLowerCase())}/>
+        </div>
+        <div className="d-grid">
+            <ButtonGroup vertical className="m-2">
+                {wantProjects.map(want =>
+                    <Button
+                        variant={props.selected && props.selected.Name == want.Name ? "light" : "outline-light"}
+                        key={want.Name}
+                        onClick={() => onClickProject(want)}>
+                        {want.Title}
+                        {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
+                        {want.VideoReleased == false ? <em><small><br/>In Production</small></em> : ""}
+                        {want.VideoReleased == true ? <em><small><br/>Completed</small></em> : ""}
+                    </Button>)}
+            </ButtonGroup>
+        </div>
+    </div>;
 };
 
 const ProjectCredits = (props: { project: Project }) => {
