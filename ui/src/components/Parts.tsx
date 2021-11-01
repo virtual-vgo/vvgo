@@ -52,21 +52,23 @@ export const Parts = () => {
     if (!(allProjects && parts))
         return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
 
+    const projectsWithParts = new Set(parts.map(p => p.Project));
+    const choices = allProjects.filter(r => projectsWithParts.has(r.Name) || r.PartsReleased == false);
     return <RootContainer title={documentTitle}>
         <Row>
             <Col lg={3}>
                 <FancyProjectMenu
                     selected={selected}
                     setSelected={setSelected}
-                    choices={allProjects}
+                    choices={choices}
                     permaLink={permaLink}
                     toggles={[{
                         title: "Unreleased",
-                        hidden: getSession().Roles.includes(UserRole.ProductionTeam),
+                        hidden: !getSession().Roles.includes(UserRole.ProductionTeam),
                         filter: (on: boolean, x: Project) => on || x.PartsReleased == true,
                     }, {
                         title: "Archived",
-                        hidden: getSession().Roles.includes(UserRole.ExecutiveDirector),
+                        hidden: !getSession().Roles.includes(UserRole.ExecutiveDirector),
                         filter: (on: boolean, x: Project) => on || x.PartsArchived == false,
                     }]}
                     buttonContent={(proj) =>
@@ -122,7 +124,7 @@ const PartsTable = (props: {
 }) => {
     const searchInputRef = React.useRef({} as HTMLInputElement);
     const [searchInput, setSearchInput] = React.useState("");
-    const wantParts = searchParts(searchInput, props.parts);
+    const wantParts = searchParts(searchInput, props.parts).filter(r => r.Project == props.projectName);
     const searchBoxStyle = {maxWidth: 250} as React.CSSProperties;
     // This width gives enough space to have all the download buttons on one line
     const partNameStyle = {width: 220} as React.CSSProperties;

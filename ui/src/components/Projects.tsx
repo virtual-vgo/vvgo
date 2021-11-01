@@ -41,7 +41,7 @@ export const Projects = () => {
                     setSelected={setSelected}
                     permaLink={permaLink}
                     searchChoices={searchProjects}
-                    buttonContent={(proj) =>
+                    buttonContent={(proj: Project) =>
                         <div>
                             {proj.Title}
                             {proj.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}

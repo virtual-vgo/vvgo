@@ -51,7 +51,7 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
     const menuToggles = useToggles(props.toggles);
 
     const searcher = _.defaultTo(props.searchChoices, () => props.choices);
-    const filter = (x: T) => _.isEmpty(menuToggles.filter(t => t.state)) ||
+    const filter = (x: T) => _.isEmpty(menuToggles) ||
         menuToggles.map(t => t.filter(t.state, x))
             .reduce((a, b) => (a && b));
     const wantChoices = searcher(searchInput, props.choices).filter(filter);
@@ -101,10 +101,11 @@ export function useToggles<T>(toggles: Array<{
 }
 
 export function MenuToggles<T>(props: { toggles: Toggle<T>[] }): JSX.Element {
+    const toggles = props.toggles.filter(t => t.hidden == false)
     return _.isEmpty(props.toggles) ?
         <div/> :
         <div className={"d-flex flex-row justify-content-center"}>
-            {props.toggles.map((toggle) =>
+            {toggles.map((toggle) =>
                 <ShowHideToggle
                     key={toggle.title}
                     title={toggle.title}
