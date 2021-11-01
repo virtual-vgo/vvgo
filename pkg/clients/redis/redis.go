@@ -51,6 +51,10 @@ func ReadSheet(ctx context.Context, spreadsheetName string, name string) ([][]in
 		return nil, errors.RedisFailure(err)
 	}
 
+	if buf.Len() == 0 {
+		return nil, nil
+	}
+
 	var values [][]interface{}
 	if err := json.NewDecoder(&buf).Decode(&values); err != nil {
 		return nil, errors.JsonDecodeFailure(err)

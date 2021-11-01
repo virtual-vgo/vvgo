@@ -6,88 +6,75 @@ import Col from "react-bootstrap/Col";
 import FormControl from "react-bootstrap/FormControl";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
-import {getSession} from "../auth";
 import {Channels} from "../data/discord";
 import {links} from "../data/links";
-import {
-    ApiRole,
-    Part,
-    Project,
-    projectIsOpenForSubmission,
-    Session,
-    useNewApiSession,
-    useParts,
-    useProjects,
-    UserRole,
-} from "../datasets";
+import {ApiRole, latestProject, Part, Project, Session, useNewApiSession, useParts, useProjects} from "../datasets";
 import {AlertArchivedParts} from "./shared/AlertArchivedParts";
 import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
 import {LinkChannel} from "./shared/LinkChannel";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
+import {FancyProjectMenu, useMenuSelection} from "./shared/ProjectsMenu";
 import {RootContainer} from "./shared/RootContainer";
-import {ShowHideToggle} from "./shared/ShowHideToggle";
+
+const documentTitle = "Parts";
+const permaLink = (project: Project) => `/parts/${project.Name}`;
+const pathMatcher = /\/parts\/(.+)\/?/;
+
+const searchParts = (query: string, parts: Part[]): Part[] => {
+    return _.defaultTo(parts, []).filter(part =>
+        part.PartName.toLowerCase().includes(query) ||
+        part.Project.toLowerCase().includes(query),
+    );
+};
 
 export const Parts = () => {
-    const documentTitle = "Parts";
-    const me = getSession();
     const allProjects = useProjects();
     const parts = useParts();
     const downloadSession = useNewApiSession(4 * 3600, [ApiRole.Download]);
-
-    const [project, setProject] = React.useState(null as Project);
-    const [showUnreleased, setShowUnreleased] = React.useState(false);
-    const [showArchived, setShowArchived] = React.useState(false);
+    const [selected, setSelected] = useMenuSelection(allProjects, pathMatcher, permaLink,
+        latestProject(_.defaultTo(allProjects, [])
+            .filter(r => r.PartsReleased == true)
+            .filter(r => r.PartsArchived == false)),
+    );
 
     if (!(allProjects && parts))
         return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
 
-    const wantProjects = allProjects
-        .filter(r => showUnreleased || r.PartsReleased == true)
-        .filter(r => showArchived || r.PartsArchived == false);
-
-    if (project == null && wantProjects.length > 0) setProject(wantProjects[0]);
-
     return <RootContainer title={documentTitle}>
         <Row>
             <Col lg={3}>
-                <div className={"d-flex flex-row justify-content-center"}>
-                    {me.Roles.includes(UserRole.ProductionTeam) ?
-                        <ShowHideToggle
-                            title="Unreleased"
-                            state={showUnreleased}
-                            setState={setShowUnreleased}/> : ""}
-
-                    {me.Roles.includes(UserRole.ExecutiveDirector) ?
-                        <ShowHideToggle
-                            title="Archived"
-                            state={showArchived}
-                            setState={setShowArchived}/> : ""}
-                </div>
-                <div className="d-flex justify-content-center">
-                    <ButtonGroup vertical className="m-2">
-                        {wantProjects.map(want =>
-                            <Button
-                                variant={project && project.Name == want.Name ?
-                                    projectIsOpenForSubmission(want) ? "light" : "warning" :
-                                    projectIsOpenForSubmission(want) ? "outline-light" : "outline-warning"
-                                }
-                                key={want.Name}
-                                onClick={() => setProject(want)}>
-                                {want.Title}
-                                {want.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
-                                {want.PartsArchived == true ? <em><small><br/>Archived</small></em> : ""}
-                            </Button>)}
-                    </ButtonGroup>
-                </div>
+                <FancyProjectMenu
+                    selected={selected}
+                    setSelected={setSelected}
+                    choices={allProjects}
+                    permaLink={permaLink}
+                    toggles={[{
+                        title: "Unreleased",
+                        hidden: allProjects.filter(x => x.PartsReleased == false).length > 0,
+                        filter: (on: boolean, x: Project) => on || x.PartsReleased == true,
+                    }, {
+                        title: "Archived",
+                        hidden: allProjects.filter(x => x.PartsArchived == true).length > 0,
+                        filter: (on: boolean, x: Project) => on || x.PartsArchived == false,
+                    }]}
+                    buttonContent={(proj) =>
+                        <div>
+                            {proj.Title}
+                            {proj.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
+                            {proj.PartsArchived == true ? <em><small><br/>Archived</small></em> : ""}
+                        </div>}/>
             </Col>
-            {project ?
+            {selected ?
                 <Col className="mx-4">
-                    <AlertArchivedParts project={project}/>
-                    <AlertUnreleasedProject project={project}/>
-                    <ProjectHeader project={project}/>
-                    <PartsTopLinks downloadSession={downloadSession} project={project}/>
-                    <PartsTable downloadSession={downloadSession} projectName={project.Name} parts={parts}/>
+                    <AlertArchivedParts project={selected}/>
+                    <AlertUnreleasedProject project={selected}/>
+                    <ProjectHeader project={selected}/>
+                    <PartsTopLinks downloadSession={downloadSession} project={selected}/>
+                    <PartsTable
+                        downloadSession={downloadSession}
+                        projectName={selected.Name}
+                        parts={parts}/>
                 </Col> :
                 <Col>
                     <p>There are no projects currently accepting submissions, but we are working hard to bring you some!
@@ -99,7 +86,7 @@ export const Parts = () => {
 
 const ButtonGroupBreakPoint = 800;
 
-export const PartsTopLinks = (props: { downloadSession: Session, project: Project }) => {
+const PartsTopLinks = (props: { downloadSession: Session, project: Project }) => {
     return <div className="d-flex justify-content-center">
         <ButtonGroup vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
             <LinkButton to={links.RecordingInstructions}>
@@ -117,18 +104,17 @@ export const PartsTopLinks = (props: { downloadSession: Session, project: Projec
     </div>;
 };
 
-const PartsTable = (props: { downloadSession: Session, projectName: string, parts: Part[] }) => {
-    const [searchInput, setSearchInput] = React.useState("");
+const PartsTable = (props: {
+    downloadSession: Session,
+    projectName: string,
+    parts: Part[],
+}) => {
     const searchInputRef = React.useRef({} as HTMLInputElement);
-
-    const wantParts = props.parts
-        .filter(p => p.PartName.toLowerCase().includes(searchInput))
-        .filter(p => p.Project == props.projectName);
-
+    const [searchInput, setSearchInput] = React.useState("");
+    const wantParts = searchParts(searchInput, props.parts);
     const searchBoxStyle = {maxWidth: 250} as React.CSSProperties;
     // This width gives enough space to have all the download buttons on one line
     const partNameStyle = {width: 220} as React.CSSProperties;
-
     return <div className="d-flex justify-content-center">
         <div className="d-flex flex-column flex-fill justify-content-center">
             <FormControl
@@ -146,9 +132,13 @@ const PartsTable = (props: { downloadSession: Session, projectName: string, part
                 </thead>
                 <tbody>
                 {wantParts.map(part =>
-                    <tr key={part.PartName}>
+                    <tr key={`${part.Project}|${part.PartName}`}>
                         <td style={partNameStyle}>{part.PartName}</td>
-                        <td><PartDownloads downloadSession={props.downloadSession} part={part}/></td>
+                        <td>
+                            <PartDownloads
+                                downloadSession={props.downloadSession}
+                                part={part}/>
+                        </td>
                     </tr>)}
                 </tbody>
             </Table>

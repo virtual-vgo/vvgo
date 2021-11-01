@@ -1,10 +1,11 @@
 import {Dispatch, MutableRefObject, SetStateAction, useState} from "react";
+import {Button} from "react-bootstrap";
 import {getSession} from "../auth";
 import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "../datasets";
 import {LoadingText} from "./shared/LoadingText";
 import {RootContainer} from "./shared/RootContainer";
-import React = require("react");
 import _ = require("lodash");
+import React = require("react");
 
 export const Sessions = () => {
     const me = getSession();
@@ -141,13 +142,22 @@ const SessionRow = (props: {
 }) => {
     const session = props.session;
     return <tr className={props.className}>
-        <td>{session.Kind}</td>
-        <td>{session.Roles ? session.Roles.reduce((a, b) => a + ", " + b) : "none"}</td>
+        <td>
+            <Button
+                variant={"outline-primary"}
+                className={"borderless"}
+                onClick={() => navigator.clipboard.writeText(session.Key)}>
+                {session.Kind}
+            </Button>
+        </td>
+        <td>{session.Roles ? session.Roles.join(", ") : "none"}</td>
         <td>{session.DiscordID}</td>
         <td>{_.isEmpty(session.ExpiresAt) ? "" : new Date(session.ExpiresAt).toLocaleString()}</td>
         <td width={120}>
-            <DeleteButton session={props.session} buttonState={props.buttonState}
-                          setButtonState={props.setButtonState}/>
+            <DeleteButton
+                session={props.session}
+                buttonState={props.buttonState}
+                setButtonState={props.setButtonState}/>
         </td>
     </tr>;
 };

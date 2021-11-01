@@ -52,8 +52,7 @@ func Handler(handler http.Handler) http.HandlerFunc {
 		debugRequestIn(r)
 		handler.ServeHTTP(&writer, r)
 
-		// submit results
-		logger.WithFields(logrus.Fields{
+		fields := logrus.Fields{
 			"request_method":     r.Method,
 			"request_size":       r.ContentLength,
 			"request_path":       r.URL.Path,
@@ -63,7 +62,15 @@ func Handler(handler http.Handler) http.HandlerFunc {
 			"response_size":      writer.size,
 			"start_time":         start,
 			"duration":           time.Since(start).Seconds(),
-		}).Info("http server: request completed")
+		}
+
+		// submit results
+		switch {
+		case writer.code >= 200 && writer.code < 400:
+			logger.WithFields(fields).Info("http server: request completed")
+		default:
+			logger.WithFields(fields).Error("http server: request completed with error")
+		}
 	}
 }
 

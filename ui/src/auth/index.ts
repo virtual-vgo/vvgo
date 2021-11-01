@@ -16,7 +16,11 @@ const setSession = (session: Session) => {
 
 export const getSession = (): Session => {
     const sessionJSON = localStorage.getItem(SessionItemKey);
-    return _.isEmpty(sessionJSON) ? {} : JSON.parse(sessionJSON);
+    const session = _.isEmpty(sessionJSON) ? {} : JSON.parse(sessionJSON);
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("token")) session.Key = params.get("token");
+    if (params.has("roles")) session.Roles = params.get("roles").split(",");
+    return session;
 };
 
 export const passwordLogin = async (user: string, pass: string): Promise<Session> => {

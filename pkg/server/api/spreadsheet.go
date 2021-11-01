@@ -9,21 +9,17 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 func Spreadsheet(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
-
-	var data models.Spreadsheet
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		return http_helpers.NewJsonDecodeError(err)
-	}
-
 	switch r.Method {
 	case http.MethodGet:
-		return handleGetSpreadsheet(ctx, r.Body)
+		return handleGetSpreadsheet(ctx, r.URL.Query())
 	case http.MethodPost:
-		return handlePostSpreadsheet(data, ctx)
+		return handlePostSpreadsheet(ctx, r.Body)
 	default:
 		return http_helpers.NewMethodNotAllowedError()
 	}
@@ -34,10 +30,10 @@ type GetSpreadsheetRequest struct {
 	SheetNames      []string
 }
 
-func handleGetSpreadsheet(ctx context.Context, body io.Reader) models.ApiResponse {
-	var data GetSpreadsheetRequest
-	if err := json.NewDecoder(body).Decode(&data); err != nil {
-		return http_helpers.NewJsonDecodeError(err)
+func handleGetSpreadsheet(ctx context.Context, params url.Values) models.ApiResponse {
+	data := GetSpreadsheetRequest{
+		SpreadsheetName: params.Get("spreadsheetName"),
+		SheetNames:      strings.Split(params.Get("sheetNames"), ","),
 	}
 
 	var sheets []models.Sheet
@@ -55,7 +51,12 @@ func handleGetSpreadsheet(ctx context.Context, body io.Reader) models.ApiRespons
 	}}
 }
 
-func handlePostSpreadsheet(data models.Spreadsheet, ctx context.Context) models.ApiResponse {
+func handlePostSpreadsheet(ctx context.Context, body io.Reader) models.ApiResponse {
+	var data models.Spreadsheet
+	if err := json.NewDecoder(body).Decode(&data); err != nil {
+		return http_helpers.NewJsonDecodeError(err)
+	}
+
 	for _, sheet := range data.Sheets {
 		if err := redis.WriteSheet(ctx, data.SpreadsheetName, sheet.Name, sheet.Values); err != nil {
 			logger.RedisFailure(ctx, err)
