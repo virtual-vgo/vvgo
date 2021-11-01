@@ -27,7 +27,6 @@ export function useMenuSelection<T extends { Name: string }>(
         want = choices.filter(p => p.Name == params.get("name")).pop();
 
     const pathMatch = document.location.pathname.match(pathMatcher);
-    console.log("pathMatch", pathMatch);
     if (pathMatch && pathMatch.length == 2 && pathMatch[1].length > 0)
         want = choices.filter(p => p.Name == pathMatch[1]).pop();
 
@@ -60,7 +59,7 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
 
     const onClickChoice = (want: T) => {
         const params = new URLSearchParams({name: want.Name});
-        window.history.pushState(params, "", "/projects?" + params.toString());
+        window.history.pushState(params, "", props.permaLink(want));
         props.setSelected(want);
     };
 
@@ -90,7 +89,9 @@ export type Toggle<T> = {
 }
 
 export function useToggles<T>(toggles: Array<{
-    hidden: boolean, title: string, filter: (on: boolean, x: T) => boolean
+    hidden: boolean,
+    title: string,
+    filter: (on: boolean, x: T) => boolean
 }>): Toggle<T>[] {
     const [toggleState, setToggleState] = React.useState(0);
     return _.defaultTo(toggles, []).map((t, i) => ({

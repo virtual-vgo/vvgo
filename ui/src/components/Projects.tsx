@@ -39,7 +39,7 @@ export const Projects = () => {
                     choices={allowedProjects}
                     selected={selected}
                     setSelected={setSelected}
-                    permaLink={null}
+                    permaLink={permaLink}
                     searchChoices={searchProjects}
                     buttonContent={(proj) =>
                         <div>

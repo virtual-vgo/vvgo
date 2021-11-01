@@ -24,7 +24,7 @@ const BannerLink = (props: { project: Project, children: JSX.Element }) =>
     _.isEmpty(props.project.YoutubeLink) ?
         <Link
             className="text-light text-center"
-            to={"/projects?" + new URLSearchParams({name: props.project.Name})}>
+            to={`/projects/${props.project.Name}`}>
             {props.children}
         </Link> :
         <a
