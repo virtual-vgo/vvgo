@@ -19,49 +19,30 @@ import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
 import {Parts} from "./Parts";
 import {Projects} from "./Projects";
 import {Sessions} from "./Sessions";
+import {Members as MemberStats} from "./stats/Members";
 
 export const App = () => {
     document.documentElement.lang = "en";
     return <BrowserRouter>
         <Switch>
+            <PrivateRoute path="/credits-maker/" role={UserRole.ProductionTeam}><CreditsMaker/></PrivateRoute>
+            <PrivateRoute path="/stats/members" role={UserRole.VerifiedMember}><MemberStats/></PrivateRoute>
+            <PrivateRoute path="/parts/" role={UserRole.VerifiedMember}><Parts/></PrivateRoute>
             <PrivateRoute
-                path="/credits-maker"
-                requireRole={UserRole.ProductionTeam}>
-                <CreditsMaker/>
-            </PrivateRoute>
-
-            <PrivateRoute
-                path="/sessions"
-                requireRole={UserRole.ExecutiveDirector}>
-                <Sessions/>
-            </PrivateRoute>
-
-            <PrivateRoute
-                path="/mixtape/NewProjectWorkflow"
-                requireRole={UserRole.ExecutiveDirector}>
+                path="/mixtape/NewProjectWorkflow/"
+                role={UserRole.ExecutiveDirector}>
                 <NewProjectWorkflow/>
             </PrivateRoute>
-
             <PrivateRoute
-                path="/mixtape/NewProjectFormResponses"
-                requireRole={UserRole.ExecutiveDirector}>
+                path="/mixtape/NewProjectFormResponses/"
+                role={UserRole.ExecutiveDirector}>
                 <NewProjectFormResponses/>
             </PrivateRoute>
+            <PrivateRoute path="/mixtape/" role={UserRole.VerifiedMember}><MemberDashboard/></PrivateRoute>
+            <PrivateRoute path="/sessions/" role={UserRole.ExecutiveDirector}><Sessions/></PrivateRoute>
 
-            <PrivateRoute
-                path="/mixtape"
-                requireRole={UserRole.VerifiedMember}>
-                <MemberDashboard/>
-            </PrivateRoute>
-
-            <PrivateRoute
-                path="/parts"
-                requireRole={UserRole.VerifiedMember}>
-                <Parts/>
-            </PrivateRoute>
-
-            <Route path="/login/failure"><LoginFailure/></Route>
-            <Route path="/login/discord"><LoginDiscord/></Route>
+            <Route path="/login/failure/"><LoginFailure/></Route>
+            <Route path="/login/discord/"><LoginDiscord/></Route>
             <Route path="/logout/"><Logout/></Route>
             <Route path="/login/"><Login/></Route>
             <Route path="/projects/"><Projects/></Route>
@@ -78,11 +59,11 @@ export const App = () => {
 
 const PrivateRoute = (props: {
     path: string
-    requireRole: string;
+    role: string;
     children: JSX.Element;
 }) => {
     const me = getSession();
-    const authorized = me.Roles && me.Roles.includes(props.requireRole);
+    const authorized = me.Roles && me.Roles.includes(props.role);
     const children = () => {
         switch (true) {
             case authorized:

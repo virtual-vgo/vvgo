@@ -1,3 +1,5 @@
+import _ = require("lodash");
+
 export interface Project {
     Name: string;
     Title: string;
@@ -26,28 +28,8 @@ export interface Project {
     ReferenceTrackLink: string;
 }
 
-export const projectIsOpenForSubmission = (project: Project): boolean => {
-    if (project.Hidden) return false;
-    if (project.VideoReleased) return false;
-    if (project.PartsArchived) return false;
-    return project.PartsReleased;
-};
-
-export const projectIsPostProduction = (project: Project): boolean => {
-    if (project.Hidden) return false;
-    if (project.VideoReleased) return false;
-    return project.PartsArchived;
-};
-
-export const projectIsReleased = (project: Project): boolean => {
-    if (project.Hidden) return false;
-    return project.VideoReleased;
-};
-
-export const latestProject = (projects: Project[]): Project => {
-    if (projects) {
-        const released = projects.filter(proj => proj.VideoReleased === true);
-        return released.sort((a, b) => a.Name.localeCompare(b.Name)).pop();
-    }
-    return null;
-};
+export const latestProject = (projects: Project[]): Project =>
+    _.defaultTo(projects, [])
+        .filter(proj => proj.VideoReleased === true)
+        .sort((a, b) => a.Name.localeCompare(b.Name))
+        .pop();

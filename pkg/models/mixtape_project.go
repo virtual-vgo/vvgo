@@ -10,21 +10,20 @@ import (
 )
 
 type MixtapeProject struct {
-	Id      string
-	Mixtape string
-	Name    string
-	Blurb   string
-	Channel string
-	Owners  []string
-	Links   []string
-	Tags    []string
+	Id      string   `json:"id"`
+	Mixtape string   `json:"mixtape"`
+	Name    string   `json:"Name"`
+	Blurb   string   `json:"blurb"`
+	Channel string   `json:"channel"`
+	Hosts   []string `json:"hosts,omitempty"`
+	Tags    []string `json:"tags,omitempty"`
 }
 
-const MixtapeRedisKey = "mixtape_projects"
+const MixtapeProjectsRedisKey = "mixtape:projects"
 
 func ListMixtapeProjects(ctx context.Context) ([]MixtapeProject, error) {
 	var projectsJSON []string
-	if err := redis.Do(ctx, redis.Cmd(&projectsJSON, "HVALS", MixtapeRedisKey)); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(&projectsJSON, "HVALS", MixtapeProjectsRedisKey)); err != nil {
 		return nil, errors.RedisFailure(err)
 	}
 
@@ -42,11 +41,11 @@ func ListMixtapeProjects(ctx context.Context) ([]MixtapeProject, error) {
 
 func WriteMixtapeProjects(ctx context.Context, projects []MixtapeProject) error {
 	if len(projects) == 0 {
-		logger.Infof("skipping empty write to %s", MixtapeRedisKey)
+		logger.Infof("skipping empty write to %s", MixtapeProjectsRedisKey)
 		return nil
 	}
 
-	redisArgs := []string{MixtapeRedisKey}
+	redisArgs := []string{MixtapeProjectsRedisKey}
 	for _, project := range projects {
 		projectJSON, err := json.Marshal(project)
 		if err != nil {

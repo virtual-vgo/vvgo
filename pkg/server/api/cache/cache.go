@@ -1,4 +1,4 @@
-package api
+package cache
 
 import (
 	"bytes"
@@ -12,10 +12,10 @@ import (
 	"time"
 )
 
-func CacheResponse(expires time.Duration, handler func(*http.Request) models.ApiResponse) func(r *http.Request) models.ApiResponse {
+func Handle(expires time.Duration, handler func(*http.Request) models.ApiResponse) func(r *http.Request) models.ApiResponse {
 	return func(r *http.Request) models.ApiResponse {
 		ctx := r.Context()
-		key := "api_response_cache:" + r.URL.String()
+		key := "response_cache:" + r.URL.String()
 		if response, ok := readCache(ctx, key); ok {
 			return response
 		}
@@ -27,9 +27,9 @@ func CacheResponse(expires time.Duration, handler func(*http.Request) models.Api
 	}
 }
 
-func readCache(ctx context.Context, url string) (models.ApiResponse, bool) {
+func readCache(ctx context.Context, key string) (models.ApiResponse, bool) {
 	var cacheRespJSON bytes.Buffer
-	if err := redis.Do(ctx, redis.Cmd(&cacheRespJSON, "GET", "api:response_cache:"+url)); err != nil {
+	if err := redis.Do(ctx, redis.Cmd(&cacheRespJSON, "GET", key)); err != nil {
 		logger.RedisFailure(ctx, err)
 		return models.ApiResponse{}, false
 	}

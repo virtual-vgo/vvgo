@@ -24,7 +24,7 @@ const searchProjects = (query: string, projects: Project[]): Project[] => {
 
 export const Projects = () => {
     const allProjects = useProjects();
-    const allowedProjects = _.isEmpty(allProjects) ? [] : allProjects.filter(r => r.Hidden == false);
+    const allowedProjects = allProjects.filter(r => r.Hidden == false);
     const [selected, setSelected] = useMenuSelection(allowedProjects, pathMatcher, permaLink, latestProject(allowedProjects));
 
     if (!allProjects)
@@ -100,4 +100,5 @@ const ProjectCredits = (props: { project: Project }) => {
         </Row>)}
     </div>;
 };
+
 

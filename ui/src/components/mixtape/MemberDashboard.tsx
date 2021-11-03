@@ -1,34 +1,39 @@
 import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
-import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ReactMarkdown from "react-markdown";
 import {getSession} from "../../auth";
-import {fetchApi, Session, useMixtapeProjects, UserRole} from "../../datasets";
-import {MixtapeProject} from "../../datasets/MixtapeProject";
+import {
+    fetchApi,
+    MixtapeProject,
+    resolveHostNicks,
+    Session,
+    useGuildMemberLookup,
+    useMixtapeProjects,
+    UserRole,
+} from "../../datasets";
 import {FancyProjectMenu, useMenuSelection} from "../shared/ProjectsMenu";
 import {RootContainer} from "../shared/RootContainer";
 import _ = require("lodash");
 import React = require("react");
 
 const pageTitle = "Wintry Mix | Members Dashboard";
-const permaLink = (project: MixtapeProject) => `/mixtape/${project.Id}`;
+const permaLink = (project: MixtapeProject) => `/mixtape/${project.id}`;
 const pathMatcher = /\/mixtape\/(.+)\/?/;
 
 const searchProjects = (query: string, projects: MixtapeProject[]): MixtapeProject[] => {
     return _.defaultTo(projects, []).filter(project =>
         project.Name.toLowerCase().includes(query) ||
-        project.Channel.toLowerCase().includes(query) ||
-        project.Owners.map(x => x.toLowerCase()).includes(query) ||
-        project.Tags.map(x => x.toLowerCase()).includes(query),
+        project.channel.toLowerCase().includes(query) ||
+        project.hosts.map(x => x.toLowerCase()).includes(query) ||
+        project.tags.map(x => x.toLowerCase()).includes(query),
     );
 };
 
 export const MemberDashboard = () => {
     const [projects] = useMixtapeProjects();
+    const hosts = useGuildMemberLookup(projects.flatMap(r => r.hosts));
     const shuffleProjects = _.shuffle(projects).map(p => {
-        const tags = p.Tags ? p.Tags : [];
-        const owners = p.Owners ? p.Owners : [];
-        return {...p, Tags: tags, Owners: owners} as MixtapeProject;
+        return {...p, tags: _.defaultTo(p.tags, []), hosts: _.defaultTo(p.hosts, [])} as MixtapeProject;
     });
     const [selected, setSelected] = useMenuSelection(projects, pathMatcher, permaLink, _.shuffle(projects).pop());
     const me = getSession();
@@ -48,17 +53,16 @@ export const MemberDashboard = () => {
                     setSelected={setSelected}
                     permaLink={null}
                     searchChoices={searchProjects}
-                    buttonContent={(proj) =>
-                        <div>
-                            {proj.Name}
-                            {proj.Owners ? <em><small>{proj.Owners.sort().join(", ")}</small></em> : ""}
-                        </div>}/>
+                    buttonContent={(proj) => <div>
+                        {proj.Name}<br/>
+                        <small><em>{resolveHostNicks(hosts, proj).join(", ")}</em></small>
+                    </div>}/>
             </Col>
             <Col lg={9}>
                 <Row className={"row-cols-1"}>
-                    {shuffleProjects.map((p, i) =>
+                    {shuffleProjects.map((proj, i) =>
                         <Col key={i.toString()} className={"mt-3"}>
-                            <ProjectCard me={me} project={p}/>
+                            <ProjectCard me={me} hostNicks={resolveHostNicks(hosts, proj)} project={proj}/>
                         </Col>)}
                 </Row>
             </Col>
@@ -66,78 +70,42 @@ export const MemberDashboard = () => {
     </RootContainer>;
 };
 
-const ProjectMenu = (props: {
-    projects: MixtapeProject[],
-    setSelected: (p: MixtapeProject) => void,
-    selected: MixtapeProject,
-}) => {
-    const [searchInput, setSearchInput] = React.useState("");
-    const searchInputRef = React.useRef({} as HTMLInputElement);
-    const wantProjects = searchProjects(searchInput, props.projects);
-    const onClickProject = (want: MixtapeProject) => {
-        window.history.pushState(want, "", permaLink(want));
-        props.setSelected(want);
-    };
-
-    return <div>
-        <div className="d-flex flex-row justify-content-center">
-            <FormControl
-                className="m-2"
-                ref={searchInputRef}
-                placeholder="search projects"
-                onChange={(event) => setSearchInput(event.target.value.toLowerCase())}/>
-        </div>
-        <div className="d-grid">
-            <ButtonGroup vertical className="m-2">
-                {wantProjects.map(want =>
-                    <Button
-                        variant={props.selected && props.selected.Name == want.Name ? "light" : "outline-light"}
-                        key={want.Name}
-                        onClick={() => onClickProject(want)}>
-                        {want.Name}
-                        <em><small><br/>{want.Owners.sort().join(", ")}</small></em>
-                    </Button>)}
-            </ButtonGroup>
-        </div>
-    </div>;
-};
-
-const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
-    const {project, me} = props;
-
+const ProjectCard = (props: { project: MixtapeProject, hostNicks: string[], me: Session }) => {
     const [showEdit, setShowEdit] = useState(false);
     const blurbRef = useRef({} as HTMLTextAreaElement);
     const tagsRef = useRef({} as HTMLInputElement);
-    const canEdit = (me.DiscordID && project.Owners.includes(me.DiscordID)) ||
-        (me.Roles && me.Roles.includes(UserRole.ExecutiveDirector));
+    const canEdit = (props.me.DiscordID && props.project.hosts.includes(props.me.DiscordID)) ||
+        (props.me.Roles && props.me.Roles.includes(UserRole.ExecutiveDirector));
 
     const onClickButton = () => {
         setShowEdit(false);
-        project.Blurb = blurbRef.current.value;
-        project.Tags = tagsRef.current.value.split(",").map(t => t.trim());
         fetchApi("/mixtape", {
             method: "POST",
-            body: JSON.stringify([project]),
+            body: JSON.stringify([{
+                ...props.project,
+                blurb: blurbRef.current.value,
+                tags: tagsRef.current.value.split(",").map(t => t.trim()),
+            }]),
         }).then(resp => console.log(resp));
     };
 
     return <div>
-        <h1>{project.Name}</h1>
+        <h1>{props.project.Name}</h1>
         <h4>
-            Hosts: {project.Owners.join(", ")}<br/>
-            Channel: <em>{project.Channel}</em>
+            Hosts: {props.hostNicks.join(", ")}<br/>
+            Channel: <em>{props.project.channel}</em>
         </h4>
         {showEdit ?
             <InputGroup className="mb-3">
                 <FormControl
                     ref={blurbRef}
                     as={"textarea"}
-                    defaultValue={project.Blurb}
+                    defaultValue={props.project.blurb}
                     placeholder={"Description"}
                 />
             </InputGroup> :
             <ReactMarkdown>
-                {project.Blurb}
+                {props.project.blurb}
             </ReactMarkdown>}
         <Row>
             <Col>
@@ -146,12 +114,12 @@ const ProjectCard = (props: { project: MixtapeProject, me: Session }) => {
                         <InputGroup.Text>#</InputGroup.Text>
                         <FormControl
                             ref={tagsRef}
-                            defaultValue={project.Tags.join(", ")}
+                            defaultValue={props.project.tags.join(", ")}
                             placeholder={"tags"}
                         />
                     </InputGroup> :
                     <Card.Text>
-                        <i># {project.Tags.join(", ")}</i>
+                        <i># {props.project.tags.join(", ")}</i>
                     </Card.Text>}
             </Col>
             {canEdit ?
