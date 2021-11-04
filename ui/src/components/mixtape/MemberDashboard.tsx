@@ -10,10 +10,12 @@ import {
     Session,
     useGuildMemberLookup,
     useMixtapeProjects,
+    useProjects,
     UserRole,
 } from "../../datasets";
 import {FancyProjectMenu, useMenuSelection} from "../shared/ProjectsMenu";
 import {RootContainer} from "../shared/RootContainer";
+import {CurrentMixtape} from "./NewProjectWorkflow";
 import _ = require("lodash");
 import React = require("react");
 
@@ -31,22 +33,25 @@ const searchProjects = (query: string, projects: mixtapeProject[]): mixtapeProje
 };
 
 export const MemberDashboard = () => {
-    const [allProjects, setAllProjects] = useMixtapeProjects();
-    const hosts = useGuildMemberLookup(allProjects.flatMap(r => r.hosts));
-    const [selected, setSelected] = useMenuSelection(allProjects, pathMatcher, permaLink, _.shuffle(allProjects).pop());
+    const vvgoProjects = useProjects();
+    const [mixtapeProjects, setMixtapeProjects] = useMixtapeProjects();
+    const hosts = useGuildMemberLookup(mixtapeProjects.flatMap(r => r.hosts));
+    const [selected, setSelected] = useMenuSelection(mixtapeProjects, pathMatcher, permaLink, _.shuffle(mixtapeProjects).pop());
     const me = getSession();
+
+    const thisMixtape = _.defaultTo(vvgoProjects, []).filter(x => x.Name == CurrentMixtape).pop();
 
     return <RootContainer title={pageTitle}>
         <h1 className={"title"} style={{textAlign: "left"}}>
             Wintry Mix | Members Dashboard
         </h1>
         <h3>
-            <em>All submissions are due by THIS DATE.</em>
+            {_.isEmpty(thisMixtape) ? <div/> : <em>All submissions are due by {thisMixtape.SubmissionDeadline}.</em>}
         </h3>
         <Row className={"row-cols-1"}>
             <Col lg={3}>
                 <FancyProjectMenu
-                    choices={allProjects}
+                    choices={mixtapeProjects}
                     selected={selected}
                     setSelected={setSelected}
                     permaLink={permaLink}
@@ -63,8 +68,8 @@ export const MemberDashboard = () => {
                         hostNicks={resolveHostNicks(hosts, selected)}
                         project={selected}
                         setProject={setSelected}
-                        allProjects={allProjects}
-                        setAllProjects={setAllProjects}/> :
+                        allProjects={mixtapeProjects}
+                        setAllProjects={setMixtapeProjects}/> :
                     <div/>}
             </Col>
         </Row>

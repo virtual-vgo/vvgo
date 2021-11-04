@@ -16,7 +16,7 @@ import _ = require("lodash");
 import React = require("react");
 
 const GuildMemberToastLimit = 5;
-const CurrentMixtape = "19-wintry-mix";
+export const CurrentMixtape = "19-wintry-mix";
 
 export const NewProjectWorkflow = () => {
     const [projects, setProjects] = useMixtapeProjects();
