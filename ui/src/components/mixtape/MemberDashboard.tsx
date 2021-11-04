@@ -1,5 +1,5 @@
 import {useRef, useState} from "react";
-import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
+import {Button, Col, FormControl, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import {getSession} from "../../auth";
 import {links} from "../../data/links";
@@ -79,9 +79,8 @@ const ProjectCard = (props: {
     allProjects: mixtapeProject[]
     setAllProjects: (x: mixtapeProject[]) => void
 }) => {
-    const [showEdit, setShowEdit] = useState(false);
+    const [showEdit, setShowEdit] = useState("");
     const blurbRef = useRef({} as HTMLTextAreaElement);
-    const tagsRef = useRef({} as HTMLInputElement);
     const canEdit = (props.me.DiscordID && props.project.hosts.includes(props.me.DiscordID)) ||
         (props.me.Roles && props.me.Roles.includes(UserRole.ExecutiveDirector));
 
@@ -89,9 +88,8 @@ const ProjectCard = (props: {
         const update = {
             ...props.project,
             blurb: blurbRef.current.value,
-            tags: tagsRef.current.value.split(",").map(t => t.trim()),
         };
-        setShowEdit(false);
+        setShowEdit("");
         saveMixtapeProjects([update])
             .then((resp) => {
                 props.setProject(update);
@@ -106,7 +104,7 @@ const ProjectCard = (props: {
             Hosts: {props.hostNicks.join(", ")}<br/>
             Channel: <em>{props.project.channel}</em>
         </h4>
-        {showEdit ?
+        {showEdit == props.project.Name ?
             <div className="mb-3">
                 <FormControl
                     ref={blurbRef}
@@ -119,39 +117,22 @@ const ProjectCard = (props: {
             <ReactMarkdown>
                 {props.project.blurb}
             </ReactMarkdown>}
-        <Row>
-            <Col>
-                {showEdit ?
-                    <InputGroup className="mb-3">
-                        <InputGroup.Text>#</InputGroup.Text>
-                        <FormControl
-                            ref={tagsRef}
-                            defaultValue={props.project.tags.join(", ")}
-                            placeholder={"tags"}
-                        />
-                    </InputGroup> :
-                    <Card.Text>
-                        <i># {props.project.tags.join(", ")}</i>
-                    </Card.Text>}
-            </Col>
-            {canEdit ?
-                <Col className={"d-grid justify-content-end"}>
-                    {showEdit ?
-                        <Button
-                            type={"button"}
-                            variant={"outline-secondary"}
-                            size={"sm"}
-                            onClick={onClickSubmit}>
-                            Submit
-                        </Button> :
-                        <Button
-                            type={"button"}
-                            variant={"outline-secondary"}
-                            size={"sm"}
-                            onClick={() => setShowEdit(true)}>
-                            Edit
-                        </Button>}
-                </Col> : ""}
-        </Row>
+        {canEdit ?
+            showEdit == props.project.Name ?
+                <Button
+                    type={"button"}
+                    variant={"outline-primary"}
+                    size={"sm"}
+                    onClick={onClickSubmit}>
+                    Submit
+                </Button> :
+                <Button
+                    type={"button"}
+                    variant={"outline-primary"}
+                    size={"sm"}
+                    onClick={() => setShowEdit(props.project.Name)}>
+                    Edit
+                </Button> :
+            <div/>}
     </div>;
 };
