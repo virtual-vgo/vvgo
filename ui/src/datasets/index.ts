@@ -7,4 +7,4 @@ export * from "./Project";
 export * from "./Session";
 export * from "./GuildMember";
 export * from "./CreditsTable";
-export * from "./MixtapeProject";
+export * from "./mixtapeProject";
