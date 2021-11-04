@@ -6,9 +6,20 @@ import Col from "react-bootstrap/Col";
 import FormControl from "react-bootstrap/FormControl";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
+import {getSession} from "../auth";
 import {Channels} from "../data/discord";
 import {links} from "../data/links";
-import {ApiRole, latestProject, Part, Project, Session, useNewApiSession, useParts, useProjects} from "../datasets";
+import {
+    ApiRole,
+    latestProject,
+    Part,
+    Project,
+    Session,
+    useNewApiSession,
+    useParts,
+    useProjects,
+    UserRole,
+} from "../datasets";
 import {AlertArchivedParts} from "./shared/AlertArchivedParts";
 import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
 import {LinkChannel} from "./shared/LinkChannel";
@@ -41,21 +52,23 @@ export const Parts = () => {
     if (!(allProjects && parts))
         return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
 
+    const projectsWithParts = new Set(parts.map(p => p.Project));
+    const choices = allProjects.filter(r => projectsWithParts.has(r.Name) || r.PartsReleased == false);
     return <RootContainer title={documentTitle}>
         <Row>
             <Col lg={3}>
                 <FancyProjectMenu
                     selected={selected}
                     setSelected={setSelected}
-                    choices={allProjects}
+                    choices={choices}
                     permaLink={permaLink}
                     toggles={[{
                         title: "Unreleased",
-                        hidden: allProjects.filter(x => x.PartsReleased == false).length > 0,
+                        hidden: !getSession().Roles.includes(UserRole.ProductionTeam),
                         filter: (on: boolean, x: Project) => on || x.PartsReleased == true,
                     }, {
                         title: "Archived",
-                        hidden: allProjects.filter(x => x.PartsArchived == true).length > 0,
+                        hidden: !getSession().Roles.includes(UserRole.ExecutiveDirector),
                         filter: (on: boolean, x: Project) => on || x.PartsArchived == false,
                     }]}
                     buttonContent={(proj) =>
@@ -111,7 +124,7 @@ const PartsTable = (props: {
 }) => {
     const searchInputRef = React.useRef({} as HTMLInputElement);
     const [searchInput, setSearchInput] = React.useState("");
-    const wantParts = searchParts(searchInput, props.parts);
+    const wantParts = searchParts(searchInput, props.parts).filter(r => r.Project == props.projectName);
     const searchBoxStyle = {maxWidth: 250} as React.CSSProperties;
     // This width gives enough space to have all the download buttons on one line
     const partNameStyle = {width: 220} as React.CSSProperties;

@@ -51,9 +51,8 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
     const menuToggles = useToggles(props.toggles);
 
     const searcher = _.defaultTo(props.searchChoices, () => props.choices);
-    const filter = (x: T) => _.isEmpty(menuToggles.filter(t => t.state)) ||
-        menuToggles.filter(t => t.state)
-            .map(t => t.filter(t.state, x))
+    const filter = (x: T) => _.isEmpty(menuToggles) ||
+        menuToggles.map(t => t.filter(t.state, x))
             .reduce((a, b) => (a && b));
     const wantChoices = searcher(searchInput, props.choices).filter(filter);
 
@@ -97,16 +96,18 @@ export function useToggles<T>(toggles: Array<{
     return _.defaultTo(toggles, []).map((t, i) => ({
         ...t,
         state: (toggleState & (1 << i)) == (1 << i),
-        setState: (x: boolean) => setToggleState(x ? toggleState | (1 << i) : toggleState),
+        setState: (x: boolean) => setToggleState(x ? toggleState | (1 << i) : toggleState & ~(1 << i)),
     }));
 }
 
 export function MenuToggles<T>(props: { toggles: Toggle<T>[] }): JSX.Element {
+    const toggles = props.toggles.filter(t => t.hidden == false)
     return _.isEmpty(props.toggles) ?
         <div/> :
         <div className={"d-flex flex-row justify-content-center"}>
-            {props.toggles.map((toggle) =>
+            {toggles.map((toggle) =>
                 <ShowHideToggle
+                    key={toggle.title}
                     title={toggle.title}
                     state={toggle.state}
                     setState={toggle.setState}/>)}
