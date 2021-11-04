@@ -1,6 +1,6 @@
 import React = require("react");
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
-import {getSession} from "../auth";
+import {getSession, updateLogin} from "../auth";
 import {sessionIsAnonymous, UserRole} from "../datasets";
 import {About} from "./About";
 import {Contact} from "./Contact";
@@ -23,6 +23,7 @@ import {Members as MemberStats} from "./stats/Members";
 
 export const App = () => {
     document.documentElement.lang = "en";
+    updateLogin();
     return <BrowserRouter>
         <Switch>
             <PrivateRoute path="/credits-maker/" role={UserRole.ProductionTeam}><CreditsMaker/></PrivateRoute>

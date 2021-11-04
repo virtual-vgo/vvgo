@@ -8,6 +8,13 @@ export const logout = () => {
         .then(() => setSession({} as Session));
 };
 
+export const updateLogin = () => {
+    fetchApi("/me", {method: "GET"}).then(resp => {
+        const me = _.defaultTo(resp.Identity, {} as Session);
+        if (me.Key != getSession().Key) setSession(me);
+    });
+};
+
 const setSession = (session: Session) => {
     const sessionJSON = JSON.stringify(session);
     localStorage.clear();

@@ -54,7 +54,7 @@ export const Navbar = () => {
                     <NavLink to="/projects/">Projects</NavLink>
                 </li>
                 <li className="nav-item">
-                    <NavLink to="/mixtape/">Wintry Mix</NavLink>
+                    <MemberNavLink to="/mixtape/">Wintry Mix</MemberNavLink>
                 </li>
                 <li className="nav-item">
                     <NavLink to="/about/">About</NavLink>
