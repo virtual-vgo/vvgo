@@ -2,10 +2,11 @@ import {useRef, useState} from "react";
 import {Button, Card, Col, FormControl, InputGroup, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import {getSession} from "../../auth";
+import {links} from "../../data/links";
 import {
-    fetchApi,
     mixtapeProject,
     resolveHostNicks,
+    saveMixtapeProjects,
     Session,
     useGuildMemberLookup,
     useMixtapeProjects,
@@ -30,12 +31,9 @@ const searchProjects = (query: string, projects: mixtapeProject[]): mixtapeProje
 };
 
 export const MemberDashboard = () => {
-    const [projects] = useMixtapeProjects();
-    const hosts = useGuildMemberLookup(projects.flatMap(r => r.hosts));
-    const shuffleProjects = _.shuffle(projects).map(p => {
-        return {...p, tags: _.defaultTo(p.tags, []), hosts: _.defaultTo(p.hosts, [])} as mixtapeProject;
-    });
-    const [selected, setSelected] = useMenuSelection(projects, pathMatcher, permaLink, _.shuffle(projects).pop());
+    const [allProjects, setAllProjects] = useMixtapeProjects();
+    const hosts = useGuildMemberLookup(allProjects.flatMap(r => r.hosts));
+    const [selected, setSelected] = useMenuSelection(allProjects, pathMatcher, permaLink, _.shuffle(allProjects).pop());
     const me = getSession();
 
     return <RootContainer title={pageTitle}>
@@ -48,7 +46,7 @@ export const MemberDashboard = () => {
         <Row className={"row-cols-1"}>
             <Col lg={3}>
                 <FancyProjectMenu
-                    choices={projects}
+                    choices={allProjects}
                     selected={selected}
                     setSelected={setSelected}
                     permaLink={permaLink}
@@ -59,29 +57,47 @@ export const MemberDashboard = () => {
                     </div>}/>
             </Col>
             <Col lg={9}>
-                <ProjectCard me={me} hostNicks={resolveHostNicks(hosts, selected)} project={selected}/>
+                {selected ?
+                    <ProjectCard
+                        me={me}
+                        hostNicks={resolveHostNicks(hosts, selected)}
+                        project={selected}
+                        setProject={setSelected}
+                        allProjects={allProjects}
+                        setAllProjects={setAllProjects}/> :
+                    <div/>}
             </Col>
         </Row>
     </RootContainer>;
 };
 
-const ProjectCard = (props: { project: mixtapeProject, hostNicks: string[], me: Session }) => {
+const ProjectCard = (props: {
+    me: Session
+    hostNicks: string[]
+    project: mixtapeProject
+    setProject: (x: mixtapeProject) => void
+    allProjects: mixtapeProject[]
+    setAllProjects: (x: mixtapeProject[]) => void
+}) => {
     const [showEdit, setShowEdit] = useState(false);
     const blurbRef = useRef({} as HTMLTextAreaElement);
     const tagsRef = useRef({} as HTMLInputElement);
     const canEdit = (props.me.DiscordID && props.project.hosts.includes(props.me.DiscordID)) ||
         (props.me.Roles && props.me.Roles.includes(UserRole.ExecutiveDirector));
 
-    const onClickButton = () => {
+    const onClickSubmit = () => {
+        const update = {
+            ...props.project,
+            blurb: blurbRef.current.value,
+            tags: tagsRef.current.value.split(",").map(t => t.trim()),
+        };
         setShowEdit(false);
-        fetchApi("/mixtape", {
-            method: "POST",
-            body: JSON.stringify([{
-                ...props.project,
-                blurb: blurbRef.current.value,
-                tags: tagsRef.current.value.split(",").map(t => t.trim()),
-            }]),
-        }).then(resp => console.log(resp));
+        saveMixtapeProjects([update])
+            .then((resp) => {
+                props.setProject(update);
+                props.setAllProjects(_.uniqBy([...resp.MixtapeProjects, ...props.allProjects], x => x.Name));
+            });
+
     };
 
     return <div>
@@ -91,14 +107,15 @@ const ProjectCard = (props: { project: mixtapeProject, hostNicks: string[], me: 
             Channel: <em>{props.project.channel}</em>
         </h4>
         {showEdit ?
-            <InputGroup className="mb-3">
+            <div className="mb-3">
                 <FormControl
                     ref={blurbRef}
                     as={"textarea"}
                     defaultValue={props.project.blurb}
-                    placeholder={"Description"}
-                />
-            </InputGroup> :
+                    placeholder={"Description"}/>
+                <br/>
+                <a href={links.Help.Markdown}>Markdown Cheatsheet</a>
+            </div> :
             <ReactMarkdown>
                 {props.project.blurb}
             </ReactMarkdown>}
@@ -118,13 +135,13 @@ const ProjectCard = (props: { project: mixtapeProject, hostNicks: string[], me: 
                     </Card.Text>}
             </Col>
             {canEdit ?
-                <Col className={"d-flex justify-content-end"}>
+                <Col className={"d-grid justify-content-end"}>
                     {showEdit ?
                         <Button
                             type={"button"}
                             variant={"outline-secondary"}
                             size={"sm"}
-                            onClick={onClickButton}>
+                            onClick={onClickSubmit}>
                             Submit
                         </Button> :
                         <Button

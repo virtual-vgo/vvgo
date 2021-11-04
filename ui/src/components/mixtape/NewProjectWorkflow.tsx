@@ -61,7 +61,7 @@ const WorkflowApp = (props: {
 }) => {
     const [curProject, setCurProject] = useState({mixtape: CurrentMixtape, hosts: []} as mixtapeProject);
     const saveProject = (project: mixtapeProject) => {
-        props.setProjects(_.uniqBy([project, ...props.projects], "Name"));
+        props.setProjects(_.uniqBy([project, ...props.projects], x => x.Name));
         saveMixtapeProjects([project])
             .then(() => setCurProject(project))
             .catch(err => console.log(err));

@@ -1,5 +1,6 @@
 import {GuildMember} from "./GuildMember";
 import {fetchApi} from "./hooks";
+import _ = require("lodash");
 
 export interface mixtapeProject {
     Name: string;
@@ -12,7 +13,7 @@ export interface mixtapeProject {
 }
 
 export const resolveHostNicks = (members: GuildMember[], project: mixtapeProject) =>
-    members.filter(m => project.hosts.includes(m.user.id)).map(m => m.nick);
+    _.uniq(members.filter(m => project.hosts.includes(m.user.id)).map(m => m.nick));
 
 export const saveMixtapeProjects = (projects: mixtapeProject[]) => {
     return fetchApi("/mixtape/projects", {

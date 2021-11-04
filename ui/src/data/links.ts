@@ -5,5 +5,6 @@ export const links = Object.freeze({
     Help: Object.freeze({
         SpreadsheetId: "https://developers.google.com/sheets/api/guides/concepts#spreadsheet_id",
         ReadRange: "https://developers.google.com/sheets/api/samples/reading",
+        Markdown: "https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet",
     }),
 });
