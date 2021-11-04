@@ -1,14 +1,22 @@
 import {MutableRefObject, useRef, useState} from "react";
-import {Button, Card, Col, Dropdown, FormControl, InputGroup, Row, Table, Toast} from "react-bootstrap";
-import {GuildMember, useGuildMembers, useMixtapeProjects} from "../../datasets";
-import {deleteMixtapeProjects, MixtapeProject, saveMixtapeProjects} from "../../datasets/MixtapeProject";
+import {Button, Card, Col, Dropdown, Form, FormControl, Row, Table, Toast} from "react-bootstrap";
+import {
+    deleteMixtapeProjects,
+    GuildMember,
+    mixtapeProject,
+    resolveHostNicks,
+    saveMixtapeProjects,
+    useGuildMemberLookup,
+    useGuildMemberSearch,
+    useMixtapeProjects,
+} from "../../datasets";
 import {LoadingText} from "../shared/LoadingText";
 import {RootContainer} from "../shared/RootContainer";
 import _ = require("lodash");
 import React = require("react");
 
 const GuildMemberToastLimit = 5;
-const WintryMixChannelPrefix = "jackson-testing-";
+export const CurrentMixtape = "15b-wintry-mix";
 
 export const NewProjectWorkflow = () => {
     const [projects, setProjects] = useMixtapeProjects();
@@ -22,12 +30,13 @@ export const NewProjectWorkflow = () => {
 };
 
 const ProjectTable = (props: {
-    projects: MixtapeProject[];
-    setProjects: (projects: MixtapeProject[]) => void;
+    projects: mixtapeProject[];
+    setProjects: (projects: mixtapeProject[]) => void;
 }) => {
-    const onClickDelete = (project: MixtapeProject) => {
+    const hosts = useGuildMemberLookup(props.projects.flatMap(r => r.hosts));
+    const onClickDelete = (project: mixtapeProject) => {
         console.log("deleting", project);
-        props.setProjects(props.projects.filter(x => project.Id != x.Id));
+        props.setProjects(props.projects.filter(x => project.Name != x.Name));
         deleteMixtapeProjects([project]).catch(err => console.log(err));
     };
 
@@ -35,12 +44,11 @@ const ProjectTable = (props: {
 
     return <Table className={"text-light"}>
         <tbody>
-        {props.projects.map(x => <tr key={x.Id}>
-            <td>{x.Mixtape}</td>
-            <td>{x.Id}</td>
+        {props.projects.map(x => <tr key={x.Name}>
             <td>{x.Name}</td>
-            <td>{x.Channel}</td>
-            <td>{x.Owners.join(", ")}</td>
+            <td>{x.title}</td>
+            <td>{x.channel}</td>
+            <td>{resolveHostNicks(hosts, x).join(", ")}</td>
             <td><Button onClick={() => onClickDelete(x)}>Delete</Button></td>
         </tr>)}
         </tbody>
@@ -48,12 +56,12 @@ const ProjectTable = (props: {
 };
 
 const WorkflowApp = (props: {
-    setProjects: (projects: MixtapeProject[]) => void;
-    projects: MixtapeProject[];
+    setProjects: (projects: mixtapeProject[]) => void;
+    projects: mixtapeProject[];
 }) => {
-    const [curProject, setCurProject] = useState({Owners: []} as MixtapeProject);
-    const saveProject = (project: MixtapeProject) => {
-        props.setProjects([...props.projects.filter(p => p.Id != project.Id), project]);
+    const [curProject, setCurProject] = useState({mixtape: CurrentMixtape, hosts: []} as mixtapeProject);
+    const saveProject = (project: mixtapeProject) => {
+        props.setProjects(_.uniqBy([project, ...props.projects], x => x.Name));
         saveMixtapeProjects([project])
             .then(() => setCurProject(project))
             .catch(err => console.log(err));
@@ -62,30 +70,28 @@ const WorkflowApp = (props: {
 
     return <Row className={"row-cols-1"}>
         <Col className={"col-md-6 mb-2"}>
-            <NameCard
-                title={"1. Set the project name."}
+            <SetTitleCard
+                cardTitle={"1. Create the project."}
                 saveProject={saveProject}
                 curProject={curProject}
-                completed={curProject.Name && curProject.Name != ""}
-            />
+                completed={!_.isEmpty(curProject.Name)}/>
         </Col>
         <Col className={"col-md-6 mb-2"}>
-            {curProject.Name && curProject.Name != "" ?
-                <OwnersCard
-                    title={"2. Choose project owners."}
+            {_.isEmpty(curProject.Name) ? <div/> :
+                <SetHostsCard
+                    cardTitle={"2. Choose project owners."}
                     saveProject={saveProject}
-                    curProject={curProject}
-                    limitResults={GuildMemberToastLimit}
-                    completed={curProject.Owners && curProject.Owners.length > 0}
-                /> : <div/>}
+                    project={curProject}
+                    toastLimit={GuildMemberToastLimit}
+                    completed={curProject.hosts && curProject.hosts.length > 0}/>}
         </Col>
         <Col className={"col-md-6 mb-2"}>
-            {curProject.Owners && curProject.Owners.length > 0 ?
-                <ChannelCard
+            {_.isEmpty(curProject.hosts) ? <div/> :
+                <SetChannelCard
+                    cardTitle={"3. Create the project channel."}
                     saveProject={saveProject}
                     curProject={curProject}
-                    completed={curProject.Channel && curProject.Channel != ""}
-                /> : <div/>}
+                    completed={curProject.channel && curProject.channel != ""}/>}
         </Col>
     </Row>;
 };
@@ -98,210 +104,188 @@ const CheckMark = (props: {
     <Col md={"auto"} className={"text-end"}>{props.completed ? "✔️" : ""}</Col>
 </Row>;
 
-const NameCard = (props: {
-    title: string
-    saveProject: (project: MixtapeProject) => void;
-    curProject: MixtapeProject;
+const SetTitleCard = (props: {
+    cardTitle: string
+    saveProject: (project: mixtapeProject) => void;
+    curProject: mixtapeProject;
     completed: boolean;
 }) => {
-    const nameInputRef = useRef({} as HTMLInputElement);
-    const [name, setName] = useState(props.curProject.Name);
-
+    const [title, setTitle] = useState(props.curProject.title);
     return <Card className={"bg-transparent"}>
         <Card.Title className={"m-2"}>
-            <CheckMark completed={props.completed}>{props.title}</CheckMark>
+            <CheckMark completed={props.completed}>{props.cardTitle}</CheckMark>
         </Card.Title>
-        <InputGroup>
-            <InputGroup.Text>Name</InputGroup.Text>
-            <FormControl
-                ref={nameInputRef}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={"prOjEct NAmE"}
-            />
-            <SubmitNameButton
-                name={name}
-                current={props.curProject}
-                saveProject={props.saveProject}
-            />
-        </InputGroup>
-        <InputGroup>
-            <InputGroup.Text>id</InputGroup.Text>
-            <FormControl readOnly defaultValue={nameToId(name)}/>
-        </InputGroup>
+        <Card.Body>
+            <Form>
+                <Form.Group>
+                    <Form.Label>Title</Form.Label>
+                    <FormControl
+                        onChange={(event) => setTitle(event.target.value)}
+                        placeholder={"prOjEct TItlE"}/>
+                </Form.Group>
+                <Form.Group>
+                    <Form.Label>Name</Form.Label>
+                    <FormControl readOnly value={nameToTitle(CurrentMixtape, title)}/>
+                </Form.Group>
+                <SubmitTitleButton
+                    title={title}
+                    current={props.curProject}
+                    saveProject={props.saveProject}/>
+            </Form>
+        </Card.Body>
     </Card>;
 };
 
-const SubmitNameButton = (props: {
-    name: string;
-    current: MixtapeProject;
-    saveProject: (project: MixtapeProject) => void;
+const SubmitTitleButton = (props: {
+    title: string
+    current: mixtapeProject
+    saveProject: (project: mixtapeProject) => void
+    className?: string
 }) => {
-    const curId = props.current.Id;
-    const id = curId && curId != "" ? curId : nameToId(props.name);
-    return _.isEmpty(props.name) ?
-        <Button
-            disabled
-            variant={"outline-warning"}>
-            required
-        </Button> :
-        <Button
-            variant={"outline-secondary"}
-            onClick={() => props.saveProject({...props.current, Name: props.name, Id: id})}>
-            Submit
-        </Button>;
+    const name = _.defaultTo(props.current.Name, nameToTitle(CurrentMixtape, props.title));
+    const variant = _.isEmpty(props.title) ? "outline-warning" : "outline-primary";
+    return <Button
+        disabled={_.isEmpty(props.title)}
+        variant={variant}
+        className={props.className}
+        onClick={() => props.saveProject({
+            ...props.current,
+            Name: name,
+            title: props.title,
+        })}>
+        Submit
+    </Button>;
 };
 
-const OwnersCard = (props: {
-    title: string;
-    limitResults: number;
-    curProject: MixtapeProject;
-    saveProject: (project: MixtapeProject) => void;
+const SetHostsCard = (props: {
+    cardTitle: string;
     completed: boolean;
+    project: mixtapeProject;
+    saveProject: (project: mixtapeProject) => void;
+    toastLimit: number;
 }) => {
-    const searchInputRef = useRef({} as HTMLInputElement);
+    const [hosts, setHosts] = useState(props.project.hosts.map(x => ({user: {id: x}} as GuildMember)));
     const [searchQuery, setSearchQuery] = useState("");
-    const [owners, setOwners] = useState(props.curProject.Owners.map(x => ({user: {id: x}} as GuildMember)));
+    const guildMembers = useGuildMemberSearch(searchQuery, props.toastLimit);
 
-    return <Card>
-        <Card.Title className={"m-2 text-dark"}>
-            <CheckMark completed={props.completed}>{props.title}</CheckMark>
+    return <Card
+        className={"bg-transparent"}
+        onKeyUp={(e) => {
+            if (e.key == "Escape") setSearchQuery("");
+        }}>
+        <Card.Title>
+            <CheckMark completed={props.completed}>{props.cardTitle}</CheckMark>
         </Card.Title>
-        <EditMembers
-            owners={owners}
-            setOwners={setOwners}
-            saveProject={props.saveProject}
-        />
-        <SearchMembers
-            searchInputRef={searchInputRef}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            curProject={props.curProject}
-            owners={owners}
-            saveProject={props.saveProject}
-        />
-        <MembersToast
-            searchInputRef={searchInputRef}
-            searchQuery={searchQuery}
-            owners={owners}
-            setOwners={setOwners}
-            limitResults={props.limitResults}
-        />
+        <Card.Body>
+            <Form>
+                Hosts<br/>
+                <ul className="list-inline">
+                    {hosts.map(host => <li key={host.nick} className="list-inline-item">
+                        {host.nick + " "}
+                        <span
+                            className={"text-primary"}
+                            style={{cursor: "pointer"}}
+                            onClick={() => setHosts(hosts.filter(x => x.user.id != host.user.id))}>
+                            (remove)
+                        </span>
+                    </li>)}
+                </ul>
+                <Form.Group>
+                    <Form.Control
+                        placeholder="search nicks"
+                        defaultValue={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}/>
+                    {_.isEmpty(searchQuery) ? <div/> : <Toast>
+                        {guildMembers
+                            .filter(m => !_.isEmpty(m.nick))
+                            .filter(m => !hosts.includes(m))
+                            .map(m => <Dropdown.Item
+                                key={m.nick}
+                                onClick={() => setHosts([...hosts, m])}>
+                                {m.nick}
+                            </Dropdown.Item>)}
+                    </Toast>}
+                </Form.Group>
+                <SubmitHostsButton
+                    project={props.project}
+                    saveProject={props.saveProject}
+                    hosts={hosts}
+                    setSearchQuery={setSearchQuery}/>
+            </Form>
+        </Card.Body>
     </Card>;
 };
 
-const EditMembers = (props: {
-    owners: GuildMember[];
-    setOwners: (owners: GuildMember[]) => void;
-    saveProject: (project: MixtapeProject) => void;
+const SubmitHostsButton = (props: {
+    project: mixtapeProject
+    saveProject: (proj: mixtapeProject) => void
+    hosts: GuildMember[]
+    setSearchQuery: (q: string) => void
 }) => {
-    return <InputGroup>
-        <InputGroup.Text>Owners</InputGroup.Text>
-        {props.owners.map(owner =>
-            <Button
-                key={owner.nick}
-                variant={"outline-primary"}
-                onClick={() => props.setOwners(props.owners.filter(x => x.user != owner.user))}>
-                {owner.nick}
-            </Button>,
-        )}
-    </InputGroup>;
+    const variant = _.isEmpty(props.hosts) ? "outline-warning" : "outline-primary";
+    return <Button
+        disabled={_.isEmpty(props.hosts)}
+        variant={variant}
+        onClick={() => {
+            props.setSearchQuery("");
+            props.saveProject({
+                ...props.project,
+                hosts: _.uniq(props.hosts.map(x => x.user.id)),
+            });
+        }}>
+        Submit
+    </Button>;
 };
 
-const SearchMembers = (props: {
-    searchInputRef: MutableRefObject<HTMLInputElement>;
-    searchQuery: string;
-    setSearchQuery: (x: string) => void;
-    saveProject: (proj: MixtapeProject) => void;
-    owners: GuildMember[];
-    curProject: MixtapeProject;
-}) => {
-    return <InputGroup>
-        <InputGroup.Text>Search</InputGroup.Text>
-        <FormControl
-            ref={props.searchInputRef}
-            placeholder="search nicks"
-            defaultValue={props.searchQuery}
-            onChange={() => props.setSearchQuery(props.searchInputRef.current.value)}
-        />
-        <Button
-            variant={"outline-secondary"}
-            onClick={() => props.saveProject({...props.curProject, Owners: props.owners.map(x => x.user.id)})}>
-            Submit
-        </Button>
-    </InputGroup>;
-};
-
-const MembersToast = (props: {
-    searchInputRef: MutableRefObject<HTMLInputElement>;
-    searchQuery: string;
-    owners: GuildMember[];
-    setOwners: (x: GuildMember[]) => void;
-    limitResults: number;
-}) => {
-    const guildMembers = useGuildMembers(props.searchQuery, props.limitResults);
-    return <Toast>
-        {props.searchInputRef.current.value === "" ? "" :
-            guildMembers
-                .filter(m => m.nick)
-                .filter(m => m.nick !== "")
-                .filter(m => !props.owners.includes(m))
-                .map(m => <Dropdown.Item
-                    key={m.nick}
-                    onClick={() => props.setOwners([...props.owners, m])}>
-                    {m.nick}
-                </Dropdown.Item>)}
-    </Toast>;
-};
-
-const ChannelCard = (props: {
-    curProject: MixtapeProject;
-    saveProject: (project: MixtapeProject) => void;
+const SetChannelCard = (props: {
+    cardTitle: string
+    curProject: mixtapeProject;
+    saveProject: (project: mixtapeProject) => void;
     completed: boolean;
 }) => {
     const channelInputRef = useRef({} as HTMLInputElement);
-    return <Card>
-        <Card.Title className={"m-2 text-dark"}>
-            <Row>
-                <Col>
-                    <CheckMark completed={props.completed}>
-                        3. Create a channel.
-                    </CheckMark>
-                </Col>
-            </Row>
+    return <Card className={"bg-transparent"}>
+        <Card.Title>
+            <CheckMark completed={props.completed}>{props.cardTitle}</CheckMark>
         </Card.Title>
-        <InputGroup>
-            <InputGroup.Text>Channel</InputGroup.Text>
-            <FormControl
-                ref={channelInputRef}
-                defaultValue={WintryMixChannelPrefix + props.curProject.Id}
-            />
-            <SubmitChannelButton
-                channelInputRef={channelInputRef}
-                curProject={props.curProject}
-                saveProject={props.saveProject}
-            />
-        </InputGroup>
+        <Card.Body>
+            <Form>
+                <Form.Group>
+                    <Form.Label>Channel</Form.Label>
+                    <Form.Control
+                        ref={channelInputRef}
+                        defaultValue={props.curProject.Name}/>
+                </Form.Group>
+                <SubmitChannelButton
+                    channelInputRef={channelInputRef}
+                    curProject={props.curProject}
+                    saveProject={props.saveProject}/>
+            </Form>
+        </Card.Body>
     </Card>;
 };
 
 const SubmitChannelButton = (props: {
     channelInputRef: MutableRefObject<HTMLInputElement>
-    curProject: MixtapeProject;
-    saveProject: (project: MixtapeProject) => void;
+    curProject: mixtapeProject;
+    saveProject: (project: mixtapeProject) => void;
 }) => {
     const handleClick = () => {
         const channel = props.channelInputRef.current.value;
-        props.saveProject({...props.curProject, Channel: channel});
+        props.saveProject({...props.curProject, channel: channel});
     };
     return <Button
-        variant={"outline-secondary"}
+        variant={"outline-primary"}
         onClick={handleClick}>
         Submit
     </Button>;
 };
 
-const nameToId = (name: string): string => _.isEmpty(name) ?
-    "" :
-    name.replace(/[ _]/g, "-")
+const nameToTitle = (mixtape: string, title: string): string => {
+    const cleanTitle = _.defaultTo(title, "")
+        .replace(/[ _]/g, "-")
         .replace(/[^\w\d-]/g, "")
         .toLowerCase();
+
+    return `${CurrentMixtape}-${cleanTitle}`;
+};

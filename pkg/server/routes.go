@@ -9,6 +9,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/auth"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/devel"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/guild_members"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
@@ -69,10 +70,11 @@ func Routes() http.Handler {
 	mux.HandleApiFunc("/api/v1/credits/table", api.CreditsTable, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/dataset", api.Dataset, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/download", api.Download, models.RoleDownload)
-	mux.HandleApiFunc("/api/v1/guild_members", api.GuildMembers, models.RoleVVGOExecutiveDirector)
+	mux.HandleApiFunc("/api/v1/guild_members/search", guild_members.HandleSearch, models.RoleVVGOVerifiedMember)
+	mux.HandleApiFunc("/api/v1/guild_members/lookup", guild_members.HandleLookup, models.RoleVVGOVerifiedMember)
 	mux.HandleApiFunc("/api/v1/auth/password", auth.Password, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/me", api.Me, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/mixtape", mixtape.ProjectsHandler, models.RoleVVGOVerifiedMember)
+	mux.HandleApiFunc("/api/v1/mixtape/projects", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
 	mux.HandleApiFunc("/api/v1/parts", api.Parts, models.RoleVVGOVerifiedMember)
 	mux.HandleApiFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
 	mux.HandleApiFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOExecutiveDirector)

@@ -13,8 +13,9 @@ export const ProjectHeader = (props: { project: Project }) =>
             <br/><small>{props.project.Arrangers}</small>
             {props.project.PartsArchived || _.isEmpty(props.project.SubmissionDeadline) ? <div/> :
                 <div className="m-2">
-                    <h4><strong>Submission Deadline:</strong>
-                        <em>{props.project.SubmissionDeadline} (Hawaii Time)</em></h4>
+                    <h4>
+                        <strong>Submission Deadline:</strong> <em>{props.project.SubmissionDeadline} (Hawaii Time)</em>
+                    </h4>
                 </div>}
         </Col>
     </Row>;

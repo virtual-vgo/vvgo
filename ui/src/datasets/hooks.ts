@@ -6,7 +6,7 @@ import {CreditsTable} from "./CreditsTable";
 import {Director} from "./Director";
 import {GuildMember} from "./GuildMember";
 import {Highlight} from "./Highlight";
-import {MixtapeProject} from "./MixtapeProject";
+import {mixtapeProject} from "./mixtapeProject";
 import {Part} from "./Part";
 import {Project} from "./Project";
 import {ApiRole, createSessions, Session, SessionKind} from "./Session";
@@ -22,21 +22,42 @@ export const useCreditsTable = (project: Project): CreditsTable => {
 
 export const useDirectors = (): Director[] => useDataset("Leaders");
 
-export const useGuildMembers = (query: string, limit: number): GuildMember[] => {
+export const useGuildMemberSearch = (query: string, limit: number): GuildMember[] => {
     const [data, setData] = useState({} as ApiResponse);
-    const url = `/guild_members?query=${query}&limit=${limit}`;
+    const params = new URLSearchParams({query: query, limit: limit.toString()});
+    const url = `/guild_members/search?` + params.toString();
     useEffect(() => {
-        if (query !== "")
+        _.isEmpty(query) ?
+            setData({} as ApiResponse) :
             fetchApi(url, {method: "GET"}).then(resp => setData(resp));
     }, [url]);
+    return _.defaultTo(data.GuildMembers, []);
+};
 
-    return data.GuildMembers ? data.GuildMembers : [] as GuildMember[];
+export const useGuildMemberLookup = (ids: string[]) => {
+    const [data, setData] = useState({} as ApiResponse);
+    const url = `/guild_members/lookup?`;
+    useEffect(() => {
+        if (ids.length > 0) fetchApi(url, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(ids),
+        }).then(resp => setData(resp));
+    }, [url, ids.sort().join(",")]);
+    return _.defaultTo(data.GuildMembers, []);
 };
 
 export const useHighlights = (): Highlight[] => useDataset("Highlights");
 
-export const useMixtapeProjects = (): [MixtapeProject[], (projects: MixtapeProject[]) => void] =>
-    useAndSetApiData("/mixtape", (p) => _.defaultTo(p.MixtapeProjects, []));
+export const useMixtapeProjects = (): [mixtapeProject[], (projects: mixtapeProject[]) => void] => {
+    const [projects, setProjects] = useAndSetApiData("/mixtape/projects", (r) =>
+        _.defaultTo(r.MixtapeProjects, []));
+    return [_.defaultTo(projects, []).map(p => ({
+        ...p,
+        tags: _.defaultTo(p.tags, []),
+        hosts: _.defaultTo(p.hosts, []),
+    })), setProjects];
+};
 
 export const useParts = (): Part[] =>
     useApiData("/parts", (p) => _.defaultTo(p.Parts, []));
