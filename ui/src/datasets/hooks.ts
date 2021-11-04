@@ -6,7 +6,7 @@ import {CreditsTable} from "./CreditsTable";
 import {Director} from "./Director";
 import {GuildMember} from "./GuildMember";
 import {Highlight} from "./Highlight";
-import {mixtapeProject} from "./MixtapeProject";
+import {mixtapeProject} from "./mixtapeProject";
 import {Part} from "./Part";
 import {Project} from "./Project";
 import {ApiRole, createSessions, Session, SessionKind} from "./Session";
