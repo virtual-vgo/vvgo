@@ -59,12 +59,7 @@ export const MemberDashboard = () => {
                     </div>}/>
             </Col>
             <Col lg={9}>
-                <Row className={"row-cols-1"}>
-                    {shuffleProjects.map((proj, i) =>
-                        <Col key={i.toString()} className={"mt-3"}>
-                            <ProjectCard me={me} hostNicks={resolveHostNicks(hosts, proj)} project={proj}/>
-                        </Col>)}
-                </Row>
+                <ProjectCard me={me} hostNicks={resolveHostNicks(hosts, selected)} project={selected}/>
             </Col>
         </Row>
     </RootContainer>;
