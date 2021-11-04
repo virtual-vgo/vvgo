@@ -32,13 +32,17 @@ func HandleProjects(r *http.Request) models.ApiResponse {
 		}
 		var allowedProject []models.MixtapeProject
 		for _, project := range projects {
+			if identity.HasRole(models.RoleVVGOExecutiveDirector) {
+				allowedProject = append(allowedProject, project)
+				continue
+			}
+
 			for _, owner := range project.Hosts {
-				if identity.HasRole(models.RoleVVGOExecutiveDirector) || owner == identity.DiscordID {
+				if owner == identity.DiscordID {
 					allowedProject = append(allowedProject, project)
 					break
 				}
 			}
-
 		}
 
 		if err := models.WriteMixtapeProjects(ctx, allowedProject); err != nil {
@@ -66,4 +70,3 @@ func HandleProjects(r *http.Request) models.ApiResponse {
 		return http_helpers.NewMethodNotAllowedError()
 	}
 }
-

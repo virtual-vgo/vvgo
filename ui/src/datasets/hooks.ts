@@ -6,7 +6,7 @@ import {CreditsTable} from "./CreditsTable";
 import {Director} from "./Director";
 import {GuildMember} from "./GuildMember";
 import {Highlight} from "./Highlight";
-import {MixtapeProject} from "./MixtapeProject";
+import {mixtapeProject} from "./MixtapeProject";
 import {Part} from "./Part";
 import {Project} from "./Project";
 import {ApiRole, createSessions, Session, SessionKind} from "./Session";
@@ -27,7 +27,9 @@ export const useGuildMemberSearch = (query: string, limit: number): GuildMember[
     const params = new URLSearchParams({query: query, limit: limit.toString()});
     const url = `/guild_members/search?` + params.toString();
     useEffect(() => {
-        if (query !== "") fetchApi(url, {method: "GET"}).then(resp => setData(resp));
+        _.isEmpty(query) ?
+            setData({} as ApiResponse) :
+            fetchApi(url, {method: "GET"}).then(resp => setData(resp));
     }, [url]);
     return _.defaultTo(data.GuildMembers, []);
 };
@@ -47,7 +49,7 @@ export const useGuildMemberLookup = (ids: string[]) => {
 
 export const useHighlights = (): Highlight[] => useDataset("Highlights");
 
-export const useMixtapeProjects = (): [MixtapeProject[], (projects: MixtapeProject[]) => void] => {
+export const useMixtapeProjects = (): [mixtapeProject[], (projects: mixtapeProject[]) => void] => {
     const [projects, setProjects] = useAndSetApiData("/mixtape/projects", (r) =>
         _.defaultTo(r.MixtapeProjects, []));
     return [_.defaultTo(projects, []).map(p => ({

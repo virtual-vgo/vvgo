@@ -3,7 +3,7 @@ import {CreditsTable} from "./CreditsTable";
 import {Director} from "./Director";
 import {GuildMember} from "./GuildMember";
 import {Highlight} from "./Highlight";
-import {MixtapeProject} from "./MixtapeProject";
+import {mixtapeProject} from "./MixtapeProject";
 import {Part} from "./Part";
 import {Project} from "./Project";
 import {Session} from "./Session";
@@ -27,7 +27,7 @@ export interface ApiResponse {
     Sessions: Session[];
     Identity: Session;
     GuildMembers: GuildMember[];
-    MixtapeProjects: MixtapeProject[];
+    MixtapeProjects: mixtapeProject[];
     OAuthRedirect: OAuthRedirect;
     CreditsTable: CreditsTable;
     CreditsPasta: CreditsPasta;

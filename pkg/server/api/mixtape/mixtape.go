@@ -42,7 +42,7 @@ func WorkflowHandler(r *http.Request) models.ApiResponse {
 	}
 	var wantProject *models.MixtapeProject
 	for _, project := range projects {
-		if project.Id == want {
+		if project.Name == want {
 			wantProject = &project
 			break
 		}

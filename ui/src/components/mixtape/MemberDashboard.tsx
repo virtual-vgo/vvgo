@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import {getSession} from "../../auth";
 import {
     fetchApi,
-    MixtapeProject,
+    mixtapeProject,
     resolveHostNicks,
     Session,
     useGuildMemberLookup,
@@ -17,10 +17,10 @@ import _ = require("lodash");
 import React = require("react");
 
 const pageTitle = "Wintry Mix | Members Dashboard";
-const permaLink = (project: MixtapeProject) => `/mixtape/${project.id}`;
+const permaLink = (project: mixtapeProject) => `/mixtape/${project.Name}`;
 const pathMatcher = /\/mixtape\/(.+)\/?/;
 
-const searchProjects = (query: string, projects: MixtapeProject[]): MixtapeProject[] => {
+const searchProjects = (query: string, projects: mixtapeProject[]): mixtapeProject[] => {
     return _.defaultTo(projects, []).filter(project =>
         project.Name.toLowerCase().includes(query) ||
         project.channel.toLowerCase().includes(query) ||
@@ -33,7 +33,7 @@ export const MemberDashboard = () => {
     const [projects] = useMixtapeProjects();
     const hosts = useGuildMemberLookup(projects.flatMap(r => r.hosts));
     const shuffleProjects = _.shuffle(projects).map(p => {
-        return {...p, tags: _.defaultTo(p.tags, []), hosts: _.defaultTo(p.hosts, [])} as MixtapeProject;
+        return {...p, tags: _.defaultTo(p.tags, []), hosts: _.defaultTo(p.hosts, [])} as mixtapeProject;
     });
     const [selected, setSelected] = useMenuSelection(projects, pathMatcher, permaLink, _.shuffle(projects).pop());
     const me = getSession();
@@ -51,10 +51,10 @@ export const MemberDashboard = () => {
                     choices={projects}
                     selected={selected}
                     setSelected={setSelected}
-                    permaLink={null}
+                    permaLink={permaLink}
                     searchChoices={searchProjects}
                     buttonContent={(proj) => <div>
-                        {proj.Name}<br/>
+                        {proj.title}<br/>
                         <small><em>{resolveHostNicks(hosts, proj).join(", ")}</em></small>
                     </div>}/>
             </Col>
@@ -70,7 +70,7 @@ export const MemberDashboard = () => {
     </RootContainer>;
 };
 
-const ProjectCard = (props: { project: MixtapeProject, hostNicks: string[], me: Session }) => {
+const ProjectCard = (props: { project: mixtapeProject, hostNicks: string[], me: Session }) => {
     const [showEdit, setShowEdit] = useState(false);
     const blurbRef = useRef({} as HTMLTextAreaElement);
     const tagsRef = useRef({} as HTMLInputElement);
@@ -90,7 +90,7 @@ const ProjectCard = (props: { project: MixtapeProject, hostNicks: string[], me: 
     };
 
     return <div>
-        <h1>{props.project.Name}</h1>
+        <h1>{props.project.title}</h1>
         <h4>
             Hosts: {props.hostNicks.join(", ")}<br/>
             Channel: <em>{props.project.channel}</em>
