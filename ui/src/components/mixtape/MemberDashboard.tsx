@@ -46,7 +46,7 @@ export const MemberDashboard = () => {
             Wintry Mix | Members Dashboard
         </h1>
         <h3>
-            {_.isEmpty(thisMixtape) ? <div/> : <em>All submissions are due by {thisMixtape.SubmissionDeadline}.</em>}
+            {_.isEmpty(thisMixtape) ? <div/> : <em>Hosts: final track submissions are due by {thisMixtape.SubmissionDeadline}.</em>}
         </h3>
         <Row className={"row-cols-1"}>
             <Col lg={3}>
