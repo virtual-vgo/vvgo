@@ -88,7 +88,7 @@ const WorkflowApp = (props: {
         <Col className={"col-md-6 mb-2"}>
             {_.isEmpty(curProject.hosts) ? <div/> :
                 <SetChannelCard
-                    cardTitle={"3. Create the project channel."}
+                    cardTitle={"3. Assign the project channel."}
                     saveProject={saveProject}
                     curProject={curProject}
                     completed={curProject.channel && curProject.channel != ""}/>}
