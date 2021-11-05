@@ -65,37 +65,8 @@ jobs:
       - name: Run `go test -v -race ./...`
         run: go generate ./... && go test -v -race ./...
 
-  go-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-go@v1
-        with:
-          go-version: 1.16
-      - uses: actions/checkout@v2
-      - name: Cache go modules
-        uses: actions/cache@v1
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
-
-      - name: Run `go build ./cmd/...`
-        run: go generate ./... && go build ./cmd/...
-
   npx-eslint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: npm install && npx eslint ui
-
-  npx-webpack-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: npm install && npx webpack build
-
-  docker-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: docker build .
