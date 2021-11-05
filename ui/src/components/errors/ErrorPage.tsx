@@ -1,6 +1,6 @@
 import {Link} from "react-router-dom";
 
-export const ErrorPage = (props: { src: string, alt: string }) => {
+export const ErrorPage = (props: { src?: string, alt: string }) => {
     document.title = props.alt;
     return <div className="mt-2">
         <img src={props.src}

@@ -1,8 +1,8 @@
 declare module "*.gif" {
-    const value: any;
+    const value: string | undefined;
     export = value;
 }
 declare module "*.png" {
-    const value: any;
+    const value: string | undefined;
     export = value;
 }

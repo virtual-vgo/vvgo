@@ -59,18 +59,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          cd ui
-          npm install
-          npx eslint
+      - run: cd ui && npm install && npx eslint src types
 
   webpack-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          cd ui
-          npm install
-          npx webpack build
+      - run: cd ui && npm install && npx webpack build
 
 
