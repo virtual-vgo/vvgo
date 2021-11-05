@@ -93,3 +93,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: npm install && npx webpack build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build .
