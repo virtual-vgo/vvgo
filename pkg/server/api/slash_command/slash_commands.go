@@ -88,37 +88,37 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	publicKey, _ := hex.DecodeString(discord.ClientPublicKey)
 	if len(publicKey) == 0 {
 		logger.Error("invalid discord public key")
-		http_helpers.WriteInternalServerError(ctx, w)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	signature, _ := hex.DecodeString(r.Header.Get("X-Signature-Ed25519"))
 	if len(signature) == 0 {
-		http_helpers.WriteErrorBadRequest(ctx, w, "invalid signature")
+		http.Error(w, "invalid signature", http.StatusBadRequest)
 		return
 	}
 
 	timestamp := r.Header.Get("X-Signature-Timestamp")
 	if len(timestamp) == 0 {
-		http_helpers.WriteErrorBadRequest(ctx, w, "invalid signature timestamp")
+		http.Error(w, "invalid signature timestamp", http.StatusBadRequest)
 		return
 	}
 
 	if ed25519.Verify(publicKey, []byte(timestamp+body.String()), signature) == false {
-		http_helpers.WriteUnauthorizedError(ctx, w)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	var interaction discord.Interaction
 	if err := json.NewDecoder(&body).Decode(&interaction); err != nil {
 		logger.JsonDecodeFailure(ctx, err)
-		http_helpers.WriteErrorBadRequest(ctx, w, "invalid request body: "+err.Error())
+		http.Error(w, "invalid request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	response, ok := HandleInteraction(ctx, interaction)
 	if !ok {
-		http_helpers.WriteErrorBadRequest(ctx, w, "unsupported interaction type")
+		http.Error(w, "unsupported interaction type", http.StatusBadRequest)
 		return
 	}
 

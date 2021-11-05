@@ -40,7 +40,7 @@ func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
 		identity := login.IdentityFromContext(r.Context())
 		fmt.Println(identity)
 		if !identity.HasRole(role) {
-			http_helpers.WriteUnauthorizedError(ctx, w)
+			http_helpers.WriteAPIResponse(ctx, w, http_helpers.NewUnauthorizedError())
 		}
 	}
 }
