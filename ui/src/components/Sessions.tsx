@@ -68,9 +68,9 @@ const NewSession = (props: {
     buttonState: string;
     setButtonState: Dispatch<SetStateAction<string>>;
 }): JSX.Element => {
-    const inputKind = useRef();
-    const inputRoles = useRef();
-    const inputExpires = useRef();
+    const inputKind = useRef({} as HTMLSelectElement);
+    const inputRoles = useRef({} as HTMLSelectElement);
+    const inputExpires = useRef({} as HTMLInputElement);
 
     const roles = ["write_spreadsheet"];
     return <tr>

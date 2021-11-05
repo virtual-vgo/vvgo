@@ -29,7 +29,7 @@ export interface Project {
 }
 
 export const latestProject = (projects: Project[]): Project =>
-    _.defaultTo(projects, [])
-        .filter(proj => proj.VideoReleased === true)
+    <Project>_.defaultTo(projects, [])
+        .filter(proj => proj.VideoReleased)
         .sort((a, b) => a.Name.localeCompare(b.Name))
         .pop();

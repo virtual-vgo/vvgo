@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import {getSession} from "../../auth";
 import {links} from "../../data/links";
 import {
-    mixtapeProject,
+    mixtapeProject, Project,
     resolveHostNicks,
     saveMixtapeProjects,
     Session,
@@ -25,17 +25,17 @@ const pathMatcher = /\/mixtape\/(.+)\/?/;
 const searchProjects = (query: string, projects: mixtapeProject[]): mixtapeProject[] => {
     return _.defaultTo(projects, []).filter(project =>
         project.Name.toLowerCase().includes(query) ||
-        project.channel.toLowerCase().includes(query) ||
-        project.hosts.map(x => x.toLowerCase()).includes(query) ||
-        project.tags.map(x => x.toLowerCase()).includes(query),
+        _.defaultTo(project.channel, "").toLowerCase().includes(query) ||
+        _.defaultTo(project.hosts, []).map(x => x.toLowerCase()).includes(query) ||
+        _.defaultTo(project.tags, []).map(x => x.toLowerCase()).includes(query),
     );
 };
 
 export const MemberDashboard = () => {
     const vvgoProjects = useProjects();
     const [mixtapeProjects, setMixtapeProjects] = useMixtapeProjects();
-    const hosts = useGuildMemberLookup(mixtapeProjects.flatMap(r => r.hosts));
-    const [selected, setSelected] = useMenuSelection(mixtapeProjects, pathMatcher, permaLink, _.shuffle(mixtapeProjects).pop());
+    const hosts = useGuildMemberLookup(mixtapeProjects.flatMap(r => _.defaultTo(r.hosts, [])));
+    const [selected, setSelected] = useMenuSelection(mixtapeProjects, pathMatcher, permaLink, _.shuffle(mixtapeProjects).pop() as mixtapeProject);
     const me = getSession();
 
     const thisMixtape = _.defaultTo(vvgoProjects, []).filter(x => x.Name == CurrentMixtape).pop();
@@ -45,7 +45,7 @@ export const MemberDashboard = () => {
             Wintry Mix | Members Dashboard
         </h1>
         <h3>
-            {_.isEmpty(thisMixtape) ? <div/> : <em>All submissions are due by {thisMixtape.SubmissionDeadline}.</em>}
+            {_.isEmpty(thisMixtape) ? <div/> : <em>All submissions are due by {(thisMixtape as Project).SubmissionDeadline}.</em>}
         </h3>
         <Row className={"row-cols-1"}>
             <Col lg={3}>
@@ -85,7 +85,7 @@ const ProjectCard = (props: {
 }) => {
     const [showEdit, setShowEdit] = useState("");
     const blurbRef = useRef({} as HTMLTextAreaElement);
-    const canEdit = (props.me.DiscordID && props.project.hosts.includes(props.me.DiscordID)) ||
+    const canEdit = (props.me.DiscordID && _.defaultTo(props.project.hosts, []).includes(props.me.DiscordID)) ||
         (props.me.Roles && props.me.Roles.includes(UserRole.ExecutiveDirector));
 
     const onClickSubmit = () => {
@@ -119,7 +119,7 @@ const ProjectCard = (props: {
                 <a href={links.Help.Markdown}>Markdown Cheatsheet</a>
             </div> :
             <ReactMarkdown>
-                {props.project.blurb}
+                {_.defaultTo(props.project.blurb, "")}
             </ReactMarkdown>}
         {canEdit ?
             showEdit == props.project.Name ?

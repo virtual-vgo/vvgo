@@ -4,16 +4,16 @@ import _ = require("lodash");
 
 export interface mixtapeProject {
     Name: string;
-    title: string;
     mixtape: string;
-    blurb: string;
-    channel: string;
-    hosts: string[];
-    tags: string[];
+    title?: string;
+    blurb?: string;
+    channel?: string;
+    hosts?: string[];
+    tags?: string[];
 }
 
 export const resolveHostNicks = (members: GuildMember[], project: mixtapeProject) =>
-    _.uniq(members.filter(m => project.hosts.includes(m.user.id)).map(m => m.nick));
+    _.uniq(members.filter(m => _.defaultTo(project.hosts, []).includes(m.user.id)).map(m => m.nick));
 
 export const saveMixtapeProjects = (projects: mixtapeProject[]) => {
     return fetchApi("/mixtape/projects", {

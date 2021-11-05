@@ -11,7 +11,7 @@ export function useMenuSelection<T extends { Name: string }>(
     permaLink: (x: T) => string,
     defaultChoice: T,
 ): [T, Dispatch<SetStateAction<T>>] {
-    const [selected, setSelected] = useState(null as T);
+    const [selected, setSelected] = useState(null as unknown as T);
 
     window.onpopstate = (event) => {
         if (event.state) setSelected(event.state);
@@ -24,11 +24,11 @@ export function useMenuSelection<T extends { Name: string }>(
 
     const params = new URLSearchParams(document.location.search);
     if (!_.isEmpty(params.get("name")))
-        want = choices.filter(p => p.Name == params.get("name")).pop();
+        want = choices.filter(p => p.Name == params.get("name")).pop() as T;
 
     const pathMatch = document.location.pathname.match(pathMatcher);
     if (pathMatch && pathMatch.length == 2 && pathMatch[1].length > 0)
-        want = choices.filter(p => p.Name == pathMatch[1]).pop();
+        want = choices.filter(p => p.Name == pathMatch[1]).pop() as T;
 
     if (want) {
         setSelected(want);
@@ -38,6 +38,8 @@ export function useMenuSelection<T extends { Name: string }>(
     return [selected, setSelected];
 }
 
+type ToggleParams<T> = { hidden: boolean, title: string, filter: (on: boolean, x: T) => boolean }
+
 export function FancyProjectMenu<T extends { Name: string }>(props: {
     choices: T[],
     permaLink: (x: T) => string,
@@ -45,10 +47,10 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
     setSelected: Dispatch<SetStateAction<T>>,
     buttonContent: (x: T) => JSX.Element
     searchChoices?: (q: string, choices: T[]) => T[],
-    toggles?: Array<{ hidden: boolean, title: string, filter: (on: boolean, x: T) => boolean }>,
+    toggles?: Array<ToggleParams<T>>,
 }) {
     const [searchInput, setSearchInput] = useState("");
-    const menuToggles = useToggles(props.toggles);
+    const menuToggles = useToggles(props.toggles as Array<ToggleParams<T>>);
 
     const searcher = _.defaultTo(props.searchChoices, () => props.choices);
     const filter = (x: T) => _.isEmpty(menuToggles) ||
@@ -87,11 +89,7 @@ export type Toggle<T> = {
     filter: (on: boolean, x: T) => boolean
 }
 
-export function useToggles<T>(toggles: Array<{
-    hidden: boolean,
-    title: string,
-    filter: (on: boolean, x: T) => boolean
-}>): Toggle<T>[] {
+export function useToggles<T>(toggles: Array<ToggleParams<T>>): Toggle<T>[] {
     const [toggleState, setToggleState] = useState(0);
     return _.defaultTo(toggles, []).map((t, i) => ({
         ...t,
@@ -101,7 +99,7 @@ export function useToggles<T>(toggles: Array<{
 }
 
 export function MenuToggles<T>(props: { toggles: Toggle<T>[] }): JSX.Element {
-    const toggles = props.toggles.filter(t => t.hidden == false)
+    const toggles = props.toggles.filter(t => !t.hidden);
     return _.isEmpty(props.toggles) ?
         <div/> :
         <div className={"d-flex flex-row justify-content-center"}>

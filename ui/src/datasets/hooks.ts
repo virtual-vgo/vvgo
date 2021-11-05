@@ -69,7 +69,7 @@ export const useSessions = (): [Session[], (sessions: Session[]) => void] =>
     useAndSetApiData("/sessions", (p) => _.defaultTo(p.Sessions, []));
 
 export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Session => {
-    const [session, setSession] = useState(null as Session);
+    const [session, setSession] = useState(null as unknown as Session);
     useEffect(() => {
         createSessions([{expires: expires, Kind: SessionKind.ApiToken, Roles: roles}])
             .then(sessions => _.isEmpty(sessions) ? setSession({} as Session) : setSession(sessions[0]));
@@ -78,7 +78,7 @@ export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Sessio
 };
 
 export const useSheet = (spreadsheetName: string, sheetName: string): Sheet =>
-    _.defaultTo(_.defaultTo(useSpreadsheet(spreadsheetName, [sheetName]), {} as Spreadsheet).sheets, [])
+    <Sheet>_.defaultTo(_.defaultTo(useSpreadsheet(spreadsheetName, [sheetName]), {} as Spreadsheet).sheets, [])
         .filter(sheet => sheet.Name == sheetName).pop();
 
 export const useSpreadsheet = (spreadsheetName: string, sheetNames: string[]): Spreadsheet => {
@@ -96,7 +96,7 @@ export function useApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T):
 }
 
 export function useAndSetApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): [T, (t: T) => void] {
-    const [data, setData] = useState(null as T);
+    const [data, setData] = useState(null as unknown as T);
     useEffect(() => {
         fetchApi(url, {method: "GET"}).then(resp => setData(getData(resp)));
     }, [url, getSession().Key]);

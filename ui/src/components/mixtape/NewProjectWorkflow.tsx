@@ -32,7 +32,7 @@ const ProjectTable = (props: {
     projects: mixtapeProject[];
     setProjects: (projects: mixtapeProject[]) => void;
 }) => {
-    const hosts = useGuildMemberLookup(props.projects.flatMap(r => r.hosts));
+    const hosts = useGuildMemberLookup(props.projects.flatMap(r => _.defaultTo(r.hosts, [])));
     const onClickDelete = (project: mixtapeProject) => {
         console.log("deleting", project);
         props.setProjects(props.projects.filter(x => project.Name != x.Name));
@@ -58,7 +58,7 @@ const WorkflowApp = (props: {
     setProjects: (projects: mixtapeProject[]) => void;
     projects: mixtapeProject[];
 }) => {
-    const [curProject, setCurProject] = useState({mixtape: CurrentMixtape, hosts: []} as mixtapeProject);
+    const [curProject, setCurProject] = useState({Name: "", mixtape: CurrentMixtape, hosts: []} as mixtapeProject);
     const saveProject = (project: mixtapeProject) => {
         props.setProjects(_.uniqBy([project, ...props.projects], x => x.Name));
         saveMixtapeProjects([project])
@@ -82,7 +82,7 @@ const WorkflowApp = (props: {
                     saveProject={saveProject}
                     project={curProject}
                     toastLimit={GuildMemberToastLimit}
-                    completed={curProject.hosts && curProject.hosts.length > 0}/>}
+                    completed={!_.isEmpty(curProject.hosts)}/>}
         </Col>
         <Col className={"col-md-6 mb-2"}>
             {_.isEmpty(curProject.hosts) ? <div/> :
@@ -90,7 +90,7 @@ const WorkflowApp = (props: {
                     cardTitle={"3. Assign the project channel."}
                     saveProject={saveProject}
                     curProject={curProject}
-                    completed={curProject.channel && curProject.channel != ""}/>}
+                    completed={!_.isEmpty(curProject.channel)}/>}
         </Col>
     </Row>;
 };
@@ -109,7 +109,7 @@ const SetTitleCard = (props: {
     curProject: mixtapeProject;
     completed: boolean;
 }) => {
-    const [title, setTitle] = useState(props.curProject.title);
+    const [title, setTitle] = useState(_.defaultTo(props.curProject.title, ""));
     return <Card className={"bg-transparent"}>
         <Card.Title className={"m-2"}>
             <CheckMark completed={props.completed}>{props.cardTitle}</CheckMark>
@@ -163,7 +163,7 @@ const SetHostsCard = (props: {
     saveProject: (project: mixtapeProject) => void;
     toastLimit: number;
 }) => {
-    const [hosts, setHosts] = useState(props.project.hosts.map(x => ({user: {id: x}} as GuildMember)));
+    const [hosts, setHosts] = useState(_.defaultTo(props.project.hosts, []).map(x => ({user: {id: x}} as GuildMember)));
     const [searchQuery, setSearchQuery] = useState("");
     const guildMembers = useGuildMemberSearch(searchQuery, props.toastLimit);
 
