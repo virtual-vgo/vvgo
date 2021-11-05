@@ -20,11 +20,15 @@ export const CurrentMixtape = "15b-wintry-mix";
 export const NewProjectWorkflow = () => {
     const [projects, setProjects] = useMixtapeProjects();
     return <RootContainer title="New Project Workflow">
-        <h1>Winter Mixtape</h1>
-        <h2>New Project Workflow</h2>
-        <WorkflowApp projects={projects} setProjects={setProjects}/>
-        <h2>Existing Projects</h2>
-        <ProjectTable projects={projects} setProjects={setProjects}/>
+        {projects ?
+            <div>
+                <h1>Winter Mixtape</h1>
+                <h2>New Project Workflow</h2>
+                <WorkflowApp projects={projects} setProjects={setProjects}/>
+                <h2>Existing Projects</h2>
+                <ProjectTable projects={projects} setProjects={setProjects}/>
+            </div> :
+            <LoadingText/>}
     </RootContainer>;
 };
 
@@ -38,8 +42,6 @@ const ProjectTable = (props: {
         props.setProjects(props.projects.filter(x => project.Name != x.Name));
         deleteMixtapeProjects([project]).catch(err => console.log(err));
     };
-
-    if (!props.projects) return <LoadingText/>;
 
     return <Table className={"text-light"}>
         <tbody>
@@ -58,7 +60,7 @@ const WorkflowApp = (props: {
     setProjects: (projects: mixtapeProject[]) => void;
     projects: mixtapeProject[];
 }) => {
-    const [curProject, setCurProject] = useState({Name: "", mixtape: CurrentMixtape, hosts: []} as mixtapeProject);
+    const [curProject, setCurProject] = useState<mixtapeProject>({Name: "", mixtape: CurrentMixtape, hosts: []});
     const saveProject = (project: mixtapeProject) => {
         props.setProjects(_.uniqBy([project, ...props.projects], x => x.Name));
         saveMixtapeProjects([project])

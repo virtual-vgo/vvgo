@@ -55,4 +55,22 @@ jobs:
       - name: Run `go vet ./...`
         run: go generate ./... && go vet ./...
 
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          cd ui
+          npm install
+          npx eslint
+
+  webpack-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          cd ui
+          npm install
+          npx webpack build
+
 

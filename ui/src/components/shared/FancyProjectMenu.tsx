@@ -9,9 +9,9 @@ export function useMenuSelection<T extends { Name: string }>(
     choices: T[],
     pathMatcher: RegExp,
     permaLink: (x: T) => string,
-    defaultChoice: T,
-): [T, Dispatch<SetStateAction<T>>] {
-    const [selected, setSelected] = useState(null as unknown as T);
+    defaultChoice?: T,
+): [T | undefined, Dispatch<SetStateAction<T | undefined>>] {
+    const [selected, setSelected] = useState<T | undefined>(undefined);
 
     window.onpopstate = (event) => {
         if (event.state) setSelected(event.state);
@@ -24,11 +24,11 @@ export function useMenuSelection<T extends { Name: string }>(
 
     const params = new URLSearchParams(document.location.search);
     if (!_.isEmpty(params.get("name")))
-        want = choices.filter(p => p.Name == params.get("name")).pop() as T;
+        want = choices.filter(p => p.Name == params.get("name")).pop();
 
     const pathMatch = document.location.pathname.match(pathMatcher);
     if (pathMatch && pathMatch.length == 2 && pathMatch[1].length > 0)
-        want = choices.filter(p => p.Name == pathMatch[1]).pop() as T;
+        want = choices.filter(p => p.Name == pathMatch[1]).pop();
 
     if (want) {
         setSelected(want);
@@ -43,8 +43,8 @@ type ToggleParams<T> = { hidden: boolean, title: string, filter: (on: boolean, x
 export function FancyProjectMenu<T extends { Name: string }>(props: {
     choices: T[],
     permaLink: (x: T) => string,
-    selected: T,
-    setSelected: Dispatch<SetStateAction<T>>,
+    selected: T | undefined,
+    setSelected: Dispatch<SetStateAction<T | undefined>>,
     buttonContent: (x: T) => JSX.Element
     searchChoices?: (q: string, choices: T[]) => T[],
     toggles?: Array<ToggleParams<T>>,

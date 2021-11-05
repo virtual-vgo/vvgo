@@ -1,8 +1,5 @@
 module.exports = {
-    env: {
-        browser: true,
-        es2021: true
-    },
+    env: {browser: true, es6: true},
     extends: [
         "eslint:recommended",
         "plugin:react/recommended",
@@ -12,16 +9,10 @@ module.exports = {
     parser: "@typescript-eslint/parser",
     parserOptions: {
         sourceType: "module",
-        ecmaFeatures: {jsx: true}
+        ecmaFeatures: {jsx: true, impliedStrict: true}
     },
-    plugins: [
-        "babel",
-        "react",
-        "@typescript-eslint"
-    ],
-    settings: {
-        react: {version: "detect"}
-    },
+    plugins: ["react", "@typescript-eslint"],
+    settings: {react: {version: "detect"}},
     rules: {
         "react/jsx-uses-react": 1,
         "no-unneeded-ternary": 1,

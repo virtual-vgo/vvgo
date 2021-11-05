@@ -28,8 +28,8 @@ export interface Project {
     ReferenceTrackLink: string;
 }
 
-export const latestProject = (projects: Project[]): Project =>
-    <Project>_.defaultTo(projects, [])
+export const latestProject = (projects: Project[]): Project | undefined =>
+    _.defaultTo(projects, [])
         .filter(proj => proj.VideoReleased)
         .sort((a, b) => a.Name.localeCompare(b.Name))
         .pop();

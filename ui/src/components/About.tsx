@@ -42,7 +42,7 @@ const Blurb = () => {
     </Row>;
 };
 
-const Directors = (props: { directors: Director[] }) => {
+const Directors = (props: { directors?: Director[] }) => {
     return <div className="text-center">
         <Row className="mt-3 row-cols-2">
             <Col lg={3}>

@@ -2,7 +2,7 @@ import _ = require("lodash");
 import {Link} from "react-router-dom";
 import {Project} from "../../datasets";
 
-export const ProjectBanner = (props: { project: Project }) => {
+export const ProjectBanner = (props: { project: Project | undefined }) => {
     if (!props.project) return <div/>;
     return <div className={"d-flex justify-content-center mb-2"}>
         {_.isEmpty(props.project.BannerLink) ?

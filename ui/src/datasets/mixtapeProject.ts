@@ -9,7 +9,6 @@ export interface mixtapeProject {
     blurb?: string;
     channel?: string;
     hosts?: string[];
-    tags?: string[];
 }
 
 export const resolveHostNicks = (members: GuildMember[], project: mixtapeProject) =>

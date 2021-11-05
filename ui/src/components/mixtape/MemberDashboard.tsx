@@ -4,7 +4,8 @@ import ReactMarkdown from "react-markdown";
 import {getSession} from "../../auth";
 import {links} from "../../data/links";
 import {
-    mixtapeProject, Project,
+    mixtapeProject,
+    Project,
     resolveHostNicks,
     saveMixtapeProjects,
     Session,
@@ -13,7 +14,7 @@ import {
     useProjects,
     UserRole,
 } from "../../datasets";
-import {FancyProjectMenu, useMenuSelection} from "../shared/ProjectsMenu";
+import {FancyProjectMenu, useMenuSelection} from "../shared/FancyProjectMenu";
 import {RootContainer} from "../shared/RootContainer";
 import {CurrentMixtape} from "./NewProjectWorkflow";
 import _ = require("lodash");
@@ -26,16 +27,15 @@ const searchProjects = (query: string, projects: mixtapeProject[]): mixtapeProje
     return _.defaultTo(projects, []).filter(project =>
         project.Name.toLowerCase().includes(query) ||
         _.defaultTo(project.channel, "").toLowerCase().includes(query) ||
-        _.defaultTo(project.hosts, []).map(x => x.toLowerCase()).includes(query) ||
-        _.defaultTo(project.tags, []).map(x => x.toLowerCase()).includes(query),
+        _.defaultTo(project.hosts, []).map(x => x.toLowerCase()).includes(query),
     );
 };
 
 export const MemberDashboard = () => {
     const vvgoProjects = useProjects();
     const [mixtapeProjects, setMixtapeProjects] = useMixtapeProjects();
-    const hosts = useGuildMemberLookup(mixtapeProjects.flatMap(r => _.defaultTo(r.hosts, [])));
-    const [selected, setSelected] = useMenuSelection(mixtapeProjects, pathMatcher, permaLink, _.shuffle(mixtapeProjects).pop() as mixtapeProject);
+    const hosts = useGuildMemberLookup(_.defaultTo(mixtapeProjects, []).flatMap(r => _.defaultTo(r.hosts, [])));
+    const [selected, setSelected] = useMenuSelection(_.defaultTo(mixtapeProjects, []), pathMatcher, permaLink, _.shuffle(mixtapeProjects).pop());
     const me = getSession();
 
     const thisMixtape = _.defaultTo(vvgoProjects, []).filter(x => x.Name == CurrentMixtape).pop();
@@ -45,12 +45,13 @@ export const MemberDashboard = () => {
             Wintry Mix | Members Dashboard
         </h1>
         <h3>
-            {_.isEmpty(thisMixtape) ? <div/> : <em>All submissions are due by {(thisMixtape as Project).SubmissionDeadline}.</em>}
+            {_.isEmpty(thisMixtape) ? <div/> :
+                <em>All submissions are due by {(thisMixtape as Project).SubmissionDeadline}.</em>}
         </h3>
         <Row className={"row-cols-1"}>
             <Col lg={3}>
                 <FancyProjectMenu
-                    choices={mixtapeProjects}
+                    choices={_.defaultTo(mixtapeProjects, [])}
                     selected={selected}
                     setSelected={setSelected}
                     permaLink={permaLink}
@@ -67,7 +68,7 @@ export const MemberDashboard = () => {
                         hostNicks={resolveHostNicks(hosts, selected)}
                         project={selected}
                         setProject={setSelected}
-                        allProjects={mixtapeProjects}
+                        allProjects={_.defaultTo(mixtapeProjects, [])}
                         setAllProjects={setMixtapeProjects}/> :
                     <div/>}
             </Col>
