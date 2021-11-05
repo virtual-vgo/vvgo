@@ -14,15 +14,14 @@ export const NewProjectFormResponses = () => {
         <Table>
             <thead>
             <tr>
-                {sheet.Values[0].map(v => <td>{v}</td>)}
+                {sheet.Values[0].map(v => <td key={v}>{v}</td>)}
             </tr>
             </thead>
             <tbody>
             {sheet.Values.slice(1).map(r =>
-                <tr>
-                    {r.map(v => <td>{v}</td>)}
+                <tr key={r.join(",")}>
+                    {r.map(v => <td key={v}>{v}</td>)}
                 </tr>)}
-
             </tbody>
         </Table>
     </RootContainer>;

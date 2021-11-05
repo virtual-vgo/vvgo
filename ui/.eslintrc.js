@@ -11,18 +11,20 @@ module.exports = {
     ],
     parser: "@typescript-eslint/parser",
     parserOptions: {
-        ecmaFeatures: {
-            jsx: true
-        },
-        ecmaVersion: 12,
-        sourceType: "module"
+        sourceType: "module",
+        ecmaFeatures: {jsx: true}
     },
     plugins: [
+        "babel",
         "react",
         "@typescript-eslint"
     ],
     settings: {
         react: {version: "detect"}
     },
-    rules: {}
+    rules: {
+        "react/jsx-uses-react": 1,
+        "no-unneeded-ternary": 1,
+        "no-var": 1,
+    }
 };

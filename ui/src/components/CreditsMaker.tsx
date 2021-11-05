@@ -117,7 +117,7 @@ const ProjectDropdown = (props: { projectName: string, setProjectName: (name: st
             </Dropdown.Toggle>
 
             <Dropdown.Menu>
-                {projects.map(p => <Dropdown.Item onClick={() => updateSelect(p)}>
+                {projects.map(p => <Dropdown.Item key={p.Name} onClick={() => updateSelect(p)}>
                     {p.Title}
                 </Dropdown.Item>)}
             </Dropdown.Menu>
