@@ -13,7 +13,6 @@ import {
 import {LoadingText} from "../shared/LoadingText";
 import {RootContainer} from "../shared/RootContainer";
 import _ = require("lodash");
-import React = require("react");
 
 const GuildMemberToastLimit = 5;
 export const CurrentMixtape = "15b-wintry-mix";

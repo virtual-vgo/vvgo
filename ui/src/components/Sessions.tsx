@@ -1,11 +1,10 @@
-import {Dispatch, MutableRefObject, SetStateAction, useState} from "react";
+import {Dispatch, MutableRefObject, SetStateAction, useRef, useState} from "react";
 import {Button} from "react-bootstrap";
 import {getSession} from "../auth";
 import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "../datasets";
 import {LoadingText} from "./shared/LoadingText";
 import {RootContainer} from "./shared/RootContainer";
 import _ = require("lodash");
-import React = require("react");
 
 export const Sessions = () => {
     const me = getSession();
@@ -69,9 +68,9 @@ const NewSession = (props: {
     buttonState: string;
     setButtonState: Dispatch<SetStateAction<string>>;
 }): JSX.Element => {
-    const inputKind = React.useRef();
-    const inputRoles = React.useRef();
-    const inputExpires = React.useRef();
+    const inputKind = useRef();
+    const inputRoles = useRef();
+    const inputExpires = useRef();
 
     const roles = ["write_spreadsheet"];
     return <tr>

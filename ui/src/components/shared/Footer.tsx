@@ -1,4 +1,3 @@
-import React = require("react");
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 

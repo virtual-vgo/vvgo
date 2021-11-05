@@ -1,5 +1,4 @@
 import _ = require("lodash");
-import React = require("react");
 import * as d3 from "d3";
 import {MutableRefObject, useEffect, useRef} from "react";
 import {Part} from "../../datasets";

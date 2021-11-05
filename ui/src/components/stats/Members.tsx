@@ -1,6 +1,5 @@
 import d3 = require("d3");
 import _ = require("lodash");
-import React = require("react");
 import {VegaLite} from "react-vega";
 import {useCredits} from "../../datasets";
 import {RootContainer} from "../shared/RootContainer";

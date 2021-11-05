@@ -5,7 +5,6 @@ import {randElement} from "../utils";
 import {ProjectBanner} from "./shared/ProjectBanner";
 import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
-import React = require("react");
 
 export const Home = () => {
     const highlights = useHighlights();

@@ -1,4 +1,3 @@
-import React = require("react");
 import {Project} from "../../datasets";
 
 export const YoutubeIframe = (props: { project: Project }) => {

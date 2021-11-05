@@ -1,4 +1,3 @@
-import React = require("react");
 import {Link} from "react-router-dom";
 
 export const ErrorPage = (props: { src: string, alt: string }) => {

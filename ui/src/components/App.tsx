@@ -1,4 +1,3 @@
-import React = require("react");
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession, updateLogin} from "../auth";
 import {sessionIsAnonymous, UserRole} from "../datasets";

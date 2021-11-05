@@ -1,4 +1,4 @@
-import React = require("react");
+import {CSSProperties, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
@@ -14,7 +14,7 @@ const styles = {
         maxWidth: "330px",
         padding: "15px",
         margin: "auto",
-    } as React.CSSProperties,
+    } as CSSProperties,
 };
 
 export const RedirectLogin = () => <Redirect to="/login/"/>
@@ -22,10 +22,10 @@ export const RedirectLoginSuccess = () => <Redirect to="/parts"/>;
 export const RedirectLoginFailure = () => <Redirect to="/login/failure"/>;
 
 export const Login = () => {
-    const [success, setSuccess] = React.useState(false);
-    const [loginFailed, setLoginFailed] = React.useState(false);
-    const userRef = React.useRef({} as HTMLInputElement);
-    const passRef = React.useRef({} as HTMLInputElement);
+    const [success, setSuccess] = useState(false);
+    const [loginFailed, setLoginFailed] = useState(false);
+    const userRef = useRef({} as HTMLInputElement);
+    const passRef = useRef({} as HTMLInputElement);
 
     const onClickLogin = () =>
         passwordLogin(userRef.current.value, passRef.current.value)

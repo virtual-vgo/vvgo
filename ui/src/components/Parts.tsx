@@ -1,5 +1,5 @@
-import React = require("react");
 import * as _ from "lodash";
+import {CSSProperties, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
@@ -122,12 +122,12 @@ const PartsTable = (props: {
     projectName: string,
     parts: Part[],
 }) => {
-    const searchInputRef = React.useRef({} as HTMLInputElement);
-    const [searchInput, setSearchInput] = React.useState("");
+    const searchInputRef = useRef({} as HTMLInputElement);
+    const [searchInput, setSearchInput] = useState("");
     const wantParts = searchParts(searchInput, props.parts).filter(r => r.Project == props.projectName);
-    const searchBoxStyle = {maxWidth: 250} as React.CSSProperties;
+    const searchBoxStyle = {maxWidth: 250} as CSSProperties;
     // This width gives enough space to have all the download buttons on one line
-    const partNameStyle = {width: 220} as React.CSSProperties;
+    const partNameStyle = {width: 220} as CSSProperties;
     return <div className="d-flex justify-content-center">
         <div className="d-flex flex-column flex-fill justify-content-center">
             <FormControl

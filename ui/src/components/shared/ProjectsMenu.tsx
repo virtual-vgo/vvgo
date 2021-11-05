@@ -1,5 +1,5 @@
 import _ = require("lodash");
-import React = require("react");
+import {Dispatch, SetStateAction, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import FormControl from "react-bootstrap/FormControl";
@@ -10,8 +10,8 @@ export function useMenuSelection<T extends { Name: string }>(
     pathMatcher: RegExp,
     permaLink: (x: T) => string,
     defaultChoice: T,
-): [T, React.Dispatch<React.SetStateAction<T>>] {
-    const [selected, setSelected] = React.useState(null as T);
+): [T, Dispatch<SetStateAction<T>>] {
+    const [selected, setSelected] = useState(null as T);
 
     window.onpopstate = (event) => {
         if (event.state) setSelected(event.state);
@@ -42,12 +42,12 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
     choices: T[],
     permaLink: (x: T) => string,
     selected: T,
-    setSelected: React.Dispatch<React.SetStateAction<T>>,
+    setSelected: Dispatch<SetStateAction<T>>,
     buttonContent: (x: T) => JSX.Element
     searchChoices?: (q: string, choices: T[]) => T[],
     toggles?: Array<{ hidden: boolean, title: string, filter: (on: boolean, x: T) => boolean }>,
 }) {
-    const [searchInput, setSearchInput] = React.useState("");
+    const [searchInput, setSearchInput] = useState("");
     const menuToggles = useToggles(props.toggles);
 
     const searcher = _.defaultTo(props.searchChoices, () => props.choices);
@@ -92,7 +92,7 @@ export function useToggles<T>(toggles: Array<{
     title: string,
     filter: (on: boolean, x: T) => boolean
 }>): Toggle<T>[] {
-    const [toggleState, setToggleState] = React.useState(0);
+    const [toggleState, setToggleState] = useState(0);
     return _.defaultTo(toggles, []).map((t, i) => ({
         ...t,
         state: (toggleState & (1 << i)) == (1 << i),

@@ -1,5 +1,4 @@
 import _ = require("lodash");
-import React = require("react");
 import {Footer} from "./Footer";
 import {Navbar} from "./Navbar";
 

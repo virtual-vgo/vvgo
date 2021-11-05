@@ -1,4 +1,3 @@
-import React = require("react");
 import imgSrc = require("./500.gif");
 import {ErrorPage} from "./ErrorPage";
 
