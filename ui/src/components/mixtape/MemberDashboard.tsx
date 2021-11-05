@@ -5,7 +5,6 @@ import {getSession} from "../../auth";
 import {links} from "../../data/links";
 import {
     mixtapeProject,
-    Project,
     resolveHostNicks,
     saveMixtapeProjects,
     Session,
@@ -45,8 +44,9 @@ export const MemberDashboard = () => {
             Wintry Mix | Members Dashboard
         </h1>
         <h3>
-            {_.isEmpty(thisMixtape) ? <div/> :
-                <em>All submissions are due by {(thisMixtape as Project).SubmissionDeadline}.</em>}
+            {thisMixtape ?
+                <em>Hosts: final track submissions are due by {thisMixtape.SubmissionDeadline}.</em> :
+                <div/>}
         </h3>
         <Row className={"row-cols-1"}>
             <Col lg={3}>
