@@ -47,7 +47,7 @@ func TestJSON(t *testing.T) {
 		GitSha:    "yeet",
 		GoVersion: "1.14.1",
 	}
-	wantJSON := `{"build_time":"today","git_sha":"yeet""go_version":"1.14.1"}`
+	wantJSON := `{"build_time":"today","git_sha":"yeet","go_version":"1.14.1"}`
 	gotJSON := string(JSON())
 	if expected, got := wantJSON, gotJSON; expected != got {
 		t.Errorf("\nwant: `%v`\n got: `%v`", expected, got)

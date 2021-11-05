@@ -10,6 +10,8 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -39,7 +41,19 @@ func main() {
 
 	apiServer := server.NewServer(config.Config.VVGO.ListenAddress)
 	logger.Println("listening on " + config.Config.VVGO.ListenAddress)
-	if err := apiServer.ListenAndServe(); err != nil {
-		logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
+
+	go func() {
+		if err := apiServer.ListenAndServe(); err != nil {
+			logger.WithError(err).Fatal("apiServer.ListenAndServe() failed")
+		}
+	}()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	logger.Printf("caught %s", <-sigCh)
+	if err := apiServer.Close(); err != nil {
+		logger.WithError(err).Fatal("apiServer.Close() failed")
 	}
+	logger.Println("shutdown complete")
+	os.Exit(0)
 }

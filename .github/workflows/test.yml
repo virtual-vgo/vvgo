@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: npm install && npx eslint src types
+      - run: npm install && npx eslint ui
 
   webpack-build:
     runs-on: ubuntu-latest

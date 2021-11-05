@@ -30,12 +30,13 @@ module.exports = {
         new ESLintPlugin(),
         new HtmlWebpackPlugin({
             title: 'VVGO | Virtual Video Game Orchestra',
-            template: "./ui/src/index.html"
+            template: "./ui/src/index.html",
+            favicon: "./ui/src/favicon.png"
         })],
     resolve: {extensions: ['.ts', '.tsx', '...']},
     output: {
         path: path.resolve(__dirname, './public/dist'),
-        filename: './index.js',
+        filename: 'index.js',
         clean: true,
         publicPath: "/"
     },

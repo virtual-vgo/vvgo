@@ -32,6 +32,7 @@ func (auth *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) m
 		switch resp.Status {
 		case models.StatusFound:
 			http.Redirect(w, r, resp.Location, http.StatusFound)
+			return
 
 		case models.StatusError:
 			if resp.Error != nil {
@@ -39,11 +40,17 @@ func (auth *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) m
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
+
+		case models.StatusOk:
+			w.WriteHeader(http.StatusOK)
+
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			logger.JsonEncodeFailure(ctx, err)
 		}
+
 	}), role)
 }
 

@@ -21,7 +21,6 @@ import {Sessions} from "./Sessions";
 import {Members as MemberStats} from "./stats/Members";
 
 export const App = () => {
-    document.documentElement.lang = "en";
     updateLogin();
     return <BrowserRouter>
         <Switch>
