@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "outDir": "./dist/",
     "sourceMap": true,
     "module": "commonjs",
     "target": "es6",
@@ -9,8 +8,5 @@
     "moduleResolution": "node",
     "strict": true
   },
-  "include": [
-    "src",
-    "types/index.d.ts"
-  ]
+  "include": ["ui"]
 }

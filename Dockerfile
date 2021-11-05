@@ -1,10 +1,10 @@
 FROM node:14.5 as node
-WORKDIR /wrk/ui
-COPY ui/package.json .
-COPY ui/package-lock.json .
+WORKDIR /wrk/
+COPY package.json .
+COPY package-lock.json .
 RUN npm install
 
-COPY ui .
+COPY ui ui
 RUN npx webpack --mode=production
 
 FROM golang:1.16 as builder
