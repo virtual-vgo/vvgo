@@ -32,4 +32,3 @@ func gitSha() string {
 	}
 	return strings.TrimSpace(string(output))
 }
-
