@@ -1,4 +1,4 @@
-//go:generate go run ../../tools/generate_code pkg/logger
+//go:generate go run ../../cmd/generate_code pkg/logger
 
 package logger
 

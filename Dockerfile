@@ -15,12 +15,11 @@ RUN go mod download
 
 COPY cmd cmd
 COPY pkg pkg
-COPY tools tools
 RUN go generate ./...
 RUN go build -o vvgo ./cmd/vvgo
 
 COPY .git .git
-RUN go run ./tools/version
+RUN go run ./cmd/version
 
 FROM alpine:3.4 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils

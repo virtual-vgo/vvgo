@@ -10,17 +10,13 @@ import (
 
 func TestHeader(t *testing.T) {
 	version = Version{
-		BuildHost: "tuba-international.xyz",
 		BuildTime: "today",
 		GitSha:    "yeet",
-		GitBranch: "best-branch",
 		GoVersion: "1.14.1",
 	}
 	wantHeader := http.Header{
-		"Build-Host": []string{"tuba-international.xyz"},
 		"Build-Time": []string{"today"},
 		"Git-Sha":    []string{"yeet"},
-		"Git-Branch": []string{"best-branch"},
 		"Go-Version": []string{"1.14.1"},
 	}
 	gotHeader := Header()
@@ -30,18 +26,14 @@ func TestHeader(t *testing.T) {
 func TestSetVersionHeaders(t *testing.T) {
 	w := httptest.NewRecorder()
 	version = Version{
-		BuildHost: "tuba-international.xyz",
 		BuildTime: "today",
 		GitSha:    "yeet",
-		GitBranch: "best-branch",
 		GoVersion: "1.14.1",
 	}
 
 	wantHeader := http.Header{
-		"Build-Host": []string{"tuba-international.xyz"},
 		"Build-Time": []string{"today"},
 		"Git-Sha":    []string{"yeet"},
-		"Git-Branch": []string{"best-branch"},
 		"Go-Version": []string{"1.14.1"},
 	}
 	SetVersionHeaders(w)
@@ -51,13 +43,11 @@ func TestSetVersionHeaders(t *testing.T) {
 
 func TestJSON(t *testing.T) {
 	version = Version{
-		BuildHost: "tuba-international.xyz",
 		BuildTime: "today",
 		GitSha:    "yeet",
-		GitBranch: "best-branch",
 		GoVersion: "1.14.1",
 	}
-	wantJSON := `{"build_host":"tuba-international.xyz","build_time":"today","git_sha":"yeet","git_branch":"best-branch","go_version":"1.14.1"}`
+	wantJSON := `{"build_time":"today","git_sha":"yeet""go_version":"1.14.1"}`
 	gotJSON := string(JSON())
 	if expected, got := wantJSON, gotJSON; expected != got {
 		t.Errorf("\nwant: `%v`\n got: `%v`", expected, got)
@@ -67,18 +57,14 @@ func TestJSON(t *testing.T) {
 func TestSet(t *testing.T) {
 	version = Version{} // reset
 	Set(Version{
-		BuildHost: "tuba-international.xyz",
 		BuildTime: "today",
 		GitSha:    "yeet",
-		GitBranch: "best-branch",
 		GoVersion: "1.14.1",
 	})
 
 	wantVersion := Version{
-		BuildHost: "tuba-international.xyz",
 		BuildTime: "today",
 		GitSha:    "yeet",
-		GitBranch: "best-branch",
 		GoVersion: "1.14.1",
 	}
 	gotVersion := version
@@ -90,10 +76,8 @@ func TestSet(t *testing.T) {
 
 func TestString(t *testing.T) {
 	version = Version{
-		BuildHost: "tuba-international.xyz",
 		BuildTime: "today",
 		GitSha:    "yeet",
-		GitBranch: "best-branch",
 		GoVersion: "1.14.1",
 	}
 	wantString := "yeet"
