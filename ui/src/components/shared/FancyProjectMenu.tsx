@@ -59,8 +59,8 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
     const wantChoices = searcher(searchInput, props.choices).filter(filter);
 
     const onClickChoice = (want: T) => {
-        const params = new URLSearchParams({name: want.Name});
-        window.history.pushState(params, "", props.permaLink(want));
+        // const params = new URLSearchParams({name: want.Name});
+        // window.history.pushState(params, "", props.permaLink(want));
         props.setSelected(want);
     };
 
