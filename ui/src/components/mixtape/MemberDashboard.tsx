@@ -1,4 +1,4 @@
-import {isEmpty, shuffle, uniqBy} from "lodash";
+import {isEmpty, shuffle, uniqBy} from "lodash/fp";
 import {useRef, useState} from "react";
 import {Button, Col, FormControl, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
@@ -15,10 +15,8 @@ import {
     UserRole,
 } from "../../datasets";
 import {FancyProjectMenu, useMenuSelection} from "../shared/FancyProjectMenu";
-import {RootContainer} from "../shared/RootContainer";
 import {CurrentMixtape} from "./NewProjectWorkflow";
 
-const pageTitle = "Wintry Mix | Members Dashboard";
 const permaLink = (project: mixtapeProject) => `/mixtape/${project.Name}`;
 const pathMatcher = /\/mixtape\/(.+)\/?/;
 
@@ -39,14 +37,12 @@ export const MemberDashboard = () => {
 
     const thisMixtape = vvgoProjects?.filter(x => x.Name == CurrentMixtape).pop();
 
-    return <RootContainer title={pageTitle}>
-        <h1 className={"title"} style={{textAlign: "left"}}>
-            Wintry Mix | Members Dashboard
-        </h1>
+    const submissionDeadline = thisMixtape?.SubmissionDeadline ?? "the heat death of the universe";
+    return <div>
         <h3>
-            {thisMixtape ?
-                <em>Hosts: final track submissions are due by {thisMixtape.SubmissionDeadline}.</em> :
-                <div/>}
+            <em>
+                Hosts: final track submissions are due by{submissionDeadline}.
+            </em>
         </h3>
         <Row className={"row-cols-1"}>
             <Col lg={3}>
@@ -73,7 +69,7 @@ export const MemberDashboard = () => {
                     <div/>}
             </Col>
         </Row>
-    </RootContainer>;
+    </div>;
 };
 
 const ProjectCard = (props: {
@@ -108,10 +104,12 @@ const ProjectCard = (props: {
         saveMixtapeProjects([update])
             .then((resp) => {
                 props.setProject(update);
-                props.setAllProjects(uniqBy([...(resp.MixtapeProjects ?? []), ...props.allProjects], x => x.Name));
+                props.setAllProjects(uniqBy(x => x.Name, [...(resp.MixtapeProjects ?? []), ...props.allProjects]));
             });
 
     };
+
+    const blurb = props.project.blurb ?? "";
 
     return <div>
         <h1>{props.project.title}</h1>
@@ -130,7 +128,7 @@ const ProjectCard = (props: {
                 <a href={links.Help.Markdown}>Markdown Cheatsheet</a>
             </div> :
             <ReactMarkdown>
-                {props.project.blurb ?? "Project details coming soon!"}
+                {blurb == "" ? "Project details coming soon!" : blurb}
             </ReactMarkdown>}
         {canEdit ?
             showEdit == props.project.Name ?

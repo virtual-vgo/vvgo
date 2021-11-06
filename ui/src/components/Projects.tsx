@@ -1,4 +1,4 @@
-import _ from "lodash";
+import {isEmpty} from "lodash/fp";
 import {lazy, Suspense} from "react";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
@@ -7,10 +7,8 @@ import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
 import {FancyProjectMenu, useMenuSelection} from "./shared/FancyProjectMenu";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
-import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
 
-const documentTitle = "Projects";
 const permaLink = (project: Project) => `/projects/${project.Name}`;
 const pathMatcher = /\/projects\/(.+)\/?/;
 
@@ -26,12 +24,8 @@ export const Projects = () => {
     const allowedProjects = (allProjects ?? []).filter(r => !r.Hidden);
     const [selected, setSelected] = useMenuSelection(allowedProjects, pathMatcher, permaLink, latestProject(allowedProjects));
 
-    if (!allProjects)
-        return <RootContainer title={documentTitle}>
-            <LoadingText/>
-        </RootContainer>;
-
-    return <RootContainer title={documentTitle}>
+    if (!allProjects) return <LoadingText/>;
+    return <div>
         <Row>
             <Col lg={3}>
                 <FancyProjectMenu
@@ -65,7 +59,7 @@ export const Projects = () => {
                     <div/>}
             </Col>
         </Row>
-    </RootContainer>;
+    </div>;
 };
 
 const ProjectCredits = (props: { project: Project }) => {
@@ -86,7 +80,7 @@ const ProjectCredits = (props: { project: Project }) => {
                         defaultHeight={450}
                         defaultColumns={3}
                         defaultSpacing={1}>
-                        {_.isEmpty(topic.Rows) ? <div/> : topic.Rows.map(team =>
+                        {isEmpty(topic.Rows) ? <div/> : topic.Rows.map(team =>
                             <Col key={team.Name} lg={4}>
                                 <h5>{team.Name}</h5>
                                 <ul className="list-unstyled">

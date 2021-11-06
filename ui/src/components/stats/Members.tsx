@@ -2,7 +2,6 @@ import {flatRollup} from "d3";
 import {isEmpty} from "lodash/fp";
 import {VegaLite} from "react-vega";
 import {useCredits} from "../../datasets";
-import {RootContainer} from "../shared/RootContainer";
 
 export const Members = () => {
     const credits = (useCredits() ?? []).filter(x => !isEmpty(x.Name));
@@ -27,7 +26,7 @@ export const Members = () => {
         .reverse()
         .slice(0, 10);
 
-    return <RootContainer title={"Member Stats"}>
+    return <div>
         <div className={"d-grid justify-content-center"}>
             <h1>Member Stats</h1>
             <VegaLite
@@ -123,6 +122,6 @@ export const Members = () => {
                     },
                 }}/>
         </div>
-    </RootContainer>;
+    </div>;
 };
 export default Members;

@@ -31,3 +31,5 @@ export const LoginDiscord = () => {
             return <div>Loading...</div>;
     }
 };
+
+export default LoginDiscord

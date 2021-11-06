@@ -1,10 +1,8 @@
-import _ from "lodash";
 import {Dispatch, MutableRefObject, SetStateAction, useRef, useState} from "react";
 import {Button} from "react-bootstrap";
 import {getSession} from "../auth";
 import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "../datasets";
 import {LoadingText} from "./shared/LoadingText";
-import {RootContainer} from "./shared/RootContainer";
 
 export const Sessions = () => {
     const me = getSession();
@@ -12,8 +10,8 @@ export const Sessions = () => {
     const [deleteButtonState, setDeleteButtonState] = useState(new Map());
     const [createButtonState, setCreateButtonState] = useState("new");
 
-    if (!sessions) return <RootContainer title="Sessions"><LoadingText/></RootContainer>;
-    sessions.sort((a, b) => new Date(a.ExpiresAt).getTime() - new Date(b.ExpiresAt).getTime());
+    if (!sessions) return <LoadingText/>;
+    sessions.sort((a, b) => new Date(a.ExpiresAt ?? "").getTime() - new Date(b.ExpiresAt ?? "").getTime());
 
     const mySessions = sessions
         .filter(session => deleteButtonState.get(session.Key) !== "deleted")
@@ -36,7 +34,7 @@ export const Sessions = () => {
             setButtonState={setDeleteButtonState}
         />);
 
-    return <RootContainer title="Sessions">
+    return <div>
         <div className={"row row-cols-1 mt-2"}>
             <div className={"col"}>
                 <h1>Sessions</h1>
@@ -51,15 +49,18 @@ export const Sessions = () => {
                     </tr>
                     </thead>
                     <tbody>
-                    <NewSession buttonState={createButtonState} setButtonState={setCreateButtonState}
-                                sessions={sessions} setSessions={setSessions}/>
+                    <NewSession
+                        buttonState={createButtonState}
+                        setButtonState={setCreateButtonState}
+                        sessions={sessions}
+                        setSessions={setSessions}/>
                     {mySessions}
                     {otherSessions}
                     </tbody>
                 </table>
             </div>
         </div>
-    </RootContainer>;
+    </div>;
 };
 
 const NewSession = (props: {
@@ -90,6 +91,7 @@ const NewSession = (props: {
             </select>
         </td>
         <td/>
+        <td>{/*CreatedAt*/}</td>
         <td><input type={"number"} className={"form-control"} ref={inputExpires} defaultValue={3600}/></td>
         <td width={120}>
             <CreateButton sessions={props.sessions} setSessions={props.setSessions}
@@ -110,17 +112,17 @@ const CreateButton = (props: {
 }) => {
     const buttonClick = () => {
         props.setButtonState("creating");
-        new Promise(resolve => setTimeout(resolve, 500),
-        ).then(() => createSessions([{
-                Kind: props.inputKind.current.value as SessionKind,
-                Roles: [props.inputRoles.current.value] as string[],
-                expires: Number(props.inputExpires.current.value),
-            }]),
-        ).then(resp => {
-            console.log("Created sessions:", resp);
-            props.setSessions([...resp, ...props.sessions]);
-            props.setButtonState("created");
-        }).catch(error => console.log(error));
+        createSessions([{
+            Kind: props.inputKind.current.value as SessionKind,
+            Roles: [props.inputRoles.current.value] as string[],
+            expires: Number(props.inputExpires.current.value),
+        }])
+            .then(resp => {
+                console.log("Created sessions:", resp);
+                props.setSessions([...resp, ...props.sessions]);
+                props.setButtonState("created");
+            })
+            .catch(error => console.log(error));
     };
 
     if (props.buttonState !== "creating")
@@ -145,13 +147,14 @@ const SessionRow = (props: {
             <Button
                 variant={"outline-primary"}
                 className={"borderless"}
-                onClick={() => navigator.clipboard.writeText(session.Key)}>
+                onClick={() => navigator.clipboard.writeText(session.Key ?? "")}>
                 {session.Kind}
             </Button>
         </td>
         <td>{session.Roles ? session.Roles.join(", ") : "none"}</td>
         <td>{session.DiscordID}</td>
-        <td>{_.isEmpty(session.ExpiresAt) ? "" : new Date(session.ExpiresAt).toLocaleString()}</td>
+        <td>{new Date(session.CreatedAt ?? "").toLocaleString()}</td>
+        <td>{new Date(session.ExpiresAt ?? "").toLocaleString()}</td>
         <td width={120}>
             <DeleteButton
                 session={props.session}
@@ -176,7 +179,7 @@ const DeleteButton = (props: {
         newState.set(session.Key, "deleting");
         setButtonState(newState);
 
-        deleteSessions([session.Key]).then(() => {
+        deleteSessions([session.Key ?? ""]).then(() => {
             const state = new Map();
             buttonState.forEach((val, key) => state.set(key, val));
             state.set(session.Key, "deleted");
@@ -184,11 +187,10 @@ const DeleteButton = (props: {
         }).catch(error => console.log(error));
     };
 
-    const key = props.session.Key;
-
-    if (buttonState.get(key) === "deleted")
+    const sessionKey = props.session.Key ?? "";
+    if (buttonState.get(sessionKey) === "deleted")
         return <div/>;
-    if (buttonState.get(key) === "deleting")
+    if (buttonState.get(sessionKey) === "deleting")
         return <button className={"btn btn-sm btn-warning text-warning w-100"}>☠️☠️☠️</button>;
 
     return <button className={"btn btn-sm btn-dark btn-outline-dark text-light w-100"}

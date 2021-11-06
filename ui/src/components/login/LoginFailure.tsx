@@ -13,3 +13,5 @@ export const LoginFailure = () => {
         <Link to="/login">Return to the login page.</Link>
     </p>;
 };
+
+export default LoginFailure

@@ -5,21 +5,20 @@ const OAuthStateKey = (state: string) => "oauth_state:" + state;
 
 export const logout = () => {
     return fetchApi("/auth/logout", {method: "GET"})
-        .then(() => setSession({} as Session));
+        .then(() => setSession(AnonymousSession));
 };
 
 export const updateLogin = () => {
     fetchApi("/me", {method: "GET"}).then(resp => {
         const me: Session = resp.Identity ?? AnonymousSession;
-        if (me?.Key != getSession().Key) setSession(me);
+        if (me.Key == "" || me.Key != getSession().Key) setSession(AnonymousSession);
     });
 };
 
 const setSession = (session: Session | undefined) => {
-    if (sessionIsAnonymous(session)) return;
-    const sessionJSON = JSON.stringify(session);
     localStorage.clear();
-    localStorage.setItem(SessionItemKey, sessionJSON);
+    if (sessionIsAnonymous(session)) return;
+    localStorage.setItem(SessionItemKey, JSON.stringify(session));
 };
 
 export const getSession = (): Session => {

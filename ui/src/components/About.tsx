@@ -2,14 +2,13 @@ import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {Director, useDirectors} from "../datasets";
 import {LoadingText} from "./shared/LoadingText";
-import {RootContainer} from "./shared/RootContainer";
 
 export const About = () => {
     const directors = useDirectors();
-    return <RootContainer title="About">
+    return <div>
         <Blurb/>
         <Directors directors={directors}/>
-    </RootContainer>;
+    </div>;
 };
 
 const Blurb = () => {
@@ -78,4 +77,4 @@ const ExecutiveDirectorRow = (props: { director: Director, bottom: boolean }) =>
     </tr>;
 };
 
-export default About
+export default About;

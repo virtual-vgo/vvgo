@@ -6,8 +6,6 @@ import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import {Redirect} from "react-router";
 import {oauthRedirect, passwordLogin} from "../../auth";
-import {OAuthRedirect} from "../../datasets";
-import {RootContainer} from "../shared/RootContainer";
 
 const styles = {
     Form: {
@@ -50,8 +48,7 @@ export const Login = () => {
 
     if (success) return <RedirectLoginSuccess/>;
 
-    // noinspection HtmlUnknownTarget
-    return <RootContainer title="Login">
+    return <div>
         <Row className="justify-content-md-center">
             <Col style={styles.Form}>
                 <Form>
@@ -82,7 +79,7 @@ export const Login = () => {
                 </div>
             </Col>
         </Row>
-    </RootContainer>;
+    </div>;
 };
 
 export default Login;

@@ -1,6 +1,5 @@
 import {CSSProperties} from "react";
 import Button from "react-bootstrap/Button";
-import {RootContainer} from "./shared/RootContainer";
 
 const styles = {
     Form: {
@@ -11,7 +10,7 @@ const styles = {
     } as CSSProperties,
 };
 
-export const Contact = () => <RootContainer title={"Contact"}>
+export const Contact = () => <div>
     <form className="mx-auto" action="https://formspree.io/f/xrgojvvj" method="POST" style={styles.Form}>
         <div className="form-group">
             <h1>Contact</h1>
@@ -31,5 +30,5 @@ export const Contact = () => <RootContainer title={"Contact"}>
             </div>
         </div>
     </form>
-</RootContainer>;
+</div>;
 export default Contact;

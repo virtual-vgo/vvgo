@@ -1,4 +1,4 @@
-import _ from "lodash";
+import {isEmpty} from "lodash";
 import {CSSProperties, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
@@ -26,9 +26,7 @@ import {FancyProjectMenu, useMenuSelection} from "./shared/FancyProjectMenu";
 import {LinkChannel} from "./shared/LinkChannel";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
-import {RootContainer} from "./shared/RootContainer";
 
-const documentTitle = "Parts";
 const permaLink = (project: Project) => `/parts/${project.Name}`;
 const pathMatcher = /\/parts\/(.+)\/?/;
 
@@ -46,12 +44,11 @@ export const Parts = () => {
     const [selected, setSelected] = useMenuSelection(allProjects ?? [], pathMatcher, permaLink,
         latestProject(allProjects?.filter(r => r.PartsReleased).filter(r => !r.PartsArchived)));
 
-    if (!(allProjects && parts))
-        return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
+    if (!(allProjects && parts)) return <LoadingText/>;
 
     const projectsWithParts = new Set(parts.map(p => p.Project));
     const choices = allProjects.filter(r => projectsWithParts.has(r.Name) || !r.PartsReleased);
-    return <RootContainer title={documentTitle}>
+    return <div>
         <Row>
             <Col lg={3}>
                 <FancyProjectMenu
@@ -91,7 +88,7 @@ export const Parts = () => {
                         <br/>Please check <LinkChannel channel={Channels.NextProjectHints}/> for updates.</p>
                 </Col>}
         </Row>
-    </RootContainer>;
+    </div>;
 };
 
 const ButtonGroupBreakPoint = 800;
@@ -158,7 +155,7 @@ const PartsTable = (props: {
 
 const PartDownloads = (props: { downloadSession: Session | undefined, part: Part }) => {
     const buttons = [] as Array<JSX.Element>;
-    if (!_.isEmpty(props.part.SheetMusicFile))
+    if (!isEmpty(props.part.SheetMusicFile))
         buttons.push(<DownloadButton
             key={props.part.SheetMusicFile}
             fileName={props.part.SheetMusicFile}
@@ -167,7 +164,7 @@ const PartDownloads = (props: { downloadSession: Session | undefined, part: Part
             <i className="far fa-file-pdf"/> sheet music
         </DownloadButton>);
 
-    if (!_.isEmpty(props.part.ClickTrackFile))
+    if (!isEmpty(props.part.ClickTrackFile))
         buttons.push(<DownloadButton
             key={props.part.ClickTrackFile}
             fileName={props.part.ClickTrackFile}
@@ -176,7 +173,7 @@ const PartDownloads = (props: { downloadSession: Session | undefined, part: Part
             <i className="far fa-file-audio"/> click track
         </DownloadButton>);
 
-    if (!_.isEmpty(props.part.ConductorVideo))
+    if (!isEmpty(props.part.ConductorVideo))
         buttons.push(<LinkButton
             key={props.part.ConductorVideo}
             to={props.part.ConductorVideo}
@@ -184,7 +181,7 @@ const PartDownloads = (props: { downloadSession: Session | undefined, part: Part
             <i className="far fa-file-video"/> conductor video
         </LinkButton>);
 
-    if (!_.isEmpty(props.part.PronunciationGuide))
+    if (!isEmpty(props.part.PronunciationGuide))
         buttons.push(<DownloadButton
             key={props.part.PronunciationGuide}
             fileName={props.part.PronunciationGuide}
