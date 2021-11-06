@@ -6,6 +6,7 @@ import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import {Redirect} from "react-router";
 import {oauthRedirect, passwordLogin} from "../../auth";
+import {OAuthRedirect} from "../../datasets";
 import {RootContainer} from "../shared/RootContainer";
 
 const styles = {
@@ -17,7 +18,7 @@ const styles = {
     } as CSSProperties,
 };
 
-export const RedirectLogin = () => <Redirect to="/login/"/>
+export const RedirectLogin = () => <Redirect to="/login/"/>;
 export const RedirectLoginSuccess = () => <Redirect to="/parts"/>;
 export const RedirectLoginFailure = () => <Redirect to="/login/failure"/>;
 
@@ -40,7 +41,7 @@ export const Login = () => {
 
     const onClickDiscordLogin = () =>
         oauthRedirect()
-            .then((data: { DiscordURL: string; }) => {
+            .then((data) => {
                 document.location.href = data.DiscordURL;
             })
             .catch((err: unknown) => {
@@ -83,3 +84,5 @@ export const Login = () => {
         </Row>
     </RootContainer>;
 };
+
+export default Login;

@@ -1,3 +1,4 @@
+import {CSSProperties} from "react";
 import Button from "react-bootstrap/Button";
 import {RootContainer} from "./shared/RootContainer";
 
@@ -7,7 +8,7 @@ const styles = {
         maxWidth: "500px",
         padding: "15px",
         margin: "auto",
-    } as React.CSSProperties,
+    } as CSSProperties,
 };
 
 export const Contact = () => <RootContainer title={"Contact"}>
@@ -26,8 +27,9 @@ export const Contact = () => <RootContainer title={"Contact"}>
             <textarea className="form-control mb-1" id="message" name="message"
                       placeholder="But actually the earth is flat." rows={3}/>
             <div className="d-grid">
-                <Button type="submit" variant={'primary'}>Submit</Button>
+                <Button type="submit" variant={"primary"}>Submit</Button>
             </div>
         </div>
     </form>
 </RootContainer>;
+export default Contact;

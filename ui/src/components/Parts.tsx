@@ -232,3 +232,5 @@ const LinkButton = (props: {
         {props.children}
     </Button>;
 };
+
+export default Parts;

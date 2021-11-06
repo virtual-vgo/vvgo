@@ -25,3 +25,5 @@ export const NewProjectFormResponses = () => {
         </Table>
     </RootContainer>;
 };
+
+export default NewProjectFormResponses

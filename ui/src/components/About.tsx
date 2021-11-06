@@ -6,7 +6,6 @@ import {RootContainer} from "./shared/RootContainer";
 
 export const About = () => {
     const directors = useDirectors();
-
     return <RootContainer title="About">
         <Blurb/>
         <Directors directors={directors}/>
@@ -79,3 +78,4 @@ const ExecutiveDirectorRow = (props: { director: Director, bottom: boolean }) =>
     </tr>;
 };
 
+export default About

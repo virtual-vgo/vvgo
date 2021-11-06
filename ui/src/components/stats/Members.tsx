@@ -125,3 +125,4 @@ export const Members = () => {
         </div>
     </RootContainer>;
 };
+export default Members;

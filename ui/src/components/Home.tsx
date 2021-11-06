@@ -72,3 +72,5 @@ const MemberHighlight = (props: { highlight?: Highlight }) => {
         </tbody>
     </table>;
 };
+
+export default Home

@@ -1,3 +1,4 @@
+import {isEmpty} from "lodash";
 import {fetchApi} from "./hooks";
 
 export enum UserRole {
@@ -22,22 +23,23 @@ export enum SessionKind {
 }
 
 export interface Session {
-    Key: string;
     Kind: string;
-    Roles: string[];
-    DiscordID: string;
-    ExpiresAt: string;
+    Key?: string;
+    Roles?: string[];
+    DiscordID?: string;
+    CreatedAt?: string;
+    ExpiresAt?: string;
 }
+
+export const AnonymousSession: Session = {Kind: SessionKind.Anonymous};
 
 export const sessionIsAnonymous = (session: Session): boolean => {
     switch (true) {
         case session.Kind == SessionKind.Anonymous:
             return true;
-        case session.Roles == undefined:
+        case isEmpty(session.Roles):
             return true;
-        case session.Roles.length == 0:
-            return true;
-        case session.Roles.length == 1 && session.Roles[0] == UserRole.Anonymous:
+        case session.Roles?.length == 1 && session.Roles[0] == UserRole.Anonymous :
             return true;
         default:
             return false;

@@ -290,3 +290,5 @@ const nameToTitle = (mixtape: string, title: string): string => {
 
     return `${CurrentMixtape}-${cleanTitle}`;
 };
+
+export default NewProjectWorkflow

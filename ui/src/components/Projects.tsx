@@ -1,5 +1,5 @@
-import _ from "lodash"
-import Masonry from "@mui/lab/Masonry";
+import _ from "lodash";
+import {lazy, Suspense} from "react";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {latestProject, Project, useCreditsTable, useProjects} from "../datasets";
@@ -69,6 +69,7 @@ export const Projects = () => {
 };
 
 const ProjectCredits = (props: { project: Project }) => {
+    const Masonry = lazy(() => import("@mui/lab/Masonry"));
     const creditsTable = useCreditsTable(props.project);
     return <div>
         {_.defaultTo(creditsTable, []).map(topic => <Row key={topic.Name}>
@@ -78,24 +79,26 @@ const ProjectCredits = (props: { project: Project }) => {
                 </Col>
             </Row>
             <Row>
-                <Masonry
-                    columns={3}
-                    spacing={1}
-                    defaultHeight={450}
-                    defaultColumns={3}
-                    defaultSpacing={1}>
-                    {_.isEmpty(topic.Rows) ? <div/> : topic.Rows.map(team =>
-                        <Col key={team.Name} lg={4}>
-                            <h5>{team.Name}</h5>
-                            <ul className="list-unstyled">
-                                {team.Rows.map(credit =>
-                                    <li key={credit.Name}>{credit.Name} <small>{credit.BottomText}</small></li>)}
-                            </ul>
-                        </Col>)}
-                </Masonry>
+                <Suspense fallback={<LoadingText/>}>
+                    <Masonry
+                        columns={3}
+                        spacing={1}
+                        defaultHeight={450}
+                        defaultColumns={3}
+                        defaultSpacing={1}>
+                        {_.isEmpty(topic.Rows) ? <div/> : topic.Rows.map(team =>
+                            <Col key={team.Name} lg={4}>
+                                <h5>{team.Name}</h5>
+                                <ul className="list-unstyled">
+                                    {team.Rows.map(credit =>
+                                        <li key={credit.Name}>{credit.Name} <small>{credit.BottomText}</small></li>)}
+                                </ul>
+                            </Col>)}
+                    </Masonry>
+                </Suspense>
             </Row>
         </Row>)}
     </div>;
 };
 
-
+export default Projects;

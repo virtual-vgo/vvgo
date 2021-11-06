@@ -141,3 +141,5 @@ const ProjectCard = (props: {
             <div/>}
     </div>;
 };
+
+export default MemberDashboard

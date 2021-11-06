@@ -1,4 +1,4 @@
-import _ from "lodash"
+import _ from "lodash";
 import {CSSProperties, useRef, useState} from "react";
 import {Dropdown} from "react-bootstrap";
 import Button from "react-bootstrap/Button";
@@ -151,3 +151,5 @@ const PastaResult = (props: { title: string, content: string }) => {
         </Col>
     </Row>;
 };
+
+export default CreditsMaker;

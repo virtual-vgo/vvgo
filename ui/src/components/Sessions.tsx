@@ -1,10 +1,10 @@
+import _ from "lodash";
 import {Dispatch, MutableRefObject, SetStateAction, useRef, useState} from "react";
 import {Button} from "react-bootstrap";
 import {getSession} from "../auth";
 import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "../datasets";
 import {LoadingText} from "./shared/LoadingText";
 import {RootContainer} from "./shared/RootContainer";
-import _ from "lodash"
 
 export const Sessions = () => {
     const me = getSession();
@@ -194,3 +194,4 @@ const DeleteButton = (props: {
     return <button className={"btn btn-sm btn-dark btn-outline-dark text-light w-100"}
                    onClick={buttonClick}>Delete</button>;
 };
+export default Sessions;

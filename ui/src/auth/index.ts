@@ -1,5 +1,5 @@
-import {fetchApi, OAuthRedirect, Session} from "../datasets";
-import _ from "lodash"
+import {isEmpty} from "lodash";
+import {AnonymousSession, fetchApi, OAuthRedirect, Session} from "../datasets";
 
 const SessionItemKey = "session";
 
@@ -10,8 +10,8 @@ export const logout = () => {
 
 export const updateLogin = () => {
     fetchApi("/me", {method: "GET"}).then(resp => {
-        const me = _.defaultTo(resp.Identity, {} as Session);
-        if (me.Key != getSession().Key) setSession(me);
+        const me: Session = resp.Identity ?? AnonymousSession;
+        if (me?.Key != getSession().Key) setSession(me);
     });
 };
 
@@ -22,11 +22,10 @@ const setSession = (session: Session) => {
 };
 
 export const getSession = (): Session => {
-    const sessionJSON = _.defaultTo(localStorage.getItem(SessionItemKey), "");
-    const session = _.isEmpty(sessionJSON) ? {} : JSON.parse(sessionJSON);
+    const session = JSON.parse(localStorage.getItem(SessionItemKey) ?? "{}");
     const params = new URLSearchParams(window.location.search);
     if (params.has("token")) session.Key = params.get("token");
-    if (params.has("roles")) session.Roles = _.defaultTo(params.get("roles"), "").split(",");
+    if (params.has("roles")) session.Roles = params.get("roles")?.split(",");
     return session;
 };
 
@@ -34,14 +33,17 @@ export const passwordLogin = async (user: string, pass: string): Promise<Session
     const params = new URLSearchParams({user: user, pass: pass});
     return fetchApi("/auth/password?" + params.toString(), {method: "POST"})
         .then(resp => {
-            setSession(resp.Identity);
-            return resp.Identity;
+            const me = resp.Identity ?? AnonymousSession;
+            setSession(me);
+            return me;
         });
 };
 
 export const oauthRedirect = async (): Promise<OAuthRedirect> => {
     return fetchApi("/auth/oauth_redirect", {method: "GET"})
         .then(resp => {
+            const data = resp.OAuthRedirect
+            if isEmpty(data) throw `login failed`
             const itemKey = "oauth_redirect_secret:" + resp.OAuthRedirect.State;
             localStorage.setItem(itemKey, resp.OAuthRedirect.Secret);
             return resp.OAuthRedirect;
