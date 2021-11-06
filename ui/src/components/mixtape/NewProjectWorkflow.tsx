@@ -143,7 +143,7 @@ const SubmitTitleButton = (props: {
     saveProject: (project: mixtapeProject) => void
     className?: string
 }) => {
-    const name = _.defaultTo(props.current.Name, nameToTitle(CurrentMixtape, props.title));
+    const name = props.current.Name != "" ? props.current.Name : nameToTitle(CurrentMixtape, props.title);
     const variant = _.isEmpty(props.title) ? "outline-warning" : "outline-primary";
     return <Button
         disabled={_.isEmpty(props.title)}
