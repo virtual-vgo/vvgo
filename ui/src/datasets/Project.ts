@@ -1,4 +1,4 @@
-import _ = require("lodash");
+import _ from "lodash"
 
 export interface Project {
     Name: string;
@@ -28,8 +28,8 @@ export interface Project {
     ReferenceTrackLink: string;
 }
 
-export const latestProject = (projects: Project[]): Project =>
+export const latestProject = (projects: Project[]): Project | undefined =>
     _.defaultTo(projects, [])
-        .filter(proj => proj.VideoReleased === true)
+        .filter(proj => proj.VideoReleased)
         .sort((a, b) => a.Name.localeCompare(b.Name))
         .pop();

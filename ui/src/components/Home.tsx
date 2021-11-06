@@ -5,14 +5,13 @@ import {randElement} from "../utils";
 import {ProjectBanner} from "./shared/ProjectBanner";
 import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
-import React = require("react");
 
 export const Home = () => {
     const highlights = useHighlights();
     const projects = useProjects();
-    const highlight = randElement(highlights);
+    const highlight = highlights ? randElement(highlights) : undefined;
 
-    const latest = latestProject(projects);
+    const latest = projects ? latestProject(projects) : undefined;
     return <RootContainer>
         <Row>
             <Col lg={7} md={12}>
@@ -39,7 +38,7 @@ export const Home = () => {
     </RootContainer>;
 };
 
-const LatestReleases = (props: { projects: Project[] }) => {
+const LatestReleases = (props: { projects: Project[] | undefined }) => {
     if (!props.projects) return <div/>;
     const projects = props.projects.filter(p => p.VideoReleased).slice(0, 3);
 
@@ -60,7 +59,7 @@ const LatestReleases = (props: { projects: Project[] }) => {
     </table>;
 };
 
-const MemberHighlight = (props: { highlight: Highlight }) => {
+const MemberHighlight = (props: { highlight?: Highlight }) => {
     if (!props.highlight) return <div/>;
     const {Source, Alt} = props.highlight;
     return <table className="table text-light">

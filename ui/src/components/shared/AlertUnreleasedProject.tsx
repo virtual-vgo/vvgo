@@ -1,4 +1,3 @@
-import React = require("react");
 import {Project} from "../../datasets";
 
 export const AlertUnreleasedProject = (props: { project: Project }) => props.project.PartsReleased == false ?

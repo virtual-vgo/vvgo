@@ -12,8 +12,7 @@ import {
 } from "../../datasets";
 import {LoadingText} from "../shared/LoadingText";
 import {RootContainer} from "../shared/RootContainer";
-import _ = require("lodash");
-import React = require("react");
+import _ from "lodash"
 
 const GuildMemberToastLimit = 5;
 export const CurrentMixtape = "15b-wintry-mix";
@@ -21,11 +20,15 @@ export const CurrentMixtape = "15b-wintry-mix";
 export const NewProjectWorkflow = () => {
     const [projects, setProjects] = useMixtapeProjects();
     return <RootContainer title="New Project Workflow">
-        <h1>Winter Mixtape</h1>
-        <h2>New Project Workflow</h2>
-        <WorkflowApp projects={projects} setProjects={setProjects}/>
-        <h2>Existing Projects</h2>
-        <ProjectTable projects={projects} setProjects={setProjects}/>
+        {projects ?
+            <div>
+                <h1>Winter Mixtape</h1>
+                <h2>New Project Workflow</h2>
+                <WorkflowApp projects={projects} setProjects={setProjects}/>
+                <h2>Existing Projects</h2>
+                <ProjectTable projects={projects} setProjects={setProjects}/>
+            </div> :
+            <LoadingText/>}
     </RootContainer>;
 };
 
@@ -33,14 +36,12 @@ const ProjectTable = (props: {
     projects: mixtapeProject[];
     setProjects: (projects: mixtapeProject[]) => void;
 }) => {
-    const hosts = useGuildMemberLookup(props.projects.flatMap(r => r.hosts));
+    const hosts = useGuildMemberLookup(props.projects.flatMap(r => _.defaultTo(r.hosts, [])));
     const onClickDelete = (project: mixtapeProject) => {
         console.log("deleting", project);
         props.setProjects(props.projects.filter(x => project.Name != x.Name));
         deleteMixtapeProjects([project]).catch(err => console.log(err));
     };
-
-    if (!props.projects) return <LoadingText/>;
 
     return <Table className={"text-light"}>
         <tbody>
@@ -59,7 +60,7 @@ const WorkflowApp = (props: {
     setProjects: (projects: mixtapeProject[]) => void;
     projects: mixtapeProject[];
 }) => {
-    const [curProject, setCurProject] = useState({mixtape: CurrentMixtape, hosts: []} as mixtapeProject);
+    const [curProject, setCurProject] = useState<mixtapeProject>({Name: "", mixtape: CurrentMixtape, hosts: []});
     const saveProject = (project: mixtapeProject) => {
         props.setProjects(_.uniqBy([project, ...props.projects], x => x.Name));
         saveMixtapeProjects([project])
@@ -83,7 +84,7 @@ const WorkflowApp = (props: {
                     saveProject={saveProject}
                     project={curProject}
                     toastLimit={GuildMemberToastLimit}
-                    completed={curProject.hosts && curProject.hosts.length > 0}/>}
+                    completed={!_.isEmpty(curProject.hosts)}/>}
         </Col>
         <Col className={"col-md-6 mb-2"}>
             {_.isEmpty(curProject.hosts) ? <div/> :
@@ -91,7 +92,7 @@ const WorkflowApp = (props: {
                     cardTitle={"3. Assign the project channel."}
                     saveProject={saveProject}
                     curProject={curProject}
-                    completed={curProject.channel && curProject.channel != ""}/>}
+                    completed={!_.isEmpty(curProject.channel)}/>}
         </Col>
     </Row>;
 };
@@ -110,7 +111,7 @@ const SetTitleCard = (props: {
     curProject: mixtapeProject;
     completed: boolean;
 }) => {
-    const [title, setTitle] = useState(props.curProject.title);
+    const [title, setTitle] = useState(_.defaultTo(props.curProject.title, ""));
     return <Card className={"bg-transparent"}>
         <Card.Title className={"m-2"}>
             <CheckMark completed={props.completed}>{props.cardTitle}</CheckMark>
@@ -164,7 +165,7 @@ const SetHostsCard = (props: {
     saveProject: (project: mixtapeProject) => void;
     toastLimit: number;
 }) => {
-    const [hosts, setHosts] = useState(props.project.hosts.map(x => ({user: {id: x}} as GuildMember)));
+    const [hosts, setHosts] = useState(_.defaultTo(props.project.hosts, []).map(x => ({user: {id: x}} as GuildMember)));
     const [searchQuery, setSearchQuery] = useState("");
     const guildMembers = useGuildMemberSearch(searchQuery, props.toastLimit);
 

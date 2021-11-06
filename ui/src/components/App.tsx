@@ -1,4 +1,3 @@
-import React = require("react");
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession, updateLogin} from "../auth";
 import {sessionIsAnonymous, UserRole} from "../datasets";
@@ -22,7 +21,6 @@ import {Sessions} from "./Sessions";
 import {Members as MemberStats} from "./stats/Members";
 
 export const App = () => {
-    document.documentElement.lang = "en";
     updateLogin();
     return <BrowserRouter>
         <Switch>

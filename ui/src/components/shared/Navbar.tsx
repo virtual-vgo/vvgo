@@ -1,4 +1,3 @@
-import React = require("react");
 import NavDropdown from "react-bootstrap/NavDropdown";
 import {Link, NavLink as RouterNavLink} from "react-router-dom";
 import {getSession} from "../../auth";

@@ -1,5 +1,5 @@
-import React = require("react");
-import * as _ from "lodash";
+import _ from "lodash";
+import {CSSProperties, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
@@ -22,10 +22,10 @@ import {
 } from "../datasets";
 import {AlertArchivedParts} from "./shared/AlertArchivedParts";
 import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
+import {FancyProjectMenu, useMenuSelection} from "./shared/FancyProjectMenu";
 import {LinkChannel} from "./shared/LinkChannel";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
-import {FancyProjectMenu, useMenuSelection} from "./shared/ProjectsMenu";
 import {RootContainer} from "./shared/RootContainer";
 
 const documentTitle = "Parts";
@@ -43,17 +43,17 @@ export const Parts = () => {
     const allProjects = useProjects();
     const parts = useParts();
     const downloadSession = useNewApiSession(4 * 3600, [ApiRole.Download]);
-    const [selected, setSelected] = useMenuSelection(allProjects, pathMatcher, permaLink,
+    const [selected, setSelected] = useMenuSelection(_.defaultTo(allProjects, []), pathMatcher, permaLink,
         latestProject(_.defaultTo(allProjects, [])
-            .filter(r => r.PartsReleased == true)
-            .filter(r => r.PartsArchived == false)),
+            .filter(r => r.PartsReleased)
+            .filter(r => !r.PartsArchived)),
     );
 
     if (!(allProjects && parts))
         return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
 
     const projectsWithParts = new Set(parts.map(p => p.Project));
-    const choices = allProjects.filter(r => projectsWithParts.has(r.Name) || r.PartsReleased == false);
+    const choices = allProjects.filter(r => projectsWithParts.has(r.Name) || !r.PartsReleased);
     return <RootContainer title={documentTitle}>
         <Row>
             <Col lg={3}>
@@ -65,11 +65,11 @@ export const Parts = () => {
                     toggles={[{
                         title: "Unreleased",
                         hidden: !getSession().Roles.includes(UserRole.ProductionTeam),
-                        filter: (on: boolean, x: Project) => on || x.PartsReleased == true,
+                        filter: (on: boolean, x: Project) => on || x.PartsReleased,
                     }, {
                         title: "Archived",
                         hidden: !getSession().Roles.includes(UserRole.ExecutiveDirector),
-                        filter: (on: boolean, x: Project) => on || x.PartsArchived == false,
+                        filter: (on: boolean, x: Project) => on || !x.PartsArchived,
                     }]}
                     buttonContent={(proj) =>
                         <div>
@@ -99,7 +99,7 @@ export const Parts = () => {
 
 const ButtonGroupBreakPoint = 800;
 
-const PartsTopLinks = (props: { downloadSession: Session, project: Project }) => {
+const PartsTopLinks = (props: { downloadSession: Session | undefined, project: Project }) => {
     return <div className="d-flex justify-content-center">
         <ButtonGroup vertical={(window.visualViewport.width < ButtonGroupBreakPoint)}>
             <LinkButton to={links.RecordingInstructions}>
@@ -118,16 +118,16 @@ const PartsTopLinks = (props: { downloadSession: Session, project: Project }) =>
 };
 
 const PartsTable = (props: {
-    downloadSession: Session,
+    downloadSession: Session | undefined,
     projectName: string,
     parts: Part[],
 }) => {
-    const searchInputRef = React.useRef({} as HTMLInputElement);
-    const [searchInput, setSearchInput] = React.useState("");
+    const searchInputRef = useRef({} as HTMLInputElement);
+    const [searchInput, setSearchInput] = useState("");
     const wantParts = searchParts(searchInput, props.parts).filter(r => r.Project == props.projectName);
-    const searchBoxStyle = {maxWidth: 250} as React.CSSProperties;
+    const searchBoxStyle = {maxWidth: 250} as CSSProperties;
     // This width gives enough space to have all the download buttons on one line
-    const partNameStyle = {width: 220} as React.CSSProperties;
+    const partNameStyle = {width: 220} as CSSProperties;
     return <div className="d-flex justify-content-center">
         <div className="d-flex flex-column flex-fill justify-content-center">
             <FormControl
@@ -159,9 +159,9 @@ const PartsTable = (props: {
     </div>;
 };
 
-const PartDownloads = (props: { downloadSession: Session, part: Part }) => {
+const PartDownloads = (props: { downloadSession: Session | undefined, part: Part }) => {
     const buttons = [] as Array<JSX.Element>;
-    if (_.isEmpty(props.part.SheetMusicFile) == false)
+    if (!_.isEmpty(props.part.SheetMusicFile))
         buttons.push(<DownloadButton
             key={props.part.SheetMusicFile}
             fileName={props.part.SheetMusicFile}
@@ -170,7 +170,7 @@ const PartDownloads = (props: { downloadSession: Session, part: Part }) => {
             <i className="far fa-file-pdf"/> sheet music
         </DownloadButton>);
 
-    if (_.isEmpty(props.part.ClickTrackFile) == false)
+    if (!_.isEmpty(props.part.ClickTrackFile))
         buttons.push(<DownloadButton
             key={props.part.ClickTrackFile}
             fileName={props.part.ClickTrackFile}
@@ -179,7 +179,7 @@ const PartDownloads = (props: { downloadSession: Session, part: Part }) => {
             <i className="far fa-file-audio"/> click track
         </DownloadButton>);
 
-    if (_.isEmpty(props.part.ConductorVideo) == false)
+    if (!_.isEmpty(props.part.ConductorVideo))
         buttons.push(<LinkButton
             key={props.part.ConductorVideo}
             to={props.part.ConductorVideo}
@@ -187,7 +187,7 @@ const PartDownloads = (props: { downloadSession: Session, part: Part }) => {
             <i className="far fa-file-video"/> conductor video
         </LinkButton>);
 
-    if (_.isEmpty(props.part.PronunciationGuide) == false)
+    if (!_.isEmpty(props.part.PronunciationGuide))
         buttons.push(<DownloadButton
             key={props.part.PronunciationGuide}
             fileName={props.part.PronunciationGuide}
@@ -204,7 +204,7 @@ const PartDownloads = (props: { downloadSession: Session, part: Part }) => {
 };
 
 const DownloadButton = (props: {
-    downloadSession: Session,
+    downloadSession: Session | undefined,
     fileName: string,
     children: string | (string | JSX.Element)[]
     size?: "sm" | "lg"

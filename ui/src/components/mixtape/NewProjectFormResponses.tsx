@@ -1,5 +1,4 @@
-import _ = require("lodash");
-import React = require("react");
+import _ from "lodash"
 import {Table} from "react-bootstrap";
 import {useSheet} from "../../datasets";
 import {InternalOopsie} from "../errors/InternalOopsie";
@@ -14,15 +13,14 @@ export const NewProjectFormResponses = () => {
         <Table>
             <thead>
             <tr>
-                {sheet.Values[0].map(v => <td>{v}</td>)}
+                {sheet.Values[0].map(v => <td key={v}>{v}</td>)}
             </tr>
             </thead>
             <tbody>
             {sheet.Values.slice(1).map(r =>
-                <tr>
-                    {r.map(v => <td>{v}</td>)}
+                <tr key={r.join(",")}>
+                    {r.map(v => <td key={v}>{v}</td>)}
                 </tr>)}
-
             </tbody>
         </Table>
     </RootContainer>;

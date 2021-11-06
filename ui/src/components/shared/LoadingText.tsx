@@ -1,4 +1,3 @@
-import React = require("react");
 import {randElement} from "../../utils";
 
 export const LoadingText = () => {

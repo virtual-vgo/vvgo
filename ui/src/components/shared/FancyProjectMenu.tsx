@@ -1,5 +1,5 @@
-import _ = require("lodash");
-import React = require("react");
+import _ from "lodash"
+import {Dispatch, SetStateAction, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import FormControl from "react-bootstrap/FormControl";
@@ -9,9 +9,9 @@ export function useMenuSelection<T extends { Name: string }>(
     choices: T[],
     pathMatcher: RegExp,
     permaLink: (x: T) => string,
-    defaultChoice: T,
-): [T, React.Dispatch<React.SetStateAction<T>>] {
-    const [selected, setSelected] = React.useState(null as T);
+    defaultChoice?: T,
+): [T | undefined, Dispatch<SetStateAction<T | undefined>>] {
+    const [selected, setSelected] = useState<T | undefined>(undefined);
 
     window.onpopstate = (event) => {
         if (event.state) setSelected(event.state);
@@ -38,17 +38,19 @@ export function useMenuSelection<T extends { Name: string }>(
     return [selected, setSelected];
 }
 
+type ToggleParams<T> = { hidden: boolean, title: string, filter: (on: boolean, x: T) => boolean }
+
 export function FancyProjectMenu<T extends { Name: string }>(props: {
     choices: T[],
     permaLink: (x: T) => string,
-    selected: T,
-    setSelected: React.Dispatch<React.SetStateAction<T>>,
+    selected: T | undefined,
+    setSelected: Dispatch<SetStateAction<T | undefined>>,
     buttonContent: (x: T) => JSX.Element
     searchChoices?: (q: string, choices: T[]) => T[],
-    toggles?: Array<{ hidden: boolean, title: string, filter: (on: boolean, x: T) => boolean }>,
+    toggles?: Array<ToggleParams<T>>,
 }) {
-    const [searchInput, setSearchInput] = React.useState("");
-    const menuToggles = useToggles(props.toggles);
+    const [searchInput, setSearchInput] = useState("");
+    const menuToggles = useToggles(props.toggles as Array<ToggleParams<T>>);
 
     const searcher = _.defaultTo(props.searchChoices, () => props.choices);
     const filter = (x: T) => _.isEmpty(menuToggles) ||
@@ -57,8 +59,8 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
     const wantChoices = searcher(searchInput, props.choices).filter(filter);
 
     const onClickChoice = (want: T) => {
-        const params = new URLSearchParams({name: want.Name});
-        window.history.pushState(params, "", props.permaLink(want));
+        // const params = new URLSearchParams({name: want.Name});
+        // window.history.pushState(params, "", props.permaLink(want));
         props.setSelected(want);
     };
 
@@ -87,12 +89,8 @@ export type Toggle<T> = {
     filter: (on: boolean, x: T) => boolean
 }
 
-export function useToggles<T>(toggles: Array<{
-    hidden: boolean,
-    title: string,
-    filter: (on: boolean, x: T) => boolean
-}>): Toggle<T>[] {
-    const [toggleState, setToggleState] = React.useState(0);
+export function useToggles<T>(toggles: Array<ToggleParams<T>>): Toggle<T>[] {
+    const [toggleState, setToggleState] = useState(0);
     return _.defaultTo(toggles, []).map((t, i) => ({
         ...t,
         state: (toggleState & (1 << i)) == (1 << i),
@@ -101,7 +99,7 @@ export function useToggles<T>(toggles: Array<{
 }
 
 export function MenuToggles<T>(props: { toggles: Toggle<T>[] }): JSX.Element {
-    const toggles = props.toggles.filter(t => t.hidden == false)
+    const toggles = props.toggles.filter(t => !t.hidden);
     return _.isEmpty(props.toggles) ?
         <div/> :
         <div className={"d-flex flex-row justify-content-center"}>

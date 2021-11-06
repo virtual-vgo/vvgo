@@ -1,10 +1,14 @@
 FROM node:14.5 as node
-WORKDIR /wrk/ui
-COPY ui/package.json .
-COPY ui/package-lock.json .
+WORKDIR /wrk/
+COPY package.json .
+COPY package-lock.json .
 RUN npm install
 
-COPY ui .
+COPY ui ui
+COPY .eslintrc.js .
+COPY tsconfig.json .
+COPY webpack.config.js .
+COPY .babelrc.js .
 RUN npx webpack --mode=production
 
 FROM golang:1.16 as builder
@@ -15,12 +19,11 @@ RUN go mod download
 
 COPY cmd cmd
 COPY pkg pkg
-COPY tools tools
 RUN go generate ./...
 RUN go build -o vvgo ./cmd/vvgo
 
 COPY .git .git
-RUN go run ./tools/version
+RUN go run ./cmd/version
 
 FROM alpine:3.4 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils

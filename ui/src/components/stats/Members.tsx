@@ -1,6 +1,5 @@
-import d3 = require("d3");
-import _ = require("lodash");
-import React = require("react");
+import {flatRollup} from "d3";
+import _ from "lodash";
 import {VegaLite} from "react-vega";
 import {useCredits} from "../../datasets";
 import {RootContainer} from "../shared/RootContainer";
@@ -9,20 +8,20 @@ export const Members = () => {
     const credits = _.defaultTo(useCredits(), []).filter(x => !_.isEmpty(x.Name));
     if (_.isEmpty(credits)) return <div/>;
 
-    const topCredited = d3.flatRollup(credits, g => g.length, p => p.Name)
+    const topCredited = flatRollup(credits, g => g.length, p => p.Name)
         .map(([name, count]) => ({name, count}))
         .sort((a, b) => a.count - b.count)
         .reverse()
         .slice(0, 10);
 
     const performers = credits.filter(x => x.MajorCategory != "CREW");
-    const topCreditedPerformers = d3.flatRollup(performers, g => g.length, p => p.Name)
+    const topCreditedPerformers = flatRollup(performers, g => g.length, p => p.Name)
         .map(([name, count]) => ({name, count}))
         .sort((a, b) => a.count - b.count)
         .reverse()
         .slice(0, 10);
 
-    const topUniqueParts = d3.flatRollup(performers, g => new Set(g).size, p => p.Name)
+    const topUniqueParts = flatRollup(performers, g => new Set(g).size, p => p.Name)
         .map(([name, count]) => ({name, count}))
         .sort((a, b) => a.count - b.count)
         .reverse()

@@ -1,5 +1,5 @@
-import _ = require("lodash");
-import React = require("react");
+import _ from "lodash"
+import {CSSProperties, useRef, useState} from "react";
 import {Dropdown} from "react-bootstrap";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
@@ -11,7 +11,7 @@ import {CreditsPasta, fetchApi, Project, useProjects} from "../datasets";
 import {RootContainer} from "./shared/RootContainer";
 
 export const CreditsMaker = () => {
-    const [pasta, setPasta] = React.useState({} as CreditsPasta);
+    const [pasta, setPasta] = useState({} as CreditsPasta);
 
     return <RootContainer title="Credits Maker">
         <Row>
@@ -31,10 +31,10 @@ export const CreditsMaker = () => {
 };
 
 const InputForm = (props: { setPasta: (pasta: CreditsPasta) => void; }) => {
-    const [errorMessage, setErrorMessage] = React.useState("");
-    const [projectName, setProjectName] = React.useState("");
-    const spreadsheetIDInputRef = React.useRef({} as HTMLInputElement);
-    const readRangeInputRef = React.useRef({} as HTMLInputElement);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [projectName, setProjectName] = useState("");
+    const spreadsheetIDInputRef = useRef({} as HTMLInputElement);
+    const readRangeInputRef = useRef({} as HTMLInputElement);
 
     const onClickSubmit = () => {
         const params = new URLSearchParams({
@@ -103,7 +103,7 @@ const InputForm = (props: { setPasta: (pasta: CreditsPasta) => void; }) => {
 
 const ProjectDropdown = (props: { projectName: string, setProjectName: (name: string) => void }) => {
     const projects = _.defaultTo(useProjects(), [] as Project[]);
-    const [buttonText, setButtonText] = React.useState("select project");
+    const [buttonText, setButtonText] = useState("select project");
 
     const updateSelect = (project: Project) => {
         props.setProjectName(project.Name);
@@ -117,7 +117,7 @@ const ProjectDropdown = (props: { projectName: string, setProjectName: (name: st
             </Dropdown.Toggle>
 
             <Dropdown.Menu>
-                {projects.map(p => <Dropdown.Item onClick={() => updateSelect(p)}>
+                {projects.map(p => <Dropdown.Item key={p.Name} onClick={() => updateSelect(p)}>
                     {p.Title}
                 </Dropdown.Item>)}
             </Dropdown.Menu>
@@ -130,7 +130,7 @@ const PastaResult = (props: { title: string, content: string }) => {
         whiteSpace: "pre",
         overflowWrap: "normal",
         overflowX: "scroll",
-    } as React.CSSProperties);
+    } as CSSProperties);
 
     return <Row className="row-cols-1">
         <Col className="mt-4"><h3 className="text-center">{props.title}</h3></Col>

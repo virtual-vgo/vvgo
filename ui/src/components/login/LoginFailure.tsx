@@ -1,4 +1,3 @@
-import React = require("react");
 import {Link} from "react-router-dom";
 import {Channels} from "../../data/discord";
 import {LinkChannel} from "../shared/LinkChannel";

@@ -20,12 +20,16 @@ func main() {
 		exec.Command("docker", "start", localRedisContainer),
 		exec.Command("docker", "exec", localRedisContainer, "redis-cli", "SET", "__db_name", "localhost"),
 	} {
-		log.Println("executing:", cmd.String())
-		cmd.Stdout = os.Stdout
+		log.Println("Executing:", cmd.String())
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
 			log.Fatal("command failed: ", err)
 		}
 	}
-
+	log.Println("Executing cleanup tasks.")
+	if err := os.Remove("dump.rdb"); err != nil {
+		log.Println(err)
+	}
+	log.Println("Sync completed successfully!")
+	os.Exit(0)
 }

@@ -1,4 +1,3 @@
-import React = require("react");
 import {Channel, GuildId} from "../../data/discord";
 
 export const LinkChannel = (props: {

@@ -1,13 +1,12 @@
-import _ = require("lodash");
-import React = require("react");
+import _ from "lodash"
 import Masonry from "@mui/lab/Masonry";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {latestProject, Project, useCreditsTable, useProjects} from "../datasets";
 import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
+import {FancyProjectMenu, useMenuSelection} from "./shared/FancyProjectMenu";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
-import {FancyProjectMenu, useMenuSelection} from "./shared/ProjectsMenu";
 import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
 
@@ -24,7 +23,7 @@ const searchProjects = (query: string, projects: Project[]): Project[] => {
 
 export const Projects = () => {
     const allProjects = useProjects();
-    const allowedProjects = _.defaultTo(allProjects, []).filter(r => r.Hidden == false);
+    const allowedProjects = _.defaultTo(allProjects, []).filter(r => !r.Hidden);
     const [selected, setSelected] = useMenuSelection(allowedProjects, pathMatcher, permaLink, latestProject(allowedProjects));
 
     if (!allProjects)
@@ -44,9 +43,9 @@ export const Projects = () => {
                     buttonContent={(proj: Project) =>
                         <div>
                             {proj.Title}
-                            {proj.PartsReleased == false ? <em><small><br/>Unreleased</small></em> : ""}
-                            {proj.VideoReleased == false ? <em><small><br/>In Production</small></em> : ""}
-                            {proj.VideoReleased == true ? <em><small><br/>Completed</small></em> : ""}
+                            {!proj.PartsReleased ? <em><small><br/>Unreleased</small></em> : ""}
+                            {!proj.VideoReleased ? <em><small><br/>In Production</small></em> : ""}
+                            {proj.VideoReleased ? <em><small><br/>Completed</small></em> : ""}
                         </div>}/>
             </Col>
             <Col>
@@ -71,10 +70,8 @@ export const Projects = () => {
 
 const ProjectCredits = (props: { project: Project }) => {
     const creditsTable = useCreditsTable(props.project);
-
-    if (_.isEmpty(creditsTable)) return <div/>;
     return <div>
-        {creditsTable.map(topic => <Row key={topic.Name}>
+        {_.defaultTo(creditsTable, []).map(topic => <Row key={topic.Name}>
             <Row>
                 <Col className="text-center">
                     <h2><strong>— {topic.Name} —</strong></h2>

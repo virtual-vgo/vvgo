@@ -10,17 +10,17 @@ import {mixtapeProject} from "./mixtapeProject";
 import {Part} from "./Part";
 import {Project} from "./Project";
 import {ApiRole, createSessions, Session, SessionKind} from "./Session";
-import _ = require("lodash");
+import _ from "lodash"
 
-export const useCredits = (): Credit[] => useDataset("Credits");
+export const useCredits = (): Credit[] | undefined => useDataset("Credits");
 
-export const useCreditsTable = (project: Project): CreditsTable => {
+export const useCreditsTable = (project: Project): CreditsTable | undefined => {
     const params = new URLSearchParams({projectName: project.Name});
     const url = "/credits/table?" + params.toString();
     return useApiData(url, (p) => _.defaultTo(p.CreditsTable, []));
 };
 
-export const useDirectors = (): Director[] => useDataset("Leaders");
+export const useDirectors = (): Director[] | undefined => useDataset("Leaders");
 
 export const useGuildMemberSearch = (query: string, limit: number): GuildMember[] => {
     const [data, setData] = useState({} as ApiResponse);
@@ -47,29 +47,24 @@ export const useGuildMemberLookup = (ids: string[]) => {
     return _.defaultTo(data.GuildMembers, []);
 };
 
-export const useHighlights = (): Highlight[] => useDataset("Highlights");
+export const useHighlights = (): Highlight[] | undefined => useDataset("Highlights");
 
-export const useMixtapeProjects = (): [mixtapeProject[], (projects: mixtapeProject[]) => void] => {
-    const [projects, setProjects] = useAndSetApiData("/mixtape/projects", (r) =>
+export const useMixtapeProjects = (): [mixtapeProject[] | undefined, (projects: mixtapeProject[]) => void] => {
+    return useAndSetApiData("/mixtape/projects", (r) =>
         _.defaultTo(r.MixtapeProjects, []));
-    return [_.defaultTo(projects, []).map(p => ({
-        ...p,
-        tags: _.defaultTo(p.tags, []),
-        hosts: _.defaultTo(p.hosts, []),
-    })), setProjects];
 };
 
-export const useParts = (): Part[] =>
+export const useParts = (): Part[] | undefined =>
     useApiData("/parts", (p) => _.defaultTo(p.Parts, []));
 
-export const useProjects = (): Project[] =>
+export const useProjects = (): Project[] | undefined =>
     useApiData("/projects", (p) => _.defaultTo(p.Projects, []));
 
-export const useSessions = (): [Session[], (sessions: Session[]) => void] =>
+export const useSessions = (): [Session[] | undefined, (sessions: Session[]) => void] =>
     useAndSetApiData("/sessions", (p) => _.defaultTo(p.Sessions, []));
 
-export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Session => {
-    const [session, setSession] = useState(null as Session);
+export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Session | undefined => {
+    const [session, setSession] = useState<Session | undefined>(undefined);
     useEffect(() => {
         createSessions([{expires: expires, Kind: SessionKind.ApiToken, Roles: roles}])
             .then(sessions => _.isEmpty(sessions) ? setSession({} as Session) : setSession(sessions[0]));
@@ -78,25 +73,25 @@ export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Sessio
 };
 
 export const useSheet = (spreadsheetName: string, sheetName: string): Sheet =>
-    _.defaultTo(_.defaultTo(useSpreadsheet(spreadsheetName, [sheetName]), {} as Spreadsheet).sheets, [])
+    <Sheet>_.defaultTo(_.defaultTo(useSpreadsheet(spreadsheetName, [sheetName]), {} as Spreadsheet).sheets, [])
         .filter(sheet => sheet.Name == sheetName).pop();
 
-export const useSpreadsheet = (spreadsheetName: string, sheetNames: string[]): Spreadsheet => {
+export const useSpreadsheet = (spreadsheetName: string, sheetNames: string[]): Spreadsheet | undefined => {
     const params = new URLSearchParams({spreadsheetName: spreadsheetName, sheetNames: sheetNames.join(",")});
     return useApiData("/spreadsheet?" + params.toString(), (p) => _.defaultTo(p.Spreadsheet, {} as Spreadsheet));
 };
 
-export function useDataset<T extends ApiDataset>(name: string): T {
+export function useDataset<T extends ApiDataset>(name: string): T | undefined {
     return useApiData("/dataset?name=" + name, (p) => _.defaultTo(p.Dataset, [])) as T;
 }
 
-export function useApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): T {
+export function useApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): T | undefined {
     const [data] = useAndSetApiData(url, getData);
-    return data as T;
+    return data;
 }
 
-export function useAndSetApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): [T, (t: T) => void] {
-    const [data, setData] = useState(null as T);
+export function useAndSetApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): [T | undefined, (t: T | undefined) => void] {
+    const [data, setData] = useState<T | undefined>(undefined);
     useEffect(() => {
         fetchApi(url, {method: "GET"}).then(resp => setData(getData(resp)));
     }, [url, getSession().Key]);

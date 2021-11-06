@@ -1,7 +1,6 @@
 *.md
 .dockerignore
 .google_api_credentials.json
+.vvgo.env
 Dockerfile
-ui/node_modules
-public/dist
-
+node_modules

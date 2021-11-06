@@ -29,10 +29,6 @@ func NewMethodNotAllowedError() models.ApiResponse {
 	})
 }
 
-func NewRedirect(location string) models.ApiResponse {
-	return models.ApiResponse{Status: models.StatusFound, Location: location}
-}
-
 func NewUnauthorizedError() models.ApiResponse {
 	return NewErrorResponse(models.ApiError{
 		Code:  http.StatusUnauthorized,

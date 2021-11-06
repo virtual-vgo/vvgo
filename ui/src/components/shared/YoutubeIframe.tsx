@@ -1,7 +1,6 @@
-import React = require("react");
 import {Project} from "../../datasets";
 
-export const YoutubeIframe = (props: { project: Project }) => {
+export const YoutubeIframe = (props: { project: Project | undefined }) => {
     const latest = props.project;
     if (!latest) return <div/>;
     if (latest.YoutubeEmbed === "") return <div/>;
