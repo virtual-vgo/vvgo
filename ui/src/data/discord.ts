@@ -1,5 +1,5 @@
 export const GuildId = "690626216637497425";
-export const  GuildLink = "https://discord.gg/vvgo"
+export const GuildLink = "https://discord.gg/vvgo";
 
 export interface Channel {
     Id: string;
