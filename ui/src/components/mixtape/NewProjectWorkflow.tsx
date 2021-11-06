@@ -1,3 +1,4 @@
+import _ from "lodash";
 import {MutableRefObject, useRef, useState} from "react";
 import {Button, Card, Col, Dropdown, Form, FormControl, Row, Table, Toast} from "react-bootstrap";
 import {
@@ -12,7 +13,6 @@ import {
 } from "../../datasets";
 import {LoadingText} from "../shared/LoadingText";
 import {RootContainer} from "../shared/RootContainer";
-import _ from "lodash"
 
 const GuildMemberToastLimit = 5;
 export const CurrentMixtape = "15b-wintry-mix";
@@ -43,6 +43,10 @@ const ProjectTable = (props: {
         deleteMixtapeProjects([project]).catch(err => console.log(err));
     };
 
+    const onClickEdit = (project: mixtapeProject) => {
+        window.location.href = `/mixtape/NewProjectWorkflow?` + new URLSearchParams({name: project.Name});
+    };
+
     return <Table className={"text-light"}>
         <tbody>
         {props.projects.map(x => <tr key={x.Name}>
@@ -51,6 +55,7 @@ const ProjectTable = (props: {
             <td>{x.channel}</td>
             <td>{resolveHostNicks(hosts, x).join(", ")}</td>
             <td><Button onClick={() => onClickDelete(x)}>Delete</Button></td>
+            <td><Button onClick={() => onClickEdit(x)}>Edit</Button></td>
         </tr>)}
         </tbody>
     </Table>;
@@ -60,7 +65,14 @@ const WorkflowApp = (props: {
     setProjects: (projects: mixtapeProject[]) => void;
     projects: mixtapeProject[];
 }) => {
-    const [curProject, setCurProject] = useState<mixtapeProject>({Name: "", mixtape: CurrentMixtape, hosts: []});
+    const params = new URLSearchParams(window.location.search);
+    const initProject: mixtapeProject = props.projects.filter(x => x.Name == params.get("name")).pop() || {
+        Name: "",
+        mixtape: CurrentMixtape,
+        hosts: [],
+    };
+
+    const [curProject, setCurProject] = useState(initProject);
     const saveProject = (project: mixtapeProject) => {
         props.setProjects(_.uniqBy([project, ...props.projects], x => x.Name));
         saveMixtapeProjects([project])

@@ -1,4 +1,4 @@
-import _ from "lodash"
+import _ from "lodash";
 import {Dispatch, SetStateAction, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
