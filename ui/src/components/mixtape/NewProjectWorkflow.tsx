@@ -43,6 +43,10 @@ const ProjectTable = (props: {
         deleteMixtapeProjects([project]).catch(err => console.log(err));
     };
 
+    const onClickEdit = (project: mixtapeProject) => {
+        window.location.href = `/mixtape/NewProjectWorkflow?` + new URLSearchParams({name: project.Name});
+    };
+
     return <Table className={"text-light"}>
         <tbody>
         {props.projects.map(x => <tr key={x.Name}>
@@ -51,6 +55,7 @@ const ProjectTable = (props: {
             <td>{x.channel}</td>
             <td>{resolveHostNicks(hosts, x).join(", ")}</td>
             <td><Button onClick={() => onClickDelete(x)}>Delete</Button></td>
+            <td><Button onClick={() => onClickEdit(x)}>Edit</Button></td>
         </tr>)}
         </tbody>
     </Table>;
@@ -60,7 +65,14 @@ const WorkflowApp = (props: {
     setProjects: (projects: mixtapeProject[]) => void;
     projects: mixtapeProject[];
 }) => {
-    const [curProject, setCurProject] = useState<mixtapeProject>({Name: "", mixtape: CurrentMixtape, hosts: []});
+    const params = new URLSearchParams(window.location.search);
+    const initProject: mixtapeProject = props.projects.filter(x => x.Name == params.get("name")).pop() || {
+        Name: "",
+        mixtape: CurrentMixtape,
+        hosts: [],
+    };
+
+    const [curProject, setCurProject] = useState(initProject);
     const saveProject = (project: mixtapeProject) => {
         props.setProjects(_.uniqBy([project, ...props.projects], x => x.Name));
         saveMixtapeProjects([project])
@@ -143,7 +155,7 @@ const SubmitTitleButton = (props: {
     saveProject: (project: mixtapeProject) => void
     className?: string
 }) => {
-    const name = _.defaultTo(props.current.Name, nameToTitle(CurrentMixtape, props.title));
+    const name = props.current.Name != "" ? props.current.Name : nameToTitle(CurrentMixtape, props.title);
     const variant = _.isEmpty(props.title) ? "outline-warning" : "outline-primary";
     return <Button
         disabled={_.isEmpty(props.title)}
