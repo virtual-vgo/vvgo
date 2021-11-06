@@ -1,3 +1,4 @@
+import _ from "lodash";
 import {MutableRefObject, useRef, useState} from "react";
 import {Button, Card, Col, Dropdown, Form, FormControl, Row, Table, Toast} from "react-bootstrap";
 import {
@@ -12,7 +13,6 @@ import {
 } from "../../datasets";
 import {LoadingText} from "../shared/LoadingText";
 import {RootContainer} from "../shared/RootContainer";
-import _ from "lodash"
 
 const GuildMemberToastLimit = 5;
 export const CurrentMixtape = "15b-wintry-mix";
@@ -36,7 +36,7 @@ const ProjectTable = (props: {
     projects: mixtapeProject[];
     setProjects: (projects: mixtapeProject[]) => void;
 }) => {
-    const hosts = useGuildMemberLookup(props.projects.flatMap(r => _.defaultTo(r.hosts, [])));
+    const hosts = useGuildMemberLookup(props.projects.flatMap(r => r.hosts ?? []));
     const onClickDelete = (project: mixtapeProject) => {
         console.log("deleting", project);
         props.setProjects(props.projects.filter(x => project.Name != x.Name));
@@ -291,4 +291,4 @@ const nameToTitle = (mixtape: string, title: string): string => {
     return `${CurrentMixtape}-${cleanTitle}`;
 };
 
-export default NewProjectWorkflow
+export default NewProjectWorkflow;

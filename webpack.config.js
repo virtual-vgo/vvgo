@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const devApi = 'http://localhost:42069'
 
 module.exports = {
-    entry: {index: './ui/src/index.js', },
+    entry: {index: './ui/src/index.js'},
     mode: 'development',
     devtool: 'inline-source-map',
     module: {

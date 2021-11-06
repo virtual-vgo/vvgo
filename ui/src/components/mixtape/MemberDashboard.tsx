@@ -1,3 +1,4 @@
+import {isEmpty, shuffle, uniqBy} from "lodash";
 import {useRef, useState} from "react";
 import {Button, Col, FormControl, Row} from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
@@ -16,28 +17,27 @@ import {
 import {FancyProjectMenu, useMenuSelection} from "../shared/FancyProjectMenu";
 import {RootContainer} from "../shared/RootContainer";
 import {CurrentMixtape} from "./NewProjectWorkflow";
-import _ from "lodash"
 
 const pageTitle = "Wintry Mix | Members Dashboard";
 const permaLink = (project: mixtapeProject) => `/mixtape/${project.Name}`;
 const pathMatcher = /\/mixtape\/(.+)\/?/;
 
 const searchProjects = (query: string, projects: mixtapeProject[]): mixtapeProject[] => {
-    return _.defaultTo(projects, []).filter(project =>
+    return (projects ?? []).filter(project =>
         project.Name.toLowerCase().includes(query) ||
-        _.defaultTo(project.channel, "").toLowerCase().includes(query) ||
-        _.defaultTo(project.hosts, []).map(x => x.toLowerCase()).includes(query),
+        project.channel?.toLowerCase().includes(query) ||
+        project.hosts?.map(x => x.toLowerCase()).includes(query),
     );
 };
 
 export const MemberDashboard = () => {
     const vvgoProjects = useProjects();
     const [mixtapeProjects, setMixtapeProjects] = useMixtapeProjects();
-    const hosts = useGuildMemberLookup(_.defaultTo(mixtapeProjects, []).flatMap(r => _.defaultTo(r.hosts, [])));
-    const [selected, setSelected] = useMenuSelection(_.defaultTo(mixtapeProjects, []), pathMatcher, permaLink, _.shuffle(mixtapeProjects).pop());
+    const hosts = useGuildMemberLookup((mixtapeProjects ?? []).flatMap(r => (r.hosts ?? [])));
+    const [selected, setSelected] = useMenuSelection(mixtapeProjects ?? [], pathMatcher, permaLink, shuffle(mixtapeProjects).pop());
     const me = getSession();
 
-    const thisMixtape = _.defaultTo(vvgoProjects, []).filter(x => x.Name == CurrentMixtape).pop();
+    const thisMixtape = vvgoProjects?.filter(x => x.Name == CurrentMixtape).pop();
 
     return <RootContainer title={pageTitle}>
         <h1 className={"title"} style={{textAlign: "left"}}>
@@ -51,7 +51,7 @@ export const MemberDashboard = () => {
         <Row className={"row-cols-1"}>
             <Col lg={3}>
                 <FancyProjectMenu
-                    choices={_.defaultTo(mixtapeProjects, [])}
+                    choices={(mixtapeProjects ?? [])}
                     selected={selected}
                     setSelected={setSelected}
                     permaLink={permaLink}
@@ -68,7 +68,7 @@ export const MemberDashboard = () => {
                         hostNicks={resolveHostNicks(hosts, selected)}
                         project={selected}
                         setProject={setSelected}
-                        allProjects={_.defaultTo(mixtapeProjects, [])}
+                        allProjects={(mixtapeProjects ?? [])}
                         setAllProjects={setMixtapeProjects}/> :
                     <div/>}
             </Col>
@@ -86,8 +86,18 @@ const ProjectCard = (props: {
 }) => {
     const [showEdit, setShowEdit] = useState("");
     const blurbRef = useRef({} as HTMLTextAreaElement);
-    const canEdit = (props.me.DiscordID && _.defaultTo(props.project.hosts, []).includes(props.me.DiscordID)) ||
-        (props.me.Roles && props.me.Roles.includes(UserRole.ExecutiveDirector));
+
+    let canEdit = false;
+    switch (true) {
+        case isEmpty(props.me.DiscordID):
+            break;
+        case props.me.Roles?.includes(UserRole.ExecutiveDirector):
+            canEdit = true;
+            break;
+        case props.project.hosts?.includes(props.me.DiscordID ?? ""):
+            canEdit = true;
+            break;
+    }
 
     const onClickSubmit = () => {
         const update = {
@@ -98,7 +108,7 @@ const ProjectCard = (props: {
         saveMixtapeProjects([update])
             .then((resp) => {
                 props.setProject(update);
-                props.setAllProjects(_.uniqBy([...resp.MixtapeProjects, ...props.allProjects], x => x.Name));
+                props.setAllProjects(uniqBy([...(resp.MixtapeProjects ?? []), ...props.allProjects], x => x.Name));
             });
 
     };
@@ -120,7 +130,7 @@ const ProjectCard = (props: {
                 <a href={links.Help.Markdown}>Markdown Cheatsheet</a>
             </div> :
             <ReactMarkdown>
-                {_.defaultTo(props.project.blurb, "")}
+                {props.project.blurb ?? "Project details coming soon!"}
             </ReactMarkdown>}
         {canEdit ?
             showEdit == props.project.Name ?
@@ -142,4 +152,4 @@ const ProjectCard = (props: {
     </div>;
 };
 
-export default MemberDashboard
+export default MemberDashboard;

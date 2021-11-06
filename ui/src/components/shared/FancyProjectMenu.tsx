@@ -1,4 +1,4 @@
-import _ from "lodash"
+import _ from "lodash";
 import {Dispatch, SetStateAction, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
@@ -50,9 +50,9 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
     toggles?: Array<ToggleParams<T>>,
 }) {
     const [searchInput, setSearchInput] = useState("");
-    const menuToggles = useToggles(props.toggles as Array<ToggleParams<T>>);
+    const menuToggles = useToggles(props.toggles ?? []);
 
-    const searcher = _.defaultTo(props.searchChoices, () => props.choices);
+    const searcher = props.searchChoices ?? (() => props.choices);
     const filter = (x: T) => _.isEmpty(menuToggles) ||
         menuToggles.map(t => t.filter(t.state, x))
             .reduce((a, b) => (a && b));
@@ -89,9 +89,9 @@ export type Toggle<T> = {
     filter: (on: boolean, x: T) => boolean
 }
 
-export function useToggles<T>(toggles: Array<ToggleParams<T>>): Toggle<T>[] {
+export function useToggles<T>(toggles: ToggleParams<T>[]): Toggle<T>[] {
     const [toggleState, setToggleState] = useState(0);
-    return _.defaultTo(toggles, []).map((t, i) => ({
+    return toggles.map((t, i) => ({
         ...t,
         state: (toggleState & (1 << i)) == (1 << i),
         setState: (x: boolean) => setToggleState(x ? toggleState | (1 << i) : toggleState & ~(1 << i)),

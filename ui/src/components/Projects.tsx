@@ -14,8 +14,8 @@ const documentTitle = "Projects";
 const permaLink = (project: Project) => `/projects/${project.Name}`;
 const pathMatcher = /\/projects\/(.+)\/?/;
 
-const searchProjects = (query: string, projects: Project[]): Project[] => {
-    return _.defaultTo(projects, []).filter(r =>
+const searchProjects = (query: string, projects: Project[] | undefined): Project[] => {
+    return (projects ?? []).filter(r =>
         r.Name.toLowerCase().includes(query) ||
         r.Title.toLowerCase().includes(query) ||
         r.Sources.toLowerCase().includes(query));
@@ -23,7 +23,7 @@ const searchProjects = (query: string, projects: Project[]): Project[] => {
 
 export const Projects = () => {
     const allProjects = useProjects();
-    const allowedProjects = _.defaultTo(allProjects, []).filter(r => !r.Hidden);
+    const allowedProjects = (allProjects ?? []).filter(r => !r.Hidden);
     const [selected, setSelected] = useMenuSelection(allowedProjects, pathMatcher, permaLink, latestProject(allowedProjects));
 
     if (!allProjects)
@@ -72,7 +72,7 @@ const ProjectCredits = (props: { project: Project }) => {
     const Masonry = lazy(() => import("@mui/lab/Masonry"));
     const creditsTable = useCreditsTable(props.project);
     return <div>
-        {_.defaultTo(creditsTable, []).map(topic => <Row key={topic.Name}>
+        {(creditsTable ?? []).map(topic => <Row key={topic.Name}>
             <Row>
                 <Col className="text-center">
                     <h2><strong>— {topic.Name} —</strong></h2>

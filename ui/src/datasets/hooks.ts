@@ -49,18 +49,17 @@ export const useGuildMemberLookup = (ids: string[]) => {
 
 export const useHighlights = (): Highlight[] | undefined => useDataset("Highlights");
 
-export const useMixtapeProjects = (): [mixtapeProject[] | undefined, (projects: mixtapeProject[]) => void] => {
-    return useAndSetApiData("/mixtape/projects", (r) => r.MixtapeProjects ?? []);
-};
+export const useMixtapeProjects = (): [mixtapeProject[] | undefined, (projects: mixtapeProject[]) => void] =>
+    useAndSetApiData("/mixtape/projects", resp => resp.MixtapeProjects ?? []);
 
 export const useParts = (): Part[] | undefined =>
-    useApiData("/parts", (p) => p.Parts ?? []);
+    useApiData("/parts", resp => resp.Parts ?? []);
 
 export const useProjects = (): Project[] | undefined =>
-    useApiData("/projects", (p) => p.Projects ?? []);
+    useApiData("/projects", resp => resp.Projects ?? []);
 
 export const useSessions = (): [Session[] | undefined, (sessions: Session[]) => void] =>
-    useAndSetApiData("/sessions", (p) => p.Sessions ?? []);
+    useAndSetApiData("/sessions", resp => resp.Sessions ?? []);
 
 export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Session | undefined => {
     const [session, setSession] = useState<Session | undefined>(undefined);

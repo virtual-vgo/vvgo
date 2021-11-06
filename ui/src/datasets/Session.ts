@@ -1,4 +1,4 @@
-import {isEmpty} from "lodash";
+import {isEmpty} from "lodash/fp";
 import {fetchApi} from "./hooks";
 
 export enum UserRole {
@@ -33,13 +33,17 @@ export interface Session {
 
 export const AnonymousSession: Session = {Kind: SessionKind.Anonymous};
 
-export const sessionIsAnonymous = (session: Session): boolean => {
+export const sessionIsAnonymous = (session: Session | undefined): boolean => {
     switch (true) {
-        case session.Kind == SessionKind.Anonymous:
+        case isEmpty(session):
             return true;
-        case isEmpty(session.Roles):
+        case isEmpty(session?.Kind):
             return true;
-        case session.Roles?.length == 1 && session.Roles[0] == UserRole.Anonymous :
+        case isEmpty(session?.Roles):
+            return true;
+        case session?.Kind == SessionKind.Anonymous:
+            return true;
+        case session?.Roles?.length == 1 && session?.Roles?.pop() == UserRole.Anonymous :
             return true;
         default:
             return false;

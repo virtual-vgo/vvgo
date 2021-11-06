@@ -1,7 +1,7 @@
-import {isEmpty} from "lodash";
-import {AnonymousSession, fetchApi, OAuthRedirect, Session} from "../datasets";
+import {AnonymousSession, fetchApi, OAuthRedirect, Session, sessionIsAnonymous} from "../datasets";
 
 const SessionItemKey = "session";
+const OAuthStateKey = (state: string) => "oauth_state:" + state;
 
 export const logout = () => {
     return fetchApi("/auth/logout", {method: "GET"})
@@ -15,7 +15,8 @@ export const updateLogin = () => {
     });
 };
 
-const setSession = (session: Session) => {
+const setSession = (session: Session | undefined) => {
+    if (sessionIsAnonymous(session)) return;
     const sessionJSON = JSON.stringify(session);
     localStorage.clear();
     localStorage.setItem(SessionItemKey, sessionJSON);
@@ -42,22 +43,21 @@ export const passwordLogin = async (user: string, pass: string): Promise<Session
 export const oauthRedirect = async (): Promise<OAuthRedirect> => {
     return fetchApi("/auth/oauth_redirect", {method: "GET"})
         .then(resp => {
-            const data = resp.OAuthRedirect
-            if isEmpty(data) throw `login failed`
-            const itemKey = "oauth_redirect_secret:" + resp.OAuthRedirect.State;
-            localStorage.setItem(itemKey, resp.OAuthRedirect.Secret);
-            return resp.OAuthRedirect;
+            const data: OAuthRedirect = resp.OAuthRedirect ?? {DiscordURL: "", State: "", Secret: ""};
+            if (data.DiscordURL == "" || data.State == "" || data.Secret == "") throw `invalid api response`;
+            localStorage.setItem(OAuthStateKey(data.State), data.Secret);
+            return data;
         });
 };
 
 export const discordLogin = async (code: string, state: string): Promise<Session> => {
-    const itemKey = "oauth_redirect_secret:" + state;
+    const itemKey = OAuthStateKey(state);
     const secret = localStorage.getItem(itemKey);
     localStorage.removeItem(itemKey);
     const data = {code, state, secret};
     return fetchApi("/auth/discord", {method: "POST", body: JSON.stringify(data)})
         .then(resp => {
             setSession(resp.Identity);
-            return resp.Identity;
+            return resp.Identity ?? AnonymousSession;
         });
 };

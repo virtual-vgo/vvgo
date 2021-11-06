@@ -33,7 +33,7 @@ const permaLink = (project: Project) => `/parts/${project.Name}`;
 const pathMatcher = /\/parts\/(.+)\/?/;
 
 const searchParts = (query: string, parts: Part[]): Part[] => {
-    return _.defaultTo(parts, []).filter(part =>
+    return (parts ?? []).filter(part =>
         part.PartName.toLowerCase().includes(query) ||
         part.Project.toLowerCase().includes(query),
     );
@@ -43,11 +43,8 @@ export const Parts = () => {
     const allProjects = useProjects();
     const parts = useParts();
     const downloadSession = useNewApiSession(4 * 3600, [ApiRole.Download]);
-    const [selected, setSelected] = useMenuSelection(_.defaultTo(allProjects, []), pathMatcher, permaLink,
-        latestProject(_.defaultTo(allProjects, [])
-            .filter(r => r.PartsReleased)
-            .filter(r => !r.PartsArchived)),
-    );
+    const [selected, setSelected] = useMenuSelection(allProjects ?? [], pathMatcher, permaLink,
+        latestProject(allProjects?.filter(r => r.PartsReleased).filter(r => !r.PartsArchived)));
 
     if (!(allProjects && parts))
         return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
@@ -64,11 +61,11 @@ export const Parts = () => {
                     permaLink={permaLink}
                     toggles={[{
                         title: "Unreleased",
-                        hidden: !getSession().Roles.includes(UserRole.ProductionTeam),
+                        hidden: !getSession().Roles?.includes(UserRole.ProductionTeam),
                         filter: (on: boolean, x: Project) => on || x.PartsReleased,
                     }, {
                         title: "Archived",
-                        hidden: !getSession().Roles.includes(UserRole.ExecutiveDirector),
+                        hidden: !getSession().Roles?.includes(UserRole.ExecutiveDirector),
                         filter: (on: boolean, x: Project) => on || !x.PartsArchived,
                     }]}
                     buttonContent={(proj) =>
@@ -209,10 +206,10 @@ const DownloadButton = (props: {
     children: string | (string | JSX.Element)[]
     size?: "sm" | "lg"
 }) => {
-    const sessionKey = props.downloadSession ? props.downloadSession.Key : "";
+    const sessionKey = props.downloadSession?.Key ?? "";
     const params = new URLSearchParams({fileName: props.fileName, token: sessionKey});
     return <Button
-        disabled={_.isEmpty(sessionKey)}
+        disabled={sessionKey == ""}
         href={"/download?" + params.toString()}
         variant="outline-light"
         size={props.size}>
