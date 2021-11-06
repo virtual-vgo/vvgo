@@ -8,6 +8,7 @@ COPY ui ui
 COPY .eslintrc.js .
 COPY tsconfig.json .
 COPY webpack.config.js .
+COPY .babelrc.js .
 RUN npx webpack --mode=production
 
 FROM golang:1.16 as builder
