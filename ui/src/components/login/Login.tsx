@@ -29,8 +29,8 @@ export const Login = () => {
     const onClickLogin = () =>
         passwordLogin(userRef.current.value, passRef.current.value)
             .then(me => {
-                setSuccess(true);
                 console.log("login successful", me);
+                document.location.href = "/parts";
             })
             .catch(err => {
                 setLoginFailed(true);
@@ -46,9 +46,8 @@ export const Login = () => {
                 console.log("api error", err);
             });
 
-    if (success) return <RedirectLoginSuccess/>;
-
     return <div>
+        {success ? <RedirectLoginSuccess/> : <div/>}
         <Row className="justify-content-md-center">
             <Col style={styles.Form}>
                 <Form>
@@ -81,5 +80,4 @@ export const Login = () => {
         </Row>
     </div>;
 };
-
 export default Login;

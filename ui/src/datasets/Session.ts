@@ -43,8 +43,6 @@ export const sessionIsAnonymous = (session: Session | undefined): boolean => {
             return true;
         case session?.Kind == SessionKind.Anonymous:
             return true;
-        case session?.Roles?.length == 1 && session?.Roles?.pop() == UserRole.Anonymous :
-            return true;
         default:
             return false;
     }

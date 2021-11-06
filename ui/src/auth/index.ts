@@ -33,9 +33,8 @@ export const passwordLogin = async (user: string, pass: string): Promise<Session
     const params = new URLSearchParams({user: user, pass: pass});
     return fetchApi("/auth/password?" + params.toString(), {method: "POST"})
         .then(resp => {
-            const me = resp.Identity ?? AnonymousSession;
-            setSession(me);
-            return me;
+            setSession(resp.Identity);
+            return resp.Identity ?? AnonymousSession;
         });
 };
 
