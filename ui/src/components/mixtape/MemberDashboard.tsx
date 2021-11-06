@@ -16,7 +16,7 @@ import {
 import {FancyProjectMenu, useMenuSelection} from "../shared/FancyProjectMenu";
 import {RootContainer} from "../shared/RootContainer";
 import {CurrentMixtape} from "./NewProjectWorkflow";
-import _ = require("lodash");
+import _ from "lodash"
 
 const pageTitle = "Wintry Mix | Members Dashboard";
 const permaLink = (project: mixtapeProject) => `/mixtape/${project.Name}`;

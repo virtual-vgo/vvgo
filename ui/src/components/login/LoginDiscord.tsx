@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {discordLogin} from "../../auth";
 import {RedirectLoginFailure, RedirectLoginSuccess} from "./Login";
-import _ = require("lodash");
+import _ from "lodash"
 
 export const LoginDiscord = () => {
     const [success, setSuccess] = useState(false);

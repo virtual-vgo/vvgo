@@ -12,7 +12,7 @@ import {
 } from "../../datasets";
 import {LoadingText} from "../shared/LoadingText";
 import {RootContainer} from "../shared/RootContainer";
-import _ = require("lodash");
+import _ from "lodash"
 
 const GuildMemberToastLimit = 5;
 export const CurrentMixtape = "15b-wintry-mix";

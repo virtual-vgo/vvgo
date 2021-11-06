@@ -1,4 +1,4 @@
-import _ = require("lodash");
+import _ from "lodash"
 import {Link} from "react-router-dom";
 import {Project} from "../../datasets";
 

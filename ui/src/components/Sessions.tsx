@@ -4,7 +4,7 @@ import {getSession} from "../auth";
 import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "../datasets";
 import {LoadingText} from "./shared/LoadingText";
 import {RootContainer} from "./shared/RootContainer";
-import _ = require("lodash");
+import _ from "lodash"
 
 export const Sessions = () => {
     const me = getSession();

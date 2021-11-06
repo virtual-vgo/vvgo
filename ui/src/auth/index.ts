@@ -1,5 +1,5 @@
 import {fetchApi, OAuthRedirect, Session} from "../datasets";
-import _ = require("lodash");
+import _ from "lodash"
 
 const SessionItemKey = "session";
 

@@ -1,4 +1,4 @@
-import _ = require("lodash");
+import _ from "lodash"
 import {Table} from "react-bootstrap";
 import {useSheet} from "../../datasets";
 import {InternalOopsie} from "../errors/InternalOopsie";

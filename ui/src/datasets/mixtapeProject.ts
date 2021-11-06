@@ -1,6 +1,6 @@
+import _ from "lodash";
 import {GuildMember} from "./GuildMember";
 import {fetchApi} from "./hooks";
-import _ = require("lodash");
 
 export interface mixtapeProject {
     Name: string;

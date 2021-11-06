@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import {CSSProperties, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";

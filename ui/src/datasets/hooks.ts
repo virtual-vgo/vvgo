@@ -10,7 +10,7 @@ import {mixtapeProject} from "./mixtapeProject";
 import {Part} from "./Part";
 import {Project} from "./Project";
 import {ApiRole, createSessions, Session, SessionKind} from "./Session";
-import _ = require("lodash");
+import _ from "lodash"
 
 export const useCredits = (): Credit[] | undefined => useDataset("Credits");
 

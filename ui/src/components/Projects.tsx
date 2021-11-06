@@ -1,4 +1,4 @@
-import _ = require("lodash");
+import _ from "lodash"
 import Masonry from "@mui/lab/Masonry";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";

@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const devApi = 'http://localhost:42069'
 
 module.exports = {
-    entry: {index: './ui/src/index.js'},
+    entry: {index: './ui/src/index.js', },
     mode: 'development',
     devtool: 'inline-source-map',
     module: {
@@ -14,15 +14,15 @@ module.exports = {
                 use: ["style-loader", "css-loader"],
             }, {
                 test: /\.s[ac]ss$/i,
-                use: ["style-loader", "css-loader", "sass-loader",],
+                use: ["style-loader", "css-loader", "sass-loader"],
             }, {
                 test: /\.(png|svg|jpg|jpeg|gif)$/i,
                 type: 'asset/resource',
             }, {
-                test: /\.tsx?$/,
+                test: /\.jsx?|\.tsx?$/,
                 exclude: /node_modules/,
-                use: 'ts-loader',
-            }
+                use: 'babel-loader',
+            },
         ]
     },
     optimization: {splitChunks: {}},

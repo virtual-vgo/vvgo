@@ -1,4 +1,4 @@
-import _ = require("lodash");
+import _ from "lodash"
 
 export interface Project {
     Name: string;
