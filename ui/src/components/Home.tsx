@@ -3,7 +3,6 @@ import Row from "react-bootstrap/Row";
 import {Highlight, latestProject, Project, useHighlights, useProjects} from "../datasets";
 import {randElement} from "../utils";
 import {ProjectBanner} from "./shared/ProjectBanner";
-import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
 
 export const Home = () => {
@@ -12,7 +11,7 @@ export const Home = () => {
     const highlight = highlights ? randElement(highlights) : undefined;
 
     const latest = projects ? latestProject(projects) : undefined;
-    return <RootContainer>
+    return <div>
         <Row>
             <Col lg={7} md={12}>
                 <ProjectBanner project={latest}/>
@@ -35,7 +34,7 @@ export const Home = () => {
                 </div>
             </Col>
         </Row>
-    </RootContainer>;
+    </div>;
 };
 
 const LatestReleases = (props: { projects: Project[] | undefined }) => {
@@ -72,3 +71,5 @@ const MemberHighlight = (props: { highlight?: Highlight }) => {
         </tbody>
     </table>;
 };
+
+export default Home;

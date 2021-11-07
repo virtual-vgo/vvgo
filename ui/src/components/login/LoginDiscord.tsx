@@ -1,15 +1,14 @@
 import {useEffect, useState} from "react";
 import {discordLogin} from "../../auth";
 import {RedirectLoginFailure, RedirectLoginSuccess} from "./Login";
-import _ from "lodash"
 
 export const LoginDiscord = () => {
     const [success, setSuccess] = useState(false);
     const [failed, setFailed] = useState(false);
 
     const params = new URLSearchParams(window.location.search);
-    const code = _.defaultTo(params.get("code"), "");
-    const state = _.defaultTo(params.get("state"), "");
+    const code = params.get("code") ?? "";
+    const state = params.get("state") ?? "";
 
     useEffect(() => {
         discordLogin(code, state)
@@ -32,3 +31,5 @@ export const LoginDiscord = () => {
             return <div>Loading...</div>;
     }
 };
+
+export default LoginDiscord

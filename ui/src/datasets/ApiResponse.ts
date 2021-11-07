@@ -20,23 +20,23 @@ export type ApiDataset = Highlight[] | Director[] | Credit[]
 
 export interface ApiResponse {
     Status: string;
-    Error: ErrorResponse;
-    Dataset: ApiDataset;
-    Parts: Part[];
-    Projects: Project[];
-    Sessions: Session[];
-    Identity: Session;
-    GuildMembers: GuildMember[];
-    MixtapeProjects: mixtapeProject[];
-    OAuthRedirect: OAuthRedirect;
-    CreditsTable: CreditsTable;
-    CreditsPasta: CreditsPasta;
-    Spreadsheet: Spreadsheet;
+    Error?: ErrorResponse;
+    Dataset?: ApiDataset;
+    Parts?: Part[];
+    Projects?: Project[];
+    Sessions?: Session[];
+    Identity?: Session;
+    GuildMembers?: GuildMember[];
+    MixtapeProjects?: mixtapeProject[];
+    OAuthRedirect?: OAuthRedirect;
+    CreditsTable?: CreditsTable;
+    CreditsPasta?: CreditsPasta;
+    Spreadsheet?: Spreadsheet;
 }
 
 export interface Spreadsheet {
     SpreadsheetName: string;
-    sheets: Sheet[];
+    sheets?: Sheet[];
 }
 
 export interface Sheet {

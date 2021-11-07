@@ -13,14 +13,6 @@ const navbarStyle: CSSProperties = {
 
 export const Navbar = () => {
     const me = getSession();
-
-    const ExternalLink = (props: {
-        to: string,
-        children: string
-    }) => <Nav.Link>
-        {props.children}
-    </Nav.Link>;
-
     const NavLink = (props: {
         to: string,
         children: string | JSX.Element | (JSX.Element | string)[]

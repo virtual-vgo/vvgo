@@ -1,4 +1,4 @@
-import _ from "lodash";
+import {isEmpty} from "lodash/fp";
 import {Dispatch, SetStateAction, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
@@ -18,12 +18,12 @@ export function useMenuSelection<T extends { Name: string }>(
     };
 
     if (selected) return [selected, setSelected];
-    if (_.isEmpty(choices)) return [selected, setSelected];
+    if (isEmpty(choices)) return [selected, setSelected];
 
     let want = defaultChoice;
 
     const params = new URLSearchParams(document.location.search);
-    if (!_.isEmpty(params.get("name")))
+    if (!isEmpty(params.get("name")))
         want = choices.filter(p => p.Name == params.get("name")).pop();
 
     const pathMatch = document.location.pathname.match(pathMatcher);
@@ -50,12 +50,12 @@ export function FancyProjectMenu<T extends { Name: string }>(props: {
     toggles?: Array<ToggleParams<T>>,
 }) {
     const [searchInput, setSearchInput] = useState("");
-    const menuToggles = useToggles(props.toggles as Array<ToggleParams<T>>);
+    const menuToggles = useToggles(props.toggles ?? []);
 
-    const searcher = _.defaultTo(props.searchChoices, () => props.choices);
-    const filter = (x: T) => _.isEmpty(menuToggles) ||
-        menuToggles.map(t => t.filter(t.state, x))
-            .reduce((a, b) => (a && b));
+    const searcher = props.searchChoices ?? (() => props.choices);
+    const filter = (x: T) => isEmpty(menuToggles) || menuToggles
+        .map(t => t.filter(t.state, x))
+        .reduce((a, b) => (a && b));
     const wantChoices = searcher(searchInput, props.choices).filter(filter);
 
     const onClickChoice = (want: T) => {
@@ -89,9 +89,9 @@ export type Toggle<T> = {
     filter: (on: boolean, x: T) => boolean
 }
 
-export function useToggles<T>(toggles: Array<ToggleParams<T>>): Toggle<T>[] {
+export function useToggles<T>(toggles: ToggleParams<T>[]): Toggle<T>[] {
     const [toggleState, setToggleState] = useState(0);
-    return _.defaultTo(toggles, []).map((t, i) => ({
+    return toggles.map((t, i) => ({
         ...t,
         state: (toggleState & (1 << i)) == (1 << i),
         setState: (x: boolean) => setToggleState(x ? toggleState | (1 << i) : toggleState & ~(1 << i)),
@@ -100,7 +100,7 @@ export function useToggles<T>(toggles: Array<ToggleParams<T>>): Toggle<T>[] {
 
 export function MenuToggles<T>(props: { toggles: Toggle<T>[] }): JSX.Element {
     const toggles = props.toggles.filter(t => !t.hidden);
-    return _.isEmpty(props.toggles) ?
+    return isEmpty(props.toggles) ?
         <div/> :
         <div className={"d-flex flex-row justify-content-center"}>
             {toggles.map((toggle) =>

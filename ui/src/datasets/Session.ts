@@ -1,3 +1,4 @@
+import {isEmpty} from "lodash/fp";
 import {fetchApi} from "./hooks";
 
 export enum UserRole {
@@ -22,22 +23,25 @@ export enum SessionKind {
 }
 
 export interface Session {
-    Key: string;
     Kind: string;
-    Roles: string[];
-    DiscordID: string;
-    ExpiresAt: string;
+    Key?: string;
+    Roles?: string[];
+    DiscordID?: string;
+    CreatedAt?: string;
+    ExpiresAt?: string;
 }
 
-export const sessionIsAnonymous = (session: Session): boolean => {
+export const AnonymousSession: Session = {Kind: SessionKind.Anonymous};
+
+export const sessionIsAnonymous = (session: Session | undefined): boolean => {
     switch (true) {
-        case session.Kind == SessionKind.Anonymous:
+        case isEmpty(session):
             return true;
-        case session.Roles == undefined:
+        case isEmpty(session?.Kind):
             return true;
-        case session.Roles.length == 0:
+        case isEmpty(session?.Roles):
             return true;
-        case session.Roles.length == 1 && session.Roles[0] == UserRole.Anonymous:
+        case session?.Kind == SessionKind.Anonymous:
             return true;
         default:
             return false;
@@ -49,7 +53,7 @@ export const createSessions = async (sessions: { expires: number; Kind: SessionK
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(({"sessions": sessions})),
-    }).then(resp => resp.Sessions);
+    }).then(resp => resp.Sessions ?? []);
 };
 
 export const deleteSessions = async (sessionsIds: string[]) => {

@@ -1,12 +1,11 @@
 import {flatRollup} from "d3";
-import _ from "lodash";
+import {isEmpty} from "lodash/fp";
 import {VegaLite} from "react-vega";
 import {useCredits} from "../../datasets";
-import {RootContainer} from "../shared/RootContainer";
 
 export const Members = () => {
-    const credits = _.defaultTo(useCredits(), []).filter(x => !_.isEmpty(x.Name));
-    if (_.isEmpty(credits)) return <div/>;
+    const credits = (useCredits() ?? []).filter(x => !isEmpty(x.Name));
+    if (isEmpty(credits)) return <div/>;
 
     const topCredited = flatRollup(credits, g => g.length, p => p.Name)
         .map(([name, count]) => ({name, count}))
@@ -27,7 +26,7 @@ export const Members = () => {
         .reverse()
         .slice(0, 10);
 
-    return <RootContainer title={"Member Stats"}>
+    return <div>
         <div className={"d-grid justify-content-center"}>
             <h1>Member Stats</h1>
             <VegaLite
@@ -123,5 +122,6 @@ export const Members = () => {
                     },
                 }}/>
         </div>
-    </RootContainer>;
+    </div>;
 };
+export default Members;

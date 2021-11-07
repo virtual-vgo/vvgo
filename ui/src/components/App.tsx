@@ -1,56 +1,98 @@
+import isEmpty from "lodash/fp/isEmpty";
+import {lazy, Suspense} from "react";
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession, updateLogin} from "../auth";
 import {sessionIsAnonymous, UserRole} from "../datasets";
-import {About} from "./About";
-import {Contact} from "./Contact";
-import {CreditsMaker} from "./CreditsMaker";
-import {AccessDenied} from "./errors/AccessDenied";
-import {InternalOopsie} from "./errors/InternalOopsie";
-import {NotFound} from "./errors/NotFound";
-import {Home} from "./Home";
-import {Login} from "./login/Login";
-import {LoginDiscord} from "./login/LoginDiscord";
-import {LoginFailure} from "./login/LoginFailure";
-import {Logout} from "./login/Logout";
-import {MemberDashboard} from "./mixtape/MemberDashboard";
-import {NewProjectFormResponses} from "./mixtape/NewProjectFormResponses";
-import {NewProjectWorkflow} from "./mixtape/NewProjectWorkflow";
-import {Parts} from "./Parts";
-import {Projects} from "./Projects";
-import {Sessions} from "./Sessions";
-import {Members as MemberStats} from "./stats/Members";
+import Contact from "./Contact";
+import AccessDenied from "./errors/AccessDenied";
+import InternalOopsie from "./errors/InternalOopsie";
+import NotFound from "./errors/NotFound";
+import Home from "./Home";
+import Login from "./login/Login";
+import LoginDiscord from "./login/LoginDiscord";
+import LoginFailure from "./login/LoginFailure";
+import Logout from "./login/Logout";
+import {Footer} from "./shared/Footer";
+import {LoadingText} from "./shared/LoadingText";
+import {Navbar} from "./shared/Navbar";
+
+// Lazy loads
+const NewProjectFormResponses = lazy(() => import("./mixtape/NewProjectFormResponses"));
+const MemberStats = lazy(() => import("./stats/Members"));
+const Projects = lazy(() => import("./Projects"));
+const Parts = lazy(() => import("./Parts"));
+const NewProjectWorkflow = lazy(() => import("./mixtape/NewProjectWorkflow"));
+const MemberDashboard = lazy(() => import("./mixtape/MemberDashboard"));
+const About = lazy(() => import("./About"));
+const CreditsMaker = lazy(() => import("./CreditsMaker"));
+const Sessions = lazy(() => import("./Sessions"));
 
 export const App = () => {
     updateLogin();
     return <BrowserRouter>
         <Switch>
-            <PrivateRoute path="/credits-maker/" role={UserRole.ProductionTeam}><CreditsMaker/></PrivateRoute>
-            <PrivateRoute path="/stats/members" role={UserRole.VerifiedMember}><MemberStats/></PrivateRoute>
-            <PrivateRoute path="/parts/" role={UserRole.VerifiedMember}><Parts/></PrivateRoute>
-            <PrivateRoute
-                path="/mixtape/NewProjectWorkflow/"
-                role={UserRole.ExecutiveDirector}>
-                <NewProjectWorkflow/>
+            <PrivateRoute path="/credits-maker/" role={UserRole.ProductionTeam}>
+                <AppPage title="Credits Maker"><CreditsMaker/></AppPage>
             </PrivateRoute>
-            <PrivateRoute
-                path="/mixtape/NewProjectFormResponses/"
-                role={UserRole.ExecutiveDirector}>
-                <NewProjectFormResponses/>
-            </PrivateRoute>
-            <PrivateRoute path="/mixtape/" role={UserRole.VerifiedMember}><MemberDashboard/></PrivateRoute>
-            <PrivateRoute path="/sessions/" role={UserRole.ExecutiveDirector}><Sessions/></PrivateRoute>
 
-            <Route path="/login/failure/"><LoginFailure/></Route>
-            <Route path="/login/discord/"><LoginDiscord/></Route>
-            <Route path="/logout/"><Logout/></Route>
-            <Route path="/login/"><Login/></Route>
-            <Route path="/projects/"><Projects/></Route>
-            <Route path="/about/"><About/></Route>
-            <Route path="/contact/"><Contact/></Route>
+            <PrivateRoute path="/stats/members" role={UserRole.VerifiedMember}>
+                <AppPage title="Member Stats"><MemberStats/></AppPage>
+            </PrivateRoute>
+
+            <PrivateRoute path="/sessions/" role={UserRole.ExecutiveDirector}>
+                <AppPage title="Sessions"><Sessions/></AppPage>
+            </PrivateRoute>
+
+            <PrivateRoute path="/parts/" role={UserRole.VerifiedMember}>
+                <AppPage title="Parts"><Parts/></AppPage>
+            </PrivateRoute>
+
+            <PrivateRoute path="/mixtape/" role={UserRole.VerifiedMember}>
+                <Switch>
+                    <PrivateRoute path="/mixtape/NewProjectWorkflow/" role={UserRole.ExecutiveDirector}>
+                        <AppPage title="New Project Workflow"><NewProjectWorkflow/></AppPage>
+                    </PrivateRoute>
+                    <PrivateRoute path="/mixtape/NewProjectFormResponses/" role={UserRole.ExecutiveDirector}>
+                        <AppPage title="New Project Form Responses"><NewProjectFormResponses/></AppPage>
+                    </PrivateRoute>
+                    <Route>
+                        <AppPage title="Wintry Mix"><MemberDashboard/></AppPage>
+                    </Route>
+                </Switch>
+            </PrivateRoute>
+
+            <Route path="/projects/">
+                <AppPage title="Projects"><Projects/></AppPage>
+            </Route>
+
+            <Route path="/about/">
+                <AppPage title="About"><About/></AppPage>
+            </Route>
+
+            <Route path="/contact/">
+                <AppPage title="Contact"><Contact/></AppPage>
+            </Route>
+
+            <Route path="/logout/">
+                <AppPage title="Logout"><Logout/></AppPage>
+            </Route>
+
+            <Route path="/login/">
+                <Switch>
+                    <Route path="/login/failure/"><LoginFailure/></Route>
+                    <Route path="/login/discord/"><LoginDiscord/></Route>
+                    <Route>
+                        <AppPage title="Login"><Login/></AppPage>
+                    </Route>
+                </Switch>
+            </Route>
+
+            <Route exact path="/">
+                <AppPage><Home/></AppPage>
+            </Route>
             <Route exact path="/401.html"><AccessDenied/></Route>
             <Route exact path="/404.html"><NotFound/></Route>
             <Route exact path="/500.html"><InternalOopsie/></Route>
-            <Route exact path="/"><Home/></Route>
             <Route path="*"><NotFound/></Route>
         </Switch>
     </BrowserRouter>;
@@ -62,7 +104,7 @@ const PrivateRoute = (props: {
     children: JSX.Element;
 }) => {
     const me = getSession();
-    const authorized = me.Roles && me.Roles.includes(props.role);
+    const authorized = me.Roles?.includes(props.role) ?? false;
     const children = () => {
         switch (true) {
             case authorized:
@@ -75,3 +117,13 @@ const PrivateRoute = (props: {
     };
     return <Route path={props.path} render={children}/>;
 };
+
+function AppPage(props: { title?: string, children: JSX.Element }) {
+    const title = isEmpty(props.title) ? "Virtual Video Game Orchestra" : props.title;
+    document.title = "VVGO | " + title;
+    return <div className={"container"}>
+        <Navbar/>
+        <Suspense fallback={<LoadingText/>}>{props.children}</Suspense>
+        <Footer/>
+    </div>;
+}

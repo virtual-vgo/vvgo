@@ -1,5 +1,5 @@
+import {CSSProperties} from "react";
 import Button from "react-bootstrap/Button";
-import {RootContainer} from "./shared/RootContainer";
 
 const styles = {
     Form: {
@@ -7,10 +7,10 @@ const styles = {
         maxWidth: "500px",
         padding: "15px",
         margin: "auto",
-    } as React.CSSProperties,
+    } as CSSProperties,
 };
 
-export const Contact = () => <RootContainer title={"Contact"}>
+export const Contact = () => <div>
     <form className="mx-auto" action="https://formspree.io/f/xrgojvvj" method="POST" style={styles.Form}>
         <div className="form-group">
             <h1>Contact</h1>
@@ -26,8 +26,9 @@ export const Contact = () => <RootContainer title={"Contact"}>
             <textarea className="form-control mb-1" id="message" name="message"
                       placeholder="But actually the earth is flat." rows={3}/>
             <div className="d-grid">
-                <Button type="submit" variant={'primary'}>Submit</Button>
+                <Button type="submit" variant={"primary"}>Submit</Button>
             </div>
         </div>
     </form>
-</RootContainer>;
+</div>;
+export default Contact;

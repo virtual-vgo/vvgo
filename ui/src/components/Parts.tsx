@@ -1,4 +1,4 @@
-import _ from "lodash";
+import {isEmpty} from "lodash";
 import {CSSProperties, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
@@ -26,14 +26,12 @@ import {FancyProjectMenu, useMenuSelection} from "./shared/FancyProjectMenu";
 import {LinkChannel} from "./shared/LinkChannel";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
-import {RootContainer} from "./shared/RootContainer";
 
-const documentTitle = "Parts";
 const permaLink = (project: Project) => `/parts/${project.Name}`;
 const pathMatcher = /\/parts\/(.+)\/?/;
 
 const searchParts = (query: string, parts: Part[]): Part[] => {
-    return _.defaultTo(parts, []).filter(part =>
+    return (parts ?? []).filter(part =>
         part.PartName.toLowerCase().includes(query) ||
         part.Project.toLowerCase().includes(query),
     );
@@ -43,18 +41,14 @@ export const Parts = () => {
     const allProjects = useProjects();
     const parts = useParts();
     const downloadSession = useNewApiSession(4 * 3600, [ApiRole.Download]);
-    const [selected, setSelected] = useMenuSelection(_.defaultTo(allProjects, []), pathMatcher, permaLink,
-        latestProject(_.defaultTo(allProjects, [])
-            .filter(r => r.PartsReleased)
-            .filter(r => !r.PartsArchived)),
-    );
+    const [selected, setSelected] = useMenuSelection(allProjects ?? [], pathMatcher, permaLink,
+        latestProject(allProjects?.filter(r => r.PartsReleased).filter(r => !r.PartsArchived)));
 
-    if (!(allProjects && parts))
-        return <RootContainer title={documentTitle}><LoadingText/></RootContainer>;
+    if (!(allProjects && parts)) return <LoadingText/>;
 
     const projectsWithParts = new Set(parts.map(p => p.Project));
     const choices = allProjects.filter(r => projectsWithParts.has(r.Name) || !r.PartsReleased);
-    return <RootContainer title={documentTitle}>
+    return <div>
         <Row>
             <Col lg={3}>
                 <FancyProjectMenu
@@ -64,11 +58,11 @@ export const Parts = () => {
                     permaLink={permaLink}
                     toggles={[{
                         title: "Unreleased",
-                        hidden: !getSession().Roles.includes(UserRole.ProductionTeam),
+                        hidden: !getSession().Roles?.includes(UserRole.ProductionTeam),
                         filter: (on: boolean, x: Project) => on || x.PartsReleased,
                     }, {
                         title: "Archived",
-                        hidden: !getSession().Roles.includes(UserRole.ExecutiveDirector),
+                        hidden: !getSession().Roles?.includes(UserRole.ExecutiveDirector),
                         filter: (on: boolean, x: Project) => on || !x.PartsArchived,
                     }]}
                     buttonContent={(proj) =>
@@ -94,7 +88,7 @@ export const Parts = () => {
                         <br/>Please check <LinkChannel channel={Channels.NextProjectHints}/> for updates.</p>
                 </Col>}
         </Row>
-    </RootContainer>;
+    </div>;
 };
 
 const ButtonGroupBreakPoint = 800;
@@ -161,7 +155,7 @@ const PartsTable = (props: {
 
 const PartDownloads = (props: { downloadSession: Session | undefined, part: Part }) => {
     const buttons = [] as Array<JSX.Element>;
-    if (!_.isEmpty(props.part.SheetMusicFile))
+    if (!isEmpty(props.part.SheetMusicFile))
         buttons.push(<DownloadButton
             key={props.part.SheetMusicFile}
             fileName={props.part.SheetMusicFile}
@@ -170,7 +164,7 @@ const PartDownloads = (props: { downloadSession: Session | undefined, part: Part
             <i className="far fa-file-pdf"/> sheet music
         </DownloadButton>);
 
-    if (!_.isEmpty(props.part.ClickTrackFile))
+    if (!isEmpty(props.part.ClickTrackFile))
         buttons.push(<DownloadButton
             key={props.part.ClickTrackFile}
             fileName={props.part.ClickTrackFile}
@@ -179,7 +173,7 @@ const PartDownloads = (props: { downloadSession: Session | undefined, part: Part
             <i className="far fa-file-audio"/> click track
         </DownloadButton>);
 
-    if (!_.isEmpty(props.part.ConductorVideo))
+    if (!isEmpty(props.part.ConductorVideo))
         buttons.push(<LinkButton
             key={props.part.ConductorVideo}
             to={props.part.ConductorVideo}
@@ -187,7 +181,7 @@ const PartDownloads = (props: { downloadSession: Session | undefined, part: Part
             <i className="far fa-file-video"/> conductor video
         </LinkButton>);
 
-    if (!_.isEmpty(props.part.PronunciationGuide))
+    if (!isEmpty(props.part.PronunciationGuide))
         buttons.push(<DownloadButton
             key={props.part.PronunciationGuide}
             fileName={props.part.PronunciationGuide}
@@ -209,10 +203,10 @@ const DownloadButton = (props: {
     children: string | (string | JSX.Element)[]
     size?: "sm" | "lg"
 }) => {
-    const sessionKey = props.downloadSession ? props.downloadSession.Key : "";
+    const sessionKey = props.downloadSession?.Key ?? "";
     const params = new URLSearchParams({fileName: props.fileName, token: sessionKey});
     return <Button
-        disabled={_.isEmpty(sessionKey)}
+        disabled={sessionKey == ""}
         href={"/download?" + params.toString()}
         variant="outline-light"
         size={props.size}>
@@ -232,3 +226,5 @@ const LinkButton = (props: {
         {props.children}
     </Button>;
 };
+
+export default Parts;

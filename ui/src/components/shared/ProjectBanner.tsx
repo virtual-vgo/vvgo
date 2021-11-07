@@ -1,11 +1,11 @@
-import _ from "lodash"
+import {isEmpty} from "lodash/fp";
 import {Link} from "react-router-dom";
 import {Project} from "../../datasets";
 
 export const ProjectBanner = (props: { project: Project | undefined }) => {
     if (!props.project) return <div/>;
     return <div className={"d-flex justify-content-center mb-2"}>
-        {_.isEmpty(props.project.BannerLink) ?
+        {isEmpty(props.project.BannerLink) ?
             <div>
                 <BannerLink project={props.project}>
                     <h1 className="title">{props.project.Title}</h1>
@@ -20,7 +20,7 @@ export const ProjectBanner = (props: { project: Project | undefined }) => {
 };
 
 const BannerLink = (props: { project: Project, children: JSX.Element }) =>
-    _.isEmpty(props.project.YoutubeLink) ?
+    isEmpty(props.project.YoutubeLink) ?
         <Link
             className="text-light text-center"
             to={`/projects/${props.project.Name}`}>

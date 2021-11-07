@@ -6,7 +6,7 @@ import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import {Redirect} from "react-router";
 import {oauthRedirect, passwordLogin} from "../../auth";
-import {RootContainer} from "../shared/RootContainer";
+import logoSrc from "./logo.svg";
 
 const styles = {
     Form: {
@@ -17,12 +17,11 @@ const styles = {
     } as CSSProperties,
 };
 
-export const RedirectLogin = () => <Redirect to="/login/"/>
+export const RedirectLogin = () => <Redirect to="/login/"/>;
 export const RedirectLoginSuccess = () => <Redirect to="/parts"/>;
 export const RedirectLoginFailure = () => <Redirect to="/login/failure"/>;
 
 export const Login = () => {
-    const [success, setSuccess] = useState(false);
     const [loginFailed, setLoginFailed] = useState(false);
     const userRef = useRef({} as HTMLInputElement);
     const passRef = useRef({} as HTMLInputElement);
@@ -30,8 +29,8 @@ export const Login = () => {
     const onClickLogin = () =>
         passwordLogin(userRef.current.value, passRef.current.value)
             .then(me => {
-                setSuccess(true);
                 console.log("login successful", me);
+                document.location.href = "/parts";
             })
             .catch(err => {
                 setLoginFailed(true);
@@ -40,21 +39,18 @@ export const Login = () => {
 
     const onClickDiscordLogin = () =>
         oauthRedirect()
-            .then((data: { DiscordURL: string; }) => {
+            .then((data) => {
                 document.location.href = data.DiscordURL;
             })
             .catch((err: unknown) => {
                 console.log("api error", err);
             });
 
-    if (success) return <RedirectLoginSuccess/>;
-
-    // noinspection HtmlUnknownTarget
-    return <RootContainer title="Login">
+    return <div>
         <Row className="justify-content-md-center">
             <Col style={styles.Form}>
                 <Form>
-                    <img className="mb-4 mt-4" src="/images/logo.svg" alt="" width="100%"/>
+                    <img className="mb-4 mt-4" src={logoSrc} alt="logo.svg" width="100%"/>
                     <Form.Group>
                         <Form.Control ref={userRef} type="text" placeholder="user" required autoFocus/>
                         <Form.Control ref={passRef} type="password" placeholder="password" required/>
@@ -81,5 +77,6 @@ export const Login = () => {
                 </div>
             </Col>
         </Row>
-    </RootContainer>;
+    </div>;
 };
+export default Login;

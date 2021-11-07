@@ -1,5 +1,5 @@
-import _ from "lodash"
-import Masonry from "@mui/lab/Masonry";
+import {isEmpty} from "lodash/fp";
+import {lazy, Suspense} from "react";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {latestProject, Project, useCreditsTable, useProjects} from "../datasets";
@@ -7,15 +7,13 @@ import {AlertUnreleasedProject} from "./shared/AlertUnreleasedProject";
 import {FancyProjectMenu, useMenuSelection} from "./shared/FancyProjectMenu";
 import {LoadingText} from "./shared/LoadingText";
 import {ProjectHeader} from "./shared/ProjectHeader";
-import {RootContainer} from "./shared/RootContainer";
 import {YoutubeIframe} from "./shared/YoutubeIframe";
 
-const documentTitle = "Projects";
 const permaLink = (project: Project) => `/projects/${project.Name}`;
 const pathMatcher = /\/projects\/(.+)\/?/;
 
-const searchProjects = (query: string, projects: Project[]): Project[] => {
-    return _.defaultTo(projects, []).filter(r =>
+const searchProjects = (query: string, projects: Project[] | undefined): Project[] => {
+    return (projects ?? []).filter(r =>
         r.Name.toLowerCase().includes(query) ||
         r.Title.toLowerCase().includes(query) ||
         r.Sources.toLowerCase().includes(query));
@@ -23,15 +21,11 @@ const searchProjects = (query: string, projects: Project[]): Project[] => {
 
 export const Projects = () => {
     const allProjects = useProjects();
-    const allowedProjects = _.defaultTo(allProjects, []).filter(r => !r.Hidden);
+    const allowedProjects = (allProjects ?? []).filter(r => !r.Hidden);
     const [selected, setSelected] = useMenuSelection(allowedProjects, pathMatcher, permaLink, latestProject(allowedProjects));
 
-    if (!allProjects)
-        return <RootContainer title={documentTitle}>
-            <LoadingText/>
-        </RootContainer>;
-
-    return <RootContainer title={documentTitle}>
+    if (!allProjects) return <LoadingText/>;
+    return <div>
         <Row>
             <Col lg={3}>
                 <FancyProjectMenu
@@ -65,37 +59,40 @@ export const Projects = () => {
                     <div/>}
             </Col>
         </Row>
-    </RootContainer>;
+    </div>;
 };
 
 const ProjectCredits = (props: { project: Project }) => {
+    const Masonry = lazy(() => import("@mui/lab/Masonry"));
     const creditsTable = useCreditsTable(props.project);
     return <div>
-        {_.defaultTo(creditsTable, []).map(topic => <Row key={topic.Name}>
+        {(creditsTable ?? []).map(topic => <Row key={topic.Name}>
             <Row>
                 <Col className="text-center">
                     <h2><strong>— {topic.Name} —</strong></h2>
                 </Col>
             </Row>
             <Row>
-                <Masonry
-                    columns={3}
-                    spacing={1}
-                    defaultHeight={450}
-                    defaultColumns={3}
-                    defaultSpacing={1}>
-                    {_.isEmpty(topic.Rows) ? <div/> : topic.Rows.map(team =>
-                        <Col key={team.Name} lg={4}>
-                            <h5>{team.Name}</h5>
-                            <ul className="list-unstyled">
-                                {team.Rows.map(credit =>
-                                    <li key={credit.Name}>{credit.Name} <small>{credit.BottomText}</small></li>)}
-                            </ul>
-                        </Col>)}
-                </Masonry>
+                <Suspense fallback={<LoadingText/>}>
+                    <Masonry
+                        columns={3}
+                        spacing={1}
+                        defaultHeight={450}
+                        defaultColumns={3}
+                        defaultSpacing={1}>
+                        {isEmpty(topic.Rows) ? <div/> : topic.Rows.map(team =>
+                            <Col key={team.Name} lg={4}>
+                                <h5>{team.Name}</h5>
+                                <ul className="list-unstyled">
+                                    {team.Rows.map(credit =>
+                                        <li key={credit.Name}>{credit.Name} <small>{credit.BottomText}</small></li>)}
+                                </ul>
+                            </Col>)}
+                    </Masonry>
+                </Suspense>
             </Row>
         </Row>)}
     </div>;
 };
 
-
+export default Projects;

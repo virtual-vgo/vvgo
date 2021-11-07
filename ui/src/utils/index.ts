@@ -1,5 +1,5 @@
-import _ from "lodash";
+import {isEmpty, random} from "lodash/fp";
 
 export function randElement<T>(arr: Array<T>): T | undefined {
-    return _.isEmpty(arr) ? undefined : arr[_.random(arr.length - 1)];
+    return isEmpty(arr) ? undefined : arr[random(0, arr.length - 1)];
 }

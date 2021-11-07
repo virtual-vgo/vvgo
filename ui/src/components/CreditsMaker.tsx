@@ -1,4 +1,3 @@
-import _ from "lodash"
 import {CSSProperties, useRef, useState} from "react";
 import {Dropdown} from "react-bootstrap";
 import Button from "react-bootstrap/Button";
@@ -8,26 +7,25 @@ import FormLabel from "react-bootstrap/FormLabel";
 import Row from "react-bootstrap/Row";
 import {links} from "../data/links";
 import {CreditsPasta, fetchApi, Project, useProjects} from "../datasets";
-import {RootContainer} from "./shared/RootContainer";
+
+const DefaultSpreadsheetId = "1a-2u726Hg-Wp5GMWfLnYwSi2DvTMym85gQqpRviafJk";
+const DefaultReadRange = "06 Aurene!A3:I39";
 
 export const CreditsMaker = () => {
     const [pasta, setPasta] = useState({} as CreditsPasta);
-
-    return <RootContainer title="Credits Maker">
+    return <div>
         <Row>
             <Col><InputForm setPasta={setPasta}/></Col>
         </Row>
-
         <Row>
             <Col className="mt-4"><h2 className="text-center">~ Results ~</h2></Col>
         </Row>
-
         <Row>
             <Col><PastaResult title={"Website Pasta"} content={pasta.WebsitePasta}/></Col>
             <Col><PastaResult title={"Video Pasta"} content={pasta.VideoPasta}/></Col>
             <Col><PastaResult title={"Youtube Pasta"} content={pasta.YoutubePasta}/></Col>
         </Row>
-    </RootContainer>;
+    </div>;
 };
 
 const InputForm = (props: { setPasta: (pasta: CreditsPasta) => void; }) => {
@@ -46,7 +44,7 @@ const InputForm = (props: { setPasta: (pasta: CreditsPasta) => void; }) => {
         fetchApi("/credits/pasta?" + params.toString(), {method: "GET"})
             .then(resp => {
                 setErrorMessage("");
-                props.setPasta(resp.CreditsPasta);
+                props.setPasta(resp.CreditsPasta ?? {WebsitePasta: "", VideoPasta: "", YoutubePasta: ""});
             })
             .catch(err => setErrorMessage(err.toString()));
     };
@@ -64,7 +62,7 @@ const InputForm = (props: { setPasta: (pasta: CreditsPasta) => void; }) => {
                 </FormLabel>
                 <FormControl
                     type="text"
-                    defaultValue="1a-2u726Hg-Wp5GMWfLnYwSi2DvTMym85gQqpRviafJk"
+                    defaultValue={DefaultSpreadsheetId}
                     ref={spreadsheetIDInputRef}/>
             </Col>
 
@@ -74,7 +72,7 @@ const InputForm = (props: { setPasta: (pasta: CreditsPasta) => void; }) => {
                 </FormLabel>
                 <FormControl
                     type="text"
-                    defaultValue="06 Aurene!A3:I39"
+                    defaultValue={DefaultReadRange}
                     ref={readRangeInputRef}/>
             </Col>
             <Col className="m-2">
@@ -102,7 +100,7 @@ const InputForm = (props: { setPasta: (pasta: CreditsPasta) => void; }) => {
 };
 
 const ProjectDropdown = (props: { projectName: string, setProjectName: (name: string) => void }) => {
-    const projects = _.defaultTo(useProjects(), [] as Project[]);
+    const projects = useProjects() ?? [];
     const [buttonText, setButtonText] = useState("select project");
 
     const updateSelect = (project: Project) => {
@@ -151,3 +149,5 @@ const PastaResult = (props: { title: string, content: string }) => {
         </Col>
     </Row>;
 };
+
+export default CreditsMaker;
