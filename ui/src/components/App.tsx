@@ -3,11 +3,15 @@ import {lazy, Suspense} from "react";
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession, updateLogin} from "../auth";
 import {sessionIsAnonymous, UserRole} from "../datasets";
+import Contact from "./Contact";
 import AccessDenied from "./errors/AccessDenied";
 import InternalOopsie from "./errors/InternalOopsie";
 import NotFound from "./errors/NotFound";
+import Home from "./Home";
+import Login from "./login/Login";
 import LoginDiscord from "./login/LoginDiscord";
 import LoginFailure from "./login/LoginFailure";
+import Logout from "./login/Logout";
 import {Footer} from "./shared/Footer";
 import {LoadingText} from "./shared/LoadingText";
 import {Navbar} from "./shared/Navbar";
@@ -19,12 +23,8 @@ const Projects = lazy(() => import("./Projects"));
 const Parts = lazy(() => import("./Parts"));
 const NewProjectWorkflow = lazy(() => import("./mixtape/NewProjectWorkflow"));
 const MemberDashboard = lazy(() => import("./mixtape/MemberDashboard"));
-const Logout = lazy(() => import("./login/Logout"));
-const Login = lazy(() => import("./login/Login"));
 const About = lazy(() => import("./About"));
-const Contact = lazy(() => import("./Contact"));
 const CreditsMaker = lazy(() => import("./CreditsMaker"));
-const Home = lazy(() => import("./Home"));
 const Sessions = lazy(() => import("./Sessions"));
 
 export const App = () => {
