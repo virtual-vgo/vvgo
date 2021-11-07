@@ -126,4 +126,4 @@ function AppPage(props: { title?: string, children: JSX.Element }) {
         <Suspense fallback={<LoadingText/>}>{props.children}</Suspense>
         <Footer/>
     </div>;
-};
+}
