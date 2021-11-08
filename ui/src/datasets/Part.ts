@@ -1,12 +1,13 @@
-export interface Part {
-    Project: string;
-    PartName: string;
-    ScoreOrder: number;
-    SheetMusicFile: string;
-    ClickTrackFile: string;
-    ConductorVideo: string;
-    PronunciationGuide: string;
-    SheetMusicLink: string;
-    ClickTrackLink: string;
-    PronunciationGuideLink: string;
+export class Part {
+    Project: string = "";
+    PartName: string = "";
+    ScoreOrder: number = 0;
+    SheetMusicFile: string = "";
+    ClickTrackFile: string = "";
+    ConductorVideo: string = "";
+    PronunciationGuide: string = "";
+
+    static fromApiJSON(obj: object): Part {
+        return obj as Part;
+    }
 }

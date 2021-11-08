@@ -4,23 +4,23 @@ import {VegaLite} from "react-vega";
 import {useCredits} from "../../datasets";
 
 export const Members = () => {
-    const credits = (useCredits() ?? []).filter(x => !isEmpty(x.Name));
+    const credits = (useCredits() ?? []).filter(x => !isEmpty(x.name));
     if (isEmpty(credits)) return <div/>;
 
-    const topCredited = flatRollup(credits, g => g.length, p => p.Name)
+    const topCredited = flatRollup(credits, g => g.length, p => p.name)
         .map(([name, count]) => ({name, count}))
         .sort((a, b) => a.count - b.count)
         .reverse()
         .slice(0, 10);
 
-    const performers = credits.filter(x => x.MajorCategory != "CREW");
-    const topCreditedPerformers = flatRollup(performers, g => g.length, p => p.Name)
+    const performers = credits.filter(x => x.majorCategory != "CREW");
+    const topCreditedPerformers = flatRollup(performers, g => g.length, p => p.name)
         .map(([name, count]) => ({name, count}))
         .sort((a, b) => a.count - b.count)
         .reverse()
         .slice(0, 10);
 
-    const topUniqueParts = flatRollup(performers, g => new Set(g).size, p => p.Name)
+    const topUniqueParts = flatRollup(performers, g => new Set(g).size, p => p.name)
         .map(([name, count]) => ({name, count}))
         .sort((a, b) => a.count - b.count)
         .reverse()

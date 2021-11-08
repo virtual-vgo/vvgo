@@ -21,9 +21,9 @@ export const CreditsMaker = () => {
             <Col className="mt-4"><h2 className="text-center">~ Results ~</h2></Col>
         </Row>
         <Row>
-            <Col><PastaResult title={"Website Pasta"} content={pasta.WebsitePasta}/></Col>
-            <Col><PastaResult title={"Video Pasta"} content={pasta.VideoPasta}/></Col>
-            <Col><PastaResult title={"Youtube Pasta"} content={pasta.YoutubePasta}/></Col>
+            <Col><PastaResult title={"Website Pasta"} content={pasta.websitePasta}/></Col>
+            <Col><PastaResult title={"Video Pasta"} content={pasta.videoPasta}/></Col>
+            <Col><PastaResult title={"Youtube Pasta"} content={pasta.youtubePasta}/></Col>
         </Row>
     </div>;
 };
@@ -44,7 +44,7 @@ const InputForm = (props: { setPasta: (pasta: CreditsPasta) => void; }) => {
         fetchApi("/credits/pasta?" + params.toString(), {method: "GET"})
             .then(resp => {
                 setErrorMessage("");
-                props.setPasta(resp.CreditsPasta ?? {WebsitePasta: "", VideoPasta: "", YoutubePasta: ""});
+                props.setPasta(resp.creditsPasta ?? {websitePasta: "", videoPasta: "", youtubePasta: ""});
             })
             .catch(err => setErrorMessage(err.toString()));
     };

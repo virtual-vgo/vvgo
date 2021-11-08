@@ -1,11 +1,11 @@
-import {isEmpty} from "lodash/fp";
+import {get, has, isEmpty} from "lodash/fp";
+import {ApiResponse} from "./ApiResponse";
 import {fetchApi} from "./hooks";
 
 export enum UserRole {
     ExecutiveDirector = "vvgo-leader",
     VerifiedMember = "vvgo-member",
     ProductionTeam = "vvgo-teams",
-    Anonymous = "anonymous"
 }
 
 export enum ApiRole {
@@ -22,44 +22,70 @@ export enum SessionKind {
     ApiToken = "api_token",
 }
 
-export interface Session {
-    Kind: string;
-    Key?: string;
-    Roles?: string[];
-    DiscordID?: string;
-    CreatedAt?: string;
-    ExpiresAt?: string;
-}
+export class Session {
+    kind: SessionKind;
+    key: string = "";
+    roles: string[] = [];
+    discordID: string = "";
+    createdAt?: Date;
+    expiresAt?: Date;
 
-export const AnonymousSession: Session = {Kind: SessionKind.Anonymous};
-
-export const sessionIsAnonymous = (session: Session | undefined): boolean => {
-    switch (true) {
-        case isEmpty(session):
-            return true;
-        case isEmpty(session?.Kind):
-            return true;
-        case isEmpty(session?.Roles):
-            return true;
-        case session?.Kind == SessionKind.Anonymous:
-            return true;
-        default:
-            return false;
+    constructor(kind?: SessionKind) {
+        this.kind = kind ?? SessionKind.Anonymous;
     }
-};
 
-export const createSessions = async (sessions: { expires: number; Kind: SessionKind; Roles: string[] }[]) => {
-    return fetchApi("/sessions", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(({"sessions": sessions})),
-    }).then(resp => resp.Sessions ?? []);
-};
+    static Anonymous = new Session();
 
-export const deleteSessions = async (sessionsIds: string[]) => {
-    return fetchApi("/sessions", {
-        method: "DELETE",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(({"sessions": sessionsIds})),
-    });
-};
+    static fromApiObject(obj: object): Session {
+        const session = new Session();
+        session.kind = get("Kind", obj) ?? SessionKind.Anonymous;
+        session.key = get("Key", obj) ?? "";
+        session.roles = get("Roles", obj) ?? "";
+        session.discordID = get("DiscordID", obj) ?? "";
+        session.createdAt = has("CreatedAt", obj) ? new Date(get("CreatedAt", obj)) : undefined;
+        session.expiresAt = has("ExpiresAt", obj) ? new Date(get("ExpiresAt", obj)) : undefined;
+        return session;
+    }
+
+    static fromJSON(src: string): Session {
+        const obj = JSON.parse(src);
+        const session = new Session();
+        session.kind = get("kind", obj) ?? SessionKind.Anonymous;
+        session.key = get("key", obj) ?? "";
+        session.roles = get("roles", obj) ?? "";
+        return session;
+    }
+
+    toJSON(): string {
+        return JSON.stringify({kind: this.kind, key: this.key, roles: this.roles});
+    }
+
+    static Create(kind: SessionKind, roles: string[], expires?: number): Promise<ApiResponse> {
+        return fetchApi("/sessions", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(({"sessions": [{Kind: kind, Roles: roles, expires: expires ?? 3600}]})),
+        });
+    }
+
+    delete(): Promise<ApiResponse> {
+        return fetchApi("/sessions", {
+            method: "DELETE",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(({"sessions": [this.key]})),
+        });
+    }
+
+    isAnonymous(): boolean {
+        switch (true) {
+            case isEmpty(this.kind):
+                return true;
+            case isEmpty(this.roles):
+                return true;
+            case this.kind == SessionKind.Anonymous:
+                return true;
+            default:
+                return false;
+        }
+    }
+}

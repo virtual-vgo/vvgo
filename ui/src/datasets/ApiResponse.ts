@@ -1,9 +1,11 @@
-import {Credit} from "./Credit";
+import {get, keys} from "lodash/fp";
+import {ApiError} from "./ApiError";
+import {CreditsPasta} from "./CreditsPasta";
 import {CreditsTable} from "./CreditsTable";
-import {Director} from "./Director";
+import {Dataset} from "./Dataset";
 import {GuildMember} from "./GuildMember";
-import {Highlight} from "./Highlight";
-import {mixtapeProject} from "./mixtapeProject";
+import {MixtapeProject} from "./MixtapeProject";
+import {OAuthRedirect} from "./OAuthRedirect";
 import {Part} from "./Part";
 import {Project} from "./Project";
 import {Session} from "./Session";
@@ -13,50 +15,51 @@ export const Endpoint = "/api/v1";
 export enum ApiStatus {
     Ok = "ok",
     Error = "error",
-    Found = "found"
 }
 
-export type ApiDataset = Highlight[] | Director[] | Credit[]
+export class ApiResponse {
+    status: ApiStatus;
+    error: ApiError = new ApiError();
+    creditsPasta: CreditsPasta = new CreditsPasta();
+    creditsTable: CreditsTable = [];
+    dataset: Dataset = new Dataset();
+    guildMembers: GuildMember[] = [];
+    identity: Session = new Session();
+    mixtapeProjects: MixtapeProject[] = [];
+    oauthRedirect: OAuthRedirect = new OAuthRedirect();
+    parts: Part[] = [];
+    projects: Project[] = [];
+    sessions: Session[] = [];
 
-export interface ApiResponse {
-    Status: string;
-    Error?: ErrorResponse;
-    Dataset?: ApiDataset;
-    Parts?: Part[];
-    Projects?: Project[];
-    Sessions?: Session[];
-    Identity?: Session;
-    GuildMembers?: GuildMember[];
-    MixtapeProjects?: mixtapeProject[];
-    OAuthRedirect?: OAuthRedirect;
-    CreditsTable?: CreditsTable;
-    CreditsPasta?: CreditsPasta;
-    Spreadsheet?: Spreadsheet;
+    constructor(status: ApiStatus) {
+        this.status = status;
+    }
+
+    static fromApiJSON(obj: object): ApiResponse {
+        const apiResp: ApiResponse = new ApiResponse(get("Status", obj));
+        switch (apiResp.status) {
+            case ApiStatus.Error:
+                apiResp.error = ApiError.fromApiJson(get("Error", obj));
+                break;
+
+            case ApiStatus.Ok:
+                console.log(keys(obj));
+                apiResp.creditsPasta = CreditsPasta.fromApiJSON(get("CreditsPasta", obj));
+                apiResp.creditsTable = get("CreditsTable", obj) as CreditsTable;
+                apiResp.dataset = Dataset.fromApiJSON(get("Dataset", obj));
+                apiResp.guildMembers = get("GuildMembers", obj)?.map((p: object[]) => GuildMember.fromApiJSON(get("Dataset", p)));
+                apiResp.identity = Session.fromApiObject(get("Identity", obj));
+                apiResp.mixtapeProjects = get("MixtapeProjects", obj)?.map((p: object[]) => MixtapeProject.fromApiJSON(get("Dataset", p)));
+                apiResp.oauthRedirect = OAuthRedirect.fromApiJSON(get("OAuthRedirect", obj));
+                apiResp.parts = get("Parts", obj)?.map((p: object[]) => Part.fromApiJSON(get("Dataset", p)));
+                apiResp.projects = get("Projects", obj)?.map((p: object[]) => Project.fromApiJSON(get("Dataset", p)));
+                apiResp.sessions = get("Sessions", obj)?.map((p: object[]) => Session.fromApiObject(get("Dataset", p)));
+                break;
+
+            default:
+                throw `invalid api response`;
+        }
+        return apiResp;
+    }
 }
 
-export interface Spreadsheet {
-    SpreadsheetName: string;
-    sheets?: Sheet[];
-}
-
-export interface Sheet {
-    Name: string;
-    Values: string[][];
-}
-
-export interface CreditsPasta {
-    WebsitePasta: string;
-    VideoPasta: string;
-    YoutubePasta: string;
-}
-
-export interface OAuthRedirect {
-    DiscordURL: string;
-    State: string;
-    Secret: string;
-}
-
-export interface ErrorResponse {
-    Code: number;
-    Error: string;
-}

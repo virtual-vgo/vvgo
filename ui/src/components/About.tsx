@@ -60,7 +60,7 @@ const ExecutiveDirectorTable = (props: { directors: Director[] }) => {
         <tbody>
         {props.directors.map((director, i) =>
             <ExecutiveDirectorRow
-                key={director.Name}
+                key={director.name}
                 director={director}
                 bottom={props.directors.length == i + 1}/>)}
         </tbody>
@@ -69,11 +69,11 @@ const ExecutiveDirectorTable = (props: { directors: Director[] }) => {
 
 const ExecutiveDirectorRow = (props: { director: Director, bottom: boolean }) => {
     return <tr className={props.bottom ? "" : "border-bottom"}>
-        <td><img src={props.director.Icon} alt={props.director.Name} height="100"/></td>
-        <td><p className="text-light">{props.director.Name}<br/><small>{props.director.Epithet}</small>
+        <td><img src={props.director.icon} alt={props.director.name} height="100"/></td>
+        <td><p className="text-light">{props.director.name}<br/><small>{props.director.epithet}</small>
         </p></td>
-        <td><p>{props.director.Blurb}</p>
-            <p><i>{props.director.Affiliations}</i></p></td>
+        <td><p>{props.director.blurb}</p>
+            <p><i>{props.director.affiliations}</i></p></td>
     </tr>;
 };
 

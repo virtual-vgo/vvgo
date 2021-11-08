@@ -16,7 +16,6 @@ type MixtapeProject struct {
 	Blurb   string   `json:"blurb"`
 	Channel string   `json:"channel"`
 	Hosts   []string `json:"hosts,omitempty"`
-	Tags    []string `json:"tags,omitempty"`
 }
 
 const MixtapeProjectsRedisKey = "mixtape:projects"

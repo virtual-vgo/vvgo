@@ -1,6 +1,6 @@
 import {Credit} from "./Credit";
 
-export type CreditsTable = Array<CreditsTopic>
+export type CreditsTable = CreditsTopic[]
 
 export interface CreditsTopic {
     Name: string;

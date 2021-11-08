@@ -1,7 +1,7 @@
 import {Dispatch, MutableRefObject, SetStateAction, useRef, useState} from "react";
 import {Button} from "react-bootstrap";
 import {getSession} from "../auth";
-import {createSessions, deleteSessions, Session, SessionKind, useSessions} from "../datasets";
+import {Session, SessionKind, useSessions} from "../datasets";
 import {LoadingText} from "./shared/LoadingText";
 
 export const Sessions = () => {
@@ -11,24 +11,24 @@ export const Sessions = () => {
     const [createButtonState, setCreateButtonState] = useState("new");
 
     if (!sessions) return <LoadingText/>;
-    sessions.sort((a, b) => new Date(a.ExpiresAt ?? "").getTime() - new Date(b.ExpiresAt ?? "").getTime());
+    sessions.sort((a, b) => new Date(a.expiresAt ?? "").getTime() - new Date(b.expiresAt ?? "").getTime());
 
     const mySessions = sessions
-        .filter(session => deleteButtonState.get(session.Key) !== "deleted")
-        .filter(session => session.DiscordID === me.DiscordID)
+        .filter(session => deleteButtonState.get(session.key) !== "deleted")
+        .filter(session => session.discordID === me.discordID)
         .map(session => <SessionRow
-            key={session.Key}
+            key={session.key}
             session={session}
             buttonState={deleteButtonState}
             setButtonState={setDeleteButtonState}
         />);
 
     const otherSessions = sessions
-        .filter(session => deleteButtonState.get(session.Key) !== "deleted")
-        .filter(session => session.DiscordID !== me.DiscordID)
+        .filter(session => deleteButtonState.get(session.key) !== "deleted")
+        .filter(session => session.discordID !== me.discordID)
         .map(session => <SessionRow
             className={"text-warning"}
-            key={session.Key}
+            key={session.key}
             session={session}
             buttonState={deleteButtonState}
             setButtonState={setDeleteButtonState}
@@ -94,9 +94,14 @@ const NewSession = (props: {
         <td>{/*CreatedAt*/}</td>
         <td><input type={"number"} className={"form-control"} ref={inputExpires} defaultValue={3600}/></td>
         <td width={120}>
-            <CreateButton sessions={props.sessions} setSessions={props.setSessions}
-                          inputKind={inputKind} inputRoles={inputRoles} inputExpires={inputExpires}
-                          buttonState={props.buttonState} setButtonState={props.setButtonState}/>
+            <CreateButton
+                sessions={props.sessions}
+                setSessions={props.setSessions}
+                inputKind={inputKind}
+                inputRoles={inputRoles}
+                inputExpires={inputExpires}
+                buttonState={props.buttonState}
+                setButtonState={props.setButtonState}/>
         </td>
     </tr>;
 };
@@ -112,17 +117,15 @@ const CreateButton = (props: {
 }) => {
     const buttonClick = () => {
         props.setButtonState("creating");
-        createSessions([{
-            Kind: props.inputKind.current.value as SessionKind,
-            Roles: [props.inputRoles.current.value] as string[],
-            expires: Number(props.inputExpires.current.value),
-        }])
-            .then(resp => {
-                console.log("Created sessions:", resp);
-                props.setSessions([...resp, ...props.sessions]);
-                props.setButtonState("created");
-            })
-            .catch(error => console.log(error));
+        Session.Create(
+            props.inputKind.current.value as SessionKind,
+            [props.inputRoles.current.value],
+            Number(props.inputExpires.current.value),
+        ).then(resp => {
+            console.log("Created sessions:", resp.sessions);
+            props.setSessions([...resp.sessions, ...props.sessions]);
+            props.setButtonState("created");
+        }).catch(error => console.log(error));
     };
 
     if (props.buttonState !== "creating")
@@ -147,14 +150,14 @@ const SessionRow = (props: {
             <Button
                 variant={"outline-primary"}
                 className={"borderless"}
-                onClick={() => navigator.clipboard.writeText(session.Key ?? "")}>
-                {session.Kind}
+                onClick={() => navigator.clipboard.writeText(session.key ?? "")}>
+                {session.kind}
             </Button>
         </td>
-        <td>{session.Roles ? session.Roles.join(", ") : "none"}</td>
-        <td>{session.DiscordID}</td>
-        <td>{new Date(session.CreatedAt ?? "").toLocaleString()}</td>
-        <td>{new Date(session.ExpiresAt ?? "").toLocaleString()}</td>
+        <td>{session.roles ? session.roles.join(", ") : "none"}</td>
+        <td>{session.discordID}</td>
+        <td>{new Date(session.createdAt ?? "").toLocaleString()}</td>
+        <td>{new Date(session.expiresAt ?? "").toLocaleString()}</td>
         <td width={120}>
             <DeleteButton
                 session={props.session}
@@ -176,18 +179,18 @@ const DeleteButton = (props: {
         const session = props.session;
         const newState = new Map();
         buttonState.forEach((val, key) => newState.set(key, val));
-        newState.set(session.Key, "deleting");
+        newState.set(session.key, "deleting");
         setButtonState(newState);
 
-        deleteSessions([session.Key ?? ""]).then(() => {
+        session.delete().then(() => {
             const state = new Map();
             buttonState.forEach((val, key) => state.set(key, val));
-            state.set(session.Key, "deleted");
+            state.set(session.key, "deleted");
             setButtonState(state);
         }).catch(error => console.log(error));
     };
 
-    const sessionKey = props.session.Key ?? "";
+    const sessionKey = props.session.key ?? "";
     if (buttonState.get(sessionKey) === "deleted")
         return <div/>;
     if (buttonState.get(sessionKey) === "deleting")

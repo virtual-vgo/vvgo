@@ -2,7 +2,7 @@ import isEmpty from "lodash/fp/isEmpty";
 import {lazy, Suspense} from "react";
 import {BrowserRouter, Redirect, Route, Switch} from "react-router-dom";
 import {getSession, updateLogin} from "../auth";
-import {sessionIsAnonymous, UserRole} from "../datasets";
+import {UserRole} from "../datasets";
 import Contact from "./Contact";
 import AccessDenied from "./errors/AccessDenied";
 import InternalOopsie from "./errors/InternalOopsie";
@@ -17,7 +17,6 @@ import {LoadingText} from "./shared/LoadingText";
 import {Navbar} from "./shared/Navbar";
 
 // Lazy loads
-const NewProjectFormResponses = lazy(() => import("./mixtape/NewProjectFormResponses"));
 const MemberStats = lazy(() => import("./stats/Members"));
 const Projects = lazy(() => import("./Projects"));
 const Parts = lazy(() => import("./Parts"));
@@ -51,9 +50,6 @@ export const App = () => {
                 <Switch>
                     <PrivateRoute path="/mixtape/NewProjectWorkflow/" role={UserRole.ExecutiveDirector}>
                         <AppPage title="New Project Workflow"><NewProjectWorkflow/></AppPage>
-                    </PrivateRoute>
-                    <PrivateRoute path="/mixtape/NewProjectFormResponses/" role={UserRole.ExecutiveDirector}>
-                        <AppPage title="New Project Form Responses"><NewProjectFormResponses/></AppPage>
                     </PrivateRoute>
                     <Route>
                         <AppPage title="Wintry Mix"><MemberDashboard/></AppPage>
@@ -104,12 +100,12 @@ const PrivateRoute = (props: {
     children: JSX.Element;
 }) => {
     const me = getSession();
-    const authorized = me.Roles?.includes(props.role) ?? false;
+    const authorized = me.roles?.includes(props.role) ?? false;
     const children = () => {
         switch (true) {
             case authorized:
                 return props.children;
-            case sessionIsAnonymous(me):
+            case me.isAnonymous():
                 return <Redirect to={"/login"}/>;
             default:
                 return <AccessDenied/>;

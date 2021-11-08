@@ -85,7 +85,7 @@ const ProjectCredits = (props: { project: Project }) => {
                                 <h5>{team.Name}</h5>
                                 <ul className="list-unstyled">
                                     {team.Rows.map(credit =>
-                                        <li key={credit.Name}>{credit.Name} <small>{credit.BottomText}</small></li>)}
+                                        <li key={credit.name}>{credit.name} <small>{credit.bottomText}</small></li>)}
                                 </ul>
                             </Col>)}
                     </Masonry>
