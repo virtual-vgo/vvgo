@@ -3,7 +3,7 @@ import {Dropdown, Nav, Navbar as BootstrapNavbar} from "react-bootstrap";
 import {Link, NavLink as RouterNavLink} from "react-router-dom";
 import {getSession} from "../../auth";
 import {links} from "../../data/links";
-import {sessionIsAnonymous, UserRole} from "../../datasets";
+import {UserRole} from "../../datasets";
 import {Favicon} from "./Favicon";
 
 const navbarStyle: CSSProperties = {
@@ -26,14 +26,14 @@ export const Navbar = () => {
     const MemberNavLink = (props: {
         to: string,
         children: string | (JSX.Element | string)[]
-    }) => (me.Roles && me.Roles.includes(UserRole.VerifiedMember)) ?
+    }) => (me.roles && me.roles.includes(UserRole.VerifiedMember)) ?
         <NavLink {...props}>{props.children}</NavLink> : <div/>;
 
     const PrivateNavLink = (props: {
         to: string,
         requireRole: UserRole
         children: string | (JSX.Element | string)[]
-    }) => (me.Roles && me.Roles.includes(props.requireRole)) ?
+    }) => (me.roles && me.roles.includes(props.requireRole)) ?
         <RouterNavLink
             to={props.to}
             activeClassName="alert-warning text-dark nav-link"
@@ -69,7 +69,7 @@ export const Navbar = () => {
                         Credits Maker <i className="fas fa-lock"/>
                     </PrivateNavLink>
                 </Nav>
-                <Nav>{sessionIsAnonymous(me) ?
+                <Nav>{me.isAnonymous() ?
                     <NavLink to="/login">Login</NavLink> :
                     <NavLink to="/logout">Logout</NavLink>}
                 </Nav>

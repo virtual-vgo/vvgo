@@ -58,11 +58,11 @@ export const Parts = () => {
                     permaLink={permaLink}
                     toggles={[{
                         title: "Unreleased",
-                        hidden: !getSession().Roles?.includes(UserRole.ProductionTeam),
+                        hidden: !getSession().roles?.includes(UserRole.ProductionTeam),
                         filter: (on: boolean, x: Project) => on || x.PartsReleased,
                     }, {
                         title: "Archived",
-                        hidden: !getSession().Roles?.includes(UserRole.ExecutiveDirector),
+                        hidden: !getSession().roles?.includes(UserRole.ExecutiveDirector),
                         filter: (on: boolean, x: Project) => on || !x.PartsArchived,
                     }]}
                     buttonContent={(proj) =>
@@ -203,7 +203,7 @@ const DownloadButton = (props: {
     children: string | (string | JSX.Element)[]
     size?: "sm" | "lg"
 }) => {
-    const sessionKey = props.downloadSession?.Key ?? "";
+    const sessionKey = props.downloadSession?.key ?? "";
     const params = new URLSearchParams({fileName: props.fileName, token: sessionKey});
     return <Button
         disabled={sessionKey == ""}

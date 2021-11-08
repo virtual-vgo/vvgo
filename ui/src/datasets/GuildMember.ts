@@ -1,9 +1,13 @@
-export interface GuildMember {
-    user: DiscordUser;
-    nick: string;
-    roles: string[];
+export class GuildMember {
+    user: DiscordUser = new DiscordUser();
+    nick = "";
+    roles: string[] = [];
+
+    static fromApiObject(obj: object): GuildMember {
+        return obj as GuildMember;
+    }
 }
 
-export interface DiscordUser {
-    id: string;
+export class DiscordUser {
+    id = "";
 }

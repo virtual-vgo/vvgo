@@ -2,11 +2,8 @@ import {isEmpty, uniq, uniqBy} from "lodash/fp";
 import {MutableRefObject, useRef, useState} from "react";
 import {Button, Card, Col, Dropdown, Form, FormControl, Row, Table, Toast} from "react-bootstrap";
 import {
-    deleteMixtapeProjects,
     GuildMember,
-    mixtapeProject,
-    resolveHostNicks,
-    saveMixtapeProjects,
+    MixtapeProject,
     useGuildMemberLookup,
     useGuildMemberSearch,
     useMixtapeProjects,
@@ -31,17 +28,17 @@ export const NewProjectWorkflow = () => {
 };
 
 const ProjectTable = (props: {
-    projects: mixtapeProject[];
-    setProjects: (projects: mixtapeProject[]) => void;
+    projects: MixtapeProject[];
+    setProjects: (projects: MixtapeProject[]) => void;
 }) => {
     const hosts = useGuildMemberLookup(props.projects.flatMap(r => r.hosts ?? []));
-    const onClickDelete = (project: mixtapeProject) => {
+    const onClickDelete = (project: MixtapeProject) => {
         console.log("deleting", project);
         props.setProjects(props.projects.filter(x => project.Name != x.Name));
-        deleteMixtapeProjects([project]).catch(err => console.log(err));
+        project.delete().catch(err => console.log(err));
     };
 
-    const onClickEdit = (project: mixtapeProject) => {
+    const onClickEdit = (project: MixtapeProject) => {
         window.location.href = `/mixtape/NewProjectWorkflow?` + new URLSearchParams({name: project.Name});
     };
 
@@ -51,7 +48,7 @@ const ProjectTable = (props: {
             <td>{x.Name}</td>
             <td>{x.title}</td>
             <td>{x.channel}</td>
-            <td>{resolveHostNicks(hosts, x).join(", ")}</td>
+            <td>{x.resolveNicks(hosts).join(", ")}</td>
             <td><Button onClick={() => onClickDelete(x)}>Delete</Button></td>
             <td><Button onClick={() => onClickEdit(x)}>Edit</Button></td>
         </tr>)}
@@ -60,20 +57,17 @@ const ProjectTable = (props: {
 };
 
 const WorkflowApp = (props: {
-    setProjects: (projects: mixtapeProject[]) => void;
-    projects: mixtapeProject[];
+    setProjects: (projects: MixtapeProject[]) => void;
+    projects: MixtapeProject[];
 }) => {
     const params = new URLSearchParams(window.location.search);
-    const initProject: mixtapeProject = props.projects.filter(x => x.Name == params.get("name")).pop() || {
-        Name: "",
-        mixtape: CurrentMixtape,
-        hosts: [],
-    };
+    const initProject: MixtapeProject = props.projects
+        .filter(x => x.Name == params.get("name")).pop() ?? new MixtapeProject("", CurrentMixtape);
 
     const [curProject, setCurProject] = useState(initProject);
-    const saveProject = (project: mixtapeProject) => {
+    const saveProject = (project: MixtapeProject) => {
         props.setProjects(uniqBy(p => p.Name, [project, ...props.projects]));
-        saveMixtapeProjects([project])
+        project.save()
             .then(() => setCurProject(project))
             .catch(err => console.log(err));
         return;
@@ -117,8 +111,8 @@ const CheckMark = (props: {
 
 const SetTitleCard = (props: {
     cardTitle: string
-    saveProject: (project: mixtapeProject) => void;
-    curProject: mixtapeProject;
+    saveProject: (project: MixtapeProject) => void;
+    curProject: MixtapeProject;
     completed: boolean;
 }) => {
     const [title, setTitle] = useState(props.curProject.title ?? "");
@@ -149,21 +143,24 @@ const SetTitleCard = (props: {
 
 const SubmitTitleButton = (props: {
     title: string
-    current: mixtapeProject
-    saveProject: (project: mixtapeProject) => void
+    current: MixtapeProject
+    saveProject: (project: MixtapeProject) => void
     className?: string
 }) => {
     const name = props.current.Name != "" ? props.current.Name : nameToTitle(CurrentMixtape, props.title);
     const variant = isEmpty(props.title) ? "outline-warning" : "outline-primary";
+    const onClick = () => {
+        const proj = props.current;
+        proj.Name = name;
+        proj.title = props.title;
+        props.saveProject(proj);
+    };
+
     return <Button
         disabled={isEmpty(props.title)}
         variant={variant}
         className={props.className}
-        onClick={() => props.saveProject({
-            ...props.current,
-            Name: name,
-            title: props.title,
-        })}>
+        onClick={onClick}>
         Submit
     </Button>;
 };
@@ -171,8 +168,8 @@ const SubmitTitleButton = (props: {
 const SetHostsCard = (props: {
     cardTitle: string;
     completed: boolean;
-    project: mixtapeProject;
-    saveProject: (project: mixtapeProject) => void;
+    project: MixtapeProject;
+    saveProject: (project: MixtapeProject) => void;
     toastLimit: number;
 }) => {
     const initHosts: GuildMember[] = props.project.hosts?.map(x => ({
@@ -233,30 +230,30 @@ const SetHostsCard = (props: {
 };
 
 const SubmitHostsButton = (props: {
-    project: mixtapeProject
-    saveProject: (proj: mixtapeProject) => void
+    project: MixtapeProject
+    saveProject: (proj: MixtapeProject) => void
     hosts: GuildMember[]
     setSearchQuery: (q: string) => void
 }) => {
     const variant = isEmpty(props.hosts) ? "outline-warning" : "outline-primary";
+    const onClick = () => {
+        const proj = props.project;
+        proj.hosts = uniq(props.hosts.map(x => x.user.id));
+        props.setSearchQuery("");
+        props.saveProject(proj);
+    };
     return <Button
         disabled={isEmpty(props.hosts)}
         variant={variant}
-        onClick={() => {
-            props.setSearchQuery("");
-            props.saveProject({
-                ...props.project,
-                hosts: uniq(props.hosts.map(x => x.user.id)),
-            });
-        }}>
+        onClick={onClick}>
         Submit
     </Button>;
 };
 
 const SetChannelCard = (props: {
     cardTitle: string
-    curProject: mixtapeProject;
-    saveProject: (project: mixtapeProject) => void;
+    curProject: MixtapeProject;
+    saveProject: (project: MixtapeProject) => void;
     completed: boolean;
 }) => {
     const channelInputRef = useRef({} as HTMLInputElement);
@@ -283,16 +280,17 @@ const SetChannelCard = (props: {
 
 const SubmitChannelButton = (props: {
     channelInputRef: MutableRefObject<HTMLInputElement>
-    curProject: mixtapeProject;
-    saveProject: (project: mixtapeProject) => void;
+    curProject: MixtapeProject;
+    saveProject: (project: MixtapeProject) => void;
 }) => {
-    const handleClick = () => {
-        const channel = props.channelInputRef.current.value;
-        props.saveProject({...props.curProject, channel: channel});
+    const onClick = () => {
+        const proj = props.curProject;
+        proj.channel = props.channelInputRef.current.value;
+        props.saveProject(proj);
     };
     return <Button
         variant={"outline-primary"}
-        onClick={handleClick}>
+        onClick={onClick}>
         Submit
     </Button>;
 };

@@ -1,26 +1,28 @@
 import isEmpty from "lodash/fp/isEmpty";
 import {useEffect, useState} from "react";
 import {getSession} from "../auth";
-import {ApiDataset, ApiResponse, ApiStatus, Endpoint, Sheet, Spreadsheet} from "./ApiResponse";
+import {ApiError} from "./ApiError";
+import {ApiResponse, ApiStatus, Endpoint} from "./ApiResponse";
 import {Credit} from "./Credit";
 import {CreditsTable} from "./CreditsTable";
+import {DatasetRow} from "./Dataset";
 import {Director} from "./Director";
 import {GuildMember} from "./GuildMember";
 import {Highlight} from "./Highlight";
-import {mixtapeProject} from "./mixtapeProject";
+import {MixtapeProject} from "./mixtapeProject";
 import {Part} from "./Part";
 import {Project} from "./Project";
-import {ApiRole, createSessions, Session, SessionKind} from "./Session";
+import {ApiRole, Session, SessionKind} from "./Session";
 
-export const useCredits = (): Credit[] | undefined => useDataset("Credits");
+export const useCredits = (): Credit[] | undefined => useDataset("Credits", Credit.fromDatasetRow);
 
 export const useCreditsTable = (project: Project): CreditsTable | undefined => {
     const params = new URLSearchParams({projectName: project.Name});
     const url = "/credits/table?" + params.toString();
-    return useApiData(url, (p) => p.CreditsTable ?? []);
+    return useApiData(url, (p) => p.creditsTable ?? []);
 };
 
-export const useDirectors = (): Director[] | undefined => useDataset("Leaders");
+export const useDirectors = (): Director[] | undefined => useDataset("Leaders", Director.fromDatasetRow);
 
 export const useGuildMemberSearch = (query: string, limit: number): GuildMember[] => {
     const [data, setData] = useState({} as ApiResponse);
@@ -31,7 +33,7 @@ export const useGuildMemberSearch = (query: string, limit: number): GuildMember[
             setData({} as ApiResponse) :
             fetchApi(url, {method: "GET"}).then(resp => setData(resp));
     }, [url]);
-    return data.GuildMembers ?? [];
+    return data.guildMembers ?? [];
 };
 
 export const useGuildMemberLookup = (ids: string[]) => {
@@ -44,42 +46,30 @@ export const useGuildMemberLookup = (ids: string[]) => {
             body: JSON.stringify(ids),
         }).then(resp => setData(resp));
     }, [url, ids.sort().join(",")]);
-    return data.GuildMembers ?? [];
+    return data.guildMembers ?? [];
 };
 
-export const useHighlights = (): Highlight[] | undefined => useDataset("Highlights");
+export const useHighlights = (): Highlight[] | undefined => useDataset("Highlights", Highlight.fromDatasetRow);
 
-export const useMixtapeProjects = (): [mixtapeProject[] | undefined, (projects: mixtapeProject[]) => void] =>
-    useAndSetApiData("/mixtape/projects", resp => resp.MixtapeProjects ?? []);
+export const useMixtapeProjects = (): [MixtapeProject[] | undefined, (projects: MixtapeProject[]) => void] =>
+    useAndSetApiData("/mixtape/projects", resp => resp.mixtapeProjects);
 
-export const useParts = (): Part[] | undefined =>
-    useApiData("/parts", resp => resp.Parts ?? []);
-
-export const useProjects = (): Project[] | undefined =>
-    useApiData("/projects", resp => resp.Projects ?? []);
-
+export const useParts = (): Part[] | undefined => useApiData("/parts", resp => resp.parts);
+export const useProjects = (): Project[] | undefined => useApiData("/projects", resp => resp.projects);
 export const useSessions = (): [Session[] | undefined, (sessions: Session[]) => void] =>
-    useAndSetApiData("/sessions", resp => resp.Sessions ?? []);
+    useAndSetApiData("/sessions", resp => resp.sessions);
 
 export const useNewApiSession = (expires: number, roles: Array<ApiRole>): Session | undefined => {
     const [session, setSession] = useState<Session | undefined>(undefined);
     useEffect(() => {
-        createSessions([{expires: expires, Kind: SessionKind.ApiToken, Roles: roles}])
-            .then(sessions => setSession(sessions?.pop()));
+        Session.Create(SessionKind.ApiToken, roles, expires)
+            .then(resp => setSession(resp.sessions?.pop()));
     }, [roles.toString()]);
     return session;
 };
 
-export const useSheet = (spreadsheetName: string, sheetName: string): Sheet | undefined =>
-    useSpreadsheet(spreadsheetName, [sheetName])?.sheets?.filter(sheet => sheet.Name == sheetName).pop();
-
-export const useSpreadsheet = (spreadsheetName: string, sheetNames: string[]): Spreadsheet | undefined => {
-    const params = new URLSearchParams({spreadsheetName: spreadsheetName, sheetNames: sheetNames.join(",")});
-    return useApiData("/spreadsheet?" + params.toString(), (p) => p.Spreadsheet);
-};
-
-export function useDataset<T extends ApiDataset>(name: string): T | undefined {
-    return useApiData("/dataset?name=" + name, (p) => p.Dataset ?? []) as T;
+export function useDataset<T>(name: string, parseRow: (x: DatasetRow) => T): T[] | undefined {
+    return useApiData("/dataset?name=" + name, p => p.dataset.map(row => parseRow(row)));
 }
 
 export function useApiData<T>(url: RequestInfo, getData: (r: ApiResponse) => T): T | undefined {
@@ -91,21 +81,20 @@ export function useAndSetApiData<T>(url: RequestInfo, getData: (r: ApiResponse) 
     const [data, setData] = useState<T | undefined>(undefined);
     useEffect(() => {
         fetchApi(url, {method: "GET"}).then(resp => setData(getData(resp)));
-    }, [url, getSession().Key]);
+    }, [url, getSession().key]);
     return [data, setData];
 }
 
 export const fetchApi = async (url: RequestInfo, init: RequestInit): Promise<ApiResponse> => {
-    init.headers = {...init.headers, Authorization: "Bearer " + getSession().Key};
+    init.headers = {...init.headers, Authorization: "Bearer " + getSession().key};
     console.log("Api Request:", init.method, url);
     return fetch(Endpoint + url, init)
-        .then(response => response.json())
-        .then(obj => {
-            const resp = obj as ApiResponse;
+        .then(resp => resp.json())
+        .then(respJson => {
+            const resp = ApiResponse.fromApiJSON(respJson);
             console.log("Api Response:", resp);
-            if (resp.Status === ApiStatus.Error) {
-                const error = resp.Error ?? {Error: "unknown", Code: 0};
-                throw `vvgo error [${error.Code}]: ${error.Error}`;
+            if (resp.status == ApiStatus.Error) {
+                throw resp.error ?? ApiError.UnknownError;
             }
             return resp;
         });

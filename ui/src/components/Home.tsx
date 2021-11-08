@@ -1,3 +1,4 @@
+import {isEmpty, random} from "lodash/fp";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {Highlight, latestProject, Project, useHighlights, useProjects} from "../datasets";
@@ -60,12 +61,12 @@ const LatestReleases = (props: { projects: Project[] | undefined }) => {
 
 const MemberHighlight = (props: { highlight?: Highlight }) => {
     if (!props.highlight) return <div/>;
-    const {Source, Alt} = props.highlight;
+    const {source, alt} = props.highlight;
     return <table className="table text-light">
         <tbody>
         <tr>
             <td>
-                <img src={Source} width="100%" alt={Alt}/>
+                <img src={source} width="100%" alt={alt}/>
             </td>
         </tr>
         </tbody>
