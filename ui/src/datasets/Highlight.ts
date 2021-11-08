@@ -1,8 +1,8 @@
 import {DatasetRow} from "./Dataset";
 
 export class Highlight {
-    alt: string = "";
-    source: string = "";
+    alt = "";
+    source = "";
 
     static fromDatasetRow(data: DatasetRow): Highlight {
         const highlight = new Highlight();

@@ -1,12 +1,12 @@
 import {DatasetRow} from "./Dataset";
 
 export class Credit {
-    bottomText: string = "";
-    majorCategory: string = "";
-    minorCategory: string = "";
-    name: string = "";
-    order: string = "";
-    project: string = "";
+    bottomText = "";
+    majorCategory = "";
+    minorCategory = "";
+    name = "";
+    order = "";
+    project = "";
 
     static fromDatasetRow(row: DatasetRow): Credit {
         const credit = new Credit();

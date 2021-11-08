@@ -1,11 +1,12 @@
-import {get} from "lodash/fp";
+import {get, isEmpty} from "lodash/fp";
 
 export class OAuthRedirect {
-    DiscordURL: string = "";
-    State: string = "";
-    Secret: string = "";
+    DiscordURL = "";
+    State = "";
+    Secret = "";
 
-    static fromApiJSON(obj: object): OAuthRedirect {
+    static fromApiObject(obj: object): OAuthRedirect | undefined {
+        if (isEmpty(obj)) return undefined;
         const data = new OAuthRedirect();
         data.DiscordURL = get("DiscordURL", obj);
         data.State = get("State", obj);

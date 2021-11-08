@@ -1,13 +1,13 @@
 export class GuildMember {
     user: DiscordUser = new DiscordUser();
-    nick: string = "";
+    nick = "";
     roles: string[] = [];
 
-    static fromApiJSON(obj: object): GuildMember {
+    static fromApiObject(obj: object): GuildMember {
         return obj as GuildMember;
     }
 }
 
 export class DiscordUser {
-    id: string = "";
+    id = "";
 }

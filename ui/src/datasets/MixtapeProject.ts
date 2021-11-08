@@ -6,9 +6,9 @@ import {fetchApi} from "./hooks";
 export class MixtapeProject {
     Name: string;
     mixtape: string;
-    title: string = "";
-    blurb: string = "";
-    channel: string = "";
+    title = "";
+    blurb = "";
+    channel = "";
     hosts: string[] = [];
 
     constructor(name: string, mixtape: string) {
@@ -16,7 +16,7 @@ export class MixtapeProject {
         this.mixtape = mixtape;
     }
 
-    static fromApiJSON(obj: object): MixtapeProject {
+    static fromApiObject(obj: object): MixtapeProject {
         const name = get("Name", obj);
         if (isEmpty(name)) throw `empty field name`;
         const mixtape = get("mixtape", obj);

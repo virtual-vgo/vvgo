@@ -1,11 +1,12 @@
-import {get} from "lodash/fp";
+import {get, isEmpty} from "lodash/fp";
 
 export class CreditsPasta {
-    websitePasta: string = "";
-    videoPasta: string = "";
-    youtubePasta: string = "";
+    websitePasta = "";
+    videoPasta = "";
+    youtubePasta = "";
 
-    static fromApiJSON(obj: object): CreditsPasta {
+    static fromApiObject(obj: object): CreditsPasta | undefined {
+        if (isEmpty(obj)) return undefined;
         const pasta = new CreditsPasta();
         pasta.websitePasta = get("WebsitePasta", obj) ?? "";
         pasta.websitePasta = get("VideoPasta", obj) ?? "";

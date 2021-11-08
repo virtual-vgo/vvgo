@@ -1,13 +1,13 @@
 export class Part {
-    Project: string = "";
-    PartName: string = "";
-    ScoreOrder: number = 0;
-    SheetMusicFile: string = "";
-    ClickTrackFile: string = "";
-    ConductorVideo: string = "";
-    PronunciationGuide: string = "";
+    Project = "";
+    PartName = "";
+    ScoreOrder = 0;
+    SheetMusicFile = "";
+    ClickTrackFile = "";
+    ConductorVideo = "";
+    PronunciationGuide = "";
 
-    static fromApiJSON(obj: object): Part {
+    static fromApiObject(obj: object): Part {
         return obj as Part;
     }
 }

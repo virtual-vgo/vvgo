@@ -24,9 +24,9 @@ export enum SessionKind {
 
 export class Session {
     kind: SessionKind;
-    key: string = "";
+    key = "";
     roles: string[] = [];
-    discordID: string = "";
+    discordID = "";
     createdAt?: Date;
     expiresAt?: Date;
 
@@ -36,7 +36,8 @@ export class Session {
 
     static Anonymous = new Session();
 
-    static fromApiObject(obj: object): Session {
+    static fromApiObject(obj: object): Session | undefined {
+        if (isEmpty(obj)) return undefined;
         const session = new Session();
         session.kind = get("Kind", obj) ?? SessionKind.Anonymous;
         session.key = get("Key", obj) ?? "";

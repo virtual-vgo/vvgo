@@ -1,11 +1,11 @@
 import {DatasetRow} from "./Dataset";
 
 export class Director {
-    name: string = "";
-    epithet: string = "";
-    affiliations: string = "";
-    blurb: string = "";
-    icon: string = "";
+    name = "";
+    epithet = "";
+    affiliations = "";
+    blurb = "";
+    icon = "";
 
     static fromDatasetRow(data: DatasetRow): Director {
         const director = new Director();

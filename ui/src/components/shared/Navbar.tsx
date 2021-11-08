@@ -3,7 +3,7 @@ import {Dropdown, Nav, Navbar as BootstrapNavbar} from "react-bootstrap";
 import {Link, NavLink as RouterNavLink} from "react-router-dom";
 import {getSession} from "../../auth";
 import {links} from "../../data/links";
-import {sessionIsAnonymous, UserRole} from "../../datasets";
+import {UserRole} from "../../datasets";
 import {Favicon} from "./Favicon";
 
 const navbarStyle: CSSProperties = {

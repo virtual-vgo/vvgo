@@ -1,31 +1,31 @@
 export class Project {
-    Name: string = "";
-    Title: string = "";
-    Season: string = "";
-    Hidden: boolean = false;
-    PartsReleased: boolean = false;
-    PartsArchived: boolean = false;
-    VideoReleased: boolean = false;
-    Sources: string = "";
-    Composers: string = "";
-    Arrangers: string = "";
-    Editors: string = "";
-    Transcribers: string = "";
-    Preparers: string = "";
-    ClixBy: string = "";
-    Reviewers: string = "";
-    Lyricists: string = "";
-    AdditionalContent: string = "";
-    ReferenceTrack: string = "";
-    ChoirPronunciationGuide: string = "";
-    BannerLink: string = "";
-    YoutubeLink: string = "";
-    YoutubeEmbed: string = "";
-    SubmissionDeadline: string = "";
-    SubmissionLink: string = "";
-    ReferenceTrackLink: string = "";
+    Name = "";
+    Title = "";
+    Season = "";
+    Hidden = false;
+    PartsReleased = false;
+    PartsArchived = false;
+    VideoReleased = false;
+    Sources = "";
+    Composers = "";
+    Arrangers = "";
+    Editors = "";
+    Transcribers = "";
+    Preparers = "";
+    ClixBy = "";
+    Reviewers = "";
+    Lyricists = "";
+    AdditionalContent = "";
+    ReferenceTrack = "";
+    ChoirPronunciationGuide = "";
+    BannerLink = "";
+    YoutubeLink = "";
+    YoutubeEmbed = "";
+    SubmissionDeadline = "";
+    SubmissionLink = "";
+    ReferenceTrackLink = "";
 
-    static fromApiJSON(obj: object): Project {
+    static fromApiObject(obj: object): Project {
         return obj as Project;
     }
 }

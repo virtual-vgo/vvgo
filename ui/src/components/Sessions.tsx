@@ -123,7 +123,7 @@ const CreateButton = (props: {
             Number(props.inputExpires.current.value),
         ).then(resp => {
             console.log("Created sessions:", resp.sessions);
-            props.setSessions([...resp.sessions, ...props.sessions]);
+            props.setSessions([...(resp.sessions??[]), ...props.sessions]);
             props.setButtonState("created");
         }).catch(error => console.log(error));
     };

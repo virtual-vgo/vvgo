@@ -19,17 +19,17 @@ export enum ApiStatus {
 
 export class ApiResponse {
     status: ApiStatus;
-    error: ApiError = new ApiError();
-    creditsPasta: CreditsPasta = new CreditsPasta();
-    creditsTable: CreditsTable = [];
-    dataset: Dataset = new Dataset();
-    guildMembers: GuildMember[] = [];
-    identity: Session = new Session();
-    mixtapeProjects: MixtapeProject[] = [];
-    oauthRedirect: OAuthRedirect = new OAuthRedirect();
-    parts: Part[] = [];
-    projects: Project[] = [];
-    sessions: Session[] = [];
+    error?: ApiError;
+    creditsPasta?: CreditsPasta;
+    creditsTable?: CreditsTable;
+    dataset?: Dataset;
+    guildMembers?: GuildMember[];
+    identity?: Session;
+    mixtapeProjects?: MixtapeProject[];
+    oauthRedirect?: OAuthRedirect;
+    parts?: Part[];
+    projects?: Project[];
+    sessions?: Session[];
 
     constructor(status: ApiStatus) {
         this.status = status;
@@ -44,16 +44,17 @@ export class ApiResponse {
 
             case ApiStatus.Ok:
                 console.log(keys(obj));
-                apiResp.creditsPasta = CreditsPasta.fromApiJSON(get("CreditsPasta", obj));
-                apiResp.creditsTable = get("CreditsTable", obj) as CreditsTable;
-                apiResp.dataset = Dataset.fromApiJSON(get("Dataset", obj));
-                apiResp.guildMembers = get("GuildMembers", obj)?.map((p: object[]) => GuildMember.fromApiJSON(get("Dataset", p)));
+                apiResp.creditsPasta = CreditsPasta.fromApiObject(get("CreditsPasta", obj));
+                apiResp.dataset = Dataset.fromApiObject(get("Dataset", obj));
                 apiResp.identity = Session.fromApiObject(get("Identity", obj));
-                apiResp.mixtapeProjects = get("MixtapeProjects", obj)?.map((p: object[]) => MixtapeProject.fromApiJSON(get("Dataset", p)));
-                apiResp.oauthRedirect = OAuthRedirect.fromApiJSON(get("OAuthRedirect", obj));
-                apiResp.parts = get("Parts", obj)?.map((p: object[]) => Part.fromApiJSON(get("Dataset", p)));
-                apiResp.projects = get("Projects", obj)?.map((p: object[]) => Project.fromApiJSON(get("Dataset", p)));
-                apiResp.sessions = get("Sessions", obj)?.map((p: object[]) => Session.fromApiObject(get("Dataset", p)));
+                apiResp.oauthRedirect = OAuthRedirect.fromApiObject(get("OAuthRedirect", obj));
+
+                apiResp.creditsTable = get("CreditsTable", obj) as CreditsTable;
+                apiResp.guildMembers = get("GuildMembers", obj)?.map((p: object[]) => GuildMember.fromApiObject(p));
+                apiResp.mixtapeProjects = get("MixtapeProjects", obj)?.map((p: object[]) => MixtapeProject.fromApiObject(p));
+                apiResp.parts = get("Parts", obj)?.map((p: object[]) => Part.fromApiObject(p));
+                apiResp.projects = get("Projects", obj)?.map((p: object[]) => Project.fromApiObject(p));
+                apiResp.sessions = get("Sessions", obj)?.map((p: object[]) => Session.fromApiObject(p));
                 break;
 
             default:
