@@ -3,6 +3,8 @@ import { lazy, Suspense } from "react";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {
+  CreditsTeamRow,
+  CreditsTopic,
   latestProject,
   Project,
   useCreditsTable,
@@ -13,6 +15,8 @@ import { FancyProjectMenu, useMenuSelection } from "./shared/FancyProjectMenu";
 import { LoadingText } from "./shared/LoadingText";
 import { ProjectHeader } from "./shared/ProjectHeader";
 import { YoutubeIframe } from "./shared/YoutubeIframe";
+
+const Masonry = lazy(() => import("@mui/lab/Masonry"));
 
 const permaLink = (project: Project) => `/projects/${project.Name}`;
 const pathMatcher = /\/projects\/(.+)\/?/;
@@ -115,11 +119,10 @@ export const Projects = () => {
 };
 
 const ProjectCredits = (props: { project: Project }) => {
-  const Masonry = lazy(() => import("@mui/lab/Masonry"));
   const creditsTable = useCreditsTable(props.project);
   return (
     <div>
-      {(creditsTable ?? []).map((topic) => (
+      {creditsTable?.map((topic) => (
         <Row key={topic.Name}>
           <Row>
             <Col className="text-center">
@@ -130,34 +133,40 @@ const ProjectCredits = (props: { project: Project }) => {
           </Row>
           <Row>
             <Suspense fallback={<LoadingText />}>
-              <Masonry
-                columns={3}
-                spacing={1}
-                defaultHeight={450}
-                defaultColumns={3}
-                defaultSpacing={1}
-              >
-                {isEmpty(topic.Rows) ? (
-                  <div />
-                ) : (
-                  topic.Rows.map((team) => (
-                    <Col key={team.Name} lg={4}>
-                      <h5>{team.Name}</h5>
-                      <ul className="list-unstyled">
-                        {team.Rows.map((credit, i) => (
-                          <li key={i}>
-                            {credit.name} <small>{credit.bottomText}</small>
-                          </li>
-                        ))}
-                      </ul>
-                    </Col>
-                  ))
-                )}
-              </Masonry>
+              <CreditsTopicMasonry topic={topic} />
             </Suspense>
           </Row>
         </Row>
       ))}
+    </div>
+  );
+};
+
+const CreditsTopicMasonry = (props: { topic: CreditsTopic }) => {
+  const columns = window.innerWidth < 400 ? 1 : 3;
+  if (isEmpty(props.topic.Rows)) return <div />;
+
+  return (
+    <Masonry defaultHeight={450} columns={{ md: 3, sm: 1 }} spacing={1}>
+      {props.topic.Rows.map((team, i) => (
+        <TeamCredits key={i} team={team} />
+      ))}
+    </Masonry>
+  );
+};
+
+const TeamCredits = (props: { team: CreditsTeamRow }) => {
+  console.log(props.team);
+  return (
+    <div className="text-center">
+      <h5>{props.team.Name}</h5>
+      <ul className="list-unstyled">
+        {props.team.Rows.map((credit, i) => (
+          <li key={i}>
+            {credit.name} <small>{credit.bottomText}</small>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

@@ -46,7 +46,9 @@ export class ApiResponse {
         apiResp.creditsPasta = CreditsPasta.fromApiObject(
           get("CreditsPasta", obj)
         );
-        apiResp.creditsTable = get("CreditsTable", obj) as CreditsTable;
+        apiResp.creditsTable = CreditsTable.fromApiArray(
+          get("CreditsTable", obj)
+        );
         apiResp.dataset = Dataset.fromApiObject(get("Dataset", obj));
         apiResp.guildMembers = get("GuildMembers", obj)?.map((p: object[]) =>
           GuildMember.fromApiObject(p)
