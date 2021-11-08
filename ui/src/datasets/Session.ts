@@ -54,11 +54,12 @@ export class Session {
         session.kind = get("kind", obj) ?? SessionKind.Anonymous;
         session.key = get("key", obj) ?? "";
         session.roles = get("roles", obj) ?? "";
+        session.discordID = get("discordID", obj) ?? "";
         return session;
     }
 
     toJSON(): string {
-        return JSON.stringify({kind: this.kind, key: this.key, roles: this.roles});
+        return JSON.stringify({kind: this.kind, key: this.key, roles: this.roles, discordID: this.discordID});
     }
 
     static Create(kind: SessionKind, roles: string[], expires?: number): Promise<ApiResponse> {

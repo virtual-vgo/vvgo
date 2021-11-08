@@ -2,10 +2,8 @@ import {isEmpty, uniq, uniqBy} from "lodash/fp";
 import {MutableRefObject, useRef, useState} from "react";
 import {Button, Card, Col, Dropdown, Form, FormControl, Row, Table, Toast} from "react-bootstrap";
 import {
-    deleteMixtapeProjects,
     GuildMember,
     MixtapeProject,
-    saveMixtapeProjects,
     useGuildMemberLookup,
     useGuildMemberSearch,
     useMixtapeProjects,
@@ -37,7 +35,7 @@ const ProjectTable = (props: {
     const onClickDelete = (project: MixtapeProject) => {
         console.log("deleting", project);
         props.setProjects(props.projects.filter(x => project.Name != x.Name));
-        deleteMixtapeProjects([project]).catch(err => console.log(err));
+        project.delete().catch(err => console.log(err));
     };
 
     const onClickEdit = (project: MixtapeProject) => {
@@ -69,7 +67,7 @@ const WorkflowApp = (props: {
     const [curProject, setCurProject] = useState(initProject);
     const saveProject = (project: MixtapeProject) => {
         props.setProjects(uniqBy(p => p.Name, [project, ...props.projects]));
-        saveMixtapeProjects([project])
+        project.save()
             .then(() => setCurProject(project))
             .catch(err => console.log(err));
         return;
@@ -286,7 +284,7 @@ const SubmitChannelButton = (props: {
     saveProject: (project: MixtapeProject) => void;
 }) => {
     const onClick = () => {
-        const proj = props.curProject
+        const proj = props.curProject;
         proj.channel = props.channelInputRef.current.value;
         props.saveProject(proj);
     };

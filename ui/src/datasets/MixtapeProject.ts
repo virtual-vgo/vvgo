@@ -29,6 +29,17 @@ export class MixtapeProject {
         return project;
     }
 
+    toApiObject(): object {
+        return {
+            "Name": this.Name,
+            "Mixtape": this.mixtape,
+            "Title": this.title,
+            "Blurb": this.blurb,
+            "Channel": this.channel,
+            "Hosts": this.hosts,
+        };
+    }
+
     resolveNicks(members: GuildMember[]): string[] {
         return uniq(members.filter(m => this.hosts?.includes(m.user.id)).map(m => m.nick));
     }
@@ -36,7 +47,7 @@ export class MixtapeProject {
     save(): Promise<ApiResponse> {
         return fetchApi("/mixtape/projects", {
             method: "POST",
-            body: JSON.stringify([this]),
+            body: JSON.stringify([this.toApiObject()]),
         });
     }
 
@@ -48,19 +59,3 @@ export class MixtapeProject {
     }
 }
 
-export const resolveHostNicks = (members: GuildMember[], project: MixtapeProject) =>
-    uniq(members.filter(m => project.hosts?.includes(m.user.id)).map(m => m.nick));
-
-export const saveMixtapeProjects = (projects: MixtapeProject[]) => {
-    return fetchApi("/mixtape/projects", {
-        method: "POST",
-        body: JSON.stringify(projects),
-    });
-};
-
-export const deleteMixtapeProjects = (projects: MixtapeProject[]) => {
-    return fetchApi("/mixtape/projects", {
-        method: "DELETE",
-        body: JSON.stringify(projects.map(x => x.Name)),
-    });
-};

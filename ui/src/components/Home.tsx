@@ -1,3 +1,4 @@
+import {isEmpty, random} from "lodash/fp";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import {Highlight, latestProject, Project, useHighlights, useProjects} from "../datasets";
