@@ -90,7 +90,7 @@ export function useDataset<T>(
   parseRow: (x: DatasetRow) => T
 ): T[] | undefined {
   return useApiData("/dataset?name=" + name, (p) =>
-    p.dataset.map((row) => parseRow(row))
+    p.dataset?.map((row) => parseRow(row))
   );
 }
 

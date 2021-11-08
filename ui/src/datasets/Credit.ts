@@ -1,3 +1,4 @@
+import { get } from "lodash/fp";
 import { DatasetRow } from "./Dataset";
 
 export class Credit {
@@ -7,6 +8,17 @@ export class Credit {
   name = "";
   order = "";
   project = "";
+
+  static fromApiObject(obj: object): Credit {
+    const credit = new Credit();
+    credit.bottomText = get("BottomText", obj) ?? "";
+    credit.majorCategory = get("MajorCategory", obj) ?? "";
+    credit.minorCategory = get("MinorCategory", obj) ?? "";
+    credit.name = get("Name", obj) ?? "";
+    credit.order = get("Order", obj) ?? "";
+    credit.project = get("Project", obj) ?? "";
+    return credit;
+  }
 
   static fromDatasetRow(row: DatasetRow): Credit {
     const credit = new Credit();

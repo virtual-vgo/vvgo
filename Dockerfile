@@ -1,4 +1,4 @@
-FROM node:14.5 as node
+FROM node:16.13 as node
 WORKDIR /wrk/
 COPY package.json .
 COPY package-lock.json .
