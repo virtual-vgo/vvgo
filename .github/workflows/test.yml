@@ -5,23 +5,12 @@ env:
   GO111MODULE: on
 
 jobs:
-  shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: install shellcheck
-        shell: bash
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
-      - name: Run `shellcheck`
-        shell: bash
-        run: find . -type f -name \*.sh -exec shellcheck {} +
-
-  gofmt:
+  go-fmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v1
         with:
-          go-version: 1.14.1
+          go-version: 1.16
       - uses: actions/checkout@v2
       - name: Run `gofmt`
         shell: bash
@@ -32,7 +21,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v1
         with:
-          go-version: 1.14.1
+          go-version: 1.16
       - uses: actions/checkout@v2
       - name: Ensure `go mod tidy` produces a zero diff
         shell: bash
@@ -43,7 +32,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v1
         with:
-          go-version: 1.14.1
+          go-version: 1.16
       - uses: actions/checkout@v2
       - name: Cache go modules
         uses: actions/cache@v1
@@ -54,3 +43,30 @@ jobs:
 
       - name: Run `go vet ./...`
         run: go generate ./... && go vet ./...
+
+  go-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.1
+      - uses: actions/checkout@v2
+
+      - name: Start containers
+        run: docker-compose up -d redis minio
+
+      - name: Cache go modules
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: Run `go test -v -race ./...`
+        run: go generate ./... && go test -v -race ./...
+
+  npx-eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: npm install && npx eslint ui

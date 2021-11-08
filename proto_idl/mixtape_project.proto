@@ -1,0 +1,12 @@
+syntax = "proto3";
+//option go_package = "github.com/virtual-vgo/vvgo/proto/mixtapeProject";
+
+message MixtapeProject {
+  string name = 1;
+  string title = 2;
+  string mixtape = 3;
+  string blurb = 4;
+  string channel = 5;
+  repeated string hosts = 6;
+}
+

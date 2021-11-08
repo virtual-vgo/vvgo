@@ -4,7 +4,7 @@ services:
     image: minio/minio
     command: server /data
     healthcheck:
-      test: [ "CMD", "curl", "http://localhost:9000" ]
+      test: ["CMD", "curl", "http://localhost:9000"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -17,7 +17,7 @@ services:
   redis:
     image: redis:6
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,25 +26,3 @@ services:
         published: 6379
         protocol: tcp
         mode: host
-
-  vvgo:
-    build:
-      dockerfile: Dockerfile
-      context: .
-    ports:
-      - target: 8080
-        published: 8081
-        protocol: tcp
-        mode: host
-    environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /etc/vvgo/google_api_credentials.json
-    volumes:
-      - type: bind
-        source: .vvgo-config.json
-        target: /etc/vvgo/config.json
-      - type: bind
-        source: .google_api_credentials.json
-        target: /etc/vvgo/google_api_credentials.json
-      - type: bind
-        source: ./public
-        target: /public

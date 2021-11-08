@@ -1,4 +1,3 @@
-import React = require("react");
-import favicon = require ("./favicon.png");
+import favicon from "../../favicon.png";
 
-export const Favicon = () => <img src={favicon} alt="favicon"/>;
+export const Favicon = () => <img src={favicon} alt="favicon" />;

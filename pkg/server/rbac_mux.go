@@ -32,18 +32,26 @@ func (auth *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) m
 		switch resp.Status {
 		case models.StatusFound:
 			http.Redirect(w, r, resp.Location, http.StatusFound)
+			return
 
 		case models.StatusError:
+			w.Header().Set("Content-Type", "application/json")
 			if resp.Error != nil {
 				w.WriteHeader(resp.Error.Code)
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
+
+		case models.StatusOk:
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+
 		}
 
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			logger.JsonEncodeFailure(ctx, err)
 		}
+
 	}), role)
 }
 
@@ -59,8 +67,9 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Ro
 			}
 			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, login.CtxKeyVVGOIdentity, &identity)))
 			return
+		} else {
+			logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
+			http_helpers.WriteAPIResponse(ctx, w, http_helpers.NewUnauthorizedError())
 		}
-		logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
-		http_helpers.WriteUnauthorizedError(ctx, w)
 	})
 }

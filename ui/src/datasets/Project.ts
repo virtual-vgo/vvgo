@@ -1,35 +1,39 @@
-import _ = require("lodash");
+export class Project {
+  Name = "";
+  Title = "";
+  Season = "";
+  Hidden = false;
+  PartsReleased = false;
+  PartsArchived = false;
+  VideoReleased = false;
+  Sources = "";
+  Composers = "";
+  Arrangers = "";
+  Editors = "";
+  Transcribers = "";
+  Preparers = "";
+  ClixBy = "";
+  Reviewers = "";
+  Lyricists = "";
+  AdditionalContent = "";
+  ReferenceTrack = "";
+  ChoirPronunciationGuide = "";
+  BannerLink = "";
+  YoutubeLink = "";
+  YoutubeEmbed = "";
+  SubmissionDeadline = "";
+  SubmissionLink = "";
+  ReferenceTrackLink = "";
 
-export interface Project {
-    Name: string;
-    Title: string;
-    Season: string;
-    Hidden: boolean;
-    PartsReleased: boolean;
-    PartsArchived: boolean;
-    VideoReleased: boolean;
-    Sources: string;
-    Composers: string;
-    Arrangers: string;
-    Editors: string;
-    Transcribers: string;
-    Preparers: string;
-    ClixBy: string;
-    Reviewers: string;
-    Lyricists: string;
-    AdditionalContent: string;
-    ReferenceTrack: string;
-    ChoirPronunciationGuide: string;
-    BannerLink: string;
-    YoutubeLink: string;
-    YoutubeEmbed: string;
-    SubmissionDeadline: string;
-    SubmissionLink: string;
-    ReferenceTrackLink: string;
+  static fromApiObject(obj: object): Project {
+    return obj as Project;
+  }
 }
 
-export const latestProject = (projects: Project[]): Project =>
-    _.defaultTo(projects, [])
-        .filter(proj => proj.VideoReleased === true)
-        .sort((a, b) => a.Name.localeCompare(b.Name))
-        .pop();
+export const latestProject = (
+  projects: Project[] | undefined
+): Project | undefined =>
+  projects
+    ?.filter((proj) => proj.VideoReleased)
+    .sort((a, b) => a.Name.localeCompare(b.Name))
+    .pop();

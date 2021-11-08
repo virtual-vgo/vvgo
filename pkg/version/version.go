@@ -35,10 +35,8 @@ func SetVersionHeaders(w http.ResponseWriter) {
 }
 
 type Version struct {
-	BuildHost string `json:"build_host"`
 	BuildTime string `json:"build_time"`
 	GitSha    string `json:"git_sha"`
-	GitBranch string `json:"git_branch"`
 	GoVersion string `json:"go_version"`
 }
 
@@ -53,10 +51,8 @@ func (x Version) JSON() json.RawMessage {
 
 func (x Version) Header() http.Header {
 	header := make(http.Header)
-	header.Set("Build-Host", x.BuildHost)
 	header.Set("Build-Time", x.BuildTime)
 	header.Set("Git-Sha", x.GitSha)
-	header.Set("Git-Branch", x.GitBranch)
 	header.Set("Go-Version", x.GoVersion)
 	return header
 }

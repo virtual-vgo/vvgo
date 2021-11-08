@@ -25,7 +25,7 @@ func TestBadRequest(t *testing.T) {
 
 func TestInternalServerError(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	WriteInternalServerError(ctx, recorder)
+	WriteAPIResponse(ctx, recorder, NewInternalServerError())
 	test_helpers.AssertEqualResponse(t, models.ApiResponse{
 		Status: models.StatusError,
 		Error: &models.ApiError{
