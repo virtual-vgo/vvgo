@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -121,12 +121,35 @@ func GetGuildMember(ctx context.Context, userID Snowflake) (*GuildMember, error)
 	return &guildMember, nil
 }
 
-func SearchGuildMembers(ctx context.Context, query string, limit string) ([]GuildMember, error) {
+func SearchGuildMembers(ctx context.Context, query string, limit int) ([]GuildMember, error) {
 	params := make(url.Values)
 	params.Set("query", query)
-	params.Set("limit", limit)
+	params.Set("limit", strconv.Itoa(limit))
 
-	req, err := newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members/search?"+params.Encode(), nil)
+	req, err := newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members", nil)
+	if err != nil {
+		logger.NewRequestFailure(ctx, err)
+		return nil, err
+	}
+
+	// unmarshal the response
+	var guildMembers []GuildMember
+	if _, err := doDiscordRequest(req, &guildMembers); err != nil {
+		return nil, err
+	}
+	return guildMembers, nil
+}
+
+func ListGuildMembers(ctx context.Context, limit int, after int) ([]GuildMember, error) {
+	params := make(url.Values)
+	if limit >= 1 {
+		params.Set("limit", strconv.Itoa(limit))
+	}
+	if after >= 0 {
+		params.Set("after", strconv.Itoa(after))
+	}
+
+	req, err := newBotRequest(ctx, http.MethodGet, "/guilds/"+VVGOGuildID+"/members?"+params.Encode(), nil)
 	if err != nil {
 		logger.NewRequestFailure(ctx, err)
 		return nil, err
@@ -249,32 +272,46 @@ func newRequest(ctx context.Context, method string, path string, body io.Reader)
 // performs the http request and logs results
 func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, error) {
 	resp, err := http_wrappers.DoRequest(req)
-	switch {
-	case err != nil:
+	if err != nil {
 		logger.HttpDoFailure(req.Context(), err)
 		return nil, err
-
-	case resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent:
-		err = ErrNon200Response
-		var buf bytes.Buffer
-		_, _ = buf.ReadFrom(resp.Body)
-
-		logger.WithFields(logrus.Fields{
-			"method": req.Method,
-			"status": resp.StatusCode,
-			"url":    req.URL.String(),
-			"body":   buf.String(),
-		}).Error("non-200 response from discord")
-		return nil, err
 	}
 
-	logger.WithFields(logrus.Fields{
-		"method": req.Method,
-		"status": resp.StatusCode,
-		"url":    req.URL.String(),
-	}).Info("discord api request complete")
-	if dest != nil {
-		err = json.NewDecoder(resp.Body).Decode(dest)
+	switch {
+	case resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent:
+		logger.Info("discord api request complete")
+		if dest != nil {
+			err = json.NewDecoder(resp.Body).Decode(dest)
+		}
+		return resp, nil
+
+	default:
+		header := make(map[string]string)
+		for key := range resp.Header {
+			header[key] = resp.Header.Get(key)
+		}
+
+		var body bytes.Buffer
+		_, _ = body.ReadFrom(resp.Body)
+
+		var bodyJSON json.RawMessage
+		if err := json.Unmarshal(body.Bytes(), &bodyJSON); err != nil {
+			logger.JsonDecodeFailure(req.Context(), err)
+			bodyJSON, _ = json.Marshal(body.String())
+		}
+
+		return nil, &Error{
+			Code:   resp.StatusCode,
+			Body:   bodyJSON,
+			Header: header,
+		}
 	}
-	return resp, nil
 }
+
+type Error struct {
+	Code   int               `json:"code"`
+	Header map[string]string `json:"header"`
+	Body   json.RawMessage   `json:"body,omitempty"`
+}
+
+func (Error) Error() string { return "non-200 response from discord" }

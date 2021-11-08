@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/mediocregopher/radix/v3"
+	log "github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/errors"
-	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"strings"
+	"time"
 )
 
 type Action struct {
@@ -25,29 +27,20 @@ func Cmd(rcv interface{}, cmd string, args ...string) Action {
 	}
 }
 
-type Client struct{ pool *radix.Pool }
+var Client struct{ *radix.Pool }
 
-var client = NewClientMust()
-
-func NewClientMust() *Client {
+func init() {
 	radixPool, err := radix.NewPool(config.Config.Redis.Network, config.Config.Redis.Address, config.Config.Redis.PoolSize)
 	if err != nil {
-		logger.WithError(err).Fatal("redis.NewClient() failed")
-		return nil
+		log.WithError(err).Fatalf("radix.NewPool() failed")
 	}
-
-	client := &Client{pool: radixPool}
-	if err != nil {
-		logger.WithError(err).Fatal("redis.NewClient() failed")
-		return nil
-	}
-	return client
+	Client.Pool = radixPool
 }
 
 func ReadSheet(ctx context.Context, spreadsheetName string, name string) ([][]interface{}, error) {
 	var buf bytes.Buffer
 	key := "sheets:" + spreadsheetName + ":" + name
-	if err := Do(ctx, Cmd(&buf, "GET", key)); err != nil {
+	if err := Do(ctx, Cmd(&buf, GET, key)); err != nil {
 		return nil, errors.RedisFailure(err)
 	}
 
@@ -69,11 +62,36 @@ func WriteSheet(ctx context.Context, spreadsheetName, name string, values [][]in
 	}
 
 	key := "sheets:" + spreadsheetName + ":" + name
-	if err := Do(ctx, Cmd(nil, "SET", key, buf.String())); err != nil {
+	if err := Do(ctx, Cmd(nil, SET, key, buf.String())); err != nil {
 		return errors.RedisFailure(err)
 	}
 	return nil
 }
+
+const LogsApiKey = "logs:api"
+
+func WriteLog(ctx context.Context, entry *log.Entry) error {
+	timestamp := fmt.Sprintf("%f", time.Duration(entry.Time.UnixNano()).Seconds())
+	var data bytes.Buffer
+	if err := json.NewEncoder(&data).Encode(entry.Data); err != nil {
+		log.WithError(err).Error("json.Encode() failed")
+	}
+	return Do(ctx, Cmd(nil, ZADD, LogsApiKey, timestamp, data.String()))
+}
+
+func ListLogs(ctx context.Context, start time.Time, end time.Time) ([]string, error) {
+	startString := fmt.Sprintf("%f", time.Duration(start.UnixNano()).Seconds())
+	endString := fmt.Sprintf("%f", time.Duration(end.UnixNano()).Seconds())
+	var entriesJSON []string
+
+	err := Do(ctx, Cmd(&entriesJSON, ZRANGEBYSCORE, LogsApiKey, startString, endString))
+	return entriesJSON, err
+}
+
+const ZRANGEBYSCORE = "ZRANGEBYSCORE"
+const GET = "GET"
+const SET = "SET"
+const ZADD = "ZADD"
 
 func Do(_ context.Context, a Action) error {
 	truncArgs := func(args []string) string {
@@ -84,6 +102,6 @@ func Do(_ context.Context, a Action) error {
 		return argString
 	}
 
-	logger.WithField("cmd", a.Cmd).Infof("redis query: %s %s", a.Cmd, truncArgs(a.Args))
-	return client.pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...))
+	log.WithField("cmd", a.Cmd).Debugf("redis query: %s %s", a.Cmd, truncArgs(a.Args))
+	return Client.Pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...))
 }

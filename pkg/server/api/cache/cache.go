@@ -16,11 +16,10 @@ func Handle(expires time.Duration, handler func(*http.Request) models.ApiRespons
 	return func(r *http.Request) models.ApiResponse {
 		ctx := r.Context()
 		key := "response_cache:" + r.URL.String()
-		if response, ok := readCache(ctx, key); ok {
-			return response
+		if cachedResp, ok := readCache(ctx, key); ok {
+			return cachedResp
 		}
-		logger.Info("cache miss", key)
-
+		logger.WithField("cache_key", key).Info("cache miss")
 		resp := handler(r)
 		writeCache(ctx, key, expires, resp)
 		return resp
@@ -46,6 +45,10 @@ func readCache(ctx context.Context, key string) (models.ApiResponse, bool) {
 }
 
 func writeCache(ctx context.Context, key string, expires time.Duration, resp models.ApiResponse) {
+	if resp.Status != models.StatusOk {
+		return
+	}
+
 	var cacheRespJSON bytes.Buffer
 	if err := json.NewEncoder(&cacheRespJSON).Encode(resp); err != nil {
 		logger.JsonEncodeFailure(ctx, err)

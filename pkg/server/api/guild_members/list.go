@@ -1,8 +1,9 @@
 package guild_members
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
-	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/cache"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
@@ -11,28 +12,33 @@ import (
 	"time"
 )
 
-type SearchRequest struct {
+type ListRequest struct {
 	Limit int
-	Query string
+	After int
 }
 
-var HandleSearch = cache.Handle(60*time.Second, func(r *http.Request) models.ApiResponse {
+var HandleList = cache.Handle(60*time.Second, func(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 
 	queryParams := r.URL.Query()
 	limit, _ := strconv.Atoi(queryParams.Get("limit"))
-	params := SearchRequest{
+	after, _ := strconv.Atoi(queryParams.Get("after"))
+	params := ListRequest{
 		Limit: limit,
-		Query: queryParams.Get("query"),
+		After: after,
 	}
 
-	if params.Query == "" {
-		return http_helpers.NewBadRequestError("query is required")
-	}
-
-	members, err := discord.SearchGuildMembers(ctx, params.Query, params.Limit)
+	members, err := discord.ListGuildMembers(ctx, params.Limit, params.After)
 	if err != nil {
-		logger.MethodFailure(ctx, "discord.SearchGuildMembers", err)
+		if e, ok := err.(*discord.Error); ok {
+			var buf bytes.Buffer
+			json.NewEncoder(&buf).Encode(e)
+			return http_helpers.NewErrorResponse(models.ApiError{
+				Code:  e.Code,
+				Error: e.Error(),
+				Data:  buf.Bytes(),
+			})
+		}
 		return http_helpers.NewInternalServerError()
 	}
 

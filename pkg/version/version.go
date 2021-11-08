@@ -3,23 +3,23 @@ package version
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
 	"os"
 )
 
 // Package to query version information
 
-const VersionFile = "version.json"
+const FileName = "version.json"
 
 var version Version
 
 func init() {
-	if file, err := os.Open(VersionFile); err != nil {
-		logger.WithError(err).WithField("path", VersionFile).Info("failed to open version file")
-	} else if err = json.NewDecoder(file).Decode(&version); err != nil {
-		logger.WithError(err).WithField("path", VersionFile).Info("failed unmarshal version file")
+	file, err := os.Open(FileName)
+	if err != nil {
+		return
 	}
+	defer file.Close()
+	_ = json.NewDecoder(file).Decode(&version)
 }
 
 func Get() Version          { return version }

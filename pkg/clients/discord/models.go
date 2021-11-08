@@ -16,7 +16,8 @@ func (x Snowflake) String() string { return string(x) }
 
 // https://discordapp.com/developers/docs/resources/user#user-object
 type User struct {
-	ID Snowflake `json:"id"`
+	ID       Snowflake `json:"id"`
+	Username string    `json:"username"`
 }
 
 // https://discordapp.com/developers/docs/resources/guild#guild-member-object

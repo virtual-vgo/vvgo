@@ -3,6 +3,7 @@ package http_helpers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"net/http"
 )
@@ -47,6 +48,13 @@ func NewInternalServerError() models.ApiResponse {
 	return NewErrorResponse(models.ApiError{
 		Code:  http.StatusInternalServerError,
 		Error: "internal server error",
+	})
+}
+
+func NewRedisError(err error) models.ApiResponse {
+	return NewErrorResponse(models.ApiError{
+		Code:  http.StatusInternalServerError,
+		Error: fmt.Sprintf("redis error: %s", err),
 	})
 }
 

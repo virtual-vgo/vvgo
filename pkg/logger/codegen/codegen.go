@@ -49,13 +49,11 @@ func generateMethods() []string {
 	} {
 		if x.returnEntry {
 			statements = append(statements,
-				fmt.Sprintf("func %s(%s) Entry { return defaultLogger.%s(%s) }", x.method, x.params, x.method, x.args),
-				fmt.Sprintf("func (x Logger) %s(%s) Entry { return Entry{Entry: x.Logger.%s(%s)} }", x.method, x.params, x.method, x.args),
-				fmt.Sprintf("func (e Entry) %s(%s) Entry { return Entry{Entry: e.Entry.%s(%s)} }", x.method, x.params, x.method, x.args))
+				fmt.Sprintf("func %s(%s) Entry { return Entry{logrus.%s(%s)} }", x.method, x.params, x.method, x.args),
+				fmt.Sprintf("func (e Entry) %s(%s) Entry { return Entry{e.Entry.%s(%s)} }", x.method, x.params, x.method, x.args))
 		} else {
 			statements = append(statements,
-				fmt.Sprintf("func %s(%s) { defaultLogger.%s(%s) }", x.method, x.params, x.method, x.args),
-				fmt.Sprintf("func (x Logger) %s(%s) { x.Logger.%s(%s) }", x.method, x.params, x.method, x.args),
+				fmt.Sprintf("func %s(%s) { logrus.%s(%s) }", x.method, x.params, x.method, x.args),
 				fmt.Sprintf("func (e Entry) %s(%s) { e.Entry.%s(%s) }", x.method, x.params, x.method, x.args))
 		}
 	}
@@ -68,8 +66,7 @@ func generateMethodFailures() []string {
 		params := `ctx context.Context, err error`
 		args := fmt.Sprintf(`ctx, "%s", err`, x.Failed)
 		statements = append(statements,
-			fmt.Sprintf("func %s(%s) { defaultLogger.MethodFailure(%s) }", x.Method, params, args),
-			fmt.Sprintf("func (x Logger) %s(%s) { x.MethodFailure(%s) }", x.Method, params, args),
+			fmt.Sprintf("func %s(%s) { MethodFailure(%s) }", x.Method, params, args),
 			fmt.Sprintf("func (e Entry) %s(%s)  { e.MethodFailure(%s) }", x.Method, params, args))
 	}
 	return statements

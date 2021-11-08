@@ -1,15 +1,13 @@
 package http_wrappers
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
+	"github.com/virtual-vgo/vvgo/pkg/models/apilog"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
-	"strings"
 	"time"
 )
 
@@ -52,16 +50,29 @@ func Handler(handler http.Handler) http.HandlerFunc {
 		debugRequestIn(r)
 		handler.ServeHTTP(&writer, r)
 
-		fields := logrus.Fields{
-			"request_method":     r.Method,
-			"request_size":       r.ContentLength,
-			"request_path":       r.URL.Path,
-			"request_host":       r.URL.Host,
-			"request_user_agent": r.UserAgent(),
-			"response_status":    writer.code,
-			"response_size":      writer.size,
-			"start_time":         start,
-			"duration":           time.Since(start).Seconds(),
+		header := make(map[string]string)
+		for key := range r.Header {
+			header[key] = r.Header.Get(key)
+		}
+
+		entry := apilog.Entry{
+			Request: apilog.Request{
+				Method: r.Method,
+				Size:   r.ContentLength,
+				Url:    apilog.Url{Path: r.URL.Path, Host: r.URL.Host},
+				Header: header,
+			},
+			Response: apilog.Response{
+				Code: writer.code,
+				Size: int64(writer.size),
+			},
+			Duration: time.Since(start),
+		}
+
+		fields := log.Fields{
+			"request":  entry.Request,
+			"response": entry.Response,
+			"duration": entry.Duration,
 		}
 
 		// submit results
@@ -74,49 +85,34 @@ func Handler(handler http.Handler) http.HandlerFunc {
 	}
 }
 
-type Non200StatusError struct {
-	Code int
-	Body string
-}
-
-func (x Non200StatusError) Error() string {
-	return fmt.Sprintf("non-200 status code: (%d) %s", x.Code, x.Body)
-}
-
 func DoRequest(req *http.Request) (*http.Response, error) {
 	start := time.Now()
-	ctx := req.Context()
 
-	// do the request
 	debugRequestOut(req)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 200 {
-		var body bytes.Buffer
-		if _, err := body.ReadFrom(resp.Body); err != nil {
-			logger.MethodFailure(ctx, "request.Body", err)
-			// log this error but don't return
-		}
-		return nil, Non200StatusError{
-			Code: resp.StatusCode,
-			Body: body.String(),
-		}
-	}
 	debugResponse(resp)
 
-	// submit results
-	logger.WithFields(logrus.Fields{
-		"request_method":  req.Method,
-		"request_size":    req.ContentLength,
-		"request_path":    req.URL.Path,
-		"request_host":    req.URL.Host,
-		"response_status": resp.StatusCode,
-		"response_size":   resp.ContentLength,
-		"start_time":      start,
-		"duration":        time.Since(start).Seconds(),
-	}).Info("http client: request completed")
+	header := make(map[string]string)
+	for key := range req.Header {
+		header[key] = req.Header.Get(key)
+	}
+
+	logger.WithFields(log.Fields{
+		"request": apilog.Request{
+			Method: req.Method,
+			Size:   req.ContentLength,
+			Url:    apilog.Url{Path: req.URL.Path, Host: req.URL.Host},
+			Header: header,
+		},
+		"response": apilog.Response{
+			Code: resp.StatusCode,
+			Size: resp.ContentLength,
+		},
+		"duration": time.Since(start).Seconds(),
+	}).Info("http client request completed")
 	return resp, err
 }
 
@@ -125,15 +121,6 @@ func Get(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	return DoRequest(req)
-}
-
-func PostForm(url string, data url.Values) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(data.Encode()))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return DoRequest(req)
 }
 
