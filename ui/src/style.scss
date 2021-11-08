@@ -1,12 +1,12 @@
-$vvgo-purple: #8C17D9;
+$vvgo-purple: #8c17d9;
 $primary: $vvgo-purple;
 
 @import "~bootstrap/scss/bootstrap";
 
 body {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   background-color: rgb(15, 10, 24);
-  color: #E9E9E9;
+  color: #e9e9e9;
 }
 
 .title {
@@ -32,15 +32,15 @@ body {
 }
 
 .bg-vvgo-purple {
-  background-color: #8C17D9;
+  background-color: #8c17d9;
 }
 
 .bg-discord-blue {
-  background-color: #7289DA;
+  background-color: #7289da;
 }
 
 .bg-facebook-blue {
-  background-color: #1877F2;
+  background-color: #1877f2;
 }
 
 .thick-border {
@@ -76,4 +76,3 @@ body {
   opacity: 1;
   transition: opacity 2s linear;
 }
-

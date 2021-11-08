@@ -1,13 +1,13 @@
-import {Credit} from "./Credit";
+import { Credit } from "./Credit";
 
-export type CreditsTable = CreditsTopic[]
+export type CreditsTable = CreditsTopic[];
 
 export interface CreditsTopic {
-    Name: string;
-    Rows: Array<CreditsTeamRow>;
+  Name: string;
+  Rows: Array<CreditsTeamRow>;
 }
 
 export interface CreditsTeamRow {
-    Name: string;
-    Rows: Credit[];
+  Name: string;
+  Rows: Credit[];
 }
