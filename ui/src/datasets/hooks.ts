@@ -9,7 +9,7 @@ import { DatasetRow } from "./Dataset";
 import { Director } from "./Director";
 import { GuildMember } from "./GuildMember";
 import { Highlight } from "./Highlight";
-import { MixtapeProject } from "./mixtapeProject";
+import { MixtapeProject } from "./MixtapeProject";
 import { Part } from "./Part";
 import { Project } from "./Project";
 import { ApiRole, Session, SessionKind } from "./Session";
