@@ -67,6 +67,7 @@ export const useParts = (): Part[] | undefined =>
   useApiData("/parts", (resp) => resp.parts);
 export const useProjects = (): Project[] | undefined =>
   useApiData("/projects", (resp) => resp.projects);
+
 export const useSessions = (): [
   Session[] | undefined,
   (sessions: Session[]) => void

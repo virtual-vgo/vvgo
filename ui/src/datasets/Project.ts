@@ -9,21 +9,15 @@ export class Project {
   Sources = "";
   Composers = "";
   Arrangers = "";
-  Editors = "";
-  Transcribers = "";
   Preparers = "";
   ClixBy = "";
-  Reviewers = "";
-  Lyricists = "";
-  AdditionalContent = "";
   ReferenceTrack = "";
-  ChoirPronunciationGuide = "";
   BannerLink = "";
   YoutubeLink = "";
   YoutubeEmbed = "";
   SubmissionDeadline = "";
   SubmissionLink = "";
-  ReferenceTrackLink = "";
+  BandcampAlbum = "";
 
   static fromApiObject(obj: object): Project {
     return obj as Project;
