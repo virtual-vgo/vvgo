@@ -15,7 +15,7 @@ export class ApiError {
 
   static UnknownError = new ApiError(0, `unknown api error 😔`);
 
-  static fromApiJson(obj: object): ApiError {
+  static fromApiObject(obj: object): ApiError {
     return new ApiError(get("Code", obj), get("Error", obj));
   }
 }

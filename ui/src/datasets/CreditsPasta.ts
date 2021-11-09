@@ -9,7 +9,7 @@ export class CreditsPasta {
     if (isEmpty(obj)) return undefined;
     const pasta = new CreditsPasta();
     pasta.websitePasta = get("WebsitePasta", obj) ?? "";
-    pasta.websitePasta = get("VideoPasta", obj) ?? "";
+    pasta.videoPasta = get("VideoPasta", obj) ?? "";
     pasta.youtubePasta = get("YoutubePasta", obj) ?? "";
     return pasta;
   }

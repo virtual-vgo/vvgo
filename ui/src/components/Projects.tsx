@@ -143,7 +143,6 @@ const ProjectCredits = (props: { project: Project }) => {
 };
 
 const CreditsTopicMasonry = (props: { topic: CreditsTopic }) => {
-  const columns = window.innerWidth < 400 ? 1 : 3;
   if (isEmpty(props.topic.Rows)) return <div />;
 
   return (

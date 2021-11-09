@@ -8,3 +8,4 @@ version.json
 dump.rdb
 scrape_out
 public/dist
+.nyc_output

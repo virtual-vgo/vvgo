@@ -65,8 +65,20 @@ jobs:
       - name: Run `go test -v -race ./...`
         run: go generate ./... && go test -v -race ./...
 
-  npx-eslint:
+  npx-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: npm install && npx prettier -c ui
+
+  npx-vet:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: npm install && npx eslint ui
+
+  npx-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: npm install && npx mocha ui
