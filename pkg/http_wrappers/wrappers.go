@@ -60,7 +60,6 @@ func Handler(handler http.Handler) http.HandlerFunc {
 				Method: r.Method,
 				Size:   r.ContentLength,
 				Url:    apilog.Url{Path: r.URL.Path, Host: r.URL.Host},
-				Header: header,
 			},
 			Response: apilog.Response{
 				Code: writer.code,
@@ -95,17 +94,12 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 	}
 	debugResponse(resp)
 
-	header := make(map[string]string)
-	for key := range req.Header {
-		header[key] = req.Header.Get(key)
-	}
 
 	logger.WithFields(log.Fields{
 		"request": apilog.Request{
 			Method: req.Method,
 			Size:   req.ContentLength,
 			Url:    apilog.Url{Path: req.URL.Path, Host: req.URL.Host},
-			Header: header,
 		},
 		"response": apilog.Response{
 			Code: resp.StatusCode,

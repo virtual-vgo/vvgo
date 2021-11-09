@@ -12,7 +12,6 @@ type Request struct {
 	Method string            `json:"method,omitempty"`
 	Size   int64             `json:"size,omitempty"`
 	Url    Url               `json:"url"`
-	Header map[string]string `json:"header,omitempty"`
 }
 
 type Url struct {
