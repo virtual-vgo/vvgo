@@ -39,7 +39,7 @@ export class ApiResponse {
     const apiResp: ApiResponse = new ApiResponse(get("Status", obj));
     switch (apiResp.status) {
       case ApiStatus.Error:
-        apiResp.error = ApiError.fromApiJson(get("Error", obj));
+        apiResp.error = ApiError.fromApiObject(get("Error", obj));
         break;
 
       case ApiStatus.Ok:
@@ -49,7 +49,7 @@ export class ApiResponse {
         apiResp.creditsTable = CreditsTable.fromApiArray(
           get("CreditsTable", obj)
         );
-        apiResp.dataset = Dataset.fromApiObject(get("Dataset", obj));
+        apiResp.dataset = Dataset.fromApiArray(get("Dataset", obj));
         apiResp.guildMembers = get("GuildMembers", obj)?.map((p: object[]) =>
           GuildMember.fromApiObject(p)
         );
