@@ -2,7 +2,7 @@ import isEmpty from "lodash/fp/isEmpty";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
 import { getSession, updateLogin } from "../auth";
-import { UserRole } from "../datasets";
+import { latestProject, useProjects, UserRole } from "../datasets";
 import Contact from "./Contact";
 import AccessDenied from "./errors/AccessDenied";
 import InternalOopsie from "./errors/InternalOopsie";
@@ -165,6 +165,40 @@ function AppPage(props: { title?: string; children: JSX.Element }) {
       <Navbar />
       <Suspense fallback={<LoadingText />}>{props.children}</Suspense>
       <Footer />
+      <BandcampOverlay />
     </div>
   );
 }
+
+const BandcampOverlay = (props: {
+  size?: string;
+  bgcol?: string;
+  linkcol?: string;
+  tracklist?: boolean;
+  artwork?: string;
+  transparent?: boolean;
+}) => {
+  const project = latestProject(useProjects());
+  if (!project) return <div />;
+  if (project.BandcampAlbum == "") <div />;
+  const src =
+    `https://bandcamp.com/EmbeddedPlayer/` +
+    [
+      `album=${project.BandcampAlbum}`,
+      `size=${props.size ?? "small"}`,
+      `bgcol=${props.bgcol ?? "8c17d9"}`,
+      `linkcol=${props.linkcol ?? "9a64ff"}`,
+      `tracklist=${props.tracklist ?? false}`,
+      `artwork=${props.artwork ?? "none"}`,
+      `transparent=${props.transparent ?? true}`,
+    ].join("/");
+  return (
+    <div className="position-fixed bottom-0 start-0">
+      <iframe
+        style={{ border: 0, width: "100%", height: "42px" }}
+        src={src}
+        seamless
+      ></iframe>
+    </div>
+  );
+};
