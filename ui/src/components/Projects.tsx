@@ -2,6 +2,7 @@ import { isEmpty } from "lodash/fp";
 import { lazy, Suspense } from "react";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
+import { GuildChannel } from "../data/discord";
 import {
   CreditsTeamRow,
   CreditsTopic,
@@ -12,6 +13,7 @@ import {
 } from "../datasets";
 import { AlertUnreleasedProject } from "./shared/AlertUnreleasedProject";
 import { FancyProjectMenu, useMenuSelection } from "./shared/FancyProjectMenu";
+import { LinkChannel } from "./shared/LinkChannel";
 import { LoadingText } from "./shared/LoadingText";
 import { ProjectHeader } from "./shared/ProjectHeader";
 import { YoutubeIframe } from "./shared/YoutubeIframe";
@@ -43,6 +45,21 @@ export const Projects = () => {
     latestProject(allowedProjects)
   );
 
+  const buttonContent = (proj: Project) => {
+    return (
+      <div>
+        {proj.Title}
+        <em>
+          <small>
+            {!proj.PartsReleased ? <div>Unreleased</div> : <div />}
+            {!proj.VideoReleased ? <div>In Production</div> : <div />}
+            {proj.VideoReleased ? <div>Completed</div> : <div />}
+          </small>
+        </em>
+      </div>
+    );
+  };
+
   if (!allProjects) return <LoadingText />;
   return (
     <div>
@@ -54,66 +71,45 @@ export const Projects = () => {
             setSelected={setSelected}
             permaLink={permaLink}
             searchChoices={searchProjects}
-            buttonContent={(proj: Project) => (
-              <div>
-                {proj.Title}
-                {!proj.PartsReleased ? (
-                  <em>
-                    <small>
-                      <br />
-                      Unreleased
-                    </small>
-                  </em>
-                ) : (
-                  ""
-                )}
-                {!proj.VideoReleased ? (
-                  <em>
-                    <small>
-                      <br />
-                      In Production
-                    </small>
-                  </em>
-                ) : (
-                  ""
-                )}
-                {proj.VideoReleased ? (
-                  <em>
-                    <small>
-                      <br />
-                      Completed
-                    </small>
-                  </em>
-                ) : (
-                  ""
-                )}
-              </div>
-            )}
+            buttonContent={buttonContent}
           />
         </Col>
         <Col>
-          {selected ? (
-            <div className="mx-4">
-              <AlertUnreleasedProject project={selected} />
-              <ProjectHeader project={selected} />
-              {selected.PartsArchived ? (
-                selected.YoutubeEmbed ? (
-                  <YoutubeIframe project={selected} />
-                ) : (
-                  <div className="text-center text-info">
-                    <em>Video coming soon!</em>
-                  </div>
-                )
-              ) : (
-                <div />
-              )}
-              <ProjectCredits project={selected} />
-            </div>
-          ) : (
-            <div />
-          )}
+          <ProjectPage project={selected} />
         </Col>
       </Row>
+    </div>
+  );
+};
+
+const ProjectPage = (props: { project: Project | undefined }) => {
+  if (props.project == undefined) return <LoadingText />;
+  return (
+    <div className="mx-4">
+      <AlertUnreleasedProject project={props.project} />
+      <AlertInProduction project={props.project} />
+      <ProjectHeader project={props.project} />
+      <YoutubeIframe project={props.project} />
+      <ProjectCredits project={props.project} />
+    </div>
+  );
+};
+
+const AlertInProduction = (props: { project: Project | undefined }) => {
+  if (props.project == undefined) return <div />;
+  if (props.project.VideoReleased) return <div />;
+  if (!props.project.PartsArchived) return <div />;
+  return (
+    <div className="text-muted mb-4 fa-border">
+      <h2 className="m-2">
+        <em>Hey beautiful!</em> 😉{" "}
+        <em>
+          This project is still in production, but we are no longer accepting
+          submissions. Stay tuned for upcoming release news in{" "}
+          <LinkChannel channel={GuildChannel.Announcements} />.
+        </em>{" "}
+        😘
+      </h2>
     </div>
   );
 };

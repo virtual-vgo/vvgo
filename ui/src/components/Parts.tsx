@@ -7,7 +7,7 @@ import FormControl from "react-bootstrap/FormControl";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
 import { getSession } from "../auth";
-import { Channels } from "../data/discord";
+import { GuildChannel } from "../data/discord";
 import { links } from "../data/links";
 import {
   ApiRole,
@@ -130,10 +130,9 @@ export const Parts = () => {
               There are no projects currently accepting submissions, but we are
               working hard to bring you some!
               <br />
-              Please check <LinkChannel
-                channel={Channels.NextProjectHints}
-              />{" "}
-              for updates.
+              Please check{" "}
+              <LinkChannel channel={GuildChannel.NextProjectHints} /> for
+              updates.
             </p>
           </Col>
         )}
