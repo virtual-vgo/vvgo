@@ -98,7 +98,7 @@ func TestClient_QueryIdentity(t *testing.T) {
 	assert.Equal(t, "/users/@me", gotRequest.URL.String())
 	//goland:noinspection SpellCheckingInspection
 	assert.Equal(t, []string{"Bearer 6qrZcUqja7812RVdnEKjpzOL4CvHBFG"}, gotRequest.Header["Authorization"])
-	assert.Equal(t, &User{ID: "80351110224678912"}, gotUser)
+	assert.Equal(t, &User{ID: "80351110224678912", Username: "Nelly"}, gotUser)
 }
 
 func TestClient_QueryGuildMember(t *testing.T) {
