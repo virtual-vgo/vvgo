@@ -63,12 +63,12 @@ func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Ro
 
 		if identity.HasRole(role) {
 			if role != models.RoleAnonymous {
-				logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access granted")
+				logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("http server: access granted")
 			}
 			handler.ServeHTTP(w, r.Clone(context.WithValue(ctx, login.CtxKeyVVGOIdentity, &identity)))
 			return
 		} else {
-			logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("access denied")
+			logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("http server: access denied")
 			http_helpers.WriteAPIResponse(ctx, w, http_helpers.NewUnauthorizedError())
 		}
 	})

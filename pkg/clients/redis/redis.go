@@ -9,8 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/errors"
+	"github.com/virtual-vgo/vvgo/pkg/models/apilog"
 	"github.com/virtual-vgo/vvgo/pkg/version"
-	"strings"
 	"time"
 )
 
@@ -69,25 +69,14 @@ func WriteSheet(ctx context.Context, spreadsheetName, name string, values [][]in
 	return nil
 }
 
-const LogsApiKey = "logs:api"
-
-func WriteLog(ctx context.Context, entry *log.Entry) error {
-	timestamp := fmt.Sprintf("%f", time.Duration(entry.Time.UnixNano()).Seconds())
-	entry.WithField("api_version", version.Get())
+func WriteLog(ctx context.Context, entry apilog.Entry) error {
+	timestamp := fmt.Sprintf("%f", time.Duration(entry.StartTime.UnixNano()).Seconds())
+	entry.Version = version.Get()
 	var data bytes.Buffer
-	if err := json.NewEncoder(&data).Encode(entry.Data); err != nil {
+	if err := json.NewEncoder(&data).Encode(entry); err != nil {
 		log.WithError(err).Error("json.Encode() failed")
 	}
-	return Do(ctx, Cmd(nil, ZADD, LogsApiKey, timestamp, data.String()))
-}
-
-func ListLogs(ctx context.Context, start time.Time, end time.Time) ([]string, error) {
-	startString := fmt.Sprintf("%f", time.Duration(start.UnixNano()).Seconds())
-	endString := fmt.Sprintf("%f", time.Duration(end.UnixNano()).Seconds())
-	var entriesJSON []string
-
-	err := Do(ctx, Cmd(&entriesJSON, ZRANGEBYSCORE, LogsApiKey, startString, endString))
-	return entriesJSON, err
+	return Do(ctx, Cmd(nil, ZADD, apilog.RedisKey, timestamp, data.String()))
 }
 
 const ZRANGEBYSCORE = "ZRANGEBYSCORE"
@@ -96,14 +85,22 @@ const SET = "SET"
 const ZADD = "ZADD"
 
 func Do(_ context.Context, a Action) error {
-	truncArgs := func(args []string) string {
-		argString := strings.Join(args, " ")
-		if len(argString) > 64 {
-			argString = argString[:61] + "..."
-		}
-		return argString
+	start := time.Now()
+	if err := Client.Pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...)); err != nil {
+		return err
 	}
 
-	log.WithField("cmd", a.Cmd).Debugf("redis query: %s %s", a.Cmd, truncArgs(a.Args))
-	return Client.Pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...))
+	var argBytes int
+	for _, arg := range a.Args {
+		argBytes += len(arg)
+	}
+	entry := apilog.RedisQuery{
+		StartTime:       start,
+		Cmd:             a.Cmd,
+		ArgLen:          len(a.Args),
+		ArgBytes:        argBytes,
+		DurationSeconds: time.Since(start).Seconds(),
+	}
+	log.WithFields(entry.Fields()).Info("redis client: query completed")
+	return nil
 }
