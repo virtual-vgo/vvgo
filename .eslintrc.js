@@ -17,5 +17,6 @@ module.exports = {
     "react/jsx-uses-react": 1,
     "no-unneeded-ternary": 1,
     "no-var": 1,
+    "@typescript-eslint/no-non-null-assertion": 0,
   },
 };

@@ -33,9 +33,7 @@ type Project struct {
 	YoutubeEmbed            string
 	SubmissionDeadline      string
 	SubmissionLink          string
-
-	// Derived
-	ReferenceTrackLink string
+	BandcampAlbum           string
 }
 
 func (x Project) ProjectPage() string { return "/projects?name=" + x.Name }
@@ -57,13 +55,7 @@ func ValuesToProjects(values [][]interface{}) Projects {
 	}
 	var projects Projects
 	UnmarshalSheet(values, &projects)
-	projects = projects.prune()
-	for i := range projects {
-		if projects[i].ReferenceTrackLink == "" {
-			projects[i].ReferenceTrackLink = downloadLink(projects[i].ReferenceTrack)
-		}
-	}
-	return projects
+	return projects.prune()
 }
 
 func (x Projects) prune() Projects {

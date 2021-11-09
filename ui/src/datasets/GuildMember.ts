@@ -9,5 +9,9 @@ export class GuildMember {
 }
 
 export class DiscordUser {
-  id = "";
+  id;
+
+  constructor(id?: string) {
+    this.id = id ?? "";
+  }
 }

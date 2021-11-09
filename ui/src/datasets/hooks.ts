@@ -9,7 +9,7 @@ import { DatasetRow } from "./Dataset";
 import { Director } from "./Director";
 import { GuildMember } from "./GuildMember";
 import { Highlight } from "./Highlight";
-import { MixtapeProject } from "./mixtapeProject";
+import { MixtapeProject } from "./MixtapeProject";
 import { Part } from "./Part";
 import { Project } from "./Project";
 import { ApiRole, Session, SessionKind } from "./Session";
@@ -67,6 +67,7 @@ export const useParts = (): Part[] | undefined =>
   useApiData("/parts", (resp) => resp.parts);
 export const useProjects = (): Project[] | undefined =>
   useApiData("/projects", (resp) => resp.projects);
+
 export const useSessions = (): [
   Session[] | undefined,
   (sessions: Session[]) => void
@@ -90,7 +91,7 @@ export function useDataset<T>(
   parseRow: (x: DatasetRow) => T
 ): T[] | undefined {
   return useApiData("/dataset?name=" + name, (p) =>
-    p.dataset.map((row) => parseRow(row))
+    p.dataset?.map((row) => parseRow(row))
   );
 }
 

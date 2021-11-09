@@ -32,11 +32,11 @@ export class MixtapeProject {
   toApiObject(): object {
     return {
       Name: this.Name,
-      Mixtape: this.mixtape,
-      Title: this.title,
-      Blurb: this.blurb,
-      Channel: this.channel,
-      Hosts: this.hosts,
+      mixtape: this.mixtape,
+      title: this.title,
+      blurb: this.blurb,
+      channel: this.channel,
+      hosts: this.hosts,
     };
   }
 
