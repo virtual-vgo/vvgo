@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/errors"
+	"github.com/virtual-vgo/vvgo/pkg/version"
 	"strings"
 	"time"
 )
@@ -72,6 +73,7 @@ const LogsApiKey = "logs:api"
 
 func WriteLog(ctx context.Context, entry *log.Entry) error {
 	timestamp := fmt.Sprintf("%f", time.Duration(entry.Time.UnixNano()).Seconds())
+	entry.WithField("api_version", version.Get())
 	var data bytes.Buffer
 	if err := json.NewEncoder(&data).Encode(entry.Data); err != nil {
 		log.WithError(err).Error("json.Encode() failed")

@@ -9,9 +9,9 @@ type Entry struct {
 }
 
 type Request struct {
-	Method string            `json:"method,omitempty"`
-	Size   int64             `json:"size,omitempty"`
-	Url    Url               `json:"url"`
+	Method string `json:"method,omitempty"`
+	Size   int64  `json:"size,omitempty"`
+	Url    Url    `json:"url"`
 }
 
 type Url struct {
@@ -20,6 +20,6 @@ type Url struct {
 }
 
 type Response struct {
-	Code int `json:"code,omitempty"`
+	Code int   `json:"code,omitempty"`
 	Size int64 `json:"size,omitempty"`
 }

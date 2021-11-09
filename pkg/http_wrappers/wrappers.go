@@ -49,12 +49,6 @@ func Handler(handler http.Handler) http.HandlerFunc {
 		writer := ResponseWriter{ResponseWriter: w, code: http.StatusOK} // this is the default status code
 		debugRequestIn(r)
 		handler.ServeHTTP(&writer, r)
-
-		header := make(map[string]string)
-		for key := range r.Header {
-			header[key] = r.Header.Get(key)
-		}
-
 		entry := apilog.Entry{
 			Request: apilog.Request{
 				Method: r.Method,
@@ -93,7 +87,6 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	debugResponse(resp)
-
 
 	logger.WithFields(log.Fields{
 		"request": apilog.Request{
