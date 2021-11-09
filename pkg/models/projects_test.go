@@ -29,7 +29,6 @@ func Test_valuesToProjects(t *testing.T) {
 			YoutubeLink:        "https://bit.ly/vvgo01",
 			YoutubeEmbed:       "https://www.youtube.com/embed/HVKRro_lizk",
 			BannerLink:         "/images/snake-eater-title-text.png",
-			ReferenceTrackLink: "/download?object=01_MSG3_Snake-Eater_VVGO_Reference.mp3",
 		},
 		{
 			Name:               "02-proof-of-a-hero",
@@ -47,7 +46,6 @@ func Test_valuesToProjects(t *testing.T) {
 			YoutubeLink:        "https://bit.ly/vvgo2",
 			YoutubeEmbed:       "https://www.youtube.com/embed/GJZtTe7Ayks",
 			BannerLink:         "/images/Site_Banner_-_Proof_of_a_Hero.png",
-			ReferenceTrackLink: "/download?object=02_MH_Proof-of-a-Hero_Reference-Track_W-CLIX",
 		},
 		{
 			Name:               "03-the-end-begins-to-rock",
@@ -64,7 +62,6 @@ func Test_valuesToProjects(t *testing.T) {
 			YoutubeLink:        "https://bit.ly/vvgo03",
 			YoutubeEmbed:       "https://www.youtube.com/embed/2V52as93SEE",
 			BannerLink:         "/images/VVGO_03_TEBTR_Website_Title.png",
-			ReferenceTrackLink: "/download?object=03_The-End-Begins-to-Rock_Reference-Track-NoCLIX.mp3",
 		},
 	}
 	assert.Equal(t, want, got)
