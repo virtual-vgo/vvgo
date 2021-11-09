@@ -9,10 +9,17 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/errors"
-	"github.com/virtual-vgo/vvgo/pkg/models/apilog"
-	"github.com/virtual-vgo/vvgo/pkg/version"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
+	"github.com/virtual-vgo/vvgo/pkg/models/traces"
+	"strings"
 	"time"
 )
+
+const ZREVRANGEBYSCORE = "ZREVRANGEBYSCORE"
+const GET = "GET"
+const INCR = "INCR"
+const SET = "SET"
+const ZADD = "ZADD"
 
 type Action struct {
 	Rcv  interface{}
@@ -69,38 +76,68 @@ func WriteSheet(ctx context.Context, spreadsheetName, name string, values [][]in
 	return nil
 }
 
-func WriteLog(ctx context.Context, entry apilog.Entry) error {
-	timestamp := fmt.Sprintf("%f", time.Duration(entry.StartTime.UnixNano()).Seconds())
-	entry.Version = version.Get()
-	var data bytes.Buffer
-	if err := json.NewEncoder(&data).Encode(entry); err != nil {
-		log.WithError(err).Error("json.Encode() failed")
+func Do(ctx context.Context, a Action) error {
+	span, ok := traces.NewSpanFromContext(ctx, "redis query")
+	var err error
+	if !ok {
+		logger.Warn("redis client: invalid trace context")
+	} else {
+		defer WriteSpan(span.WithRedisQuery(a.Cmd, a.Args).WithError(err))
 	}
-	return Do(ctx, Cmd(nil, ZADD, apilog.RedisKey, timestamp, data.String()))
+	err = Client.Pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...))
+	if err != nil {
+		logger.
+			WithField("cmd", a.Cmd).
+			WithError(err).
+			Warn("redis client: query completed with error")
+	} else {
+		logger.
+			WithField("cmd", a.Cmd).
+			Info("redis client: query completed")
+	}
+	return err
 }
 
-const ZRANGEBYSCORE = "ZRANGEBYSCORE"
-const GET = "GET"
-const SET = "SET"
-const ZADD = "ZADD"
+func NewTrace(ctx context.Context, name string) (*traces.Span, error) {
+	var traceId int64
+	err := Client.Pool.Do(radix.Cmd(&traceId, INCR, traces.NextTraceIdRedisKey))
+	if err != nil {
+		return nil, err
+	}
+	trace := traces.NewTrace(ctx, uint64(traceId), name)
+	return &trace, nil
+}
 
-func Do(_ context.Context, a Action) error {
-	start := time.Now()
-	if err := Client.Pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...)); err != nil {
-		return err
+func WriteSpan(span traces.Span) {
+	if span.Duration == 0 {
+		span = span.Finish()
 	}
+	timestamp := fmt.Sprintf("%f", time.Duration(span.StartTime.UnixNano()).Seconds())
+	var data bytes.Buffer
+	if err := json.NewEncoder(&data).Encode(span); err != nil {
+		log.WithError(err).Error("json.Encode() failed")
+		return
+	}
+	if err := Client.Pool.Do(radix.Cmd(nil, ZADD, traces.SpansRedisKey, timestamp, data.String())); err != nil {
+		logger.RedisFailure(context.Background(), err)
+		return
+	}
+}
 
-	var argBytes int
-	for _, arg := range a.Args {
-		argBytes += len(arg)
+func ListSpans(ctx context.Context, start, end time.Time) ([]traces.Span, error) {
+	startString := fmt.Sprintf("%f", time.Duration(start.UnixNano()).Seconds())
+	endString := fmt.Sprintf("%f", time.Duration(end.UnixNano()).Seconds())
+	var entriesJSON []string
+	if err := Do(ctx, Cmd(&entriesJSON, ZREVRANGEBYSCORE, traces.SpansRedisKey, endString, startString)); err != nil {
+		return nil, err
 	}
-	entry := apilog.RedisQuery{
-		StartTime:       start,
-		Cmd:             a.Cmd,
-		ArgLen:          len(a.Args),
-		ArgBytes:        argBytes,
-		DurationSeconds: time.Since(start).Seconds(),
+	spans := make([]traces.Span, 0, len(entriesJSON))
+	for _, logJSON := range entriesJSON {
+		var entry traces.Span
+		if err := json.NewDecoder(strings.NewReader(logJSON)).Decode(&entry); err != nil {
+			logger.WithError(err).Error("json.Decode() failed")
+		}
+		spans = append(spans, entry)
 	}
-	log.WithFields(entry.Fields()).Info("redis client: query completed")
-	return nil
+	return spans, nil
 }

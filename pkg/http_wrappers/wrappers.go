@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
-	"github.com/virtual-vgo/vvgo/pkg/models/apilog"
+	"github.com/virtual-vgo/vvgo/pkg/models/traces"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"net/http/httputil"
-	"time"
 )
 
 var DebugHTTP = false
@@ -26,7 +25,7 @@ func NoFollow(client *http.Client) *http.Client {
 // ResponseWriter middleware response writer that captures the http response code and other metrics
 type ResponseWriter struct {
 	code int
-	size int
+	size int64
 	http.ResponseWriter
 }
 
@@ -38,64 +37,78 @@ func (x *ResponseWriter) WriteHeader(code int) {
 func (x *ResponseWriter) Write(b []byte) (int, error) {
 	version.SetVersionHeaders(x)
 	n, err := x.ResponseWriter.Write(b)
-	x.size += n
+	x.size += int64(n)
 	return n, err
 }
 
 func Handler(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		writer := ResponseWriter{ResponseWriter: w, code: http.StatusOK}
-		start := time.Now()
-		handler.ServeHTTP(&writer, r)
-		entry := apilog.Entry{
-			StartTime:        start,
-			RequestMethod:    r.Method,
-			RequestHost:      r.URL.Host,
-			RequestBytes:     r.ContentLength,
-			RequestUrl:       r.URL.Path,
-			RequestUserAgent: r.UserAgent(),
-			ResponseCode:     writer.code,
-			ResponseBytes:    int64(writer.size),
-			DurationSeconds:  time.Since(start).Seconds(),
+		defer debugRequestIn(r)
+
+		ctx := r.Context()
+		writer := &ResponseWriter{ResponseWriter: w, code: http.StatusOK}
+		trace, err := redis.NewTrace(ctx, "incoming http request")
+		if err != nil {
+			logger.RedisFailure(ctx, err)
+		} else {
+			ctx = trace.Context()
+			defer redis.WriteSpan(trace.
+				WithHttpRequest(r).
+				WithHttpResponse(writer.code, writer.size),
+			)
 		}
-		if err := redis.WriteLog(r.Context(), entry); err != nil {
-			logger.RedisFailure(r.Context(), err)
-		}
+		handler.ServeHTTP(writer, r.Clone(ctx))
 
 		switch {
 		case writer.code >= 200 && writer.code < 400:
-			logger.WithFields(entry.Fields()).Info("http server: request completed")
+			logger.
+				WithField("response_code", writer.code).
+				WithField("request_url", r.URL.Path).
+				Info("http server: request completed")
 		default:
-			logger.WithFields(entry.Fields()).Error("http server: request completed with non-200 status")
+			logger.
+				WithField("response_code", writer.code).
+				WithField("request_url", r.URL.Path).
+				Warn("http server: request completed with error status")
 		}
-		debugRequestIn(r)
-
 	}
 }
 
 func DoRequest(r *http.Request) (*http.Response, error) {
-	start := time.Now()
-	resp, err := http.DefaultClient.Do(r)
+	var resp *http.Response
+	var err error
+
+	defer debugRequestOut(r)
+	defer debugResponse(resp)
+
+	span, ok := traces.NewSpanFromContext(r.Context(), "outgoing http request")
+	if !ok {
+		logger.Warn("http client: invalid trace context")
+	} else {
+		defer redis.WriteSpan(
+			span.WithHttpRequest(r).
+				WithHttpResponse(resp.StatusCode, resp.ContentLength).
+				WithError(err),
+		)
+	}
+
+	resp, err = http.DefaultClient.Do(r)
 	if err != nil {
 		return nil, err
 	}
-	entry := apilog.Entry{
-		StartTime:       start,
-		RequestMethod:   r.Method,
-		RequestHost:     r.URL.Host,
-		RequestBytes:    r.ContentLength,
-		RequestUrl:      r.URL.Path,
-		ResponseCode:    resp.StatusCode,
-		ResponseBytes:   resp.ContentLength,
-		DurationSeconds: time.Since(start).Seconds(),
-	}
-	if err := redis.WriteLog(r.Context(), entry); err != nil {
-		logger.RedisFailure(r.Context(), err)
-	}
-	logger.WithFields(entry.Fields()).Info("http client: request completed")
-	debugRequestOut(r)
-	debugResponse(resp)
 
+	switch {
+	case resp.StatusCode >= 200 && resp.StatusCode < 400:
+		logger.
+			WithField("response_code", resp.StatusCode).
+			WithField("request_url", r.URL.Path).
+			Info("http client: request completed")
+	default:
+		logger.
+			WithField("response_code", resp.StatusCode).
+			WithField("request_url", r.URL.Path).
+			Warn("http client: request completed with error status")
+	}
 	return resp, err
 }
 

@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var Logger = logrus.New()
+var Logger = logrus.StandardLogger()
 
 type Entry struct{ *logrus.Entry }
 
