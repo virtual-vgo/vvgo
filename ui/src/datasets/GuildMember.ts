@@ -1,4 +1,5 @@
 import { get } from "lodash/fp";
+import { DiscordUser } from "./DiscordUser";
 
 export class GuildMember {
   user: DiscordUser = new DiscordUser();
@@ -16,17 +17,5 @@ export class GuildMember {
   displayName(): string {
     if ((this.nick ?? "") != "") return this.nick;
     return this.user.username;
-  }
-}
-
-export class DiscordUser {
-  id = "";
-  username = "";
-
-  static fromApiObject(obj: object): DiscordUser {
-    const user = new DiscordUser();
-    user.id = get("id", obj);
-    user.username = get("username", obj);
-    return user;
   }
 }
