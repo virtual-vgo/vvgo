@@ -1,6 +1,5 @@
 import { assert } from "chai";
 import { describe, it } from "mocha";
-import { DiscordUser, GuildMember } from "./GuildMember";
 import { Highlight } from "./Highlight";
 
 describe("Highlight", () => {

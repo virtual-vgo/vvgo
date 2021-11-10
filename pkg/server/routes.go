@@ -8,6 +8,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/auth"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/channels"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/devel"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/guild_members"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/mixtape"
@@ -67,6 +68,7 @@ func Routes() http.Handler {
 	rbacMux.HandleApiFunc("/api/v1/auth/discord", auth.Discord, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/auth/logout", auth.Logout, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth.OAuthRedirect, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/channels/list", channels.HandleList, models.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/credits/pasta", api.CreditsPasta, models.RoleVVGOProductionTeam)
 	rbacMux.HandleApiFunc("/api/v1/credits/table", api.CreditsTable, models.RoleAnonymous)
@@ -79,7 +81,7 @@ func Routes() http.Handler {
 	rbacMux.HandleApiFunc("/api/v1/traces/spans", traces.HandleSpans, models.RoleVVGOProductionTeam)
 	rbacMux.HandleApiFunc("/api/v1/traces/waterfall", traces.HandleWaterfall, models.RoleVVGOExecutiveDirector)
 	rbacMux.HandleApiFunc("/api/v1/me", api.Me, models.RoleAnonymous)
-	rbacMux.HandleApiFunc("/api/v1/mixtape/projects", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/mixtape/projects/", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/parts", api.Parts, models.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOVerifiedMember)

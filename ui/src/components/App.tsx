@@ -112,12 +112,6 @@ export const App = () => {
 const AdminRoutes = () => {
   return (
     <Switch>
-      <Route exact path="/admin/">
-        <AppPage title="Admin Links">
-          <Admin />
-        </AppPage>
-      </Route>
-
       <PrivateRoute path="/admin/mixtape/" role={UserRole.ExecutiveDirector}>
         <AppPage title="Manage Mixtape Projects">
           <ManageMixtapes />
@@ -130,8 +124,10 @@ const AdminRoutes = () => {
         </AppPage>
       </PrivateRoute>
 
-      <Route path="*">
-        <NotFound />
+      <Route path="/admin/">
+        <AppPage title="Admin Links">
+          <Admin />
+        </AppPage>
       </Route>
     </Switch>
   );

@@ -1,4 +1,4 @@
-package guild_members
+package channels
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 
 var HandleList = cache.Handle(4*3600*time.Second, func(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
-	members, err := discord.ListGuildMembers(ctx, 1000, 0)
+	channels, err := discord.GetGuildChannels(ctx)
 	if err != nil {
 		if e, ok := err.(*discord.Error); ok {
 			var buf bytes.Buffer
@@ -30,15 +30,5 @@ var HandleList = cache.Handle(4*3600*time.Second, func(r *http.Request) models.A
 		return http_helpers.NewInternalServerError()
 	}
 
-	verified := make([]discord.GuildMember, 0, len(members))
-	for _, member := range members {
-		for _, role := range member.Roles {
-			if role == models.RoleVVGOVerifiedMember.String() {
-				verified = append(verified, member)
-				break
-			}
-		}
-	}
-
-	return models.ApiResponse{Status: models.StatusOk, GuildMembers: members}
+	return models.ApiResponse{Status: models.StatusOk, Channels: channels}
 })
