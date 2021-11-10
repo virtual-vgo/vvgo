@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/gorilla/mux"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
@@ -30,6 +29,7 @@ type Filesystem string
 
 func (fs Filesystem) Open(name string) (http.File, error) {
 	file, err := os.Open(path.Join(PublicFiles, "dist", name))
+	fmt.Println(name)
 	if errors.Is(err, os.ErrNotExist) {
 		return os.Open(path.Join(PublicFiles, "dist", "index.html"))
 	}
@@ -48,7 +48,7 @@ func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
 }
 
 func Routes() http.Handler {
-	rbacMux := RBACMux{Router: mux.NewRouter()}
+	rbacMux := RBACMux{ServeMux: http.NewServeMux()}
 
 	// authorize
 	for _, role := range []models.Role{models.RoleVVGOVerifiedMember, models.RoleVVGOProductionTeam, models.RoleVVGOExecutiveDirector} {
@@ -80,7 +80,6 @@ func Routes() http.Handler {
 	rbacMux.HandleApiFunc("/api/v1/traces/waterfall", traces.HandleWaterfall, models.RoleVVGOExecutiveDirector)
 	rbacMux.HandleApiFunc("/api/v1/me", api.Me, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/mixtape/projects", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
-	rbacMux.HandleApiFunc("/api/v1/mixtape/projects/{id}", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/parts", api.Parts, models.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOVerifiedMember)

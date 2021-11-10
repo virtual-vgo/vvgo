@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/models/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
 	"net/http"
+	"strings"
 )
 
 type CreateMixtapeProjectParams struct {
@@ -23,6 +23,11 @@ type CreateMixtapeProjectParams struct {
 }
 
 type EditMixtapeProjectParams = CreateMixtapeProjectParams
+
+func idFromUrl(url string) uint64 {
+	s := strings.Split(url, "/")
+	return redis.StringToObjectId(s[len(s)-1])
+}
 
 func HandleProjects(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
@@ -49,7 +54,7 @@ func HandleProjects(r *http.Request) models.ApiResponse {
 		return saveProject(id, data, ctx)
 
 	case http.MethodPut:
-		id := redis.StringToObjectId(mux.Vars(r)["id"])
+		id := idFromUrl(r.URL.Path)
 		if id == 0 {
 			return http_helpers.NewBadRequestError("invalid id")
 		}
@@ -61,7 +66,7 @@ func HandleProjects(r *http.Request) models.ApiResponse {
 		return saveProject(id, data, ctx)
 
 	case http.MethodDelete:
-		id := redis.StringToObjectId(mux.Vars(r)["id"])
+		id := idFromUrl(r.URL.Path)
 		if id == 0 {
 			return http_helpers.NewBadRequestError("invalid id")
 		}
