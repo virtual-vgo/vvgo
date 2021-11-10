@@ -35,7 +35,7 @@ func HandleSpans(r *http.Request) models.ApiResponse {
 	var data SpansRequest
 	data.ReadParams(r.URL.Query())
 
-	spans, err := redis.ListSpans(ctx, data.Start, data.End)
+	spans, err := redis.ListSpans(ctx, data.End, data.Start)
 	if err != nil {
 		logger.RedisFailure(ctx, err)
 		return http_helpers.NewRedisError(err)
@@ -69,7 +69,7 @@ func HandleWaterfall(r *http.Request) models.ApiResponse {
 	for id := range traceIdsSet {
 		traceIds = append(traceIds, id)
 	}
-	sort.Slice(traceIds, func(i, j int) bool { return i > j })
+	sort.Slice(traceIds, func(i, j int) bool { return traceIds[i] > traceIds[j] })
 
 	waterfalls := make([]traces.Waterfall, 0, len(traceIds))
 	for _, traceId := range traceIds {

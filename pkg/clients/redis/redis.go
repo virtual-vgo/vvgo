@@ -16,6 +16,7 @@ import (
 )
 
 const ZREVRANGEBYSCORE = "ZREVRANGEBYSCORE"
+const ZRANGEBYSCORE = "ZRANGEBYSCORE"
 const GET = "GET"
 const INCR = "INCR"
 const SET = "SET"
@@ -77,22 +78,23 @@ func WriteSheet(ctx context.Context, spreadsheetName, name string, values [][]in
 }
 
 func Do(ctx context.Context, a Action) error {
-	span, ok := traces.NewSpanFromContext(ctx, "redis query")
 	var err error
+	metrics := traces.NewRedisQueryMetrics(a.Cmd, a.Args)
+	span, ok := traces.NewSpanFromContext(ctx, "redis query")
 	if !ok {
 		logger.Warn("redis client: invalid trace context")
 	} else {
-		defer WriteSpan(span.WithRedisQuery(a.Cmd, a.Args).WithError(err))
+		defer func() { WriteSpan(span.WithRedisQuery(metrics).WithError(err)) }()
 	}
-	err = Client.Pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...))
-	if err != nil {
+
+	if err = Client.Pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...)); err != nil {
 		logger.
-			WithField("cmd", a.Cmd).
+			WithFields(metrics.Fields()).
 			WithError(err).
 			Warn("redis client: query completed with error")
 	} else {
 		logger.
-			WithField("cmd", a.Cmd).
+			WithFields(metrics.Fields()).
 			Info("redis client: query completed")
 	}
 	return err
@@ -127,8 +129,14 @@ func WriteSpan(span traces.Span) {
 func ListSpans(ctx context.Context, start, end time.Time) ([]traces.Span, error) {
 	startString := fmt.Sprintf("%f", time.Duration(start.UnixNano()).Seconds())
 	endString := fmt.Sprintf("%f", time.Duration(end.UnixNano()).Seconds())
+
+	cmd := ZRANGEBYSCORE
+	if end.Before(start) {
+		cmd = ZREVRANGEBYSCORE
+	}
+
 	var entriesJSON []string
-	if err := Do(ctx, Cmd(&entriesJSON, ZREVRANGEBYSCORE, traces.SpansRedisKey, endString, startString)); err != nil {
+	if err := Do(ctx, Cmd(&entriesJSON, cmd, traces.SpansRedisKey, startString, endString)); err != nil {
 		return nil, err
 	}
 	spans := make([]traces.Span, 0, len(entriesJSON))

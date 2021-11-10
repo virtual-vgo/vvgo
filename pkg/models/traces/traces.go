@@ -1,9 +1,12 @@
 package traces
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
 	"net/http"
@@ -65,28 +68,28 @@ func NewWaterfall(traceId uint64, spans []Span) (Waterfall, error) {
 }
 
 type Span struct {
-	Id           uint64           `json:"id"`
-	Name         string           `json:"name"`
-	TraceId      uint64           `json:"trace_id"`
-	ParentId     uint64           `json:"parent_id"`
-	StartTime    time.Time        `json:"start_time"`
-	Duration     float64          `json:"duration"`
-	HttpRequest  *HttpRequest     `json:"http_request,omitempty"`
-	HttpResponse *HttpResponse    `json:"http_response,omitempty"`
-	RedisQuery   *RedisQuery      `json:"redis_query,omitempty"`
-	Error        string           `json:"error,omitempty"`
-	ApiVersion   *version.Version `json:"api_version,omitempty"`
+	Id           uint64               `json:"id"`
+	Name         string               `json:"name"`
+	TraceId      uint64               `json:"trace_id"`
+	ParentId     uint64               `json:"parent_id"`
+	StartTime    time.Time            `json:"start_time"`
+	Duration     float64              `json:"duration"`
+	HttpRequest  *HttpRequestMetrics  `json:"http_request,omitempty"`
+	HttpResponse *HttpResponseMetrics `json:"http_response,omitempty"`
+	RedisQuery   *RedisQueryMetrics   `json:"redis_query,omitempty"`
+	Error        string               `json:"error,omitempty"`
+	ApiVersion   *version.Version     `json:"api_version,omitempty"`
 	ctx          context.Context
 }
 
 func NewTrace(ctx context.Context, id uint64, name string) Span {
 	span := newSpan(nil, id, 0, name)
-	span.ctx = context.WithValue(ctx, SpanContextKey, span)
+	span.ctx = context.WithValue(ctx, SpanContextKey, &span)
 	return span
 }
 
 func NewSpanFromContext(ctx context.Context, name string) (Span, bool) {
-	parent, ok := ctx.Value(SpanContextKey).(Span)
+	parent, ok := ctx.Value(SpanContextKey).(*Span)
 	if !ok {
 		return Span{}, false
 	}
@@ -114,35 +117,18 @@ func (x Span) WithApiVersion() Span {
 	return x
 }
 
-func (x Span) WithHttpRequest(r *http.Request) Span {
-	x.HttpRequest = &HttpRequest{
-		Method:    r.Method,
-		Host:      r.URL.Host,
-		Bytes:     r.ContentLength,
-		Url:       r.URL.Path,
-		UserAgent: r.UserAgent(),
-	}
+func (x Span) WithHttpRequestMetrics(metrics HttpRequestMetrics) Span {
+	x.HttpRequest = &metrics
 	return x
 }
 
-func (x Span) WithHttpResponse(code int, size int64) Span {
-	x.HttpResponse = &HttpResponse{
-		Code:  code,
-		Bytes: size,
-	}
+func (x Span) WithHttpResponseMetrics(metrics HttpResponseMetrics) Span {
+	x.HttpResponse = &metrics
 	return x
 }
 
-func (x Span) WithRedisQuery(cmd string, args []string) Span {
-	var argBytes int
-	for _, arg := range args {
-		argBytes += len(arg)
-	}
-	x.RedisQuery = &RedisQuery{
-		Cmd:      cmd,
-		ArgCount: len(args),
-		ArgBytes: argBytes,
-	}
+func (x Span) WithRedisQuery(metrics RedisQueryMetrics) Span {
+	x.RedisQuery = &metrics
 	return x
 }
 
@@ -159,7 +145,7 @@ func (x Span) Start() Span                   { x.StartTime = time.Now(); x.Durat
 func (x Span) Finish() Span                  { x.Duration = time.Since(x.StartTime).Seconds(); return x }
 func (x Span) FinishedAt(end time.Time) Span { x.Duration = end.Sub(x.StartTime).Seconds(); return x }
 
-type HttpRequest struct {
+type HttpRequestMetrics struct {
 	Host      string `json:"host"`
 	Method    string `json:"method"`
 	Bytes     int64  `json:"bytes"`
@@ -167,13 +153,63 @@ type HttpRequest struct {
 	UserAgent string `json:"user_agent"`
 }
 
-type HttpResponse struct {
+func NewHttpRequestMetrics(r *http.Request) HttpRequestMetrics {
+	return HttpRequestMetrics{
+		Method:    r.Method,
+		Host:      r.URL.Host,
+		Bytes:     r.ContentLength,
+		Url:       r.URL.Path,
+		UserAgent: r.UserAgent(),
+	}
+}
+
+func (x HttpRequestMetrics) Fields() map[string]interface{} { return fieldsFromStruct(x) }
+
+type HttpResponseMetrics struct {
 	Code  int   `json:"code"`
 	Bytes int64 `json:"size"`
 }
 
-type RedisQuery struct {
+func NewHttpResponseMetrics(code int, size int64) HttpResponseMetrics {
+	return HttpResponseMetrics{
+		Code:  code,
+		Bytes: size,
+	}
+}
+
+func (x HttpResponseMetrics) Fields() map[string]interface{} { return fieldsFromStruct(x) }
+
+type RedisQueryMetrics struct {
 	Cmd      string `json:"cmd"`
 	ArgCount int    `json:"arg_count"`
 	ArgBytes int    `json:"arg_bytes"`
+}
+
+func NewRedisQueryMetrics(cmd string, args []string) RedisQueryMetrics {
+	var argBytes int
+	for _, arg := range args {
+		argBytes += len(arg)
+	}
+	return RedisQueryMetrics{
+		Cmd:      cmd,
+		ArgCount: len(args),
+		ArgBytes: argBytes,
+	}
+}
+
+func (x RedisQueryMetrics) Fields() map[string]interface{} { return fieldsFromStruct(x) }
+
+func fieldsFromStruct(str interface{}) map[string]interface{} {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(str); err != nil {
+		logger.JsonEncodeFailure(context.Background(), err)
+		return nil
+	}
+
+	var fields map[string]interface{}
+	if err := json.NewDecoder(&buf).Decode(&fields); err != nil {
+		logger.JsonDecodeFailure(context.Background(), err)
+		return nil
+	}
+	return fields
 }

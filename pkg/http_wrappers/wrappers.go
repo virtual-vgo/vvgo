@@ -52,23 +52,30 @@ func Handler(handler http.Handler) http.HandlerFunc {
 			logger.RedisFailure(ctx, err)
 		} else {
 			ctx = trace.Context()
-			defer redis.WriteSpan(trace.
-				WithHttpRequest(r).
-				WithHttpResponse(writer.code, writer.size),
-			)
 		}
 		handler.ServeHTTP(writer, r.Clone(ctx))
+
+		requestMetrics := traces.NewHttpRequestMetrics(r)
+		responseMetrics := traces.NewHttpResponseMetrics(writer.code, writer.size)
+		if trace != nil {
+			redis.WriteSpan(
+				trace.Finish().
+					WithHttpRequestMetrics(requestMetrics).
+					WithHttpResponseMetrics(responseMetrics).
+					WithError(err),
+			)
+		}
 
 		switch {
 		case writer.code >= 200 && writer.code < 400:
 			logger.
-				WithField("response_code", writer.code).
-				WithField("request_url", r.URL.Path).
+				WithFields(requestMetrics.Fields()).
+				WithFields(responseMetrics.Fields()).
 				Info("http server: request completed")
 		default:
 			logger.
-				WithField("response_code", writer.code).
-				WithField("request_url", r.URL.Path).
+				WithFields(requestMetrics.Fields()).
+				WithFields(responseMetrics.Fields()).
 				Warn("http server: request completed with error status")
 		}
 	}
@@ -76,40 +83,41 @@ func Handler(handler http.Handler) http.HandlerFunc {
 
 func DoRequest(r *http.Request) (*http.Response, error) {
 	var resp *http.Response
-	var err error
+	var respErr error
 
 	defer debugRequestOut(r)
 	defer debugResponse(resp)
 
-	span, ok := traces.NewSpanFromContext(r.Context(), "outgoing http request")
-	if !ok {
+	span, spanOk := traces.NewSpanFromContext(r.Context(), "outgoing http request")
+	if !spanOk {
 		logger.Warn("http client: invalid trace context")
-	} else {
-		defer redis.WriteSpan(
-			span.WithHttpRequest(r).
-				WithHttpResponse(resp.StatusCode, resp.ContentLength).
-				WithError(err),
-		)
 	}
 
-	resp, err = http.DefaultClient.Do(r)
-	if err != nil {
-		return nil, err
+	resp, respErr = http.DefaultClient.Do(r)
+	requestMetrics := traces.NewHttpRequestMetrics(r)
+	responseMetrics := traces.NewHttpResponseMetrics(resp.StatusCode, resp.ContentLength)
+	if spanOk {
+		redis.WriteSpan(
+			span.Finish().
+				WithHttpRequestMetrics(requestMetrics).
+				WithHttpResponseMetrics(responseMetrics).
+				WithError(respErr),
+		)
 	}
 
 	switch {
 	case resp.StatusCode >= 200 && resp.StatusCode < 400:
 		logger.
-			WithField("response_code", resp.StatusCode).
-			WithField("request_url", r.URL.Path).
+			WithFields(requestMetrics.Fields()).
+			WithFields(responseMetrics.Fields()).
 			Info("http client: request completed")
 	default:
 		logger.
-			WithField("response_code", resp.StatusCode).
-			WithField("request_url", r.URL.Path).
+			WithFields(requestMetrics.Fields()).
+			WithFields(responseMetrics.Fields()).
 			Warn("http client: request completed with error status")
 	}
-	return resp, err
+	return resp, respErr
 }
 
 func Get(url string) (*http.Response, error) {
