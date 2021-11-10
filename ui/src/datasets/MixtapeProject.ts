@@ -26,9 +26,9 @@ export class MixtapeProject {
   }
 
   resolveNicks(members: GuildMember[]): string[] {
-    return uniq(
-      members.filter((m) => this.hosts?.includes(m.user.id)).map((m) => m.nick)
-    );
+    return members
+      .filter((m) => this.hosts?.includes(m.user.id))
+      .map((m) => m.displayName());
   }
 
   toApiObject(): object {
@@ -43,7 +43,7 @@ export class MixtapeProject {
   }
 
   create(): Promise<ApiResponse> {
-    return fetchApi(`/mixtape/projects`, {
+    return fetchApi(`/mixtape/projects/`, {
       method: "POST",
       body: JSON.stringify(this.toApiObject()),
     });

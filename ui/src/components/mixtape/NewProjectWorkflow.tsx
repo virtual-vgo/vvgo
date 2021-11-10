@@ -14,8 +14,7 @@ import {
 import {
   GuildMember,
   MixtapeProject,
-  useGuildMemberLookup,
-  useGuildMemberSearch,
+  useGuildMembers,
   useMixtapeProjects,
 } from "../../datasets";
 import { LoadingText } from "../shared/LoadingText";
@@ -43,9 +42,7 @@ const ProjectTable = (props: {
   projects: MixtapeProject[];
   setProjects: (projects: MixtapeProject[]) => void;
 }) => {
-  const hosts = useGuildMemberLookup(
-    props.projects.flatMap((r) => r.hosts ?? [])
-  );
+  const guildMembers = useGuildMembers();
   const onClickDelete = (project: MixtapeProject) => {
     console.log("deleting", project);
     props.setProjects(props.projects.filter((x) => project.Name != x.Name));
@@ -66,7 +63,7 @@ const ProjectTable = (props: {
             <td>{x.Name}</td>
             <td>{x.title}</td>
             <td>{x.channel}</td>
-            <td>{x.resolveNicks(hosts).join(", ")}</td>
+            <td>{x.resolveNicks(guildMembers ?? []).join(", ")}</td>
             <td>
               <Button onClick={() => onClickDelete(x)}>Delete</Button>
             </td>
@@ -224,15 +221,14 @@ const SetHostsCard = (props: {
   saveProject: (project: MixtapeProject) => void;
   toastLimit: number;
 }) => {
-  const initHosts: GuildMember[] =
-    props.project.hosts?.map((x) => ({
-      user: { id: x },
-      nick: "",
-      roles: [],
-    })) ?? [];
-  const [hosts, setHosts] = useState(initHosts);
+  const [hosts, setHosts] = useState<GuildMember[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const guildMembers = useGuildMemberSearch(searchQuery, props.toastLimit);
+  const guildMembers = useGuildMembers()?.filter(
+    (m) =>
+      m.user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.nick.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.user.id.toString().includes(searchQuery)
+  );
 
   return (
     <Card
@@ -275,7 +271,7 @@ const SetHostsCard = (props: {
             ) : (
               <Toast>
                 {guildMembers
-                  .filter((m) => !isEmpty(m.nick))
+                  ?.filter((m) => !isEmpty(m.nick))
                   .filter((m) => !hosts.includes(m))
                   .map((m) => (
                     <Dropdown.Item

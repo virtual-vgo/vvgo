@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { getSession } from "../../auth";
 import { links } from "../../data/links";
 import {
+  GuildMember,
   MixtapeProject,
   Session,
   useGuildMembers,
@@ -12,6 +13,7 @@ import {
   UserRole,
 } from "../../datasets";
 import { FancyProjectMenu, useMenuSelection } from "../shared/FancyProjectMenu";
+import { LinkUser } from "../shared/LinkChannel";
 
 const permaLink = (project: MixtapeProject) => `/mixtape/${project.Name}`;
 const pathMatcher = /\/mixtape\/(.+)\/?/;
@@ -31,11 +33,13 @@ const searchProjects = (
 export const MemberDashboard = () => {
   const [mixtapeProjects, setMixtapeProjects] = useMixtapeProjects();
   const guildMembers = useGuildMembers() ?? [];
+
+  const filteredProjects = mixtapeProjects?.filter((p) => !isEmpty(p.title));
   const [selected, setSelected] = useMenuSelection(
     mixtapeProjects ?? [],
     pathMatcher,
     permaLink,
-    shuffle(mixtapeProjects).pop()
+    shuffle(filteredProjects).pop()
   );
   const me = getSession();
 
@@ -63,7 +67,7 @@ export const MemberDashboard = () => {
         <Col lg={9}>
           <ProjectCard
             me={me}
-            hostNicks={selected?.resolveNicks(guildMembers) ?? []}
+            guildMembers={guildMembers}
             project={selected}
             setProject={setSelected}
             allProjects={mixtapeProjects ?? []}
@@ -77,7 +81,7 @@ export const MemberDashboard = () => {
 
 const ProjectCard = (props: {
   me: Session;
-  hostNicks: string[];
+  guildMembers: GuildMember[];
   project: MixtapeProject | undefined;
   setProject: (x: MixtapeProject) => void;
   allProjects: MixtapeProject[];
@@ -113,10 +117,22 @@ const ProjectCard = (props: {
     });
   };
 
-  const hosts = isEmpty(props.hostNicks.join(", ")) ? (
-    <span />
+  const hosts = isEmpty(props.project.hosts) ? (
+    <div />
   ) : (
-    <span>Hosts: {props.hostNicks.join(", ")}</span>
+    <div>
+      Hosts:{" "}
+      <ul>
+        {props.guildMembers
+          .filter((m) => props.project?.hosts?.includes(m.user.id))
+          .filter((m) => m.user && m.user.username && m.user.username != "")
+          .map((m) => (
+            <li>
+              <LinkUser member={m} />{" "}
+            </li>
+          ))}
+      </ul>
+    </div>
   );
 
   const blurbInput = (

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
@@ -33,12 +34,23 @@ func HandleProjects(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 	switch r.Method {
 	case http.MethodGet:
+		id := idFromUrl(r.URL.Path)
 		projects, err := redis.ListMixtapeProjects(ctx)
 		if err != nil {
 			logger.MethodFailure(ctx, "models.ListMixtapeProjects", err)
 			return http_helpers.NewInternalServerError()
 		}
-		return models.ApiResponse{Status: models.StatusOk, MixtapeProjects: projects}
+		if id == 0 {
+			return models.ApiResponse{Status: models.StatusOk, MixtapeProjects: projects}
+		}
+		for _, project := range projects {
+			if project.Id == id {
+				return models.ApiResponse{Status: models.StatusOk, MixtapeProject: &project}
+			}
+		}
+		return http_helpers.NewNotFoundError(fmt.Sprintf("id %s not found", id))
+
+
 
 	case http.MethodPost:
 		var data CreateMixtapeProjectParams

@@ -79,7 +79,7 @@ func Routes() http.Handler {
 	rbacMux.HandleApiFunc("/api/v1/traces/spans", traces.HandleSpans, models.RoleVVGOProductionTeam)
 	rbacMux.HandleApiFunc("/api/v1/traces/waterfall", traces.HandleWaterfall, models.RoleVVGOExecutiveDirector)
 	rbacMux.HandleApiFunc("/api/v1/me", api.Me, models.RoleAnonymous)
-	rbacMux.HandleApiFunc("/api/v1/mixtape/projects", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/mixtape/projects/", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/parts", api.Parts, models.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOVerifiedMember)
