@@ -26,6 +26,9 @@ export const useCreditsTable = (project: Project): CreditsTable | undefined => {
 export const useDirectors = (): Director[] | undefined =>
   useDataset("Leaders", Director.fromDatasetRow);
 
+export const useGuildMembers = (): GuildMember[] | undefined =>
+  useApiData("/guild_members/list", (resp) => resp.guildMembers);
+
 export const useGuildMemberSearch = (
   query: string,
   limit: number

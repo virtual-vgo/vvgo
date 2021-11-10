@@ -151,7 +151,6 @@ const CreditsTopicMasonry = (props: { topic: CreditsTopic }) => {
 };
 
 const TeamCredits = (props: { team: CreditsTeamRow }) => {
-  console.log(props.team);
   return (
     <div className="text-center">
       <h5>{props.team.Name}</h5>

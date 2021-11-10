@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
 import { getSession, updateLogin } from "../auth";
 import { latestProject, useProjects, UserRole } from "../datasets";
+import Admin from "./admin/Admin";
 import Contact from "./Contact";
 import AccessDenied from "./errors/AccessDenied";
 import InternalOopsie from "./errors/InternalOopsie";
@@ -24,13 +25,18 @@ const NewProjectWorkflow = lazy(() => import("./mixtape/NewProjectWorkflow"));
 const MemberDashboard = lazy(() => import("./mixtape/MemberDashboard"));
 const About = lazy(() => import("./About"));
 const CreditsMaker = lazy(() => import("./CreditsMaker"));
-const Sessions = lazy(() => import("./Sessions"));
+const Sessions = lazy(() => import("./admin/Sessions"));
+const ManageMixtapes = lazy(() => import("./admin/Mixtapes"));
 
 export const App = () => {
   updateLogin();
   return (
     <BrowserRouter>
       <Switch>
+        <PrivateRoute path="/admin" role={UserRole.ExecutiveDirector}>
+          <AdminRoutes />
+        </PrivateRoute>
+
         <PrivateRoute path="/credits-maker/" role={UserRole.ProductionTeam}>
           <AppPage title="Credits Maker">
             <CreditsMaker />
@@ -43,12 +49,6 @@ export const App = () => {
           </AppPage>
         </PrivateRoute>
 
-        <PrivateRoute path="/sessions/" role={UserRole.ExecutiveDirector}>
-          <AppPage title="Sessions">
-            <Sessions />
-          </AppPage>
-        </PrivateRoute>
-
         <PrivateRoute path="/parts/" role={UserRole.VerifiedMember}>
           <AppPage title="Parts">
             <Parts />
@@ -56,21 +56,7 @@ export const App = () => {
         </PrivateRoute>
 
         <PrivateRoute path="/mixtape/" role={UserRole.VerifiedMember}>
-          <Switch>
-            <PrivateRoute
-              path="/mixtape/NewProjectWorkflow/"
-              role={UserRole.ExecutiveDirector}
-            >
-              <AppPage title="New Project Workflow">
-                <NewProjectWorkflow />
-              </AppPage>
-            </PrivateRoute>
-            <Route>
-              <AppPage title="Wintry Mix">
-                <MemberDashboard />
-              </AppPage>
-            </Route>
-          </Switch>
+          <MixtapeRoutes />
         </PrivateRoute>
 
         <Route path="/projects/">
@@ -98,19 +84,7 @@ export const App = () => {
         </Route>
 
         <Route path="/login/">
-          <Switch>
-            <Route path="/login/failure/">
-              <LoginFailure />
-            </Route>
-            <Route path="/login/discord/">
-              <LoginDiscord />
-            </Route>
-            <Route>
-              <AppPage title="Login">
-                <Login />
-              </AppPage>
-            </Route>
-          </Switch>
+          <LoginRoutes />
         </Route>
 
         <Route exact path="/">
@@ -132,6 +106,75 @@ export const App = () => {
         </Route>
       </Switch>
     </BrowserRouter>
+  );
+};
+
+const AdminRoutes = () => {
+  return (
+    <Switch>
+      <Route exact path="/admin/">
+        <AppPage title="Admin Links">
+          <Admin />
+        </AppPage>
+      </Route>
+
+      <PrivateRoute path="/admin/mixtape/" role={UserRole.ExecutiveDirector}>
+        <AppPage title="Manage Mixtape Projects">
+          <ManageMixtapes />
+        </AppPage>
+      </PrivateRoute>
+
+      <PrivateRoute path="/admin/sessions/" role={UserRole.ExecutiveDirector}>
+        <AppPage title="Sessions">
+          <Sessions />
+        </AppPage>
+      </PrivateRoute>
+
+      <Route path="*">
+        <NotFound />
+      </Route>
+    </Switch>
+  );
+};
+
+const MixtapeRoutes = () => {
+  return (
+    <Switch>
+      <PrivateRoute
+        path="/mixtape/NewProjectWorkflow/"
+        role={UserRole.ExecutiveDirector}
+      >
+        <AppPage title="New Project Workflow">
+          <NewProjectWorkflow />
+        </AppPage>
+      </PrivateRoute>
+      <Route>
+        <AppPage title="Wintry Mix">
+          <MemberDashboard />
+        </AppPage>
+      </Route>
+    </Switch>
+  );
+};
+
+const LoginRoutes = () => {
+  return (
+    <Switch>
+      <Route path="/login/failure/">
+        <LoginFailure />
+      </Route>
+      <Route path="/login/discord/">
+        <LoginDiscord />
+      </Route>
+      <Route>
+        <AppPage title="Login">
+          <Login />
+        </AppPage>
+      </Route>
+      <Route path="*">
+        <NotFound />
+      </Route>
+    </Switch>
   );
 };
 
@@ -198,7 +241,7 @@ const BandcampOverlay = (props: {
         style={{ border: 0, width: "100%", height: "42px" }}
         src={src}
         seamless
-      ></iframe>
+      />
     </div>
   );
 };

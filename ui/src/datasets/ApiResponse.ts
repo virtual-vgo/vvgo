@@ -26,6 +26,7 @@ export class ApiResponse {
   guildMembers?: GuildMember[];
   identity?: Session;
   mixtapeProjects?: MixtapeProject[];
+  mixtapeProject?: MixtapeProject;
   oauthRedirect?: OAuthRedirect;
   parts?: Part[];
   projects?: Project[];
@@ -54,6 +55,9 @@ export class ApiResponse {
           GuildMember.fromApiObject(p)
         );
         apiResp.identity = Session.fromApiObject(get("Identity", obj));
+        apiResp.mixtapeProject = MixtapeProject.fromApiObject(
+          get("MixtapeProject", obj)
+        );
         apiResp.mixtapeProjects = get("MixtapeProjects", obj)?.map(
           (p: object[]) => MixtapeProject.fromApiObject(p)
         );

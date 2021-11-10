@@ -78,7 +78,7 @@ func ListSessions(ctx context.Context, identity Identity) ([]Identity, error) {
 		switch {
 		case identity.HasRole(RoleVVGOExecutiveDirector):
 			want = append(want, session)
-		case session.DiscordID == identity.DiscordID:
+		case session.DiscordID != "" && session.DiscordID == identity.DiscordID:
 			want = append(want, session)
 		}
 	}

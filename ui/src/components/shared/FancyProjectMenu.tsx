@@ -108,7 +108,8 @@ export function useToggles<T>(toggles: ToggleParams<T>[]): Toggle<T>[] {
   const [toggleState, setToggleState] = useState(0);
   return toggles.map((t, i) => ({
     ...t,
-    state: (toggleState & (1 << i)) == 1 << i,
+    // prettier-ignore
+    state: (toggleState & (1 << i)) == (1 << i),
     setState: (x: boolean) =>
       setToggleState(x ? toggleState | (1 << i) : toggleState & ~(1 << i)),
   }));
