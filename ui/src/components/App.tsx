@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
 import { getSession, updateLogin } from "../auth";
 import { latestProject, useProjects, UserRole } from "../datasets";
+import Admin from "./admin/Admin";
 import Contact from "./Contact";
 import AccessDenied from "./errors/AccessDenied";
 import InternalOopsie from "./errors/InternalOopsie";
@@ -26,62 +27,6 @@ const About = lazy(() => import("./About"));
 const CreditsMaker = lazy(() => import("./CreditsMaker"));
 const Sessions = lazy(() => import("./admin/Sessions"));
 const ManageMixtapes = lazy(() => import("./admin/Mixtapes"));
-
-const AdminRoutes = () => {
-  return (
-    <Switch>
-      <PrivateRoute path="/admin/mixtapes/" role={UserRole.ExecutiveDirector}>
-        <AppPage title="Manage Mixtapes">
-          <ManageMixtapes />
-        </AppPage>
-      </PrivateRoute>
-
-      <PrivateRoute path="/admin/sessions/" role={UserRole.ExecutiveDirector}>
-        <AppPage title="Sessions">
-          <Sessions />
-        </AppPage>
-      </PrivateRoute>
-    </Switch>
-  );
-};
-
-const MixtapeRoutes = () => {
-  return (
-    <Switch>
-      <PrivateRoute
-        path="/mixtape/NewProjectWorkflow/"
-        role={UserRole.ExecutiveDirector}
-      >
-        <AppPage title="New Project Workflow">
-          <NewProjectWorkflow />
-        </AppPage>
-      </PrivateRoute>
-      <Route>
-        <AppPage title="Wintry Mix">
-          <MemberDashboard />
-        </AppPage>
-      </Route>
-    </Switch>
-  );
-};
-
-const LoginRoutes = () => {
-  return (
-    <Switch>
-      <Route path="/login/failure/">
-        <LoginFailure />
-      </Route>
-      <Route path="/login/discord/">
-        <LoginDiscord />
-      </Route>
-      <Route>
-        <AppPage title="Login">
-          <Login />
-        </AppPage>
-      </Route>
-    </Switch>
-  );
-};
 
 export const App = () => {
   updateLogin();
@@ -161,6 +106,75 @@ export const App = () => {
         </Route>
       </Switch>
     </BrowserRouter>
+  );
+};
+
+const AdminRoutes = () => {
+  return (
+    <Switch>
+      <Route exact path="/admin/">
+        <AppPage title="Admin Links">
+          <Admin />
+        </AppPage>
+      </Route>
+
+      <PrivateRoute path="/admin/mixtape/" role={UserRole.ExecutiveDirector}>
+        <AppPage title="Manage Mixtape Projects">
+          <ManageMixtapes />
+        </AppPage>
+      </PrivateRoute>
+
+      <PrivateRoute path="/admin/sessions/" role={UserRole.ExecutiveDirector}>
+        <AppPage title="Sessions">
+          <Sessions />
+        </AppPage>
+      </PrivateRoute>
+
+      <Route path="*">
+        <NotFound />
+      </Route>
+    </Switch>
+  );
+};
+
+const MixtapeRoutes = () => {
+  return (
+    <Switch>
+      <PrivateRoute
+        path="/mixtape/NewProjectWorkflow/"
+        role={UserRole.ExecutiveDirector}
+      >
+        <AppPage title="New Project Workflow">
+          <NewProjectWorkflow />
+        </AppPage>
+      </PrivateRoute>
+      <Route>
+        <AppPage title="Wintry Mix">
+          <MemberDashboard />
+        </AppPage>
+      </Route>
+    </Switch>
+  );
+};
+
+const LoginRoutes = () => {
+  return (
+    <Switch>
+      <Route path="/login/failure/">
+        <LoginFailure />
+      </Route>
+      <Route path="/login/discord/">
+        <LoginDiscord />
+      </Route>
+      <Route>
+        <AppPage title="Login">
+          <Login />
+        </AppPage>
+      </Route>
+      <Route path="*">
+        <NotFound />
+      </Route>
+    </Switch>
   );
 };
 

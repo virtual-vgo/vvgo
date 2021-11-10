@@ -3,15 +3,6 @@ import { describe, it } from "mocha";
 import { MixtapeProject } from "./MixtapeProject";
 
 describe("MixtapeProject", () => {
-  it("#constructor", () => {
-    const got = new MixtapeProject(
-      "farfalle with sausage & asparagus",
-      "pasta"
-    );
-    assert.equal(got.Name, "farfalle with sausage & asparagus");
-    assert.equal(got.mixtape, "pasta");
-  });
-
   it("#fromApiObject", () => {
     const got = MixtapeProject.fromApiObject({
       Name: "farfalle with sausage & asparagus",
@@ -34,10 +25,9 @@ describe("MixtapeProject", () => {
   });
 
   it("#toApiObject", () => {
-    const proj = new MixtapeProject(
-      "farfalle with sausage & asparagus",
-      "pasta"
-    );
+    const proj = new MixtapeProject();
+    proj.Name = "farfalle with sausage & asparagus";
+    proj.mixtape = "pasta";
     proj.title = "farfalle-with-sausage-asparagus";
     proj.blurb =
       "Farfalle, playfully referred to as bow tie pasta, soaks up just the right amount of sauce. Use it in Italian dinners, pasta salads and casseroles.";

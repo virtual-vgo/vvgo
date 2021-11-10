@@ -31,31 +31,28 @@ export class MixtapeProject {
     );
   }
 
+  toApiObject(): object {
+    return {
+      Name: this.Name,
+      mixtape: this.mixtape,
+      title: this.title,
+      blurb: this.blurb,
+      channel: this.channel,
+      hosts: this.hosts,
+    };
+  }
+
   create(): Promise<ApiResponse> {
     return fetchApi(`/mixtape/projects`, {
       method: "POST",
-      body: JSON.stringify({
-        Name: this.Name,
-        mixtape: this.mixtape,
-        title: this.title,
-        blurb: this.blurb,
-        channel: this.channel,
-        hosts: this.hosts,
-      }),
+      body: JSON.stringify(this.toApiObject()),
     });
   }
 
   save(): Promise<ApiResponse> {
     return fetchApi(`/mixtape/projects/${this.id}`, {
       method: "PUT",
-      body: JSON.stringify({
-        Name: this.Name,
-        mixtape: this.mixtape,
-        title: this.title,
-        blurb: this.blurb,
-        channel: this.channel,
-        hosts: this.hosts,
-      }),
+      body: JSON.stringify(this.toApiObject()),
     });
   }
 

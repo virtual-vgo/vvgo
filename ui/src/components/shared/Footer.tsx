@@ -2,7 +2,7 @@ import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 
 export const Footer = () => (
-  <Row className="text-center m-4">
+  <Row className="position-sticky bottom-0 start-50 translate-middle-x">
     <Col>
       <a
         className="text-light"
