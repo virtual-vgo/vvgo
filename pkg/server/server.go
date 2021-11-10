@@ -1,8 +1,9 @@
 package server
 
 import (
+	logurs "github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
-	"github.com/virtual-vgo/vvgo/pkg/logger"
+	"log"
 	"net/http"
 )
 
@@ -15,7 +16,7 @@ func NewServer(listenAddress string) *Server {
 		Server: &http.Server{
 			Addr:     listenAddress,
 			Handler:  http_wrappers.Handler(Routes()),
-			ErrorLog: logger.StdLogger(),
+			ErrorLog: log.New(logurs.New().Writer(), "", 0),
 		},
 	}
 }

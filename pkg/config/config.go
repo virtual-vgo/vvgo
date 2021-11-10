@@ -2,9 +2,8 @@ package config
 
 import (
 	"bytes"
-	"context"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/virtual-vgo/vvgo/pkg/logger"
+	"github.com/sirupsen/logrus"
 	"os"
 	"strings"
 )
@@ -55,18 +54,17 @@ func ProcessEnv() { envconfig.MustProcess("", &Config) }
 func ProcessEnvFile(envFile string) {
 	defer ProcessEnv()
 
-	ctx := context.Background()
 	file, err := os.Open(envFile)
 	if err != nil {
-		logger.WithField("file_name", envFile).MethodFailure(ctx, "os.Open", err)
-		logger.Fatal("cannot read environment file")
+		logrus.WithField("file_name", envFile).WithError(err).Error("os.Open() failed")
+		logrus.Fatal("cannot read environment file")
 		return
 	}
 
 	var buf bytes.Buffer
 	if _, err = buf.ReadFrom(file); err != nil {
-		logger.WithField("file_name", envFile).MethodFailure(ctx, "file.Read", err)
-		logger.Fatal("cannot read environment file")
+		logrus.WithField("file_name", envFile).WithError(err).Error("file.Read() failed")
+		logrus.Fatal("cannot read environment file")
 		return
 	}
 
@@ -78,14 +76,13 @@ func ProcessEnvFile(envFile string) {
 
 		fields := strings.SplitN(line, "=", 2)
 		if len(fields) != 2 {
-			logger.Fatal("cannot parse environment file")
+			logrus.Fatal("cannot parse environment file")
 			return
 		}
 
 		key, val := fields[0], fields[1]
 		if err = os.Setenv(key, val); err != nil {
-			logger.WithField("file_name", envFile).MethodFailure(ctx, "os.Setenv", err)
-			logger.Fatal("cannot update environment variables")
+			logrus.WithField("file_name", envFile).WithError(err).Error("os.Setenv() failed")
 			return
 		}
 	}

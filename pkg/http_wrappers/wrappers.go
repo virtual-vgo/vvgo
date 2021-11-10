@@ -1,16 +1,13 @@
 package http_wrappers
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
+	"github.com/virtual-vgo/vvgo/pkg/models/traces"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
-	"strings"
-	"time"
 )
 
 var DebugHTTP = false
@@ -28,7 +25,7 @@ func NoFollow(client *http.Client) *http.Client {
 // ResponseWriter middleware response writer that captures the http response code and other metrics
 type ResponseWriter struct {
 	code int
-	size int
+	size int64
 	http.ResponseWriter
 }
 
@@ -40,84 +37,87 @@ func (x *ResponseWriter) WriteHeader(code int) {
 func (x *ResponseWriter) Write(b []byte) (int, error) {
 	version.SetVersionHeaders(x)
 	n, err := x.ResponseWriter.Write(b)
-	x.size += n
+	x.size += int64(n)
 	return n, err
 }
 
 func Handler(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
+		defer debugRequestIn(r)
 
-		writer := ResponseWriter{ResponseWriter: w, code: http.StatusOK} // this is the default status code
-		debugRequestIn(r)
-		handler.ServeHTTP(&writer, r)
+		ctx := r.Context()
+		writer := &ResponseWriter{ResponseWriter: w, code: http.StatusOK}
+		trace, err := redis.NewTrace(ctx, "incoming http request")
+		if err != nil {
+			logger.RedisFailure(ctx, err)
+		} else {
+			ctx = trace.Context()
+		}
+		handler.ServeHTTP(writer, r.Clone(ctx))
 
-		fields := logrus.Fields{
-			"request_method":     r.Method,
-			"request_size":       r.ContentLength,
-			"request_path":       r.URL.Path,
-			"request_host":       r.URL.Host,
-			"request_user_agent": r.UserAgent(),
-			"response_status":    writer.code,
-			"response_size":      writer.size,
-			"start_time":         start,
-			"duration":           time.Since(start).Seconds(),
+		requestMetrics := traces.NewHttpRequestMetrics(r)
+		responseMetrics := traces.NewHttpResponseMetrics(writer.code, writer.size)
+		if trace != nil {
+			redis.WriteSpan(
+				trace.Finish().
+					WithHttpRequestMetrics(requestMetrics).
+					WithHttpResponseMetrics(responseMetrics).
+					WithError(err),
+			)
 		}
 
-		// submit results
 		switch {
 		case writer.code >= 200 && writer.code < 400:
-			logger.WithFields(fields).Info("http server: request completed")
+			logger.
+				WithFields(requestMetrics.Fields()).
+				WithFields(responseMetrics.Fields()).
+				Info("http server: request completed")
 		default:
-			logger.WithFields(fields).Error("http server: request completed with error")
+			logger.
+				WithFields(requestMetrics.Fields()).
+				WithFields(responseMetrics.Fields()).
+				Warn("http server: request completed with error status")
 		}
 	}
 }
 
-type Non200StatusError struct {
-	Code int
-	Body string
-}
+func DoRequest(r *http.Request) (*http.Response, error) {
+	var resp *http.Response
+	var respErr error
 
-func (x Non200StatusError) Error() string {
-	return fmt.Sprintf("non-200 status code: (%d) %s", x.Code, x.Body)
-}
+	defer debugRequestOut(r)
+	defer debugResponse(resp)
 
-func DoRequest(req *http.Request) (*http.Response, error) {
-	start := time.Now()
-	ctx := req.Context()
-
-	// do the request
-	debugRequestOut(req)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
+	span, spanOk := traces.NewSpanFromContext(r.Context(), "outgoing http request")
+	if !spanOk {
+		logger.Warn("http client: invalid trace context")
 	}
-	if resp.StatusCode != 200 {
-		var body bytes.Buffer
-		if _, err := body.ReadFrom(resp.Body); err != nil {
-			logger.MethodFailure(ctx, "request.Body", err)
-			// log this error but don't return
-		}
-		return nil, Non200StatusError{
-			Code: resp.StatusCode,
-			Body: body.String(),
-		}
-	}
-	debugResponse(resp)
 
-	// submit results
-	logger.WithFields(logrus.Fields{
-		"request_method":  req.Method,
-		"request_size":    req.ContentLength,
-		"request_path":    req.URL.Path,
-		"request_host":    req.URL.Host,
-		"response_status": resp.StatusCode,
-		"response_size":   resp.ContentLength,
-		"start_time":      start,
-		"duration":        time.Since(start).Seconds(),
-	}).Info("http client: request completed")
-	return resp, err
+	resp, respErr = http.DefaultClient.Do(r)
+	requestMetrics := traces.NewHttpRequestMetrics(r)
+	responseMetrics := traces.NewHttpResponseMetrics(resp.StatusCode, resp.ContentLength)
+	if spanOk {
+		redis.WriteSpan(
+			span.Finish().
+				WithHttpRequestMetrics(requestMetrics).
+				WithHttpResponseMetrics(responseMetrics).
+				WithError(respErr),
+		)
+	}
+
+	switch {
+	case resp.StatusCode >= 200 && resp.StatusCode < 400:
+		logger.
+			WithFields(requestMetrics.Fields()).
+			WithFields(responseMetrics.Fields()).
+			Info("http client: request completed")
+	default:
+		logger.
+			WithFields(requestMetrics.Fields()).
+			WithFields(responseMetrics.Fields()).
+			Warn("http client: request completed with error status")
+	}
+	return resp, respErr
 }
 
 func Get(url string) (*http.Response, error) {
@@ -125,15 +125,6 @@ func Get(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	return DoRequest(req)
-}
-
-func PostForm(url string, data url.Values) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(data.Encode()))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return DoRequest(req)
 }
 

@@ -1,7 +1,9 @@
 package models
 
 import (
+	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
+	"github.com/virtual-vgo/vvgo/pkg/models/traces"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 )
 
@@ -30,11 +32,14 @@ type ApiResponse struct {
 	Ballot          ArrangementsBallot    `json:"Ballot,omitempty"`
 	OAuthRedirect   *OAuthRedirect        `json:"OAuthRedirect,omitempty"`
 	CreditsPasta    *CreditsPasta         `json:"CreditsPasta,omitempty"`
+	Spans           []traces.Span         `json:"Spans,omitempty"`
+	Waterfalls      []traces.Waterfall    `json:"Waterfalls,omitempty"`
 }
 
 type ApiError struct {
-	Code  int    `json:"Code"`
-	Error string `json:"Error"`
+	Code  int             `json:"Code"`
+	Error string          `json:"Error"`
+	Data  json.RawMessage `json:"Data"`
 }
 
 type CreditsPasta struct {

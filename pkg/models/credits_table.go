@@ -1,7 +1,5 @@
 package models
 
-import "fmt"
-
 // CreditsTable is the credits for a project.
 type CreditsTable []CreditsTopicRow
 
@@ -42,6 +40,5 @@ func BuildCreditsTable(credits Credits, project Project) CreditsTable {
 	for i := range rows {
 		table[i] = *rows[i]
 	}
-	fmt.Println(table)
 	return table
 }
