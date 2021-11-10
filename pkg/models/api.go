@@ -27,6 +27,7 @@ type ApiResponse struct {
 	Dataset         []map[string]string   `json:"Dataset,omitempty"`
 	Identity        *Identity             `json:"Identity,omitempty"`
 	GuildMembers    []discord.GuildMember `json:"GuildMembers,omitempty"`
+	Channels        []discord.Channel     `json:"channels,omitempty"`
 	MixtapeProjects []mixtape.Project     `json:"MixtapeProjects,omitempty"`
 	MixtapeProject  *mixtape.Project      `json:"MixtapeProject,omitempty"`
 	WorkflowResult  []WorkflowTaskResult  `json:"WorkflowResult,omitempty"`

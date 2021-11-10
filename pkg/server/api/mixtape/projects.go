@@ -50,8 +50,6 @@ func HandleProjects(r *http.Request) models.ApiResponse {
 		}
 		return http_helpers.NewNotFoundError(fmt.Sprintf("id %s not found", id))
 
-
-
 	case http.MethodPost:
 		var data CreateMixtapeProjectParams
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {

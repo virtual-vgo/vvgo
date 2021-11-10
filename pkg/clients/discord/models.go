@@ -255,3 +255,15 @@ type CreateGuildChannelParams struct {
 	Type  ChannelType `json:"type,omitempty"`
 	Topic string      `json:"topic,omitempty"`
 }
+
+type Channel struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	Type int    `json:"type"`
+}
+
+type RateLimitResponse struct {
+	Message    string  `json:"message"`
+	RetryAfter float64 `json:"retry_after"`
+	Global     bool    `json:"global"`
+}

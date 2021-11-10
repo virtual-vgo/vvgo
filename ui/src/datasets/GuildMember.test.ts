@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import { describe, it } from "mocha";
-import { DiscordUser, GuildMember } from "./GuildMember";
+import { GuildMember } from "./GuildMember";
 
 describe("GuildMember", () => {
   it("#fromApiObject", () => {

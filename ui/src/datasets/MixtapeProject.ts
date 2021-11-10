@@ -1,4 +1,4 @@
-import { get, uniq } from "lodash/fp";
+import { get } from "lodash/fp";
 import { ApiResponse } from "./ApiResponse";
 import { GuildMember } from "./GuildMember";
 import { fetchApi } from "./hooks";

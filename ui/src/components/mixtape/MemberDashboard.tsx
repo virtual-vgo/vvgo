@@ -126,8 +126,8 @@ const ProjectCard = (props: {
         {props.guildMembers
           .filter((m) => props.project?.hosts?.includes(m.user.id))
           .filter((m) => m.user && m.user.username && m.user.username != "")
-          .map((m) => (
-            <li>
+          .map((m, i) => (
+            <li key={i}>
               <LinkUser member={m} />{" "}
             </li>
           ))}

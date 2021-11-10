@@ -28,6 +28,12 @@ const VVGOProductionTeamRoleID = "746434659252174971"
 const VVGOExecutiveDirectorRoleID = "690626333062987866"
 const VVGOProductionDirectorRoleID = "805504313072943155"
 
+var IgnoreChannelIds = []string{
+	"690626217594060892",
+	"817084492635701298",
+	"817084789139308544",
+}
+
 func LoginURL(state string) string {
 	query := make(url.Values)
 	query.Set("client_id", OAuthClientID)
@@ -161,6 +167,33 @@ func ListGuildMembers(ctx context.Context, limit int, after int) ([]GuildMember,
 		return nil, err
 	}
 	return guildMembers, nil
+}
+
+func GetGuildChannels(ctx context.Context) ([]Channel, error) {
+	const path = "/guilds/" + VVGOGuildID + "/channels"
+	var dest []Channel
+	err := doDiscordBotRequestWithJsonParams(ctx, http.MethodGet, path, nil, &dest)
+	if err != nil {
+		return nil, err
+	}
+
+	shouldSkip := func(id string) bool {
+		for _, ignored := range IgnoreChannelIds {
+			if id == ignored {
+				return false
+			}
+		}
+		return true
+	}
+
+	allowed := make([]Channel, len(dest))
+	for _, ch := range dest {
+		if shouldSkip(ch.Id) {
+			continue
+		}
+		allowed = append(allowed, ch)
+	}
+	return dest, err
 }
 
 func CreateGuildChannel(ctx context.Context, params CreateGuildChannelParams) error {
