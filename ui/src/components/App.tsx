@@ -24,13 +24,74 @@ const NewProjectWorkflow = lazy(() => import("./mixtape/NewProjectWorkflow"));
 const MemberDashboard = lazy(() => import("./mixtape/MemberDashboard"));
 const About = lazy(() => import("./About"));
 const CreditsMaker = lazy(() => import("./CreditsMaker"));
-const Sessions = lazy(() => import("./Sessions"));
+const Sessions = lazy(() => import("./admin/Sessions"));
+const ManageMixtapes = lazy(() => import("./admin/Mixtapes"));
+
+const AdminRoutes = () => {
+  return (
+    <Switch>
+      <PrivateRoute path="/admin/mixtapes/" role={UserRole.ExecutiveDirector}>
+        <AppPage title="Manage Mixtapes">
+          <ManageMixtapes />
+        </AppPage>
+      </PrivateRoute>
+
+      <PrivateRoute path="/admin/sessions/" role={UserRole.ExecutiveDirector}>
+        <AppPage title="Sessions">
+          <Sessions />
+        </AppPage>
+      </PrivateRoute>
+    </Switch>
+  );
+};
+
+const MixtapeRoutes = () => {
+  return (
+    <Switch>
+      <PrivateRoute
+        path="/mixtape/NewProjectWorkflow/"
+        role={UserRole.ExecutiveDirector}
+      >
+        <AppPage title="New Project Workflow">
+          <NewProjectWorkflow />
+        </AppPage>
+      </PrivateRoute>
+      <Route>
+        <AppPage title="Wintry Mix">
+          <MemberDashboard />
+        </AppPage>
+      </Route>
+    </Switch>
+  );
+};
+
+const LoginRoutes = () => {
+  return (
+    <Switch>
+      <Route path="/login/failure/">
+        <LoginFailure />
+      </Route>
+      <Route path="/login/discord/">
+        <LoginDiscord />
+      </Route>
+      <Route>
+        <AppPage title="Login">
+          <Login />
+        </AppPage>
+      </Route>
+    </Switch>
+  );
+};
 
 export const App = () => {
   updateLogin();
   return (
     <BrowserRouter>
       <Switch>
+        <PrivateRoute path="/admin" role={UserRole.ExecutiveDirector}>
+          <AdminRoutes />
+        </PrivateRoute>
+
         <PrivateRoute path="/credits-maker/" role={UserRole.ProductionTeam}>
           <AppPage title="Credits Maker">
             <CreditsMaker />
@@ -43,12 +104,6 @@ export const App = () => {
           </AppPage>
         </PrivateRoute>
 
-        <PrivateRoute path="/sessions/" role={UserRole.ExecutiveDirector}>
-          <AppPage title="Sessions">
-            <Sessions />
-          </AppPage>
-        </PrivateRoute>
-
         <PrivateRoute path="/parts/" role={UserRole.VerifiedMember}>
           <AppPage title="Parts">
             <Parts />
@@ -56,21 +111,7 @@ export const App = () => {
         </PrivateRoute>
 
         <PrivateRoute path="/mixtape/" role={UserRole.VerifiedMember}>
-          <Switch>
-            <PrivateRoute
-              path="/mixtape/NewProjectWorkflow/"
-              role={UserRole.ExecutiveDirector}
-            >
-              <AppPage title="New Project Workflow">
-                <NewProjectWorkflow />
-              </AppPage>
-            </PrivateRoute>
-            <Route>
-              <AppPage title="Wintry Mix">
-                <MemberDashboard />
-              </AppPage>
-            </Route>
-          </Switch>
+          <MixtapeRoutes />
         </PrivateRoute>
 
         <Route path="/projects/">
@@ -98,19 +139,7 @@ export const App = () => {
         </Route>
 
         <Route path="/login/">
-          <Switch>
-            <Route path="/login/failure/">
-              <LoginFailure />
-            </Route>
-            <Route path="/login/discord/">
-              <LoginDiscord />
-            </Route>
-            <Route>
-              <AppPage title="Login">
-                <Login />
-              </AppPage>
-            </Route>
-          </Switch>
+          <LoginRoutes />
         </Route>
 
         <Route exact path="/">
@@ -198,7 +227,7 @@ const BandcampOverlay = (props: {
         style={{ border: 0, width: "100%", height: "42px" }}
         src={src}
         seamless
-      ></iframe>
+      />
     </div>
   );
 };

@@ -10,17 +10,30 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/errors"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
+	"github.com/virtual-vgo/vvgo/pkg/models/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/models/traces"
+	"strconv"
 	"strings"
 	"time"
 )
 
-const ZREVRANGEBYSCORE = "ZREVRANGEBYSCORE"
-const ZRANGEBYSCORE = "ZRANGEBYSCORE"
-const GET = "GET"
-const INCR = "INCR"
-const SET = "SET"
-const ZADD = "ZADD"
+const (
+	GET              = "GET"
+	HDEL             = "HDEL"
+	HGET             = "HGET"
+	HGETALL          = "HGETALL"
+	HSET             = "HSET"
+	INCR             = "INCR"
+	SET              = "SET"
+	ZADD             = "ZADD"
+	ZRANGEBYSCORE    = "ZRANGEBYSCORE"
+	ZREVRANGEBYSCORE = "ZREVRANGEBYSCORE"
+)
+
+type ObjectId uint64
+
+func StringToObjectId(str string) uint64 { id, _ := strconv.ParseUint(str, 10, 64); return id }
+func (id ObjectId) String() string       { return strconv.FormatUint(uint64(id), 10) }
 
 type Action struct {
 	Rcv  interface{}
@@ -148,4 +161,42 @@ func ListSpans(ctx context.Context, start, end time.Time) ([]traces.Span, error)
 		spans = append(spans, entry)
 	}
 	return spans, nil
+}
+
+func ListMixtapeProjects(ctx context.Context) ([]mixtape.Project, error) {
+	var projectsJSON []string
+	if err := Do(ctx, Cmd(&projectsJSON, "HVALS", mixtape.ProjectsRedisKey)); err != nil {
+		return nil, errors.RedisFailure(err)
+	}
+
+	projects := make([]mixtape.Project, 0, len(projectsJSON))
+	for _, projectJSON := range projectsJSON {
+		var project mixtape.Project
+		if err := json.NewDecoder(strings.NewReader(projectJSON)).Decode(&project); err != nil {
+			logger.JsonDecodeFailure(ctx, err)
+			continue
+		}
+		projects = append(projects, project)
+	}
+
+	return projects, nil
+}
+
+func SaveMixtapeProject(ctx context.Context, project mixtape.Project) error {
+	if project.Id == 0 {
+		return errors.New("project id cannot be zero")
+	}
+
+	var projectJSON bytes.Buffer
+	if err := json.NewEncoder(&projectJSON).Encode(project); err != nil {
+		return err
+	}
+
+	return Do(ctx, Cmd(nil, HSET,
+		mixtape.ProjectsRedisKey, strconv.FormatUint(project.Id, 16), projectJSON.String()))
+}
+
+func DeleteMixtapeProject(ctx context.Context, id uint64) error {
+	return Do(ctx, Cmd(nil, HDEL,
+		mixtape.ProjectsRedisKey, strconv.FormatUint(id, 16)))
 }

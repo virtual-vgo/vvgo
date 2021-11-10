@@ -6,9 +6,9 @@ import {
   useState,
 } from "react";
 import { Button } from "react-bootstrap";
-import { getSession } from "../auth";
-import { Session, SessionKind, useSessions } from "../datasets";
-import { LoadingText } from "./shared/LoadingText";
+import { getSession } from "../../auth";
+import { Session, SessionKind, useSessions } from "../../datasets";
+import { LoadingText } from "../shared/LoadingText";
 
 export const Sessions = () => {
   const me = getSession();

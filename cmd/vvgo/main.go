@@ -1,12 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
+	"github.com/virtual-vgo/vvgo/pkg/models/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/server"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
@@ -16,6 +21,41 @@ import (
 	"syscall"
 	"time"
 )
+
+func migrateMixtapes() {
+	ctx := context.Background()
+	projects, err := redis.ListMixtapeProjects(context.Background())
+	if err != nil {
+		logger.Fatal("redis.Do() failed:", err)
+	}
+
+	reversed := make([]mixtape.Project, len(projects))
+	for i := range projects {
+		reversed[i] = projects[len(projects)-1-i]
+	}
+
+	for _, proj := range reversed {
+		if proj.Id == 0 {
+			var id uint64
+			if err := redis.Do(ctx, redis.Cmd(&id, redis.INCR, mixtape.NextProjectIdRedisKey)); err != nil {
+				logger.Fatal("redis.Do() failed:", err)
+			}
+			proj.Id = id
+			var projJSON bytes.Buffer
+			if err := json.NewEncoder(&projJSON).Encode(proj); err != nil {
+				logger.Fatal("json.Encode() failed:", err)
+			}
+			if err := redis.Do(ctx, redis.Cmd(nil, redis.HSET,
+				mixtape.ProjectsRedisKey, redis.ObjectId(proj.Id).String(), projJSON.String())); err != nil {
+				logger.Fatal("redis.Do() failed:", err)
+			}
+			if err := redis.Do(ctx, redis.Cmd(nil, redis.HDEL,
+				mixtape.ProjectsRedisKey, proj.Name)); err != nil {
+				logger.Fatal("redis.Do() failed:", err)
+			}
+		}
+	}
+}
 
 func main() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -41,6 +81,8 @@ func main() {
 	default:
 		config.ProcessEnv()
 	}
+
+	migrateMixtapes()
 
 	apiServer := server.NewServer(config.Config.VVGO.ListenAddress)
 	logger.Println("http server: listening on " + config.Config.VVGO.ListenAddress)

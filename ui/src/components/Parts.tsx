@@ -52,10 +52,9 @@ export const Parts = () => {
         .filter((r) => !r.PartsArchived)
     )
   );
+  if (!allProjects) return <LoadingText />;
 
-  if (!(allProjects && parts)) return <LoadingText />;
-
-  const projectsWithParts = new Set(parts.map((p) => p.Project));
+  const projectsWithParts = new Set(parts?.map((p) => p.Project));
   const choices = allProjects.filter(
     (r) => projectsWithParts.has(r.Name) || !r.PartsReleased
   );
@@ -121,7 +120,7 @@ export const Parts = () => {
             <PartsTable
               downloadSession={downloadSession}
               projectName={selected.Name}
-              parts={parts}
+              parts={parts ?? []}
             />
           </Col>
         ) : (

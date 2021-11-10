@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
@@ -13,10 +14,10 @@ import (
 // RBACMux Authenticate http requests using session based authentication.
 // If the request has a valid session or token with the required role, it is allowed access.
 type RBACMux struct {
-	*http.ServeMux
+	*mux.Router
 }
 
-func NewRBACMux() RBACMux { return RBACMux{ServeMux: http.NewServeMux()} }
+func NewRBACMux() RBACMux { return RBACMux{Router: mux.NewRouter()} }
 
 // HandleFunc registers the handler function for the given pattern.
 func (auth *RBACMux) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request), role models.Role) {
@@ -56,7 +57,7 @@ func (auth *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) m
 }
 
 func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Role) {
-	auth.ServeMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+	auth.Router.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		var identity models.Identity
 		login.ReadSessionFromRequest(ctx, r, &identity)

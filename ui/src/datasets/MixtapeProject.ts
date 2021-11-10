@@ -1,43 +1,28 @@
-import { get, isEmpty, uniq } from "lodash/fp";
+import { get, uniq } from "lodash/fp";
 import { ApiResponse } from "./ApiResponse";
 import { GuildMember } from "./GuildMember";
 import { fetchApi } from "./hooks";
 
 export class MixtapeProject {
-  Name: string;
-  mixtape: string;
+  id = 0;
+  Name = "";
+  mixtape = "";
   title = "";
   blurb = "";
   channel = "";
   hosts: string[] = [];
 
-  constructor(name: string, mixtape: string) {
-    this.Name = name;
-    this.mixtape = mixtape;
-  }
-
   static fromApiObject(obj: object): MixtapeProject {
-    const name = get("Name", obj);
-    if (isEmpty(name)) throw `empty field name`;
-    const mixtape = get("mixtape", obj);
-    if (isEmpty(name)) throw `empty field mixtape`;
-    const project = new MixtapeProject(name, mixtape);
+    const project = new MixtapeProject();
+    project.id = get("id", obj);
+    project.Name = get("Name", obj);
+    project.mixtape = get("mixtape", obj);
+    project.Name = get("Name", obj);
     project.title = get("title", obj) ?? "";
     project.blurb = get("blurb", obj) ?? "";
     project.channel = get("channel", obj) ?? "";
     project.hosts = get("hosts", obj) ?? [];
     return project;
-  }
-
-  toApiObject(): object {
-    return {
-      Name: this.Name,
-      mixtape: this.mixtape,
-      title: this.title,
-      blurb: this.blurb,
-      channel: this.channel,
-      hosts: this.hosts,
-    };
   }
 
   resolveNicks(members: GuildMember[]): string[] {
@@ -46,17 +31,35 @@ export class MixtapeProject {
     );
   }
 
-  save(): Promise<ApiResponse> {
-    return fetchApi("/mixtape/projects", {
+  create(): Promise<ApiResponse> {
+    return fetchApi(`/mixtape/projects`, {
       method: "POST",
-      body: JSON.stringify([this.toApiObject()]),
+      body: JSON.stringify({
+        Name: this.Name,
+        mixtape: this.mixtape,
+        title: this.title,
+        blurb: this.blurb,
+        channel: this.channel,
+        hosts: this.hosts,
+      }),
+    });
+  }
+
+  save(): Promise<ApiResponse> {
+    return fetchApi(`/mixtape/projects/${this.id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        Name: this.Name,
+        mixtape: this.mixtape,
+        title: this.title,
+        blurb: this.blurb,
+        channel: this.channel,
+        hosts: this.hosts,
+      }),
     });
   }
 
   delete(): Promise<ApiResponse> {
-    return fetchApi("/mixtape/projects", {
-      method: "DELETE",
-      body: JSON.stringify([this.Name]),
-    });
+    return fetchApi(`/mixtape/projects/${this.id}`, { method: "DELETE" });
   }
 }

@@ -7,13 +7,11 @@ import { links } from "../../data/links";
 import {
   MixtapeProject,
   Session,
-  useGuildMemberLookup,
+  useGuildMembers,
   useMixtapeProjects,
-  useProjects,
   UserRole,
 } from "../../datasets";
 import { FancyProjectMenu, useMenuSelection } from "../shared/FancyProjectMenu";
-import { CurrentMixtape } from "./NewProjectWorkflow";
 
 const permaLink = (project: MixtapeProject) => `/mixtape/${project.Name}`;
 const pathMatcher = /\/mixtape\/(.+)\/?/;
@@ -31,11 +29,8 @@ const searchProjects = (
 };
 
 export const MemberDashboard = () => {
-  const vvgoProjects = useProjects();
   const [mixtapeProjects, setMixtapeProjects] = useMixtapeProjects();
-  const hosts = useGuildMemberLookup(
-    (mixtapeProjects ?? []).flatMap((r) => r.hosts ?? [])
-  );
+  const guildMembers = useGuildMembers() ?? [];
   const [selected, setSelected] = useMenuSelection(
     mixtapeProjects ?? [],
     pathMatcher,
@@ -44,17 +39,8 @@ export const MemberDashboard = () => {
   );
   const me = getSession();
 
-  const thisMixtape = vvgoProjects
-    ?.filter((x) => x.Name == CurrentMixtape)
-    .pop();
-
-  const submissionDeadline =
-    thisMixtape?.SubmissionDeadline ?? "the heat death of the universe";
   return (
     <div>
-      <h3>
-        <em>Hosts: final track submissions are due by{submissionDeadline}.</em>
-      </h3>
       <Row className={"row-cols-1"}>
         <Col lg={3}>
           <FancyProjectMenu
@@ -68,25 +54,21 @@ export const MemberDashboard = () => {
                 {proj.title}
                 <br />
                 <small>
-                  <em>{proj.resolveNicks(hosts).join(", ")}</em>
+                  <em>{proj.resolveNicks(guildMembers).join(", ")}</em>
                 </small>
               </div>
             )}
           />
         </Col>
         <Col lg={9}>
-          {selected ? (
-            <ProjectCard
-              me={me}
-              hostNicks={selected.resolveNicks(hosts)}
-              project={selected}
-              setProject={setSelected}
-              allProjects={mixtapeProjects ?? []}
-              setAllProjects={setMixtapeProjects}
-            />
-          ) : (
-            <div />
-          )}
+          <ProjectCard
+            me={me}
+            hostNicks={selected?.resolveNicks(guildMembers) ?? []}
+            project={selected}
+            setProject={setSelected}
+            allProjects={mixtapeProjects ?? []}
+            setAllProjects={setMixtapeProjects}
+          />
         </Col>
       </Row>
     </div>
@@ -96,14 +78,14 @@ export const MemberDashboard = () => {
 const ProjectCard = (props: {
   me: Session;
   hostNicks: string[];
-  project: MixtapeProject;
+  project: MixtapeProject | undefined;
   setProject: (x: MixtapeProject) => void;
   allProjects: MixtapeProject[];
   setAllProjects: (x: MixtapeProject[]) => void;
 }) => {
   const [showEdit, setShowEdit] = useState("");
   const blurbRef = useRef({} as HTMLTextAreaElement);
-
+  if (!props.project) return <div />;
   let canEdit = false;
   switch (true) {
     case isEmpty(props.me.discordID):
@@ -117,68 +99,92 @@ const ProjectCard = (props: {
   }
 
   const onClickSubmit = () => {
+    if (!props.project) return;
     const proj = props.project;
     proj.blurb = blurbRef.current.value;
     setShowEdit("");
     proj.save().then((resp) => {
       props.setProject(proj);
-      props.setAllProjects(
-        uniqBy(
-          (x) => x.Name,
-          [...(resp.mixtapeProjects ?? []), ...props.allProjects]
-        )
+      const allProjects = uniqBy(
+        (x) => x.Name,
+        [...(resp.mixtapeProjects ?? []), ...props.allProjects]
       );
+      props.setAllProjects(allProjects);
     });
   };
 
-  const blurb = props.project.blurb ?? "";
+  const hosts = isEmpty(props.hostNicks.join(", ")) ? (
+    <span />
+  ) : (
+    <span>Hosts: {props.hostNicks.join(", ")}</span>
+  );
+
+  const blurbInput = (
+    <div className="mb-3">
+      <FormControl
+        ref={blurbRef}
+        as={"textarea"}
+        defaultValue={props.project.blurb}
+        placeholder={"Description"}
+      />
+      <br />
+      <a href={links.Help.Markdown}>Markdown Cheatsheet</a>
+    </div>
+  );
+
+  const blurbContent = (
+    <ReactMarkdown>
+      {props.project.blurb == ""
+        ? "Project details coming soon!"
+        : props.project.blurb}
+    </ReactMarkdown>
+  );
+
+  let bottomButtons: JSX.Element[] = [];
+  if (showEdit == props.project.Name)
+    bottomButtons = [
+      <Button
+        key={1}
+        type={"button"}
+        variant={"outline-primary"}
+        size={"sm"}
+        onClick={onClickSubmit}
+      >
+        Submit
+      </Button>,
+      <Button
+        key={2}
+        type={"button"}
+        variant={"outline-primary"}
+        size={"sm"}
+        onClick={() => setShowEdit("")}
+      >
+        Cancel
+      </Button>,
+    ];
+  else if (canEdit)
+    bottomButtons = [
+      <Button
+        key={1}
+        type={"button"}
+        variant={"outline-primary"}
+        size={"sm"}
+        onClick={() => props.project && setShowEdit(props.project.Name)}
+      >
+        Edit
+      </Button>,
+    ];
+
   return (
     <div>
       <h1>{props.project.title}</h1>
       <h4>
-        Hosts: {props.hostNicks.join(", ")}
+        {hosts}
         <br />
         Channel: <em>{props.project.channel}</em>
       </h4>
-      {showEdit == props.project.Name ? (
-        <div className="mb-3">
-          <FormControl
-            ref={blurbRef}
-            as={"textarea"}
-            defaultValue={props.project.blurb}
-            placeholder={"Description"}
-          />
-          <br />
-          <a href={links.Help.Markdown}>Markdown Cheatsheet</a>
-        </div>
-      ) : (
-        <ReactMarkdown>
-          {blurb == "" ? "Project details coming soon!" : blurb}
-        </ReactMarkdown>
-      )}
-      {canEdit ? (
-        showEdit == props.project.Name ? (
-          <Button
-            type={"button"}
-            variant={"outline-primary"}
-            size={"sm"}
-            onClick={onClickSubmit}
-          >
-            Submit
-          </Button>
-        ) : (
-          <Button
-            type={"button"}
-            variant={"outline-primary"}
-            size={"sm"}
-            onClick={() => setShowEdit(props.project.Name)}
-          >
-            Edit
-          </Button>
-        )
-      ) : (
-        <div />
-      )}
+      {showEdit == props.project.Name ? blurbInput : blurbContent}
+      {bottomButtons}
     </div>
   );
 };

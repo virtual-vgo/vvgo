@@ -87,7 +87,8 @@ const WorkflowApp = (props: {
   const params = new URLSearchParams(window.location.search);
   const initProject: MixtapeProject =
     props.projects.filter((x) => x.Name == params.get("name")).pop() ??
-    new MixtapeProject("", CurrentMixtape);
+    new MixtapeProject();
+  initProject.mixtape = CurrentMixtape;
 
   const [curProject, setCurProject] = useState(initProject);
   const saveProject = (project: MixtapeProject) => {

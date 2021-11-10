@@ -1,24 +1,34 @@
 package mixtape
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/models"
+	"github.com/virtual-vgo/vvgo/pkg/models/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
-	"github.com/virtual-vgo/vvgo/pkg/server/login"
 	"net/http"
 )
 
-type ProjectsPostRequest []models.MixtapeProject
-type ProjectsDeleteRequest []string
+type CreateMixtapeProjectParams struct {
+	Name    string   `json:"name"`
+	Title   string   `json:"title"`
+	Mixtape string   `json:"mixtape"`
+	Blurb   string   `json:"blurb"`
+	Channel string   `json:"channel"`
+	Hosts   []string `json:"hosts,omitempty"`
+}
+
+type EditMixtapeProjectParams = CreateMixtapeProjectParams
 
 func HandleProjects(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
-	identity := login.IdentityFromContext(ctx)
 	switch r.Method {
 	case http.MethodGet:
-		projects, err := models.ListMixtapeProjects(ctx)
+		projects, err := redis.ListMixtapeProjects(ctx)
 		if err != nil {
 			logger.MethodFailure(ctx, "models.ListMixtapeProjects", err)
 			return http_helpers.NewInternalServerError()
@@ -26,47 +36,67 @@ func HandleProjects(r *http.Request) models.ApiResponse {
 		return models.ApiResponse{Status: models.StatusOk, MixtapeProjects: projects}
 
 	case http.MethodPost:
-		var projects []models.MixtapeProject
-		if err := json.NewDecoder(r.Body).Decode(&projects); err != nil {
+		var data CreateMixtapeProjectParams
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			return http_helpers.NewJsonDecodeError(err)
 		}
-		var allowedProject []models.MixtapeProject
-		for _, project := range projects {
-			if identity.HasRole(models.RoleVVGOExecutiveDirector) {
-				allowedProject = append(allowedProject, project)
-				continue
-			}
 
-			for _, owner := range project.Hosts {
-				if owner == identity.DiscordID {
-					allowedProject = append(allowedProject, project)
-					break
-				}
-			}
-		}
-
-		if err := models.WriteMixtapeProjects(ctx, allowedProject); err != nil {
-			logger.MethodFailure(ctx, "models.WriteMixtapeProjects", err)
-			return http_helpers.NewInternalServerError()
-		}
-		return models.ApiResponse{Status: models.StatusOk, MixtapeProjects: allowedProject}
-
-	case http.MethodDelete:
-		if !identity.HasRole(models.RoleVVGOExecutiveDirector) {
-			return http_helpers.NewUnauthorizedError()
-		}
-		var args []string
-		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-			return http_helpers.NewJsonDecodeError(err)
-		}
-		args = append([]string{models.MixtapeProjectsRedisKey}, args...)
-		if err := redis.Do(ctx, redis.Cmd(nil, "HDEL", args...)); err != nil {
+		var id uint64
+		if err := redis.Do(r.Context(), redis.Cmd(&id, redis.INCR, mixtape.NextProjectIdRedisKey)); err != nil {
 			logger.RedisFailure(ctx, err)
 			return http_helpers.NewInternalServerError()
 		}
-		return models.ApiResponse{Status: models.StatusOk}
+		return saveProject(id, data, ctx)
+
+	case http.MethodPut:
+		id := redis.StringToObjectId(mux.Vars(r)["id"])
+		if id == 0 {
+			return http_helpers.NewBadRequestError("invalid id")
+		}
+
+		var data CreateMixtapeProjectParams
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			return http_helpers.NewJsonDecodeError(err)
+		}
+		return saveProject(id, data, ctx)
+
+	case http.MethodDelete:
+		id := redis.StringToObjectId(mux.Vars(r)["id"])
+		if id == 0 {
+			return http_helpers.NewBadRequestError("invalid id")
+		}
+
+		if err := redis.Do(ctx, redis.Cmd(nil, redis.HDEL, mixtape.ProjectsRedisKey, redis.ObjectId(id).String())); err != nil {
+			return http_helpers.NewRedisError(err)
+		}
+		return http_helpers.NewOkResponse()
 
 	default:
 		return http_helpers.NewMethodNotAllowedError()
 	}
+}
+
+func saveProject(id uint64, data CreateMixtapeProjectParams, ctx context.Context) models.ApiResponse {
+	project := mixtape.Project{
+		Id:      id,
+		Name:    data.Name,
+		Title:   data.Title,
+		Mixtape: data.Mixtape,
+		Blurb:   data.Blurb,
+		Channel: data.Channel,
+		Hosts:   data.Hosts,
+	}
+	var projectJSON bytes.Buffer
+	if err := json.NewEncoder(&projectJSON).Encode(project); err != nil {
+		logger.JsonEncodeFailure(ctx, err)
+	}
+
+	if err := redis.Do(ctx, redis.Cmd(nil, redis.HSET,
+		mixtape.ProjectsRedisKey, redis.ObjectId(id).String(), projectJSON.String()),
+	); err != nil {
+		logger.RedisFailure(ctx, err)
+		return http_helpers.NewRedisError(err)
+	}
+
+	return models.ApiResponse{Status: models.StatusOk, MixtapeProject: &project}
 }

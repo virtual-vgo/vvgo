@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
+	"github.com/virtual-vgo/vvgo/pkg/models/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/models/traces"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 )
@@ -26,7 +27,8 @@ type ApiResponse struct {
 	Dataset         []map[string]string   `json:"Dataset,omitempty"`
 	Identity        *Identity             `json:"Identity,omitempty"`
 	GuildMembers    []discord.GuildMember `json:"GuildMembers,omitempty"`
-	MixtapeProjects []MixtapeProject      `json:"MixtapeProjects,omitempty"`
+	MixtapeProjects []mixtape.Project     `json:"MixtapeProjects,omitempty"`
+	MixtapeProject  *mixtape.Project      `json:"MixtapeProject,omitempty"`
 	WorkflowResult  []WorkflowTaskResult  `json:"WorkflowResult,omitempty"`
 	CreditsTable    CreditsTable          `json:"CreditsTable,omitempty"`
 	Ballot          ArrangementsBallot    `json:"Ballot,omitempty"`

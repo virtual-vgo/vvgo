@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
@@ -47,53 +48,54 @@ func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
 }
 
 func Routes() http.Handler {
-	mux := RBACMux{ServeMux: http.NewServeMux()}
+	rbacMux := RBACMux{Router: mux.NewRouter()}
 
 	// authorize
 	for _, role := range []models.Role{models.RoleVVGOVerifiedMember, models.RoleVVGOProductionTeam, models.RoleVVGOExecutiveDirector} {
-		mux.HandleFunc("/authorize/"+role.String(), authorize(role), models.RoleAnonymous)
+		rbacMux.HandleFunc("/authorize/"+role.String(), authorize(role), models.RoleAnonymous)
 	}
 
 	// debug
-	mux.HandleFunc("/debug/pprof/", pprof.Index, models.RoleVVGOProductionTeam)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, models.RoleVVGOProductionTeam)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile, models.RoleVVGOProductionTeam)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, models.RoleVVGOProductionTeam)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace, models.RoleVVGOProductionTeam)
+	rbacMux.HandleFunc("/debug/pprof/", pprof.Index, models.RoleVVGOProductionTeam)
+	rbacMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline, models.RoleVVGOProductionTeam)
+	rbacMux.HandleFunc("/debug/pprof/profile", pprof.Profile, models.RoleVVGOProductionTeam)
+	rbacMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol, models.RoleVVGOProductionTeam)
+	rbacMux.HandleFunc("/debug/pprof/trace", pprof.Trace, models.RoleVVGOProductionTeam)
 
 	// api endpoints
-	mux.HandleApiFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOExecutiveDirector)
-	mux.HandleApiFunc("/api/v1/auth/discord", auth.Discord, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/auth/logout", auth.Logout, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth.OAuthRedirect, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/credits/pasta", api.CreditsPasta, models.RoleVVGOProductionTeam)
-	mux.HandleApiFunc("/api/v1/credits/table", api.CreditsTable, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/dataset", api.Dataset, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/download", api.Download, models.RoleDownload)
-	mux.HandleApiFunc("/api/v1/guild_members/search", guild_members.HandleSearch, models.RoleVVGOVerifiedMember)
-	mux.HandleApiFunc("/api/v1/guild_members/lookup", guild_members.HandleLookup, models.RoleVVGOVerifiedMember)
-	//mux.HandleApiFunc("/api/v1/guild_members/list", guild_members.HandleList, models.RoleVVGOExecutiveDirector)
-	mux.HandleApiFunc("/api/v1/auth/password", auth.Password, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/traces/spans", traces.HandleSpans, models.RoleVVGOProductionTeam)
-	mux.HandleApiFunc("/api/v1/traces/waterfall", traces.HandleWaterfall, models.RoleVVGOExecutiveDirector)
-	mux.HandleApiFunc("/api/v1/me", api.Me, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/mixtape/projects", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
-	mux.HandleApiFunc("/api/v1/parts", api.Parts, models.RoleVVGOVerifiedMember)
-	mux.HandleApiFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
-	mux.HandleApiFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOExecutiveDirector)
-	mux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, models.RoleAnonymous)
-	mux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, models.RoleVVGOProductionTeam)
-	mux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, models.RoleVVGOProductionTeam)
-	mux.HandleApiFunc("/api/v1/spreadsheet", api.Spreadsheet, models.RoleWriteSpreadsheet)
-	mux.HandleApiFunc("/api/v1/version", api.Version, models.RoleAnonymous)
-	mux.HandleApiFunc("/download", api.Download, models.RoleDownload)
+	rbacMux.HandleApiFunc("/api/v1/arrangements/ballot", arrangements.Ballot, models.RoleVVGOExecutiveDirector)
+	rbacMux.HandleApiFunc("/api/v1/auth/discord", auth.Discord, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/auth/logout", auth.Logout, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth.OAuthRedirect, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/credits/pasta", api.CreditsPasta, models.RoleVVGOProductionTeam)
+	rbacMux.HandleApiFunc("/api/v1/credits/table", api.CreditsTable, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/dataset", api.Dataset, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/download", api.Download, models.RoleDownload)
+	rbacMux.HandleApiFunc("/api/v1/guild_members/search", guild_members.HandleSearch, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/guild_members/lookup", guild_members.HandleLookup, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/guild_members/list", guild_members.HandleList, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/auth/password", auth.Password, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/traces/spans", traces.HandleSpans, models.RoleVVGOProductionTeam)
+	rbacMux.HandleApiFunc("/api/v1/traces/waterfall", traces.HandleWaterfall, models.RoleVVGOExecutiveDirector)
+	rbacMux.HandleApiFunc("/api/v1/me", api.Me, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/mixtape/projects", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/mixtape/projects/{id}", mixtape.HandleProjects, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/parts", api.Parts, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/projects", api.Projects, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/sessions", api.Sessions, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleFunc("/api/v1/slash_commands", slash_command.Handle, models.RoleAnonymous)
+	rbacMux.HandleFunc("/api/v1/slack_commands/list", slash_command.List, models.RoleVVGOProductionTeam)
+	rbacMux.HandleFunc("/api/v1/slack_commands/update", slash_command.Update, models.RoleVVGOProductionTeam)
+	rbacMux.HandleApiFunc("/api/v1/spreadsheet", api.Spreadsheet, models.RoleWriteSpreadsheet)
+	rbacMux.HandleApiFunc("/api/v1/version", api.Version, models.RoleAnonymous)
+	rbacMux.HandleApiFunc("/download", api.Download, models.RoleDownload)
 
 	if config.Config.Development {
-		mux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)
+		rbacMux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)
 	}
 
-	mux.Handle("/images/", http.FileServer(http.Dir(PublicFiles)), models.RoleAnonymous)
-	mux.Handle("/", ServeUI, models.RoleAnonymous)
-	return &mux
+	rbacMux.Handle("/images/", http.FileServer(http.Dir(PublicFiles)), models.RoleAnonymous)
+	rbacMux.Handle("/", ServeUI, models.RoleAnonymous)
+	return &rbacMux
 }
