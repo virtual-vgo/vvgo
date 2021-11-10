@@ -9,15 +9,17 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"time"
 )
 
-type SpansRequest struct {
+type Request struct {
 	Start time.Time
 	End   time.Time
+	Limit int
 }
 
-func (x *SpansRequest) ReadParams(params url.Values) {
+func (x *Request) ReadParams(params url.Values) {
 	x.Start, _ = time.Parse(time.RFC3339, params.Get("start"))
 	if x.Start.IsZero() {
 		x.Start = time.Now().Add(-52 * 7 * 24 * 3600 * time.Second)
@@ -27,12 +29,17 @@ func (x *SpansRequest) ReadParams(params url.Values) {
 	if x.End.IsZero() {
 		x.End = time.Now()
 	}
+
+	x.Limit, _ = strconv.Atoi(params.Get("limit"))
+	if x.Limit == 0 {
+		x.Limit = 1
+	}
 }
 
 func HandleSpans(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 
-	var data SpansRequest
+	var data Request
 	data.ReadParams(r.URL.Query())
 
 	spans, err := redis.ListSpans(ctx, data.End, data.Start)
@@ -40,12 +47,16 @@ func HandleSpans(r *http.Request) models.ApiResponse {
 		logger.RedisFailure(ctx, err)
 		return http_helpers.NewRedisError(err)
 	}
+	if len(spans) > data.Limit {
+		spans = spans[:data.Limit]
+	}
+
 	return models.ApiResponse{Status: models.StatusOk, Spans: spans}
 }
 
 func HandleWaterfall(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
-	var data SpansRequest
+	var data Request
 	data.ReadParams(r.URL.Query())
 
 	spans, err := redis.ListSpans(ctx, data.Start, data.End)
@@ -71,7 +82,7 @@ func HandleWaterfall(r *http.Request) models.ApiResponse {
 	}
 	sort.Slice(traceIds, func(i, j int) bool { return traceIds[i] > traceIds[j] })
 
-	waterfalls := make([]traces.Waterfall, 0, len(traceIds))
+	waterfalls := make([]traces.Waterfall, 0, data.Limit)
 	for _, traceId := range traceIds {
 		waterfall, err := traces.NewWaterfall(traceId, spans)
 		if err != nil {
@@ -79,8 +90,11 @@ func HandleWaterfall(r *http.Request) models.ApiResponse {
 			continue
 		}
 		waterfalls = append(waterfalls, waterfall)
+
+		if len(waterfalls) > data.Limit {
+			break
+		}
 	}
-	waterfalls = waterfalls[:]
 
 	return models.ApiResponse{Status: models.StatusOk, Waterfalls: waterfalls[:]}
 }
