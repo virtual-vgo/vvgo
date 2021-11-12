@@ -1,9 +1,9 @@
 package guild_members
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/cache"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
@@ -16,7 +16,7 @@ type SearchRequest struct {
 	Query string
 }
 
-var HandleSearch = cache.Handle(60*time.Second, func(r *http.Request) api.Response {
+var HandleSearch = cache.Handle(60*time.Second, func(r *http.Request) http2.Response {
 	ctx := r.Context()
 
 	queryParams := r.URL.Query()
@@ -27,15 +27,15 @@ var HandleSearch = cache.Handle(60*time.Second, func(r *http.Request) api.Respon
 	}
 
 	if params.Query == "" {
-		return response.NewBadRequestError("query is required")
+		return errors.NewBadRequestError("query is required")
 	}
 
 	members, err := discord.SearchGuildMembers(ctx, params.Query, params.Limit)
 	if err != nil {
 		logger.MethodFailure(ctx, "discord.SearchGuildMembers", err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
 	saveGuildMembers(ctx, members)
-	return api.Response{Status: api.StatusOk, GuildMembers: members}
+	return http2.Response{Status: http2.StatusOk, GuildMembers: members}
 })

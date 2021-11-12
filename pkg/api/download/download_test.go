@@ -4,8 +4,8 @@ import (
 	"github.com/minio/minio-go/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/api/test_helpers"
 	vvgo_minio "github.com/virtual-vgo/vvgo/pkg/clients/minio"
 	"github.com/virtual-vgo/vvgo/pkg/config"
@@ -26,24 +26,24 @@ func TestDownload(t *testing.T) {
 
 	t.Run("invalid method", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/download?fileName=danish", nil)
-		test_helpers.AssertEqualApiResponses(t, response.NewMethodNotAllowedError(), Download(req))
+		test_helpers.AssertEqualApiResponses(t, errors.NewMethodNotAllowedError(), Download(req))
 	})
 
 	t.Run("fileName is empty", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/download", nil)
-		test_helpers.AssertEqualApiResponses(t, response.NewBadRequestError("fileName is required"), Download(req))
+		test_helpers.AssertEqualApiResponses(t, errors.NewBadRequestError("fileName is required"), Download(req))
 	})
 
 	t.Run("not found", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/download?fileName=danishxx", nil)
-		test_helpers.AssertEqualApiResponses(t, response.NewNotFoundError("file `danishxx` not found"), Download(req))
+		test_helpers.AssertEqualApiResponses(t, errors.NewNotFoundError("file `danishxx` not found"), Download(req))
 	})
 
 	t.Run("success", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/download?fileName=danish", nil)
 		resp := Download(req)
 		assert.NotEmpty(t, resp.Location, "location")
-		assert.Equal(t, api.StatusFound, resp.Status, "status")
+		assert.Equal(t, http2.StatusFound, resp.Status, "status")
 		assert.Nil(t, resp.Error)
 	})
 }

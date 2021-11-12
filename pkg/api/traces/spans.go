@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
@@ -23,7 +23,7 @@ func ServeSpans(r *http.Request) api.Response {
 	spans, err := ListSpans(ctx, data.End, data.Start)
 	if err != nil {
 		logger.RedisFailure(ctx, err)
-		return response.NewRedisError(err)
+		return errors.NewRedisError(err)
 	}
 	if len(spans) > data.Limit {
 		spans = spans[:data.Limit]

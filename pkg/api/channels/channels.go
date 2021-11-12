@@ -3,16 +3,16 @@ package channels
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/cache"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
 	"time"
 )
 
-var HandleList = cache.Handle(4*3600*time.Second, func(r *http.Request) api.Response {
+var ServeChannels = cache.Handle(4*3600*time.Second, func(r *http.Request) http2.Response {
 	ctx := r.Context()
 	channels, err := discord.GetGuildChannels(ctx)
 	if err != nil {
@@ -21,14 +21,14 @@ var HandleList = cache.Handle(4*3600*time.Second, func(r *http.Request) api.Resp
 			if err := json.NewEncoder(&buf).Encode(e); err != nil {
 				logger.JsonEncodeFailure(ctx, err)
 			}
-			return response.NewErrorResponse(response.Error{
+			return errors.NewErrorResponse(errors.Error{
 				Code:    e.Code,
 				Message: e.Error(),
 				Data:    buf.Bytes(),
 			})
 		}
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
-	return api.Response{Status: api.StatusOk, Channels: channels}
+	return http2.Response{Status: http2.StatusOk, Channels: channels}
 })

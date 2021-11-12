@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
@@ -27,8 +27,35 @@ func ServeBallot(r *http.Request) api.Response {
 	case http.MethodPost:
 		return handlePostBallot(r, ctx, identity)
 	default:
-		return response.NewMethodNotAllowedError()
+		return errors.NewMethodNotAllowedError()
 	}
+}
+
+func GetBallot(ctx context.Context, identity auth.Identity) (Ballot, error) {
+	var ballotJSON string
+	if err := redis.Do(ctx, redis.Cmd(&ballotJSON,
+		"HGET", "arrangements:"+Season+":ballots", identity.DiscordID)); err != nil {
+		logger.RedisFailure(ctx, err)
+	}
+
+	var ballot Ballot
+	if ballotJSON != "" {
+		if err := json.NewDecoder(strings.NewReader(ballotJSON)).Decode(&ballot); err != nil {
+			logger.JsonDecodeFailure(ctx, err)
+			// Don't return here, instead we'll make a new ballot
+		}
+	}
+
+	if len(ballot) == 0 {
+		if err := redis.Do(ctx, redis.Cmd(&ballot,
+			"LRANGE", "arrangements:"+Season+":submissions", "0", "-1")); err != nil {
+			logger.RedisFailure(ctx, err)
+			return
+		}
+		sort.Strings(ballot)
+	}
+
+	return api.Response{Status: api.StatusOk, Ballot: ballot}
 }
 
 func handleGetBallot(ctx context.Context, identity auth.Identity) api.Response {
@@ -50,7 +77,7 @@ func handleGetBallot(ctx context.Context, identity auth.Identity) api.Response {
 		if err := redis.Do(ctx, redis.Cmd(&ballot,
 			"LRANGE", "arrangements:"+Season+":submissions", "0", "-1")); err != nil {
 			logger.RedisFailure(ctx, err)
-			return response.NewInternalServerError()
+			return errors.NewInternalServerError()
 		}
 		sort.Strings(ballot)
 	}
@@ -64,17 +91,17 @@ func handlePostBallot(r *http.Request, ctx context.Context, identity auth.Identi
 	var ballot PostBallotRequest
 	if err := json.NewDecoder(r.Body).Decode(&ballot); err != nil {
 		logger.JsonDecodeFailure(ctx, err)
-		return response.NewJsonDecodeError(err)
+		return errors.NewJsonDecodeError(err)
 	}
 	if validateBallot(ctx, ballot) == false {
-		return response.NewBadRequestError("invalid ballot")
+		return errors.NewBadRequestError("invalid ballot")
 	}
 
 	ballotJSON, _ := json.Marshal(ballot)
 	if err := redis.Do(ctx, redis.Cmd(nil,
 		"HSET", "arrangements:"+Season+":ballots", identity.DiscordID, string(ballotJSON))); err != nil {
 		logger.RedisFailure(ctx, err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 	return api.NewOkResponse()
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/virtual-vgo/vvgo/pkg/api/arrangements"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
@@ -19,7 +19,7 @@ func Results(w http.ResponseWriter, r *http.Request) {
 	if err := redis.Do(ctx, redis.Cmd(&data,
 		"HGETALL", "arrangements:"+arrangements.Season+":ballots")); err != nil {
 		logger.RedisFailure(ctx, err)
-		response.WriteInternalServerError(ctx, w)
+		errors.WriteInternalServerError(ctx, w)
 		return
 	}
 

@@ -1,9 +1,10 @@
-package api
+package http
 
 import (
 	"context"
+	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
 )
@@ -22,7 +23,7 @@ func (mux *RBACMux) HandleFunc(pattern string, handler http.HandlerFunc, role au
 }
 
 // HandleApiFunc registers the handler function for the given pattern.
-func (mux *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) Response, role auth.Role) {
+func (mux *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) api.Response, role auth.Role) {
 	mux.Handle(pattern, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handler(r).WriteHTTP(r.Context(), w, r)
 	}), role)
@@ -42,7 +43,7 @@ func (mux *RBACMux) Handle(pattern string, handler http.Handler, role auth.Role)
 			return
 		} else {
 			logger.WithField("roles", identity.Roles).WithField("path", r.URL.Path).Info("http server: access denied")
-			response.NewUnauthorizedError().WriteHTTP(ctx, w, r)
+			errors.NewUnauthorizedError().WriteHTTP(ctx, w, r)
 		}
 	})
 }

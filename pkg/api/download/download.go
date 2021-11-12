@@ -3,8 +3,8 @@ package download
 import (
 	"fmt"
 	"github.com/minio/minio-go/v6"
-	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	minio_wrapper "github.com/virtual-vgo/vvgo/pkg/clients/minio"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
@@ -18,21 +18,21 @@ type GetDownloadRequest struct {
 	FileName string
 }
 
-func Download(r *http.Request) api.Response {
+func Download(r *http.Request) http2.Response {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
-		return response.NewMethodNotAllowedError()
+		return errors.NewMethodNotAllowedError()
 	}
 
 	fileName := r.URL.Query().Get("fileName")
 	if fileName == "" {
-		return response.NewBadRequestError("fileName is required")
+		return errors.NewBadRequestError("fileName is required")
 	}
 
 	minioClient, err := minio_wrapper.NewClient()
 	if err != nil {
 		logger.MethodFailure(ctx, "minio.New", err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
 	distroBucket := config.Env.VVGO.DistroBucket
@@ -41,20 +41,20 @@ func Download(r *http.Request) api.Response {
 	if err != nil {
 		logger.MethodFailure(ctx, "minio.StatObject", err)
 		if _, ok := err.(minio.ErrorResponse); !ok {
-			return response.NewInternalServerError()
+			return errors.NewInternalServerError()
 		}
 		switch err.(minio.ErrorResponse).StatusCode {
 		case http.StatusNotFound:
-			return response.NewNotFoundError(fmt.Sprintf("file `%s` not found", fileName))
+			return errors.NewNotFoundError(fmt.Sprintf("file `%s` not found", fileName))
 		default:
-			return response.NewInternalServerError()
+			return errors.NewInternalServerError()
 		}
 	}
 
 	downloadUrl, err := minioClient.PresignedGetObject(distroBucket, fileName, ProtectedLinkExpiry, nil)
 	if err != nil {
 		logger.MethodFailure(ctx, "minio.StatObject", err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
-	return api.Response{Status: api.StatusFound, Location: downloadUrl.String()}
+	return http2.Response{Status: http2.StatusFound, Location: downloadUrl.String()}
 }

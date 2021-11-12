@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
@@ -39,7 +39,7 @@ func CreateProject(ctx context.Context, data CreateProjectParams) (*Project, err
 	var id uint64
 	if err := redis.Do(ctx, redis.Cmd(&id, redis.INCR, NextProjectIdRedisKey)); err != nil {
 		logger.RedisFailure(ctx, err)
-		return nil, response.InternalServerError
+		return nil, errors.InternalServerError
 	}
 	return saveProject(id, data, ctx)
 }
@@ -49,7 +49,7 @@ func idFromUrl(url string) uint64 {
 	return redis.StringToObjectId(s[len(s)-1])
 }
 
-func ServeProjects(r *http.Request) api.Response {
+func ServeProjects(r *http.Request) http2.Response {
 	ctx := r.Context()
 	switch r.Method {
 	case http.MethodGet:
@@ -57,56 +57,56 @@ func ServeProjects(r *http.Request) api.Response {
 		projects, err := redis.ListMixtapeProjects(ctx)
 		if err != nil {
 			logger.MethodFailure(ctx, "models.ListMixtapeProjects", err)
-			return response.NewInternalServerError()
+			return errors.NewInternalServerError()
 		}
 		if id == 0 {
-			return api.Response{Status: api.StatusOk, MixtapeProjects: projects}
+			return http2.Response{Status: http2.StatusOk, MixtapeProjects: projects}
 		}
 		for _, project := range projects {
 			if project.Id == id {
-				return api.Response{Status: api.StatusOk, MixtapeProject: &project}
+				return http2.Response{Status: http2.StatusOk, MixtapeProject: &project}
 			}
 		}
-		return response.NewNotFoundError(fmt.Sprintf("id %d not found", id))
+		return errors.NewNotFoundError(fmt.Sprintf("id %d not found", id))
 
 	case http.MethodPost:
 		var data CreateProjectParams
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-			return response.NewJsonDecodeError(err)
+			return errors.NewJsonDecodeError(err)
 		}
 
 		var id uint64
 		if err := redis.Do(r.Context(), redis.Cmd(&id, redis.INCR, NextProjectIdRedisKey)); err != nil {
 			logger.RedisFailure(ctx, err)
-			return response.NewInternalServerError()
+			return errors.NewInternalServerError()
 		}
 		return saveProject(id, data, ctx)
 
 	case http.MethodPut:
 		id := idFromUrl(r.URL.Path)
 		if id == 0 {
-			return response.NewBadRequestError("invalid id")
+			return errors.NewBadRequestError("invalid id")
 		}
 
 		var data CreateProjectParams
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-			return response.NewJsonDecodeError(err)
+			return errors.NewJsonDecodeError(err)
 		}
 		return saveProject(id, data, ctx)
 
 	case http.MethodDelete:
 		id := idFromUrl(r.URL.Path)
 		if id == 0 {
-			return response.NewBadRequestError("invalid id")
+			return errors.NewBadRequestError("invalid id")
 		}
 
 		if err := redis.Do(ctx, redis.Cmd(nil, redis.HDEL, ProjectsRedisKey, redis.ObjectId(id).String())); err != nil {
-			return response.NewRedisError(err)
+			return errors.NewRedisError(err)
 		}
-		return api.NewOkResponse()
+		return http2.NewOkResponse()
 
 	default:
-		return response.NewMethodNotAllowedError()
+		return errors.NewMethodNotAllowedError()
 	}
 }
 
@@ -123,14 +123,14 @@ func saveProject(id uint64, data CreateProjectParams, ctx context.Context) (*Pro
 	var projectJSON bytes.Buffer
 	if err := json.NewEncoder(&projectJSON).Encode(project); err != nil {
 		logger.JsonEncodeFailure(ctx, err)
-		return nil, response.InternalServerError
+		return nil, errors.InternalServerError
 	}
 
 	if err := redis.Do(ctx, redis.Cmd(nil, redis.HSET,
 		ProjectsRedisKey, redis.ObjectId(id).String(), projectJSON.String()),
 	); err != nil {
 		logger.RedisFailure(ctx, err)
-		return nil, response.RedisError(err)
+		return nil, errors.RedisError(err)
 	}
 
 	return &project, nil

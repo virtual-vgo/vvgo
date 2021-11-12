@@ -3,8 +3,8 @@ package guild_members
 import (
 	"context"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
@@ -15,21 +15,21 @@ const RedisKey = "guild_members"
 
 type LookupRequest []string
 
-func HandleLookup(r *http.Request) api.Response {
+func HandleLookup(r *http.Request) http2.Response {
 	ctx := r.Context()
 	var ids LookupRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&ids); err != nil {
-		return response.NewJsonDecodeError(err)
+		return errors.NewJsonDecodeError(err)
 	} else if len(ids) == 0 {
-		return response.NewBadRequestError("ids required")
+		return errors.NewBadRequestError("ids required")
 	}
 
 	members := make([]discord.GuildMember, 0, len(ids))
 	for _, id := range ids {
 		var memberJSON string
 		if err := redis.Do(ctx, redis.Cmd(&memberJSON, "HGET", "guild_members", id)); err != nil {
-			return response.NewInternalServerError()
+			return errors.NewInternalServerError()
 		}
 
 		var guildMember *discord.GuildMember
@@ -55,7 +55,7 @@ func HandleLookup(r *http.Request) api.Response {
 	}
 
 	saveGuildMembers(ctx, members)
-	return api.Response{Status: api.StatusOk, GuildMembers: members}
+	return http2.Response{Status: http2.StatusOk, GuildMembers: members}
 }
 
 func saveGuildMembers(ctx context.Context, members []discord.GuildMember) {

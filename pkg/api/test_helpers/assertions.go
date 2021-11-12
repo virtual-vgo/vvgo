@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"net/http"
 	"testing"
 )
 
-func AssertEqualApiResponses(t *testing.T, want, got api.Response) {
+func AssertEqualApiResponses(t *testing.T, want, got http2.Response) {
 	t.Helper()
 
 	var buf bytes.Buffer
@@ -24,10 +24,10 @@ func AssertEqualApiResponses(t *testing.T, want, got api.Response) {
 	assert.Equal(t, wantJSON, gotJSON)
 }
 
-func AssertEqualResponse(t *testing.T, want api.Response, got *http.Response) {
+func AssertEqualResponse(t *testing.T, want http2.Response, got *http.Response) {
 	t.Helper()
 	require.NotNil(t, got, "got response is nil")
-	if want.Status == api.StatusError {
+	if want.Status == http2.StatusError {
 		require.NotNil(t, want.Error, "error field")
 		assert.Equal(t, want.Error.Code, got.StatusCode, "status code")
 	} else {
@@ -35,7 +35,7 @@ func AssertEqualResponse(t *testing.T, want api.Response, got *http.Response) {
 	}
 
 	assert.Equal(t, "application/json", got.Header.Get("Content-Type"), "Content-Type")
-	var gotResponse api.Response
+	var gotResponse http2.Response
 	assert.NoError(t, json.NewDecoder(got.Body).Decode(&gotResponse), "json.Decode")
 	var buf bytes.Buffer
 	gotEncoder := json.NewEncoder(&buf)

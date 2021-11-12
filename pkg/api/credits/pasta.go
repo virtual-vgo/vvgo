@@ -1,8 +1,8 @@
 package credits
 
 import (
-	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
 )
@@ -19,7 +19,7 @@ type Pasta struct {
 	YoutubePasta string
 }
 
-func ServePasta(r *http.Request) api.Response {
+func ServePasta(r *http.Request) http2.Response {
 	ctx := r.Context()
 
 	inputData := GetPastaFormParams{
@@ -30,11 +30,11 @@ func ServePasta(r *http.Request) api.Response {
 
 	switch {
 	case inputData.SpreadsheetID == "":
-		return response.NewBadRequestError("spreadsheetID is required")
+		return errors.NewBadRequestError("spreadsheetID is required")
 	case inputData.ReadRange == "":
-		return response.NewBadRequestError("readRange is required")
+		return errors.NewBadRequestError("readRange is required")
 	case inputData.ProjectName == "":
-		return response.NewBadRequestError("projectName is required")
+		return errors.NewBadRequestError("projectName is required")
 	default:
 		break
 	}
@@ -42,12 +42,12 @@ func ServePasta(r *http.Request) api.Response {
 	submissions, err := ListSubmissions(ctx, inputData.SpreadsheetID, inputData.ReadRange)
 	if err != nil {
 		logger.ListSubmissionsFailure(ctx, err)
-		return response.NewBadRequestError(err.Error())
+		return errors.NewBadRequestError(err.Error())
 	}
 
 	credits := submissions.ToCredits(inputData.ProjectName)
-	return api.Response{
-		Status: api.StatusOk,
+	return http2.Response{
+		Status: http2.StatusOk,
 		CreditsPasta: &Pasta{
 			WebsitePasta: credits.WebsitePasta(),
 			VideoPasta:   credits.VideoPasta(),

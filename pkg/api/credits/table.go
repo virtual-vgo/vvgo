@@ -2,9 +2,9 @@ package credits
 
 import (
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/api/website_data"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
@@ -30,33 +30,33 @@ type GetTableUrlParams struct {
 	ProjectName string
 }
 
-func ServeTable(r *http.Request) api.Response {
+func ServeTable(r *http.Request) http2.Response {
 	ctx := r.Context()
 	identity := auth.IdentityFromContext(ctx)
 
 	var data GetTableUrlParams
 	data.ProjectName = r.URL.Query().Get("projectName")
 	if data.ProjectName == "" {
-		return response.NewBadRequestError("projectName is required")
+		return errors.NewBadRequestError("projectName is required")
 	}
 
 	projects, err := website_data.ListProjects(ctx, identity)
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 	wantProject, ok := website_data.GetProject(projects, data.ProjectName)
 	if !ok {
-		return response.NewNotFoundError(fmt.Sprintf("project %s not found", data.ProjectName))
+		return errors.NewNotFoundError(fmt.Sprintf("project %s not found", data.ProjectName))
 	}
 
 	credits, err := ListCredits(ctx)
 	if err != nil {
 		logger.ListCreditsFailure(ctx, err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
-	return api.Response{Status: api.StatusOk, CreditsTable: BuildCreditsTable(credits, wantProject)}
+	return http2.Response{Status: http2.StatusOk, CreditsTable: BuildCreditsTable(credits, wantProject)}
 }
 
 func BuildCreditsTable(credits Credits, project website_data.Project) Table {

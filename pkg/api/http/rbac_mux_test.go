@@ -1,9 +1,10 @@
-package api
+package http
 
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +15,7 @@ import (
 
 func TestRBACMux_Handle(t *testing.T) {
 	ctx := context.Background()
-	okHandler := func(r *http.Request) Response { return NewOkResponse() }
+	okHandler := func(r *http.Request) api.Response { return api.NewOkResponse() }
 
 	newAnonymousRequest := func() *http.Request {
 		return httptest.NewRequest(http.MethodGet, "/", nil)

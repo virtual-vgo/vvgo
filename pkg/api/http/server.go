@@ -1,12 +1,12 @@
-package api
+package http
 
 import (
 	"fmt"
 	logurs "github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/api/version"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
-	"github.com/virtual-vgo/vvgo/pkg/version"
 	"log"
 	"net/http"
 	"net/http/httputil"

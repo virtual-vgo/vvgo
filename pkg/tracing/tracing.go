@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/api/version"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
-	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
 	"net/http"
 	"time"
@@ -28,8 +28,8 @@ type Span struct {
 	HttpRequest  *HttpRequestMetrics  `json:"http_request,omitempty"`
 	HttpResponse *HttpResponseMetrics `json:"http_response,omitempty"`
 	RedisQuery   *RedisQueryMetrics   `json:"redis_query,omitempty"`
-	Error        string               `json:"error,omitempty"`
-	ApiVersion   *version.Version     `json:"api_version,omitempty"`
+	Error        string           `json:"error,omitempty"`
+	ApiVersion   *version.Version `json:"api_version,omitempty"`
 	ctx          context.Context
 }
 

@@ -6,14 +6,15 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
 	"github.com/virtual-vgo/vvgo/pkg/api/credits"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
+	auth2 "github.com/virtual-vgo/vvgo/pkg/api/http/auth"
 	"github.com/virtual-vgo/vvgo/pkg/api/mixtape"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
 	"github.com/virtual-vgo/vvgo/pkg/api/traces"
+	"github.com/virtual-vgo/vvgo/pkg/api/version"
 	"github.com/virtual-vgo/vvgo/pkg/api/website_data"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
-	"github.com/virtual-vgo/vvgo/pkg/version"
 	"net/http"
 )
 
@@ -25,9 +26,9 @@ const StatusError Status = "error"
 
 type Response struct {
 	Status          Status
-	Location        string                    `json:"Location,omitempty"`
-	Version         *version.Version          `json:"Version,omitempty"`
-	Error           *response.Error           `json:"Error,omitempty"`
+	Location        string           `json:"Location,omitempty"`
+	Version         *version.Version `json:"Version,omitempty"`
+	Error           *errors.Error    `json:"Error,omitempty"`
 	Projects        []website_data.Project    `json:"Projects,omitempty"`
 	Parts           []website_data.Part       `json:"Parts,omitempty"`
 	Sessions        []auth.Identity           `json:"Sessions,omitempty"`
@@ -40,9 +41,9 @@ type Response struct {
 	MixtapeProjects []mixtape.Project         `json:"MixtapeProjects,omitempty"`
 	MixtapeProject  *mixtape.Project          `json:"MixtapeProject,omitempty"`
 	CreditsTable    credits.Table             `json:"CreditsTable,omitempty"`
-	Ballot          arrangements.Ballot       `json:"Ballot,omitempty"`
-	OAuthRedirect   *auth.OAuthRedirect       `json:"OAuthRedirect,omitempty"`
-	CreditsPasta    *credits.Pasta            `json:"CreditsPasta,omitempty"`
+	Ballot          arrangements.Ballot  `json:"Ballot,omitempty"`
+	OAuthRedirect   *auth2.OAuthRedirect `json:"OAuthRedirect,omitempty"`
+	CreditsPasta    *credits.Pasta       `json:"CreditsPasta,omitempty"`
 	Spans           []tracing.Span            `json:"Spans,omitempty"`
 	Waterfalls      []traces.Waterfall        `json:"Waterfalls,omitempty"`
 }

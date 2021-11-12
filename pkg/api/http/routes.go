@@ -1,4 +1,4 @@
-package api
+package http
 
 import (
 	"errors"
@@ -8,14 +8,15 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/api/channels"
 	"github.com/virtual-vgo/vvgo/pkg/api/credits"
 	"github.com/virtual-vgo/vvgo/pkg/api/download"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/api/guild_members"
-	"github.com/virtual-vgo/vvgo/pkg/api/me"
+	auth2 "github.com/virtual-vgo/vvgo/pkg/api/http/auth"
+	"github.com/virtual-vgo/vvgo/pkg/api/http/me"
+	"github.com/virtual-vgo/vvgo/pkg/api/http/sessions"
+	"github.com/virtual-vgo/vvgo/pkg/api/http/version"
 	"github.com/virtual-vgo/vvgo/pkg/api/mixtape"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
-	"github.com/virtual-vgo/vvgo/pkg/api/sessions"
 	"github.com/virtual-vgo/vvgo/pkg/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/api/traces"
-	"github.com/virtual-vgo/vvgo/pkg/api/version"
 	"github.com/virtual-vgo/vvgo/pkg/api/website_data"
 	"net/http"
 	"net/http/pprof"
@@ -44,7 +45,7 @@ func authorize(role auth.Role) func(w http.ResponseWriter, r *http.Request) {
 		identity := auth.IdentityFromContext(r.Context())
 		fmt.Println(identity)
 		if !identity.HasRole(role) {
-			response.NewUnauthorizedError().WriteHTTP(ctx, w, r)
+			errors.NewUnauthorizedError().WriteHTTP(ctx, w, r)
 		}
 	}
 }
@@ -71,11 +72,11 @@ func Routes() http.Handler {
 
 	// api endpoints
 	rbacMux.HandleApiFunc("/api/v1/arrangements/ballot", arrangements.ServeBallot, auth.RoleVVGOExecutiveDirector)
-	rbacMux.HandleApiFunc("/api/v1/auth/discord", auth.Discord, auth.RoleAnonymous)
-	rbacMux.HandleApiFunc("/api/v1/auth/logout", auth.Logout, auth.RoleAnonymous)
-	rbacMux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth.ServeOAuthRedirect, auth.RoleAnonymous)
-	rbacMux.HandleApiFunc("/api/v1/auth/password", auth.Password, auth.RoleAnonymous)
-	rbacMux.HandleApiFunc("/api/v1/channels/list", channels.HandleList, auth.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/auth/discord", auth2.Discord, auth.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/auth/logout", auth2.Logout, auth.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth2.ServeOAuthRedirect, auth.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/auth/password", auth2.Password, auth.RoleAnonymous)
+	rbacMux.HandleApiFunc("/api/v1/channels/list", channels.ServeChannels, auth.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/credits", credits.ServeCredits, auth.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/credits/pasta", credits.ServePasta, auth.RoleVVGOProductionTeam)
 	rbacMux.HandleApiFunc("/api/v1/credits/table", credits.ServeTable, auth.RoleAnonymous)

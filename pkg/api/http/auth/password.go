@@ -3,7 +3,8 @@ package auth
 import (
 	"errors"
 	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/auth"
+	apiErrors "github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
@@ -18,7 +19,7 @@ type PostPasswordRequest struct {
 func Password(r *http.Request) api.Response {
 	ctx := r.Context()
 	if r.Method != http.MethodPost {
-		return response.NewMethodNotAllowedError()
+		return apiErrors.NewMethodNotAllowedError()
 	}
 
 	passwords := make(map[string]string)
@@ -40,16 +41,16 @@ func Password(r *http.Request) api.Response {
 
 	if err != nil {
 		logger.WithError(err).WithField("user", user).Error("password authentication failed")
-		return response.NewUnauthorizedError()
+		return apiErrors.NewUnauthorizedError()
 	}
 
-	identity := Identity{
-		Kind:  KindPassword,
-		Roles: []Role{RoleVVGOVerifiedMember},
+	identity := auth.Identity{
+		Kind:  auth.KindPassword,
+		Roles: []auth.Role{auth.RoleVVGOVerifiedMember},
 	}
-	if _, err := NewSession(ctx, &identity, SessionDuration); err != nil {
+	if _, err := auth.NewSession(ctx, &identity, auth.SessionDuration); err != nil {
 		logger.MethodFailure(ctx, "login.NewSession", err)
-		return response.NewInternalServerError()
+		return apiErrors.NewInternalServerError()
 	}
 
 	return api.Response{Status: api.StatusOk, Identity: &identity}

@@ -8,7 +8,7 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
@@ -57,7 +57,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		<-timer.C
 		if err := command.Create(ctx); err != nil {
 			logger.MethodFailure(ctx, "SlashCommand.Create", err)
-			response.WriteInternalServerError(ctx, w)
+			errors.WriteInternalServerError(ctx, w)
 			return
 		} else {
 			logger.Info(command.Name, "command created")
@@ -71,7 +71,7 @@ func List(w http.ResponseWriter, r *http.Request) {
 	commands, err := discord.GetApplicationCommands(ctx)
 	if err != nil {
 		logger.MethodFailure(ctx, "discord.GetApplicationCommands", err)
-		response.WriteInternalServerError(ctx, w)
+		errors.WriteInternalServerError(ctx, w)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(commands); err != nil {

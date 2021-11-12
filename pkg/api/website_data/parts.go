@@ -2,9 +2,9 @@ package website_data
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
@@ -28,21 +28,21 @@ type Part struct {
 	PronunciationGuideLink string
 }
 
-func ServeParts(r *http.Request) api.Response {
+func ServeParts(r *http.Request) http2.Response {
 	ctx := r.Context()
 	identity := auth.IdentityFromContext(ctx)
 
 	parts, err := ListParts(ctx, identity)
 	if err != nil {
 		logger.ListPartsFailure(ctx, err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
 	if parts == nil {
 		parts = []Part{}
 	}
 	sort.Slice(parts, func(i, j int) bool { return parts[i].ScoreOrder < parts[j].ScoreOrder })
-	return api.Response{Status: api.StatusOk, Parts: parts}
+	return http2.Response{Status: http2.StatusOk, Parts: parts}
 }
 
 func ListParts(ctx context.Context, identity auth.Identity) ([]Part, error) {

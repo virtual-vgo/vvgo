@@ -3,7 +3,7 @@ package vvgo
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/website_data"
 	"github.com/virtual-vgo/vvgo/pkg/clients/http_util"
 	"github.com/virtual-vgo/vvgo/pkg/config"
@@ -35,17 +35,17 @@ func GetSheets(spreadsheet string, sheets ...string) (website_data.Spreadsheet, 
 	}
 }
 
-func DoRequest(r *http.Request) (api.Response, error) {
+func DoRequest(r *http.Request) (http2.Response, error) {
 	ctx := r.Context()
 	resp, err := http_util.DoRequest(r)
 	if err != nil {
-		return api.Response{}, errors.HttpDoFailure(err)
+		return http2.Response{}, errors.HttpDoFailure(err)
 	}
 
-	var data api.Response
+	var data http2.Response
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		logger.JsonDecodeFailure(ctx, err)
-		return api.Response{}, errors.New("invalid response from api")
+		return http2.Response{}, errors.New("invalid response from api")
 	}
 	return data, nil
 }

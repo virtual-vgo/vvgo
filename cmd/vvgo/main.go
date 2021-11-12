@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api/http"
+	"github.com/virtual-vgo/vvgo/pkg/api/version"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
-	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
 	"net/http"
 	"os"
@@ -42,7 +42,7 @@ func main() {
 		config.ProcessEnv()
 	}
 
-	apiServer := api.NewServer(config.Env.VVGO.ListenAddress)
+	apiServer := http2.NewServer(config.Env.VVGO.ListenAddress)
 	logger.Println("http server: listening on " + config.Env.VVGO.ListenAddress)
 
 	go func() {

@@ -3,8 +3,8 @@ package traces
 import (
 	"errors"
 	"github.com/sirupsen/logrus"
-	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/tracing"
 	"net/http"
@@ -64,7 +64,7 @@ func NewWaterfall(traceId uint64, spans []tracing.Span) (Waterfall, error) {
 	return *root, nil
 }
 
-func ServeWaterfall(r *http.Request) api.Response {
+func ServeWaterfall(r *http.Request) http2.Response {
 	ctx := r.Context()
 	var data UrlQueryParams
 	data.ReadParams(r.URL.Query())
@@ -72,7 +72,7 @@ func ServeWaterfall(r *http.Request) api.Response {
 	spans, err := ListSpans(ctx, data.Start, data.End)
 	if err != nil {
 		logger.RedisFailure(ctx, err)
-		return response.NewRedisError(err)
+		return errors.NewRedisError(err)
 	}
 
 	traceIdsSet := make(map[uint64]struct{})
@@ -106,5 +106,5 @@ func ServeWaterfall(r *http.Request) api.Response {
 		}
 	}
 
-	return api.Response{Status: api.StatusOk, Waterfalls: waterfalls[:]}
+	return http2.Response{Status: http2.StatusOk, Waterfalls: waterfalls[:]}
 }

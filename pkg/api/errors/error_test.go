@@ -1,8 +1,8 @@
-package response
+package errors
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/test_helpers"
 	"net/http"
 	"net/http/httptest"
@@ -14,8 +14,8 @@ var ctx = context.Background()
 func TestBadRequest(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	NewBadRequestError("some-reason").WriteHTTP(ctx, recorder, httptest.NewRequest("GET", "/", nil))
-	test_helpers.AssertEqualResponse(t, api.Response{
-		Status: api.StatusError,
+	test_helpers.AssertEqualResponse(t, http2.Response{
+		Status: http2.StatusError,
 		Error: &Error{
 			Code:    http.StatusBadRequest,
 			Message: "some-reason",
@@ -26,8 +26,8 @@ func TestBadRequest(t *testing.T) {
 func TestInternalServerError(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	NewInternalServerError().WriteHTTP(ctx, recorder, httptest.NewRequest("GET", "/", nil))
-	test_helpers.AssertEqualResponse(t, api.Response{
-		Status: api.StatusError,
+	test_helpers.AssertEqualResponse(t, http2.Response{
+		Status: http2.StatusError,
 		Error: &Error{
 			Code:    http.StatusInternalServerError,
 			Message: "internal server error",
@@ -38,8 +38,8 @@ func TestInternalServerError(t *testing.T) {
 func TestMethodNotAllowed(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	NewMethodNotAllowedError().WriteHTTP(ctx, recorder, httptest.NewRequest("GET", "/", nil))
-	test_helpers.AssertEqualResponse(t, api.Response{
-		Status: api.StatusError,
+	test_helpers.AssertEqualResponse(t, http2.Response{
+		Status: http2.StatusError,
 		Error: &Error{
 			Code:    http.StatusMethodNotAllowed,
 			Message: "method not allowed",
@@ -50,8 +50,8 @@ func TestMethodNotAllowed(t *testing.T) {
 func TestNotFound(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	NewNotFoundError("not found").WriteHTTP(ctx, recorder, httptest.NewRequest("GET", "/", nil))
-	test_helpers.AssertEqualResponse(t, api.Response{
-		Status: api.StatusError,
+	test_helpers.AssertEqualResponse(t, http2.Response{
+		Status: http2.StatusError,
 		Error: &Error{
 			Code:    http.StatusNotFound,
 			Message: "not found",
@@ -62,8 +62,8 @@ func TestNotFound(t *testing.T) {
 func TestTooManyBytes(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	NewTooManyBytesError().WriteHTTP(ctx, recorder, httptest.NewRequest("GET", "/", nil))
-	test_helpers.AssertEqualResponse(t, api.Response{
-		Status: api.StatusError,
+	test_helpers.AssertEqualResponse(t, http2.Response{
+		Status: http2.StatusError,
 		Error: &Error{
 			Code:    http.StatusRequestEntityTooLarge,
 			Message: "request too chonk",
@@ -74,8 +74,8 @@ func TestTooManyBytes(t *testing.T) {
 func TestUnauthorized(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	NewUnauthorizedError().WriteHTTP(ctx, recorder, httptest.NewRequest("GET", "/", nil))
-	test_helpers.AssertEqualResponse(t, api.Response{
-		Status: api.StatusError,
+	test_helpers.AssertEqualResponse(t, http2.Response{
+		Status: http2.StatusError,
 		Error: &Error{
 			Code:    http.StatusUnauthorized,
 			Message: "unauthorized",
@@ -86,8 +86,8 @@ func TestUnauthorized(t *testing.T) {
 func TestNotImplemented(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	NewNotImplementedError().WriteHTTP(ctx, recorder, httptest.NewRequest("GET", "/", nil))
-	test_helpers.AssertEqualResponse(t, api.Response{
-		Status: api.StatusError,
+	test_helpers.AssertEqualResponse(t, http2.Response{
+		Status: http2.StatusError,
 		Error: &Error{
 			Code:    http.StatusNotImplemented,
 			Message: "not implemented",

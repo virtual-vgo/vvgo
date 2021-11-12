@@ -2,8 +2,8 @@ package website_data
 
 import (
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/api"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
@@ -31,15 +31,15 @@ func datasetIsAllowed(name string) bool {
 
 type GetDatasetUrlParams struct{ Name string }
 
-func ServeDataset(r *http.Request) api.Response {
+func ServeDataset(r *http.Request) http2.Response {
 	ctx := r.Context()
 	var dataset GetDatasetUrlParams
 	dataset.Name = r.URL.Query().Get("name")
 	switch {
 	case dataset.Name == "":
-		return response.NewBadRequestError("name cannot be empty")
+		return errors.NewBadRequestError("name cannot be empty")
 	case datasetIsAllowed(dataset.Name) == false:
-		return response.NewErrorResponse(response.Error{
+		return errors.NewErrorResponse(errors.Error{
 			Code:    http.StatusForbidden,
 			Message: fmt.Sprintf("sheet `%s` is not allowed", dataset.Name),
 		})
@@ -47,10 +47,10 @@ func ServeDataset(r *http.Request) api.Response {
 		sheetData, err := redis.ReadSheet(ctx, SpreadsheetWebsiteData, dataset.Name)
 		if err != nil {
 			logger.RedisFailure(ctx, err)
-			return response.NewInternalServerError()
+			return errors.NewInternalServerError()
 		}
-		return api.Response{
-			Status:  api.StatusOk,
+		return http2.Response{
+			Status:  http2.StatusOk,
 			Dataset: valuesToMap(sheetData),
 		}
 	}

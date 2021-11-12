@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"io"
@@ -25,7 +25,7 @@ func Sessions(r *http.Request) api.Response {
 	case http.MethodPost:
 		return handlePostSessions(r.Body, identity, ctx)
 	default:
-		return response.NewMethodNotAllowedError()
+		return errors.NewMethodNotAllowedError()
 	}
 }
 
@@ -33,7 +33,7 @@ func handleGetSession(ctx context.Context, identity auth.Identity) api.Response 
 	sessions, err := auth.ListSessions(ctx, identity)
 	if err != nil {
 		logger.MethodFailure(ctx, "models.ListSessions", err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 	return api.Response{Status: api.StatusOk, Sessions: sessions}
 }
@@ -45,11 +45,11 @@ type DeleteSessionsRequest struct {
 func handleDeleteSessions(r *http.Request, ctx context.Context) api.Response {
 	var data DeleteSessionsRequest
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		return response.NewJsonDecodeError(err)
+		return errors.NewJsonDecodeError(err)
 	}
 
 	if len(data.Sessions) == 0 {
-		return response.NewBadRequestError("sessions must not be empty")
+		return errors.NewBadRequestError("sessions must not be empty")
 	}
 
 	sessionIds := make([]string, 0, len(data.Sessions))
@@ -58,7 +58,7 @@ func handleDeleteSessions(r *http.Request, ctx context.Context) api.Response {
 	}
 	if err := redis.Do(ctx, redis.Cmd(nil, "DEL", sessionIds...)); err != nil {
 		logger.RedisFailure(ctx, err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
 	return api.NewOkResponse()
@@ -75,7 +75,7 @@ type PostSessionsRequest struct {
 func handlePostSessions(body io.Reader, identity auth.Identity, ctx context.Context) api.Response {
 	var data PostSessionsRequest
 	if err := json.NewDecoder(body).Decode(&data); err != nil {
-		return response.NewJsonDecodeError(err)
+		return errors.NewJsonDecodeError(err)
 	}
 
 	newSessionId := func(roles []string) auth.Identity {
@@ -98,7 +98,7 @@ func handlePostSessions(body io.Reader, identity auth.Identity, ctx context.Cont
 	for i, sessionData := range data.Sessions {
 		newIdentity := newSessionId(sessionData.Roles)
 		if len(newIdentity.Roles) == 0 {
-			return response.NewBadRequestError(fmt.Sprintf("session %d has no usable roles", i))
+			return errors.NewBadRequestError(fmt.Sprintf("session %d has no usable roles", i))
 		}
 
 		var expires time.Duration
@@ -115,7 +115,7 @@ func handlePostSessions(body io.Reader, identity auth.Identity, ctx context.Cont
 		_, err = auth.NewSession(ctx, &newIdentity, expires)
 		if err != nil {
 			logger.MethodFailure(ctx, "login.NewSession", err)
-			return response.NewInternalServerError()
+			return errors.NewInternalServerError()
 		}
 		results = append(results, newIdentity)
 	}

@@ -3,9 +3,9 @@ package credits
 import (
 	"context"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/api/website_data"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
@@ -27,33 +27,33 @@ type Credit struct {
 
 type Credits []Credit
 
-func ServeCredits(r *http.Request) api.Response {
+func ServeCredits(r *http.Request) http2.Response {
 	ctx := r.Context()
 
 	projectName := r.FormValue("project")
 	if projectName == "" {
-		return response.NewBadRequestError("project is requited")
+		return errors.NewBadRequestError("project is requited")
 	}
 
 	projects, err := website_data.ListProjects(ctx, auth.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
 	project, ok := website_data.GetProject(projects, projectName)
 	if !ok {
-		return response.NewNotFoundError(fmt.Sprintf("project %s does not exist", projectName))
+		return errors.NewNotFoundError(fmt.Sprintf("project %s does not exist", projectName))
 	}
 
 	credits, err := ListCredits(ctx)
 	if err != nil {
 		logger.ListCreditsFailure(ctx, err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
 	data := BuildCreditsTable(credits, project)
-	return api.Response{Status: api.StatusOk, CreditsTable: data}
+	return http2.Response{Status: http2.StatusOk, CreditsTable: data}
 }
 
 func ListCredits(ctx context.Context) (Credits, error) {

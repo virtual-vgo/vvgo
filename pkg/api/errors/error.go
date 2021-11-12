@@ -1,9 +1,9 @@
-package response
+package errors
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"net/http"
 )
 
@@ -15,39 +15,39 @@ type Error struct {
 
 func (x Error) Error() string { return x.Message }
 
-func NewJsonDecodeError(err error) api.Response {
+func NewJsonDecodeError(err error) http2.Response {
 	return NewBadRequestError("invalid json: " + err.Error())
 }
 
-func NewBadRequestError(reason string) api.Response {
+func NewBadRequestError(reason string) http2.Response {
 	return NewErrorResponse(Error{
 		Code:    http.StatusBadRequest,
 		Message: reason,
 	})
 }
 
-func NewMethodNotAllowedError() api.Response {
+func NewMethodNotAllowedError() http2.Response {
 	return NewErrorResponse(Error{
 		Code:    http.StatusMethodNotAllowed,
 		Message: "method not allowed",
 	})
 }
 
-func NewUnauthorizedError() api.Response {
+func NewUnauthorizedError() http2.Response {
 	return NewErrorResponse(Error{
 		Code:    http.StatusUnauthorized,
 		Message: "unauthorized",
 	})
 }
 
-func NewNotFoundError(reason string) api.Response {
+func NewNotFoundError(reason string) http2.Response {
 	return NewErrorResponse(Error{
 		Code:    http.StatusNotFound,
 		Message: reason,
 	})
 }
 
-func NewInternalServerError() api.Response {
+func NewInternalServerError() http2.Response {
 	return NewErrorResponse(Error{
 		Code:    http.StatusInternalServerError,
 		Message: "internal server error",
@@ -66,20 +66,20 @@ func RedisError(err error) Error {
 	}
 }
 
-func NewTooManyBytesError() api.Response {
+func NewTooManyBytesError() http2.Response {
 	return NewErrorResponse(Error{
 		Code:    http.StatusRequestEntityTooLarge,
 		Message: "request too chonk",
 	})
 }
 
-func NewNotImplementedError() api.Response {
+func NewNotImplementedError() http2.Response {
 	return NewErrorResponse(Error{
 		Code:    http.StatusNotImplemented,
 		Message: "not implemented",
 	})
 }
 
-func NewErrorResponse(error Error) api.Response {
-	return api.Response{Status: api.StatusError, Error: &error}
+func NewErrorResponse(error Error) http2.Response {
+	return http2.Response{Status: http2.StatusError, Error: &error}
 }

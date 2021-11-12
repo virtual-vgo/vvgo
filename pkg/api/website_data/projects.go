@@ -2,9 +2,9 @@ package website_data
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/api"
+	http2 "github.com/virtual-vgo/vvgo/pkg/api"
 	"github.com/virtual-vgo/vvgo/pkg/api/auth"
-	"github.com/virtual-vgo/vvgo/pkg/api/response"
+	"github.com/virtual-vgo/vvgo/pkg/api/errors"
 	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"net/http"
@@ -41,12 +41,12 @@ type Project struct {
 	BandcampAlbum           string
 }
 
-func ServeProjects(r *http.Request) api.Response {
+func ServeProjects(r *http.Request) http2.Response {
 	ctx := r.Context()
 	projects, err := ListProjects(ctx, auth.IdentityFromContext(ctx))
 	if err != nil {
 		logger.ListProjectsFailure(ctx, err)
-		return response.NewInternalServerError()
+		return errors.NewInternalServerError()
 	}
 
 	if projects == nil {
@@ -54,7 +54,7 @@ func ServeProjects(r *http.Request) api.Response {
 	}
 
 	sort.Slice(projects, func(i, j int) bool { return projects[j].Name < projects[i].Name })
-	return api.Response{Status: api.StatusOk, Projects: projects}
+	return http2.Response{Status: http2.StatusOk, Projects: projects}
 }
 
 func ListProjects(ctx context.Context, identity auth.Identity) ([]Project, error) {
