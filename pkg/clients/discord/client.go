@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/clients/http_util"
 	"github.com/virtual-vgo/vvgo/pkg/config"
-	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"io"
 	"net/http"
@@ -37,7 +37,7 @@ var IgnoreChannelIds = []string{
 func LoginURL(state string) string {
 	query := make(url.Values)
 	query.Set("client_id", OAuthClientID)
-	query.Set("redirect_uri", config.Config.VVGO.ServerUrl+"/login/discord")
+	query.Set("redirect_uri", config.Env.VVGO.ServerUrl+"/login/discord")
 	query.Set("response_type", "code")
 	query.Set("state", state)
 	query.Set("scope", "identify")
@@ -68,10 +68,10 @@ func newOAuthRequest(ctx context.Context, code string) (*http.Request, error) {
 	// build the authorization request
 	form := make(url.Values)
 	form.Add("client_id", OAuthClientID)
-	form.Add("client_secret", config.Config.Discord.OAuthClientSecret)
+	form.Add("client_secret", config.Env.Discord.OAuthClientSecret)
 	form.Add("grant_type", "authorization_code")
 	form.Add("code", code)
-	form.Add("redirect_uri", config.Config.VVGO.ServerUrl+"/login/discord")
+	form.Add("redirect_uri", config.Env.VVGO.ServerUrl+"/login/discord")
 	form.Add("scope", "identify")
 
 	req, err := newRequest(ctx, http.MethodPost, "/oauth2/token", strings.NewReader(form.Encode()))
@@ -290,12 +290,12 @@ func newBotRequest(ctx context.Context, method, path string, body io.Reader) (*h
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bot "+config.Config.Discord.BotAuthenticationToken)
+	req.Header.Add("Authorization", "Bot "+config.Env.Discord.BotAuthenticationToken)
 	return req, err
 }
 
 func newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, method, config.Config.Discord.Endpoint+path, body)
+	req, err := http.NewRequestWithContext(ctx, method, config.Env.Discord.Endpoint+path, body)
 	if err != nil {
 		return nil, fmt.Errorf("http.NewRequestWithContext() failed: %w", err)
 	}
@@ -304,7 +304,7 @@ func newRequest(ctx context.Context, method string, path string, body io.Reader)
 
 // performs the http request and logs results
 func doDiscordRequest(req *http.Request, dest interface{}) (*http.Response, error) {
-	resp, err := http_wrappers.DoRequest(req)
+	resp, err := http_util.DoRequest(req)
 	if err != nil {
 		logger.HttpDoFailure(req.Context(), err)
 		return nil, err

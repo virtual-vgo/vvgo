@@ -12,7 +12,7 @@ import (
 type Client struct{ minio.Client }
 
 func NewClient() (*Client, error) {
-	config := config.Config.Minio
+	config := config.Env.Minio
 	minioClient, err := minio.New(config.Endpoint, config.AccessKey, config.SecretKey, config.UseSSL)
 	if err != nil {
 		return nil, fmt.Errorf("minio.New() failed: %w", err)

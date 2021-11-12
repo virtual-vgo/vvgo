@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/http_wrappers"
+	"github.com/virtual-vgo/vvgo/pkg/clients/http_util"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -28,7 +28,7 @@ type Response struct {
 }
 
 func FuckOff(from string) (string, error) {
-	resp, err := http_wrappers.Get(OperationsEndpoint)
+	resp, err := http_util.Get(OperationsEndpoint)
 	if err != nil {
 		return "", fmt.Errorf("http.Do() failed: %w", err)
 	}
@@ -63,7 +63,7 @@ func FuckOff(from string) (string, error) {
 		return "", fmt.Errorf("http.NewRequest() failed: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
-	resp, err = http_wrappers.DoRequest(req)
+	resp, err = http_util.DoRequest(req)
 	if err != nil {
 		return "", fmt.Errorf("http.Do() failed: %w", err)
 	}

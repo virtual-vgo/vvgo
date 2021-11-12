@@ -8,8 +8,9 @@ import (
 	"strings"
 )
 
-var Config struct {
+var Env struct {
 	Development bool
+	DebugHTTP   bool `envconfig:"DEBUG_HTTP"`
 
 	VVGO struct {
 		ListenAddress      string `json:"listen_address" envconfig:"listen_address" default:"0.0.0.0:8080"`
@@ -49,7 +50,7 @@ var Config struct {
 
 func init() { ProcessEnv() }
 
-func ProcessEnv() { envconfig.MustProcess("", &Config) }
+func ProcessEnv() { envconfig.MustProcess("", &Env) }
 
 func ProcessEnvFile(envFile string) {
 	defer ProcessEnv()
