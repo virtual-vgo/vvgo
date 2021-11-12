@@ -1,4 +1,4 @@
-import { Channel, GuildId } from "../../data/discord";
+import { Channel, GuildId } from "../../static/discord";
 import { GuildMember } from "../../datasets";
 
 export const LinkChannel = (props: {
@@ -6,8 +6,7 @@ export const LinkChannel = (props: {
   children?: JSX.Element;
 }) => {
   const url = `https://discord.com/channels/${GuildId}/${props.channel.Id}`;
-  const children = props.children ? props.children : props.channel.Name;
-  return <a href={url}>{children}</a>;
+  return <a href={url}>{props.children ?? props.channel.Name}</a>;
 };
 
 export const LinkUser = (props: {

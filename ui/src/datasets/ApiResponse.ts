@@ -1,10 +1,12 @@
 import { get } from "lodash/fp";
+import { Project as MixtapeProject } from "../resources/mixtape/Project";
+import { ChannelSchema } from "../resources/schema/ChannelSchema";
+import { ProjectSchema as MixtapeProjectSchema } from "../resources/schema/mixtape/ProjectSchema";
 import { ApiError } from "./ApiError";
 import { CreditsPasta } from "./CreditsPasta";
 import { CreditsTable } from "./CreditsTable";
 import { Dataset } from "./Dataset";
 import { GuildMember } from "./GuildMember";
-import { MixtapeProject } from "./MixtapeProject";
 import { OAuthRedirect } from "./OAuthRedirect";
 import { Part } from "./Part";
 import { Project } from "./Project";
@@ -20,6 +22,7 @@ export enum ApiStatus {
 export class ApiResponse {
   status: ApiStatus;
   error?: ApiError;
+  channels?: ChannelSchema[];
   creditsPasta?: CreditsPasta;
   creditsTable?: CreditsTable;
   dataset?: Dataset;
@@ -44,6 +47,9 @@ export class ApiResponse {
         break;
 
       case ApiStatus.Ok:
+        apiResp.channels = get("Channels", obj)?.map(
+          (c: object) => c as ChannelSchema
+        );
         apiResp.creditsPasta = CreditsPasta.fromApiObject(
           get("CreditsPasta", obj)
         );
@@ -59,7 +65,7 @@ export class ApiResponse {
           get("MixtapeProject", obj)
         );
         apiResp.mixtapeProjects = get("MixtapeProjects", obj)?.map(
-          (p: object[]) => MixtapeProject.fromApiObject(p)
+          (p: object) => MixtapeProject.fromApiObject(p as MixtapeProjectSchema)
         );
         apiResp.oauthRedirect = OAuthRedirect.fromApiObject(
           get("OAuthRedirect", obj)

@@ -2,7 +2,7 @@ import { CSSProperties } from "react";
 import { Dropdown, Nav, Navbar as BootstrapNavbar } from "react-bootstrap";
 import { Link, NavLink as RouterNavLink } from "react-router-dom";
 import { getSession } from "../../auth";
-import { links } from "../../data/links";
+import { links } from "../../static/links";
 import { UserRole } from "../../datasets";
 import { Favicon } from "./Favicon";
 

@@ -30,7 +30,6 @@ type Filesystem string
 
 func (fs Filesystem) Open(name string) (http.File, error) {
 	file, err := os.Open(path.Join(PublicFiles, "dist", name))
-	fmt.Println(name)
 	if errors.Is(err, os.ErrNotExist) {
 		return os.Open(path.Join(PublicFiles, "dist", "index.html"))
 	}
@@ -68,7 +67,7 @@ func Routes() http.Handler {
 	rbacMux.HandleApiFunc("/api/v1/auth/discord", auth.Discord, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/auth/logout", auth.Logout, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/auth/oauth_redirect", auth.OAuthRedirect, models.RoleAnonymous)
-	rbacMux.HandleApiFunc("/api/v1/channels/list", channels.HandleList, models.RoleVVGOVerifiedMember)
+	rbacMux.HandleApiFunc("/api/v1/channels/", channels.List, models.RoleVVGOVerifiedMember)
 	rbacMux.HandleApiFunc("/api/v1/credits", api.Credits, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/api/v1/credits/pasta", api.CreditsPasta, models.RoleVVGOProductionTeam)
 	rbacMux.HandleApiFunc("/api/v1/credits/table", api.CreditsTable, models.RoleAnonymous)

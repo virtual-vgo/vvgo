@@ -7,8 +7,8 @@ import FormControl from "react-bootstrap/FormControl";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
 import { getSession } from "../auth";
-import { GuildChannel } from "../data/discord";
-import { links } from "../data/links";
+import { GuildChannel } from "../static/discord";
+import { links } from "../static/links";
 import {
   ApiRole,
   latestProject,

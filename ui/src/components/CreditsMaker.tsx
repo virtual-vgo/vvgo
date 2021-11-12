@@ -5,7 +5,7 @@ import Col from "react-bootstrap/Col";
 import FormControl from "react-bootstrap/FormControl";
 import FormLabel from "react-bootstrap/FormLabel";
 import Row from "react-bootstrap/Row";
-import { links } from "../data/links";
+import { links } from "../static/links";
 import { CreditsPasta, fetchApi, Project, useProjects } from "../datasets";
 
 const DefaultSpreadsheetId = "1a-2u726Hg-Wp5GMWfLnYwSi2DvTMym85gQqpRviafJk";

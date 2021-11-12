@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { GuildChannel } from "../../data/discord";
+import { GuildChannel } from "../../static/discord";
 import { LinkChannel } from "../shared/LinkChannel";
 
 export const LoginFailure = () => {

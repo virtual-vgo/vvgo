@@ -270,8 +270,10 @@ func newSlashCommandRequest(ctx context.Context, method string, body io.Reader) 
 
 func doDiscordBotRequestWithJsonParams(ctx context.Context, method, path string, params interface{}, dest interface{}) error {
 	var paramsBytes bytes.Buffer
-	if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
-		return fmt.Errorf("json.Encode() failed: %w", err)
+	if params != nil {
+		if err := json.NewEncoder(&paramsBytes).Encode(params); err != nil {
+			return fmt.Errorf("json.Encode() failed: %w", err)
+		}
 	}
 
 	req, err := newBotRequest(ctx, method, path, &paramsBytes)

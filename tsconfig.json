@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "sourceMap": true,
-    "module": "commonjs",
+    "target": "ES6",
     "jsx": "react-jsx",
     "allowJs": true,
     "esModuleInterop": true,

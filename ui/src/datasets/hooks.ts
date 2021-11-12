@@ -9,7 +9,6 @@ import { DatasetRow } from "./Dataset";
 import { Director } from "./Director";
 import { GuildMember } from "./GuildMember";
 import { Highlight } from "./Highlight";
-import { MixtapeProject } from "./MixtapeProject";
 import { Part } from "./Part";
 import { Project } from "./Project";
 import { ApiRole, Session, SessionKind } from "./Session";
@@ -60,11 +59,6 @@ export const useGuildMemberLookup = (ids: string[]) => {
 
 export const useHighlights = (): Highlight[] | undefined =>
   useDataset("Highlights", Highlight.fromDatasetRow);
-
-export const useMixtapeProjects = (): [
-  MixtapeProject[] | undefined,
-  (projects: MixtapeProject[]) => void
-] => useAndSetApiData("/mixtape/projects", (resp) => resp.mixtapeProjects);
 
 export const useParts = (): Part[] | undefined =>
   useApiData("/parts", (resp) => resp.parts);

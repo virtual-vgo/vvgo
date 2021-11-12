@@ -1,10 +1,11 @@
 import { assert } from "chai";
 import { describe, it } from "mocha";
-import { MixtapeProject } from "./MixtapeProject";
+import { Project } from "./Project";
 
-describe("MixtapeProject", () => {
+describe("Project", () => {
   it("#fromApiObject", () => {
-    const got = MixtapeProject.fromApiObject({
+    const got = Project.fromApiObject({
+      id: 42069,
       Name: "farfalle with sausage & asparagus",
       mixtape: "pasta",
       title: "farfalle-with-sausage-asparagus",
@@ -13,6 +14,7 @@ describe("MixtapeProject", () => {
       channel: "#farfalle-with-sausage-asparagus",
       hosts: ["only pasta"],
     });
+    assert.equal(got.id, 42069);
     assert.equal(got.Name, "farfalle with sausage & asparagus");
     assert.equal(got.mixtape, "pasta");
     assert.equal(got.title, "farfalle-with-sausage-asparagus");
@@ -25,7 +27,7 @@ describe("MixtapeProject", () => {
   });
 
   it("#toApiObject", () => {
-    const proj = new MixtapeProject();
+    const proj = new Project();
     proj.Name = "farfalle with sausage & asparagus";
     proj.mixtape = "pasta";
     proj.title = "farfalle-with-sausage-asparagus";
@@ -33,7 +35,7 @@ describe("MixtapeProject", () => {
       "Farfalle, playfully referred to as bow tie pasta, soaks up just the right amount of sauce. Use it in Italian dinners, pasta salads and casseroles.";
     proj.channel = "#farfalle-with-sausage-asparagus";
     proj.hosts = ["only pasta"];
-    assert.deepEqual(proj.toApiObject(), {
+    assert.deepEqual(proj.saveArgs(), {
       Name: "farfalle with sausage & asparagus",
       mixtape: "pasta",
       title: "farfalle-with-sausage-asparagus",

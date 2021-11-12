@@ -2,7 +2,7 @@ import { isEmpty } from "lodash/fp";
 import { lazy, Suspense } from "react";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
-import { GuildChannel } from "../data/discord";
+import { GuildChannel } from "../static/discord";
 import {
   CreditsTeamRow,
   CreditsTopic,

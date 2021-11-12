@@ -2,12 +2,11 @@ import { isEmpty, uniq } from "lodash/fp";
 import { CSSProperties, useRef, useState } from "react";
 import { Dropdown, Table, Toast } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
-import {
-  GuildMember,
-  MixtapeProject,
-  useGuildMembers,
-  useMixtapeProjects,
-} from "../../datasets";
+import { getSession } from "../../auth";
+import { GuildMember } from "../../datasets";
+import { Project } from "../../resources/mixtape/Project";
+import { Resources, useResource } from "../../resources/Resources";
+import { ChannelSchema } from "../../resources/schema/ChannelSchema";
 
 const ManageMixtapes = () => {
   return (
@@ -21,49 +20,50 @@ const ManageMixtapes = () => {
 export default ManageMixtapes;
 
 const ProjectTable = () => {
-  const [projects, setProjects] = useMixtapeProjects();
-  const guildMembers = useGuildMembers();
+  const db = new Resources(getSession().key);
+  const [projects, setProjects] = useResource(db.mixtape.projects.list);
+  const [guildMembers] = useResource(db.guildMembers.list);
+  const [channels] = useResource(db.channels.list);
   return (
     <div>
       <Table variant="dark" bordered size="small">
         <CreateProjectRow projects={projects} setProjects={setProjects} />
         {projects
           ?.sort((a, b) => b.id - a.id)
-          .map((proj) => (
-            <>
-              <thead key={`${proj.id}-head`}>
-                <tr>
-                  <td className="text-muted">id</td>
-                  <th>Title</th>
-                  <th>Name</th>
-                  <th>Mixtape</th>
-                  <th>Channel</th>
-                  <th>Hosts</th>
-                  <th />
-                </tr>
-              </thead>
-              <ProjectRow
-                key={`${proj.id}-body`}
-                projects={projects}
-                setProjects={setProjects}
-                thisProject={proj}
-                guildMembers={guildMembers ?? []}
-              />
-            </>
-          ))}
+          .map((proj) => [
+            <thead key={`${proj.id}-head`}>
+              <tr>
+                <td className="text-muted">id</td>
+                <th>Title</th>
+                <th>Name</th>
+                <th>Mixtape</th>
+                <th>Channel</th>
+                <th>Hosts</th>
+                <th />
+              </tr>
+            </thead>,
+            <ProjectRow
+              key={`${proj.id}-body`}
+              projects={projects}
+              setProjects={setProjects}
+              thisProject={proj}
+              channels={channels ?? []}
+              guildMembers={guildMembers ?? []}
+            />,
+          ])}
       </Table>
     </div>
   );
 };
 
 const CreateProjectRow = (props: {
-  projects: MixtapeProject[] | undefined;
-  setProjects: (projs: MixtapeProject[]) => void;
+  projects: Project[] | undefined;
+  setProjects: (val: Project[]) => void;
 }) => {
+  const db = new Resources(getSession().key).mixtape.projects;
   const createProject = () => {
-    new MixtapeProject().create().then((resp) => {
-      if (resp.mixtapeProject)
-        props.setProjects([resp.mixtapeProject, ...(props.projects ?? [])]);
+    db.create().then((proj) => {
+      props.setProjects([proj, ...(props.projects ?? [])]);
     });
   };
   return (
@@ -96,18 +96,21 @@ const CreateProjectRow = (props: {
 };
 
 const ProjectRow = (props: {
-  thisProject: MixtapeProject | undefined;
-  projects: MixtapeProject[] | undefined;
-  setProjects: (projs: MixtapeProject[]) => void;
+  thisProject: Project | undefined;
+  projects: Project[] | undefined;
+  setProjects: (val: Project[]) => void;
   guildMembers: GuildMember[];
+  channels: ChannelSchema[];
 }) => {
   const [project, setProject] = useState(props.thisProject);
+  const db = new Resources(getSession().key).mixtape.projects;
+
   const deleteProject = () => {
-    project?.delete().then(() => {
+    const id = project?.id ?? 0;
+    if (id == 0) return;
+    db.delete(id).then(() => {
       setProject(undefined);
-      props.setProjects(
-        props.projects?.filter((p) => p.id != project.id) ?? []
-      );
+      props.setProjects(props.projects?.filter((p) => p.id != id) ?? []);
     });
   };
   if (!project) return <div />;
@@ -135,11 +138,10 @@ const ProjectRow = (props: {
           initValue={project.mixtape}
           setField={(val, proj) => (proj.mixtape = val)}
         />
-        <EditField
+        <EditChannel
           project={project}
           setProject={setProject}
-          initValue={project.channel}
-          setField={(val, proj) => (proj.channel = val)}
+          channels={props.channels}
         />
         <EditHosts
           project={project}
@@ -166,10 +168,10 @@ const ProjectRow = (props: {
 };
 
 const EditField = (props: {
-  project: MixtapeProject;
-  setProject: (proj: MixtapeProject) => void;
+  project: Project;
+  setProject: (proj: Project) => void;
   initValue: string;
-  setField: (val: string, proj: MixtapeProject) => void;
+  setField: (val: string, proj: Project) => void;
 }) => {
   const [tdClassName, setTdClassName] = useState("");
   const inputStyle: CSSProperties = {
@@ -178,21 +180,19 @@ const EditField = (props: {
   };
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const db = new Resources(getSession().key).mixtape.projects;
+
   const saveProject = () => {
     const newVal = inputRef.current?.value ?? props.initValue;
     if (props.project.id != 0 && props.initValue == newVal) return;
 
     const project = props.project;
     props.setField(newVal, project);
-    (project.id == 0 ? project.create() : project.save())
-      .then((resp) => {
-        if (!resp.mixtapeProject) {
-          setTdClassName("text-warning");
-        } else {
-          setTdClassName("");
-          props.setProject(resp.mixtapeProject);
-          console.log("saved project", resp.mixtapeProject);
-        }
+    (project.id == 0 ? db.create(project) : db.save(project))
+      .then((proj) => {
+        setTdClassName("");
+        props.setProject(proj);
+        console.log("saved project", proj);
       })
       .catch(() => setTdClassName("text-warning"));
   };
@@ -215,20 +215,41 @@ const EditField = (props: {
   );
 };
 
+const EditChannel = (props: {
+  project: Project;
+  setProject: (proj: Project) => void;
+  channels: ChannelSchema[];
+}) => {
+  return (
+    <td>
+      <select>
+        <option>
+          {props.project?.channel ? props.project.channel : "choose a channel"}
+        </option>
+        {props.channels?.map((r, i) => (
+          <option key={i}>r.name</option>
+        ))}
+      </select>
+    </td>
+  );
+};
+
 const EditHosts = (props: {
-  project: MixtapeProject;
-  setProject: (proj: MixtapeProject | undefined) => void;
+  project: Project;
+  setProject: (proj: Project | undefined) => void;
   guildMembers: GuildMember[];
 }) => {
   const [showToast, setShowToast] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const db = new Resources(getSession().key).mixtape.projects;
+
   const addHost = (member: GuildMember | undefined) => {
     if (!member) return;
     const project = props.project;
     project.hosts = uniq([...project.hosts, member.user.id]);
-    project.save().then((resp) => {
-      if (resp.mixtapeProject) props.setProject(resp.mixtapeProject);
+    db.save(project).then((result) => {
+      props.setProject(result);
     });
   };
 
@@ -236,9 +257,7 @@ const EditHosts = (props: {
     if (!member) return;
     const project = props.project;
     project.hosts = project.hosts.filter((id) => id != member.user.id);
-    project.save().then((resp) => {
-      if (resp.mixtapeProject) props.setProject(resp.mixtapeProject);
-    });
+    db.save(project).then((result) => props.setProject(result));
   };
 
   const projectMembers = props.guildMembers.filter((m) =>

@@ -3,25 +3,22 @@ import { useRef, useState } from "react";
 import { Button, Col, FormControl, Row } from "react-bootstrap";
 import ReactMarkdown from "react-markdown";
 import { getSession } from "../../auth";
-import { links } from "../../data/links";
 import {
   GuildMember,
-  MixtapeProject,
   Session,
   useGuildMembers,
-  useMixtapeProjects,
   UserRole,
 } from "../../datasets";
+import { Project } from "../../resources/mixtape/Project";
+import { Resources, useResource } from "../../resources/Resources";
+import { links } from "../../static/links";
 import { FancyProjectMenu, useMenuSelection } from "../shared/FancyProjectMenu";
 import { LinkUser } from "../shared/LinkChannel";
 
-const permaLink = (project: MixtapeProject) => `/mixtape/${project.Name}`;
+const permaLink = (project: Project) => `/mixtape/${project.Name}`;
 const pathMatcher = /\/mixtape\/(.+)\/?/;
 
-const searchProjects = (
-  query: string,
-  projects: MixtapeProject[]
-): MixtapeProject[] => {
+const searchProjects = (query: string, projects: Project[]): Project[] => {
   return (projects ?? []).filter(
     (project) =>
       project.Name.toLowerCase().includes(query) ||
@@ -31,12 +28,13 @@ const searchProjects = (
 };
 
 export const MemberDashboard = () => {
-  const [mixtapeProjects, setMixtapeProjects] = useMixtapeProjects();
+  const db = new Resources(getSession().key);
+  const [projects, setProjects] = useResource(db.mixtape.projects.list);
   const guildMembers = useGuildMembers() ?? [];
 
-  const filteredProjects = mixtapeProjects?.filter((p) => !isEmpty(p.title));
+  const filteredProjects = projects?.filter((p) => !isEmpty(p.title));
   const [selected, setSelected] = useMenuSelection(
-    mixtapeProjects ?? [],
+    projects ?? [],
     pathMatcher,
     permaLink,
     shuffle(filteredProjects).pop()
@@ -48,7 +46,7 @@ export const MemberDashboard = () => {
       <Row className={"row-cols-1"}>
         <Col lg={3}>
           <FancyProjectMenu
-            choices={mixtapeProjects ?? []}
+            choices={projects ?? []}
             selected={selected}
             setSelected={setSelected}
             permaLink={permaLink}
@@ -70,8 +68,8 @@ export const MemberDashboard = () => {
             guildMembers={guildMembers}
             project={selected}
             setProject={setSelected}
-            allProjects={mixtapeProjects ?? []}
-            setAllProjects={setMixtapeProjects}
+            allProjects={projects ?? []}
+            setAllProjects={setProjects}
           />
         </Col>
       </Row>
@@ -82,11 +80,13 @@ export const MemberDashboard = () => {
 const ProjectCard = (props: {
   me: Session;
   guildMembers: GuildMember[];
-  project: MixtapeProject | undefined;
-  setProject: (x: MixtapeProject) => void;
-  allProjects: MixtapeProject[];
-  setAllProjects: (x: MixtapeProject[]) => void;
+  project: Project | undefined;
+  setProject: (x: Project) => void;
+  allProjects: Project[];
+  setAllProjects: (x: Project[]) => void;
 }) => {
+  const db = new Resources(getSession().key).mixtape.projects;
+
   const [showEdit, setShowEdit] = useState("");
   const blurbRef = useRef({} as HTMLTextAreaElement);
   if (!props.project) return <div />;
@@ -107,13 +107,11 @@ const ProjectCard = (props: {
     const proj = props.project;
     proj.blurb = blurbRef.current.value;
     setShowEdit("");
-    proj.save().then((resp) => {
+    db.save(proj).then((result) => {
       props.setProject(proj);
-      const allProjects = uniqBy(
-        (x) => x.Name,
-        [...(resp.mixtapeProjects ?? []), ...props.allProjects]
+      props.setAllProjects(
+        uniqBy((x) => x.Name, [result, ...props.allProjects])
       );
-      props.setAllProjects(allProjects);
     });
   };
 

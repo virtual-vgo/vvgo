@@ -21,7 +21,6 @@ import { Navbar } from "./shared/Navbar";
 const MemberStats = lazy(() => import("./stats/Members"));
 const Projects = lazy(() => import("./Projects"));
 const Parts = lazy(() => import("./Parts"));
-const NewProjectWorkflow = lazy(() => import("./mixtape/NewProjectWorkflow"));
 const MemberDashboard = lazy(() => import("./mixtape/MemberDashboard"));
 const About = lazy(() => import("./About"));
 const CreditsMaker = lazy(() => import("./CreditsMaker"));
@@ -56,7 +55,9 @@ export const App = () => {
         </PrivateRoute>
 
         <PrivateRoute path="/mixtape/" role={UserRole.VerifiedMember}>
-          <MixtapeRoutes />
+          <AppPage title="Wintry Mix">
+            <MemberDashboard />
+          </AppPage>
         </PrivateRoute>
 
         <Route path="/projects/">
@@ -127,26 +128,6 @@ const AdminRoutes = () => {
       <Route path="/admin/">
         <AppPage title="Admin Links">
           <Admin />
-        </AppPage>
-      </Route>
-    </Switch>
-  );
-};
-
-const MixtapeRoutes = () => {
-  return (
-    <Switch>
-      <PrivateRoute
-        path="/mixtape/NewProjectWorkflow/"
-        role={UserRole.ExecutiveDirector}
-      >
-        <AppPage title="New Project Workflow">
-          <NewProjectWorkflow />
-        </AppPage>
-      </PrivateRoute>
-      <Route>
-        <AppPage title="Wintry Mix">
-          <MemberDashboard />
         </AppPage>
       </Route>
     </Switch>
