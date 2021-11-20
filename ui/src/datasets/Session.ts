@@ -1,5 +1,6 @@
 import { get, has, isEmpty } from "lodash/fp";
 import { ApiResponse } from "./ApiResponse";
+import { GuildMember } from "./GuildMember";
 import { fetchApi } from "./hooks";
 
 export enum UserRole {
@@ -104,5 +105,14 @@ export class Session {
       default:
         return false;
     }
+  }
+
+  resolveNick(members: GuildMember[]): string {
+    return (
+      members
+        .filter((m) => this.discordID === m.user.id)
+        .pop()
+        ?.displayName() ?? this.discordID
+    );
   }
 }

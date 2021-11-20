@@ -35,7 +35,7 @@ const ProjectTable = () => {
                 <tr>
                   <td className="text-muted">id</td>
                   <th>Title</th>
-                  <th>Name</th>
+                  <th>Permalink</th>
                   <th>Mixtape</th>
                   <th>Channel</th>
                   <th>Hosts</th>
@@ -72,7 +72,7 @@ const CreateProjectRow = (props: {
         <tr>
           <td className="text-muted">id</td>
           <th>Title</th>
-          <th>Name</th>
+          <th>Permalink</th>
           <th>Mixtape</th>
           <th>Channel</th>
           <th>Hosts</th>

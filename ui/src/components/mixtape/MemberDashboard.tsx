@@ -34,9 +34,9 @@ export const MemberDashboard = () => {
   const [mixtapeProjects, setMixtapeProjects] = useMixtapeProjects();
   const guildMembers = useGuildMembers() ?? [];
 
-  const filteredProjects = mixtapeProjects?.filter((p) => !isEmpty(p.title));
+  const filteredProjects = mixtapeProjects?.filter((p) => p.title !== "") ?? [];
   const [selected, setSelected] = useMenuSelection(
-    mixtapeProjects ?? [],
+    filteredProjects,
     pathMatcher,
     permaLink,
     shuffle(filteredProjects).pop()
@@ -48,7 +48,7 @@ export const MemberDashboard = () => {
       <Row className={"row-cols-1"}>
         <Col lg={3}>
           <FancyProjectMenu
-            choices={mixtapeProjects ?? []}
+            choices={filteredProjects}
             selected={selected}
             setSelected={setSelected}
             permaLink={permaLink}

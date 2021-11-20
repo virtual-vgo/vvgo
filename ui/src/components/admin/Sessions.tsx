@@ -7,11 +7,18 @@ import {
 } from "react";
 import { Button } from "react-bootstrap";
 import { getSession } from "../../auth";
-import { Session, SessionKind, useSessions } from "../../datasets";
+import {
+  GuildMember,
+  Session,
+  SessionKind,
+  useGuildMembers,
+  useSessions,
+} from "../../datasets";
 import { LoadingText } from "../shared/LoadingText";
 
 export const Sessions = () => {
   const me = getSession();
+  const guildMembers = useGuildMembers() ?? [];
   const [sessions, setSessions] = useSessions();
   const [deleteButtonState, setDeleteButtonState] = useState(new Map());
   const [createButtonState, setCreateButtonState] = useState("new");
@@ -30,6 +37,7 @@ export const Sessions = () => {
       <SessionRow
         key={session.key}
         session={session}
+        guildMembers={guildMembers}
         buttonState={deleteButtonState}
         setButtonState={setDeleteButtonState}
       />
@@ -43,6 +51,7 @@ export const Sessions = () => {
         className={"text-warning"}
         key={session.key}
         session={session}
+        guildMembers={guildMembers}
         buttonState={deleteButtonState}
         setButtonState={setDeleteButtonState}
       />
@@ -59,7 +68,8 @@ export const Sessions = () => {
                 <th>Kind</th>
                 <th>Roles</th>
                 <th>Discord ID</th>
-                <th>Expires</th>
+                <th>Created At</th>
+                <th>Expires At</th>
                 <th />
               </tr>
             </thead>
@@ -183,6 +193,7 @@ const CreateButton = (props: {
 
 const SessionRow = (props: {
   session: Session;
+  guildMembers: GuildMember[];
   buttonState: Map<string, string>;
   className?: string;
   setButtonState: Dispatch<SetStateAction<Map<string, string>>>;
@@ -200,7 +211,7 @@ const SessionRow = (props: {
         </Button>
       </td>
       <td>{session.roles ? session.roles.join(", ") : "none"}</td>
-      <td>{session.discordID}</td>
+      <td>{session.resolveNick(props.guildMembers)}</td>
       <td>{new Date(session.createdAt ?? "").toLocaleString()}</td>
       <td>{new Date(session.expiresAt ?? "").toLocaleString()}</td>
       <td width={120}>
