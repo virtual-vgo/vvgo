@@ -1,9 +1,8 @@
 import isEmpty from "lodash/fp/isEmpty";
-import { lazy, Suspense, useState } from "react";
-import { Badge } from "react-bootstrap";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
 import { getSession, updateLogin } from "../auth";
-import { latestProject, useProjects, UserRole } from "../datasets";
+import { UserRole } from "../datasets";
 import Admin from "./admin/Admin";
 import Contact from "./Contact";
 import AccessDenied from "./errors/AccessDenied";

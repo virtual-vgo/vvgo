@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect, useState } from "react";
+import { useState } from "react";
 import { Badge } from "react-bootstrap";
 import { latestProject, useProjects } from "../../datasets";
 
