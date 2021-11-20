@@ -6,12 +6,10 @@ const Admin = () => {
       <h1>Executive Director Links</h1>
       <ul>
         <li>
-          <Link to="/admin/mixtape/">Manage Mixtape Projects</Link>
+          <Link to="/admin/mixtape/">View/edit mixtape projects.</Link>
         </li>
         <li>
-          <Link to="/mixtape/NewProjectWorkflow">
-            Mixtape New Project Workflow
-          </Link>
+          <Link to="/admin/sessions">View/edit login sessions.</Link>
         </li>
       </ul>
     </div>
