@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const EnvPrefix=""
+const EnvPrefix = ""
 
 var Config struct {
 	Development bool
