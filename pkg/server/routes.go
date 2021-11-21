@@ -3,13 +3,11 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/models"
 	"github.com/virtual-vgo/vvgo/pkg/server/api"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/arrangements"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/auth"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/channels"
-	"github.com/virtual-vgo/vvgo/pkg/server/api/devel"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/guild_members"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
@@ -30,7 +28,6 @@ type Filesystem string
 
 func (fs Filesystem) Open(name string) (http.File, error) {
 	file, err := os.Open(path.Join(PublicFiles, "dist", name))
-	fmt.Println(name)
 	if errors.Is(err, os.ErrNotExist) {
 		return os.Open(path.Join(PublicFiles, "dist", "index.html"))
 	}
@@ -91,10 +88,7 @@ func Routes() http.Handler {
 	rbacMux.HandleApiFunc("/api/v1/spreadsheet", api.Spreadsheet, models.RoleWriteSpreadsheet)
 	rbacMux.HandleApiFunc("/api/v1/version", api.Version, models.RoleAnonymous)
 	rbacMux.HandleApiFunc("/download", api.Download, models.RoleDownload)
-
-	if config.Config.Development {
-		rbacMux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)
-	}
+	rbacMux.HandleFunc("/api/", http.NotFound, models.RoleAnonymous)
 
 	rbacMux.Handle("/images/", http.FileServer(http.Dir(PublicFiles)), models.RoleAnonymous)
 	rbacMux.Handle("/", ServeUI, models.RoleAnonymous)

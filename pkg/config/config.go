@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const EnvPrefix=""
+
 var Config struct {
 	Development bool
 
@@ -49,17 +51,25 @@ var Config struct {
 
 func init() { ProcessEnv() }
 
-func ProcessEnv() { envconfig.MustProcess("", &Config) }
+func ProcessEnv() { envconfig.MustProcess(EnvPrefix, &Config) }
 
 func ProcessEnvFile(envFile string) {
 	defer ProcessEnv()
 
+	if envFile == "" {
+		return
+	}
+
 	file, err := os.Open(envFile)
-	if err != nil {
+	if os.IsNotExist(err) {
+		logrus.WithField("file_name", envFile).Infof("env file does not exist, skipping")
+		return
+	} else if err != nil {
 		logrus.WithField("file_name", envFile).WithError(err).Error("os.Open() failed")
 		logrus.Fatal("cannot read environment file")
 		return
 	}
+	defer file.Close()
 
 	var buf bytes.Buffer
 	if _, err = buf.ReadFrom(file); err != nil {
@@ -68,7 +78,7 @@ func ProcessEnvFile(envFile string) {
 		return
 	}
 
-	for _, line := range strings.Split(buf.String(), "\n") {
+	for i, line := range strings.Split(buf.String(), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -76,11 +86,17 @@ func ProcessEnvFile(envFile string) {
 
 		fields := strings.SplitN(line, "=", 2)
 		if len(fields) != 2 {
-			logrus.Fatal("cannot parse environment file")
+			logrus.WithField("file_name", envFile).
+				WithField("line", i).
+				WithField("text", line).
+				Error("cannot parse line, skipping")
 			return
 		}
 
 		key, val := fields[0], fields[1]
+		if os.Getenv(key) != "" {
+			continue
+		}
 		if err = os.Setenv(key, val); err != nil {
 			logrus.WithField("file_name", envFile).WithError(err).Error("os.Setenv() failed")
 			return
