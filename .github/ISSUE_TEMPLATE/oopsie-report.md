@@ -1,6 +1,6 @@
 ---
 name: Oopsie Report
-about: Tell us about an oopsie
+about: Tell us about an oopsie.
 title: ''
 labels: ''
 assignees: ''
