@@ -1,5 +1,5 @@
 ---
-name: Oopsie Report
+name: Oopsie (Bug) Report
 about: Tell us about an oopsie.
 title: ''
 labels: ''
