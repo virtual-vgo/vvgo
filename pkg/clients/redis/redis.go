@@ -3,6 +3,7 @@ package redis
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/mediocregopher/radix/v3"
@@ -16,6 +17,10 @@ import (
 	"strings"
 	"time"
 )
+
+const Network = "tcp"
+
+const NewClientRetryWaitTime = 1 * time.Second
 
 const (
 	GET              = "GET"
@@ -52,11 +57,29 @@ func Cmd(rcv interface{}, cmd string, args ...string) Action {
 var Client struct{ *radix.Pool }
 
 func init() {
-	radixPool, err := radix.NewPool(config.Config.Redis.Network, config.Config.Redis.Address, config.Config.Redis.PoolSize)
-	if err != nil {
-		log.WithError(err).Fatalf("radix.NewPool() failed")
+	ticker := time.NewTicker(NewClientRetryWaitTime)
+	defer ticker.Stop()
+	config.Config.Redis.Address = "161.35.98.208:6379"
+	for attempt := 0; ; attempt++ {
+		var err error
+		Client.Pool, err = radix.NewPool(Network,
+			config.Config.Redis.Address,
+			config.Config.Redis.PoolSize,
+			radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
+				return radix.Dial("tcp", config.Config.Redis.Address,
+					radix.DialAuthUser(config.Config.Redis.User, config.Config.Redis.Pass),
+					radix.DialSelectDB(config.Config.Redis.UseDB),
+					radix.DialUseTLS(&tls.Config{InsecureSkipVerify: true}),
+				)
+			}))
+		if err != nil {
+			log.WithField("attempt", attempt).WithError(err).Warnf("radix.Dial() failed")
+			log.WithField("attempt", attempt).Warnf("retry after %v", NewClientRetryWaitTime)
+			<-ticker.C
+			continue
+		}
+		break
 	}
-	Client.Pool = radixPool
 }
 
 func ReadSheet(ctx context.Context, spreadsheetName string, name string) ([][]interface{}, error) {
