@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
+	"github.com/virtual-vgo/vvgo/pkg/clients/cloudflare"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server"
@@ -54,6 +55,7 @@ func main() {
 	apiServer := server.NewServer(config.Config.VVGO.ListenAddress)
 	logger.Println("http server: listening on " + config.Config.VVGO.ListenAddress)
 
+	go cloudflare.PurgeCache()
 	go func() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)

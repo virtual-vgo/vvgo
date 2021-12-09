@@ -48,6 +48,11 @@ var Config struct {
 		UseTLS   bool   `json:"use_tls" envconfig:"USE_TLS" default:"false"`
 		PoolSize int    `json:"pool_size" envconfig:"POOL_SIZE" default:"10"`
 	} `json:"redis" envconfig:"redis"`
+
+	Cloudflare struct {
+		ApiKey string `json:"api_key" envconfig:"API_KEY"`
+		ZoneId string `json:"zone_id" envconfig:"ZONE_ID"`
+	} `json:"cloudflare" envconfig:"CLOUDFLARE"`
 }
 
 func init() { ProcessEnv() }
