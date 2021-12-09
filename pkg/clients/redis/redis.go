@@ -74,11 +74,17 @@ func initClient() {
 				config.Config.Redis.Address,
 				config.Config.Redis.PoolSize,
 				radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
-					return radix.Dial("tcp", config.Config.Redis.Address,
+					var dialOpts []radix.DialOpt
+
+					dialOpts = []radix.DialOpt{
 						radix.DialAuthUser(config.Config.Redis.User, config.Config.Redis.Pass),
 						radix.DialSelectDB(config.Config.Redis.UseDB),
-						radix.DialUseTLS(&tls.Config{InsecureSkipVerify: true}),
-					)
+					}
+
+					if config.Config.Redis.UseTLS {
+						dialOpts = append(dialOpts, radix.DialUseTLS(&tls.Config{InsecureSkipVerify: true}))
+					}
+					return radix.Dial("tcp", config.Config.Redis.Address, dialOpts...)
 				}))
 			if err != nil {
 				log.WithField("attempt", attempt).WithError(err).Warnf("radix.Dial() failed")
