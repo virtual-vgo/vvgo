@@ -30,7 +30,6 @@ type Filesystem string
 
 func (fs Filesystem) Open(name string) (http.File, error) {
 	file, err := os.Open(path.Join(PublicFiles, "dist", name))
-	fmt.Println(name)
 	if errors.Is(err, os.ErrNotExist) {
 		return os.Open(path.Join(PublicFiles, "dist", "index.html"))
 	}

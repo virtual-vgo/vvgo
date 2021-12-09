@@ -41,10 +41,18 @@ var Config struct {
 	} `json:"discord" envconfig:"discord"`
 
 	Redis struct {
-		Network  string `json:"network" envconfig:"network" default:"tcp"`
 		Address  string `json:"address" envconfig:"address" default:"localhost:6379"`
-		PoolSize int    `json:"pool_size" envconfig:"pool_size" default:"10"`
+		UseDB    int    `json:"use_db" envconfig:"USE_DB" default:"0"`
+		User     string `json:"user" envconfig:"USER" default:"default"`
+		Pass     string `json:"pass" envconfig:"PASS" default:""`
+		UseTLS   bool   `json:"use_tls" envconfig:"USE_TLS" default:"false"`
+		PoolSize int    `json:"pool_size" envconfig:"POOL_SIZE" default:"10"`
 	} `json:"redis" envconfig:"redis"`
+
+	Cloudflare struct {
+		ApiKey string `json:"api_key" envconfig:"API_KEY"`
+		ZoneId string `json:"zone_id" envconfig:"ZONE_ID"`
+	} `json:"cloudflare" envconfig:"CLOUDFLARE"`
 }
 
 func init() { ProcessEnv() }

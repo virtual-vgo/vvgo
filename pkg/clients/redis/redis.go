@@ -3,6 +3,7 @@ package redis
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/mediocregopher/radix/v3"
@@ -14,8 +15,13 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/models/traces"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+const Network = "tcp"
+
+const NewClientRetryWaitTime = 1 * time.Second
 
 const (
 	GET              = "GET"
@@ -49,14 +55,48 @@ func Cmd(rcv interface{}, cmd string, args ...string) Action {
 	}
 }
 
-var Client struct{ *radix.Pool }
+var client *radix.Pool
 
-func init() {
-	radixPool, err := radix.NewPool(config.Config.Redis.Network, config.Config.Redis.Address, config.Config.Redis.PoolSize)
-	if err != nil {
-		log.WithError(err).Fatalf("radix.NewPool() failed")
-	}
-	Client.Pool = radixPool
+func getClient() *radix.Pool {
+	initClient()
+	return client
+}
+
+var initClientOnce = sync.Once{}
+
+func initClient() {
+	initClientOnce.Do(func() {
+		ticker := time.NewTicker(NewClientRetryWaitTime)
+		defer ticker.Stop()
+		for attempt := 0; ; attempt++ {
+			var err error
+			client, err = radix.NewPool(Network,
+				config.Config.Redis.Address,
+				config.Config.Redis.PoolSize,
+				radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
+					var dialOpts []radix.DialOpt
+
+					if config.Config.Redis.Pass != "" {
+						dialOpts = append(dialOpts,
+							radix.DialAuthUser(config.Config.Redis.User, config.Config.Redis.Pass),
+							radix.DialSelectDB(config.Config.Redis.UseDB))
+
+					}
+
+					if config.Config.Redis.UseTLS {
+						dialOpts = append(dialOpts, radix.DialUseTLS(&tls.Config{InsecureSkipVerify: true}))
+					}
+					return radix.Dial("tcp", config.Config.Redis.Address, dialOpts...)
+				}))
+			if err != nil {
+				log.WithField("attempt", attempt).WithError(err).Warnf("radix.Dial() failed")
+				log.WithField("attempt", attempt).Warnf("retry after %v", NewClientRetryWaitTime)
+				<-ticker.C
+				continue
+			}
+			break
+		}
+	})
 }
 
 func ReadSheet(ctx context.Context, spreadsheetName string, name string) ([][]interface{}, error) {
@@ -91,6 +131,7 @@ func WriteSheet(ctx context.Context, spreadsheetName, name string, values [][]in
 }
 
 func Do(ctx context.Context, a Action) error {
+	initClient()
 	var err error
 	metrics := traces.NewRedisQueryMetrics(a.Cmd, a.Args)
 	span, ok := traces.NewSpanFromContext(ctx, "redis query")
@@ -100,7 +141,7 @@ func Do(ctx context.Context, a Action) error {
 		defer func() { WriteSpan(span.WithRedisQuery(metrics).WithError(err)) }()
 	}
 
-	if err = Client.Pool.Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...)); err != nil {
+	if err = getClient().Do(radix.Cmd(a.Rcv, a.Cmd, a.Args...)); err != nil {
 		logger.
 			WithFields(metrics.Fields()).
 			WithError(err).
@@ -114,8 +155,9 @@ func Do(ctx context.Context, a Action) error {
 }
 
 func NewTrace(ctx context.Context, name string) (*traces.Span, error) {
+	initClient()
 	var traceId int64
-	err := Client.Pool.Do(radix.Cmd(&traceId, INCR, traces.NextTraceIdRedisKey))
+	err := getClient().Do(radix.Cmd(&traceId, INCR, traces.NextTraceIdRedisKey))
 	if err != nil {
 		return nil, err
 	}
@@ -124,6 +166,7 @@ func NewTrace(ctx context.Context, name string) (*traces.Span, error) {
 }
 
 func WriteSpan(span traces.Span) {
+	initClient()
 	if span.Duration == 0 {
 		span = span.Finish()
 	}
@@ -133,13 +176,14 @@ func WriteSpan(span traces.Span) {
 		log.WithError(err).Error("json.Encode() failed")
 		return
 	}
-	if err := Client.Pool.Do(radix.Cmd(nil, ZADD, traces.SpansRedisKey, timestamp, data.String())); err != nil {
+	if err := getClient().Do(radix.Cmd(nil, ZADD, traces.SpansRedisKey, timestamp, data.String())); err != nil {
 		logger.RedisFailure(context.Background(), err)
 		return
 	}
 }
 
 func ListSpans(ctx context.Context, start, end time.Time) ([]traces.Span, error) {
+	initClient()
 	startString := fmt.Sprintf("%f", time.Duration(start.UnixNano()).Seconds())
 	endString := fmt.Sprintf("%f", time.Duration(end.UnixNano()).Seconds())
 
