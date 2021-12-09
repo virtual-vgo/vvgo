@@ -55,7 +55,9 @@ func main() {
 	apiServer := server.NewServer(config.Config.VVGO.ListenAddress)
 	logger.Println("http server: listening on " + config.Config.VVGO.ListenAddress)
 
-	go cloudflare.PurgeCache()
+	if !config.Config.Development {
+		go cloudflare.PurgeCache()
+	}
 	go func() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
