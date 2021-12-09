@@ -41,12 +41,12 @@ var Config struct {
 	} `json:"discord" envconfig:"discord"`
 
 	Redis struct {
-		Address  string `json:"address" envconfig:"ADDRESS" default:"localhost:6379"`
+		Address  string `json:"address" envconfig:"address" default:"localhost:6379"`
 		UseDB    int    `json:"use_db" envconfig:"USE_DB" default:"0"`
 		User     string `json:"user" envconfig:"USER" default:"default"`
 		Pass     string `json:"pass" envconfig:"PASS" default:""`
 		PoolSize int    `json:"pool_size" envconfig:"POOL_SIZE" default:"10"`
-	} `json:"redis" envconfig:"REDIS"`
+	} `json:"redis" envconfig:"redis"`
 }
 
 func init() { ProcessEnv() }
