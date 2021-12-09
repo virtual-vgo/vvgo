@@ -76,9 +76,11 @@ func initClient() {
 				radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
 					var dialOpts []radix.DialOpt
 
-					dialOpts = []radix.DialOpt{
-						radix.DialAuthUser(config.Config.Redis.User, config.Config.Redis.Pass),
-						radix.DialSelectDB(config.Config.Redis.UseDB),
+					if config.Config.Redis.Pass != "" {
+						dialOpts = append(dialOpts,
+							radix.DialAuthUser(config.Config.Redis.User, config.Config.Redis.Pass),
+							radix.DialSelectDB(config.Config.Redis.UseDB))
+
 					}
 
 					if config.Config.Redis.UseTLS {
