@@ -11,9 +11,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "mocha-test": "mocha ui",
-    "vet": "eslint ui",
-    "fmt": "prettier -w ui"
+    "mocha-test": "mocha src",
+    "vet": "eslint src",
+    "fmt": "prettier -w src"
   },
   "browserslist": {
     "production": [
