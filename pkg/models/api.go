@@ -51,8 +51,6 @@ type CreditsPasta struct {
 	YoutubePasta string
 }
 
-
-
 type ArrangementsBallot []string
 
 type OAuthRedirect struct {
