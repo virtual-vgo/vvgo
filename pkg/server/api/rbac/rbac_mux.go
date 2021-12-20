@@ -1,4 +1,4 @@
-package server
+package rbac
 
 import (
 	"context"
@@ -10,21 +10,21 @@ import (
 	"net/http"
 )
 
-// RBACMux Authenticate http requests using session based authentication.
+// Mux Authenticate http requests using session based authentication.
 // If the request has a valid session or token with the required role, it is allowed access.
-type RBACMux struct {
+type Mux struct {
 	*http.ServeMux
 }
 
-func NewRBACMux() RBACMux { return RBACMux{ServeMux: http.NewServeMux()} }
+func NewRBACMux() Mux { return Mux{ServeMux: http.NewServeMux()} }
 
 // HandleFunc registers the handler function for the given pattern.
-func (auth *RBACMux) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request), role models.Role) {
+func (auth *Mux) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request), role models.Role) {
 	auth.Handle(pattern, http.HandlerFunc(handler), role)
 }
 
 // HandleApiFunc registers the handler function for the given pattern.
-func (auth *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) models.ApiResponse, role models.Role) {
+func (auth *Mux) HandleApiFunc(pattern string, handler func(*http.Request) models.ApiResponse, role models.Role) {
 	auth.Handle(pattern, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		resp := handler(r)
@@ -55,7 +55,7 @@ func (auth *RBACMux) HandleApiFunc(pattern string, handler func(*http.Request) m
 	}), role)
 }
 
-func (auth *RBACMux) Handle(pattern string, handler http.Handler, role models.Role) {
+func (auth *Mux) Handle(pattern string, handler http.Handler, role models.Role) {
 	auth.ServeMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		var identity models.Identity

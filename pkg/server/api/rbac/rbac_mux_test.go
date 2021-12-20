@@ -1,4 +1,4 @@
-package server
+package rbac
 
 import (
 	"context"
@@ -41,7 +41,7 @@ func TestRBACMux_Handle(t *testing.T) {
 		return req
 	}
 
-	assertSuccess := func(t *testing.T, mux RBACMux, req *http.Request) {
+	assertSuccess := func(t *testing.T, mux Mux, req *http.Request) {
 		t.Helper()
 		recorder := httptest.NewRecorder()
 		mux.ServeHTTP(recorder, req)
@@ -49,7 +49,7 @@ func TestRBACMux_Handle(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	}
 
-	assertUnauthorized := func(t *testing.T, mux RBACMux, req *http.Request) {
+	assertUnauthorized := func(t *testing.T, mux Mux, req *http.Request) {
 		t.Helper()
 		recorder := httptest.NewRecorder()
 		mux.ServeHTTP(recorder, req)

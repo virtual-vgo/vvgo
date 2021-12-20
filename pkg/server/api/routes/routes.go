@@ -1,4 +1,4 @@
-package server
+package routes
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api/devel"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/guild_members"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/mixtape"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/rbac"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/traces"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
@@ -24,7 +25,7 @@ import (
 
 const PublicFiles = "public"
 
-var ServeUI = http.FileServer(Filesystem("public"))
+var ServeUI = http.FileServer(Filesystem(PublicFiles))
 
 type Filesystem string
 
@@ -49,7 +50,7 @@ func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
 }
 
 func Routes() http.Handler {
-	rbacMux := RBACMux{ServeMux: http.NewServeMux()}
+	rbacMux := rbac.Mux{ServeMux: http.NewServeMux()}
 
 	// authorize
 	for _, role := range []models.Role{models.RoleVVGOVerifiedMember, models.RoleVVGOProductionTeam, models.RoleVVGOExecutiveDirector} {

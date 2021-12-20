@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="9fd23187-a66b-476e-a068-ddd4eee609df" name="Default Changelist" comment="update client.go">
+      <change beforePath="$PROJECT_DIR$/cmd/sync_db/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/sync_db/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/models/api.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/models/api.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/server/api/guild_members/list.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/server/api/guild_members/list.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/server/rbac_mux.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/server/api/rbac/rbac_mux.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/server/rbac_mux_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/server/api/rbac/rbac_mux_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/server/routes.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/server/api/routes/routes.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/server/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/server/server.go" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="Go Application" />
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file://$USER_HOME$/sdk/go1.16.7" />
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="a715917d-816b-4713-927f-dad05b0e22e7" />
+        <option name="url" value="git@github.com:virtual-vgo/vvgo.git" />
+      </UrlAndAccount>
+    </option>
+  </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+    <option name="useGoPathFromSystemEnvironment" value="false" />
+  </component>
+  <component name="JsBowerSettings">
+    <bower-package value="" />
+    <bower.json value="" />
+  </component>
+  <component name="JupyterTrust" id="fa70ad04-c4b5-4526-b9b0-671defb1fc7a" />
+  <component name="KubernetesApiPersistence">
+    <option name="context" value="do-sfo2-vvgo" />
+    <option name="namespace" value="default" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="57llk2x9" />
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="2" />
+  </component>
+  <component name="ProjectId" id="1epmOqBuGJnmGEufoHhLx0X999Y" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="DatabaseDriversLRU" value="mariadb" />
+    <property name="DefaultGoTemplateProperty" value="Go File" />
+    <property name="DefaultHtmlFileTemplate" value="HTML File" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="TF_FMT" value="false" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="TEXT&#10;JSON" />
+    <property name="configurable..is.expanded" value="true" />
+    <property name="configurable.GoLibrariesConfigurable.is.expanded" value="true" />
+    <property name="database.data.extractors.current.export.id" value="Comma-separated (CSV)_id" />
+    <property name="database.data.extractors.current.id" value="Comma-separated (CSV)_id" />
+    <property name="go.formatter.settings.were.checked" value="true" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.modules.go.list.on.any.changes.was.set" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
+    <property name="go.vendoring.notification.had.been.shown" value="true" />
+    <property name="last_opened_file_path" value="$USER_HOME$/.ssh/id_rsa" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.standard" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.standard" value="" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="nodejs.mocha.mocha_node_package_dir" value="$PROJECT_DIR$/node_modules/mocha" />
+    <property name="nodejs_interpreter_path" value="node" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="prettierjs.PrettierConfiguration.Package" value="C:\Users\jacks\Documents\GitHub\vvgo\node_modules\prettier" />
+    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.proportion" value="0.15429688" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="restartRequiresConfirmation" value="false" />
+    <property name="settings.editor.selected.configurable" value="copyright.filetypes.Go" />
+    <property name="ts.external.directory.path" value="C:\Users\jacks\Documents\GitHub\vvgo\node_modules\typescript\lib" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\ui\src\components\shared" />
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\ui\src\images" />
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\public" />
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\pkg\error_wrappers" />
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\pkg\server\api\rbac_mux" />
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\pkg\server\api\routes" />
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\test" />
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\ui\test" />
+      <recent name="C:\Users\jacks\Documents\GitHub\vvgo\pkg\api\http\auth" />
+    </key>
+  </component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="docker exec -ti vvgo_redis_1 redis-cli" />
+    </option>
+  </component>
+  <component name="RunManager" selected="Compound.Run All Tests">
+    <configuration name="Launch VVGO" type="CompoundRunConfigurationType">
+      <toRun name="Deploy VVGO Sidecars " type="docker-deploy" />
+      <toRun name="Build UI" type="js.build_tools.npm" />
+      <toRun name="Build API" type="GoApplicationRunConfiguration" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Run All Tests" type="CompoundRunConfigurationType">
+      <toRun name="Deploy VVGO Sidecars " type="docker-deploy" />
+      <toRun name="Test UI" type="mocha-javascript-test-runner" />
+      <toRun name="Test Api" type="GoTestRunConfiguration" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="CompoundRunConfigurationType">
+      <toRun name="Test Api" type="GoTestRunConfiguration" />
+      <toRun name="Test UI" type="mocha-javascript-test-runner" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestBuild in github.com/virtual-vgo/vvgo/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="vvgo" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/virtual-vgo/vvgo/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestBuild\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestRedisDeploy in github.com/virtual-vgo/vvgo/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="vvgo" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/virtual-vgo/vvgo/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestRedisDeploy\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestRedisDeploy/GET_ in github.com/virtual-vgo/vvgo/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="vvgo" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/virtual-vgo/vvgo/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestRedisDeploy\E$/^\QGET_\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestVVGO in github.com/virtual-vgo/vvgo/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="vvgo" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/virtual-vgo/vvgo/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestVVGO\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestVVGO/Test_Image/GET_/api/v1/me in github.com/virtual-vgo/vvgo/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="vvgo" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/virtual-vgo/vvgo/test" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestVVGO\E$/^\QTest_Image\E$/^\QGET_\E$/^\Qapi\E$/^\Qv1\E$/^\Qme\E$" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Compound.Run All Tests" />
+      <item itemvalue="Compound.Launch VVGO" />
+      <item itemvalue="Docker.Build VVGO Container" />
+      <item itemvalue="Docker.Deploy VVGO Sidecars " />
+      <item itemvalue="Go Build.Sync DB" />
+      <item itemvalue="Go Build.Build API" />
+      <item itemvalue="Go Test.Test Api" />
+      <item itemvalue="Go Test.TestVVGO/Test_Image/GET_/api/v1/me in github.com/virtual-vgo/vvgo/test" />
+      <item itemvalue="Go Test.TestVVGO in github.com/virtual-vgo/vvgo/test" />
+      <item itemvalue="Go Test.TestRedisDeploy in github.com/virtual-vgo/vvgo/test" />
+      <item itemvalue="Go Test.TestRedisDeploy/GET_ in github.com/virtual-vgo/vvgo/test" />
+      <item itemvalue="Go Test.TestBuild in github.com/virtual-vgo/vvgo/test" />
+      <item itemvalue="Mocha.Test UI" />
+      <item itemvalue="npm.vet" />
+      <item itemvalue="npm.Build UI" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.TestBuild in github.com/virtual-vgo/vvgo/test" />
+        <item itemvalue="Go Test.TestRedisDeploy/GET_ in github.com/virtual-vgo/vvgo/test" />
+        <item itemvalue="Go Test.TestRedisDeploy in github.com/virtual-vgo/vvgo/test" />
+        <item itemvalue="Go Test.TestVVGO in github.com/virtual-vgo/vvgo/test" />
+        <item itemvalue="Go Test.TestVVGO/Test_Image/GET_/api/v1/me in github.com/virtual-vgo/vvgo/test" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9fd23187-a66b-476e-a068-ddd4eee609df" name="Default Changelist" comment="" />
+      <created>1595026878927</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1595026878927</updated>
+      <workItem from="1595026890707" duration="778000" />
+      <workItem from="1595032818908" duration="813000" />
+      <workItem from="1595033785694" duration="264000" />
+      <workItem from="1595034070128" duration="805000" />
+      <workItem from="1595034899563" duration="3785000" />
+      <workItem from="1595303365538" duration="7305000" />
+      <workItem from="1595312180337" duration="389000" />
+      <workItem from="1595312600636" duration="1432000" />
+      <workItem from="1595314064353" duration="9944000" />
+      <workItem from="1595620338354" duration="745000" />
+      <workItem from="1596125172316" duration="211000" />
+      <workItem from="1596146104237" duration="776000" />
+      <workItem from="1596916988071" duration="20674000" />
+      <workItem from="1597115106069" duration="445000" />
+      <workItem from="1597125435529" duration="6493000" />
+      <workItem from="1597333762123" duration="10145000" />
+      <workItem from="1597390360560" duration="2277000" />
+      <workItem from="1597427598479" duration="714000" />
+      <workItem from="1597429261982" duration="29000" />
+      <workItem from="1597429320237" duration="1182000" />
+      <workItem from="1597442741880" duration="1027000" />
+      <workItem from="1597453764259" duration="114000" />
+      <workItem from="1597513098604" duration="19000" />
+      <workItem from="1597636781194" duration="13509000" />
+      <workItem from="1597725804266" duration="4553000" />
+      <workItem from="1597804816361" duration="9088000" />
+      <workItem from="1599191354579" duration="3802000" />
+      <workItem from="1599878225907" duration="48886000" />
+      <workItem from="1601163218596" duration="11631000" />
+      <workItem from="1601259299182" duration="2553000" />
+      <workItem from="1601343183194" duration="17586000" />
+      <workItem from="1601517221466" duration="14610000" />
+      <workItem from="1602877558817" duration="17877000" />
+      <workItem from="1603727556784" duration="1662000" />
+      <workItem from="1604740762891" duration="30288000" />
+      <workItem from="1605655216127" duration="1208000" />
+      <workItem from="1605903066854" duration="109000" />
+      <workItem from="1606180408515" duration="4840000" />
+      <workItem from="1606359656021" duration="100384000" />
+      <workItem from="1606665312520" duration="19021000" />
+      <workItem from="1606714770107" duration="578000" />
+      <workItem from="1606715386325" duration="609000" />
+      <workItem from="1606716028091" duration="1239000" />
+      <workItem from="1606717750333" duration="13450000" />
+      <workItem from="1607095385728" duration="1198000" />
+      <workItem from="1607995205962" duration="39158000" />
+      <workItem from="1608183309595" duration="47734000" />
+      <workItem from="1608402135076" duration="17220000" />
+      <workItem from="1608507038305" duration="1264000" />
+      <workItem from="1608509774333" duration="2628000" />
+      <workItem from="1608527432340" duration="35867000" />
+      <workItem from="1608939828234" duration="12536000" />
+      <workItem from="1608952649807" duration="3291000" />
+      <workItem from="1608955997626" duration="43570000" />
+      <workItem from="1609086351167" duration="23766000" />
+      <workItem from="1609137804557" duration="46921000" />
+      <workItem from="1609208118173" duration="19000" />
+      <workItem from="1609208182100" duration="126511000" />
+      <workItem from="1609538388642" duration="45071000" />
+      <workItem from="1611796118301" duration="29801000" />
+      <workItem from="1612223231666" duration="5029000" />
+      <workItem from="1612439430750" duration="27820000" />
+      <workItem from="1613328475938" duration="1739000" />
+      <workItem from="1614392462130" duration="14980000" />
+      <workItem from="1621785774550" duration="15837000" />
+      <workItem from="1622151115163" duration="11756000" />
+      <workItem from="1625961402792" duration="15761000" />
+      <workItem from="1626024552829" duration="11074000" />
+      <workItem from="1626036247056" duration="29480000" />
+      <workItem from="1626129824911" duration="44342000" />
+      <workItem from="1626451296986" duration="3147000" />
+      <workItem from="1628134777771" duration="4314000" />
+      <workItem from="1628209667023" duration="1686000" />
+      <workItem from="1628225181830" duration="63000" />
+      <workItem from="1628226090668" duration="535000" />
+      <workItem from="1628287003008" duration="12793000" />
+      <workItem from="1628407676148" duration="25646000" />
+      <workItem from="1628652248858" duration="14543000" />
+      <workItem from="1628745316564" duration="1636000" />
+      <workItem from="1628821264208" duration="258000" />
+      <workItem from="1628825843673" duration="45745000" />
+      <workItem from="1629003871157" duration="769000" />
+      <workItem from="1629005985092" duration="46232000" />
+      <workItem from="1629481761753" duration="109680000" />
+      <workItem from="1630249863276" duration="33687000" />
+      <workItem from="1630898653200" duration="2898000" />
+      <workItem from="1631048598449" duration="767000" />
+      <workItem from="1631753182054" duration="980000" />
+      <workItem from="1631840591448" duration="1137000" />
+      <workItem from="1632435288979" duration="83000" />
+      <workItem from="1632436764050" duration="15295000" />
+      <workItem from="1633285153241" duration="43198000" />
+      <workItem from="1634313413009" duration="211392000" />
+      <workItem from="1634853062074" duration="23631000" />
+      <workItem from="1634934011289" duration="21671000" />
+      <workItem from="1634963620386" duration="392715000" />
+      <workItem from="1635967176000" duration="3243000" />
+      <workItem from="1635970559647" duration="51733000" />
+      <workItem from="1636086518101" duration="53197000" />
+      <workItem from="1636173347528" duration="76770000" />
+      <workItem from="1636339066657" duration="28500000" />
+      <workItem from="1636398671041" duration="176858000" />
+      <workItem from="1636722773438" duration="28443000" />
+      <workItem from="1636758398870" duration="1211000" />
+      <workItem from="1636877339887" duration="11313000" />
+      <workItem from="1637425252776" duration="59937000" />
+      <workItem from="1637645834720" duration="902000" />
+      <workItem from="1638547011612" duration="13915000" />
+      <workItem from="1638905391556" duration="28301000" />
+      <workItem from="1639965403564" duration="105000" />
+    </task>
+    <task id="LOCAL-00001" summary="update client.go">
+      <created>1628915221078</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1628915221078</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="TerminalProjectNonSharedOptionsProvider">
+    <option name="shellPath" value="wsl bash" />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.env" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="update client.go" />
+    <option name="LAST_COMMIT_MESSAGE" value="update client.go" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$USER_HOME$/sdk/go1.14.6/src/net/http/client.go</url>
+          <line>450</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/vvgo$go_test______.out" NAME="go test ./... Coverage Results" MODIFIED="1609609125214" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/vvgo$TestLoginHandler_ServeHTTP_success_in_github_com_virtual_vgo_vvgo_pkg_api.out" NAME="TestLoginHandler_ServeHTTP/success in github.com/virtual-vgo/vvgo/pkg/api Coverage Results" MODIFIED="1608180536170" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/vvgo$TestReadConfig_in_github_com_virtual_vgo_vvgo_pkg_minio.out" NAME="TestReadConfig in github.com/virtual-vgo/vvgo/pkg/minio Coverage Results" MODIFIED="1608005000509" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/vvgo$CreditsTopicRow.dat" NAME="CreditsTopicRow Coverage Results" MODIFIED="1636411575548" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="MochaJavaScriptTestRunnerCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/vvgo$Test_UI.dat" NAME="Test UI Coverage Results" MODIFIED="1636417718326" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="MochaJavaScriptTestRunnerCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/vvgo$Credit.dat" NAME="Credit Coverage Results" MODIFIED="1636415173263" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="MochaJavaScriptTestRunnerCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+  </component>
+</project>

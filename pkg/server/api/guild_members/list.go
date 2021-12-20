@@ -12,7 +12,9 @@ import (
 	"time"
 )
 
-var HandleList = cache.Handle(4*3600*time.Second, func(r *http.Request) models.ApiResponse {
+const ListCacheTTL = 4 * 3600 * time.Second
+
+var HandleList = cache.Handle(ListCacheTTL, func(r *http.Request) models.ApiResponse {
 	ctx := r.Context()
 	members, err := discord.ListGuildMembers(ctx, 1000, 0)
 	if err != nil {

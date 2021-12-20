@@ -51,10 +51,7 @@ type CreditsPasta struct {
 	YoutubePasta string
 }
 
-type Spreadsheet struct {
-	SpreadsheetName string  `json:"spreadsheet_name"`
-	Sheets          []Sheet `json:"sheets"`
-}
+
 
 type ArrangementsBallot []string
 
