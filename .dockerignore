@@ -4,3 +4,4 @@
 .vvgo.env
 Dockerfile
 node_modules
+build

@@ -23,17 +23,16 @@ import (
 	"path"
 )
 
-const PublicFiles = "public"
+const PublicFiles = "build"
 
 var ServeUI = http.FileServer(Filesystem(PublicFiles))
 
 type Filesystem string
 
 func (fs Filesystem) Open(name string) (http.File, error) {
-	file, err := os.Open(path.Join(PublicFiles, "dist", name))
-	fmt.Println(name)
+	file, err := os.Open(path.Join(PublicFiles, name))
 	if errors.Is(err, os.ErrNotExist) {
-		return os.Open(path.Join(PublicFiles, "dist", "index.html"))
+		return os.Open(path.Join(PublicFiles, "index.html"))
 	}
 	return file, err
 }
@@ -96,8 +95,6 @@ func Routes() http.Handler {
 	if config.Config.Development {
 		rbacMux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)
 	}
-
-	rbacMux.Handle("/images/", http.FileServer(http.Dir(PublicFiles)), models.RoleAnonymous)
 	rbacMux.Handle("/", ServeUI, models.RoleAnonymous)
 	return &rbacMux
 }

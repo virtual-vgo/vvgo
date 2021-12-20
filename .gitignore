@@ -8,3 +8,4 @@ scrape_out
 public/dist
 .nyc_output
 *.rdb
+build

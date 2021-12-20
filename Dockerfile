@@ -1,15 +1,13 @@
 FROM node:16.13 as node
 WORKDIR /wrk/
 COPY package.json .
-COPY package-lock.json .
-RUN npm install
+COPY yarn.lock .
+RUN yarn install
 
-COPY ui ui
-COPY .eslintrc.js .
+COPY public public
+COPY src src
 COPY tsconfig.json .
-COPY webpack.config.js .
-COPY .babelrc.js .
-RUN npx webpack --mode=production
+RUN npm run build
 
 FROM golang:1.16 as builder
 WORKDIR /go/src/app/
@@ -25,12 +23,12 @@ RUN go build -o vvgo ./cmd/vvgo
 COPY .git .git
 RUN go run ./cmd/version
 
-FROM alpine:3.4 as vvgo
+FROM alpine as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils
 WORKDIR /app
 COPY LICENSE .
 COPY public ./public
-COPY --from=node /wrk/public/dist ./public/dist
+COPY --from=node /wrk/build ./build
 COPY --from=builder /go/src/app/vvgo ./vvgo
 COPY --from=builder /go/src/app/version.json ./version.json
 EXPOSE 8080

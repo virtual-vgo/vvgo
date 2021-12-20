@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Build VVGO Container" type="docker-deploy" factoryName="dockerfile" server-name="Docker Local">
+  <configuration default="false" name="Build VVGO Container" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
     <deployment type="dockerfile">
       <settings>
         <option name="imageTag" value="vvgo:latest" />
