@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="07521e48-1517-49fd-ad31-35f2ac38ea0e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/reportWebVitals.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/reportWebVitals.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/setupTests.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/setupTests.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -138,7 +136,7 @@
       <command value="docker exec -ti vvgo_redis_1 redis-cli" />
     </option>
   </component>
-  <component name="RunManager" selected="Go Build.Build API">
+  <component name="RunManager" selected="Docker.Build VVGO Container">
     <configuration name="Launch VVGO" type="CompoundRunConfigurationType">
       <toRun name="Deploy VVGO Sidecars " type="docker-deploy" />
       <toRun name="Build UI" type="js.build_tools.npm" />
