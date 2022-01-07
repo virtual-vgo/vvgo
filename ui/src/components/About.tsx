@@ -38,7 +38,7 @@ const Blurb = () => {
           We are always accepting new members into our community. If you would
           like to join our orchestra or get more information about our current
           performance opportunities, please join us on{" "}
-          <a href="https://discord.gg/9RVUJMQ" className="text-info">
+          <a href="https://discord.gg/mt8EZdsrc6" className="text-info">
             Discord
           </a>
           !
