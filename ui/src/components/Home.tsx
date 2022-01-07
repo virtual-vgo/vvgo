@@ -36,7 +36,7 @@ export const Home = () => {
               <p>
                 If you would like to join our orchestra or get more information
                 about our current projects, please join us on{" "}
-                <a href="https://discord.gg/9RVUJMQ">Discord!</a>
+                <a href="https://discord.gg/mt8EZdsrc6">Discord!</a>
               </p>
             </div>
           </div>
