@@ -1,11 +1,12 @@
 *.env
 *.exe
-.idea
 node_modules
 .google_api_credentials.json
-.run
 version.json
 dump.rdb
 scrape_out
 public/dist
 .nyc_output
+*.rdb
+build
+.idea

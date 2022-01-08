@@ -1,4 +1,4 @@
-package server
+package routes
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/server/api/devel"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/guild_members"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/mixtape"
+	"github.com/virtual-vgo/vvgo/pkg/server/api/rbac"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/slash_command"
 	"github.com/virtual-vgo/vvgo/pkg/server/api/traces"
 	"github.com/virtual-vgo/vvgo/pkg/server/http_helpers"
@@ -22,16 +23,16 @@ import (
 	"path"
 )
 
-const PublicFiles = "public"
+const PublicFiles = "build"
 
-var ServeUI = http.FileServer(Filesystem("public"))
+var ServeUI = http.FileServer(Filesystem(PublicFiles))
 
 type Filesystem string
 
 func (fs Filesystem) Open(name string) (http.File, error) {
-	file, err := os.Open(path.Join(PublicFiles, "dist", name))
+	file, err := os.Open(path.Join(PublicFiles, name))
 	if errors.Is(err, os.ErrNotExist) {
-		return os.Open(path.Join(PublicFiles, "dist", "index.html"))
+		return os.Open(path.Join(PublicFiles, "index.html"))
 	}
 	return file, err
 }
@@ -48,7 +49,7 @@ func authorize(role models.Role) func(w http.ResponseWriter, r *http.Request) {
 }
 
 func Routes() http.Handler {
-	rbacMux := RBACMux{ServeMux: http.NewServeMux()}
+	rbacMux := rbac.Mux{ServeMux: http.NewServeMux()}
 
 	// authorize
 	for _, role := range []models.Role{models.RoleVVGOVerifiedMember, models.RoleVVGOProductionTeam, models.RoleVVGOExecutiveDirector} {
@@ -94,8 +95,6 @@ func Routes() http.Handler {
 	if config.Config.Development {
 		rbacMux.HandleFunc("/api/v1/devel/fetch_spreadsheets", devel.FetchSpreadsheets, models.RoleVVGOProductionTeam)
 	}
-
-	rbacMux.Handle("/images/", http.FileServer(http.Dir(PublicFiles)), models.RoleAnonymous)
 	rbacMux.Handle("/", ServeUI, models.RoleAnonymous)
 	return &rbacMux
 }

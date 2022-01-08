@@ -7,14 +7,12 @@ import (
 )
 
 const localRedisContainer = "vvgo_redis_1"
-const remoteRedisContainer = "redis-prod"
+const redisHost = "root@redis-1.infra.vvgo.org"
 
 func main() {
 	for _, cmd := range []*exec.Cmd{
-		exec.Command("ssh", "vvgo.org", "docker", "exec", remoteRedisContainer, "redis-cli", "save"),
-		exec.Command("ssh", "vvgo.org", "docker", "cp", remoteRedisContainer+":/data/dump.rdb", "dump.rdb"),
-		exec.Command("scp", "vvgo.org:dump.rdb", "."),
-		exec.Command("ssh", "vvgo.org", "rm", "dump.rdb"),
+		exec.Command("ssh", redisHost, "/root/bin/backup-redis"),
+		exec.Command("scp", redisHost+":/var/lib/redis/dump.rdb", "."),
 		exec.Command("docker", "stop", localRedisContainer),
 		exec.Command("docker", "cp", "dump.rdb", "vvgo_redis_1:/data/dump.rdb"),
 		exec.Command("docker", "start", localRedisContainer),

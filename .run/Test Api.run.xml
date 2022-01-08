@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Test Api" type="GoTestRunConfiguration" factoryName="Go Test">
+    <module name="vvgo" />
+    <working_directory value="$PROJECT_DIR$/" />
+    <go_parameters value="-i" />
+    <kind value="DIRECTORY" />
+    <package value="github.com/virtual-vgo/vvgo" />
+    <directory value="$PROJECT_DIR$/" />
+    <filePath value="$PROJECT_DIR$/" />
+    <framework value="gotest" />
+    <method v="2">
+      <option name="GoBeforeRunTask" command="generate ./cmd/... ./pkg/..." />
+      <option name="GoBeforeRunTask" command="vet ./cmd/... ./pkg/..." />
+      <option name="GoBeforeRunTask" command="fmt ./cmd/... ./pkg/..." />
+    </method>
+  </configuration>
+</component>

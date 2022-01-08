@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Build API" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="vvgo" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="-env-file .vvgo.env" />
+    <kind value="PACKAGE" />
+    <package value="github.com/virtual-vgo/vvgo/cmd/vvgo" />
+    <directory value="$PROJECT_DIR$/" />
+    <filePath value="$PROJECT_DIR$/cmd/vvgo/main.go" />
+    <method v="2">
+      <option name="GoBeforeRunTask" command="run ./cmd/version" />
+    </method>
+  </configuration>
+</component>
