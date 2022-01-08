@@ -1,17 +1,16 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
-	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
+	"github.com/virtual-vgo/vvgo/pkg/clients/cloudflare"
+	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
-	"github.com/virtual-vgo/vvgo/pkg/models/mixtape"
 	"github.com/virtual-vgo/vvgo/pkg/server"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
@@ -22,50 +21,17 @@ import (
 	"time"
 )
 
-func migrateMixtapes() {
-	ctx := context.Background()
-	projects, err := redis.ListMixtapeProjects(context.Background())
-	if err != nil {
-		logger.Fatal("redis.Do() failed:", err)
-	}
-
-	reversed := make([]mixtape.Project, len(projects))
-	for i := range projects {
-		reversed[i] = projects[len(projects)-1-i]
-	}
-
-	for _, proj := range reversed {
-		if proj.Id == 0 {
-			var id uint64
-			if err := redis.Do(ctx, redis.Cmd(&id, redis.INCR, mixtape.NextProjectIdRedisKey)); err != nil {
-				logger.Fatal("redis.Do() failed:", err)
-			}
-			proj.Id = id
-			var projJSON bytes.Buffer
-			if err := json.NewEncoder(&projJSON).Encode(proj); err != nil {
-				logger.Fatal("json.Encode() failed:", err)
-			}
-			if err := redis.Do(ctx, redis.Cmd(nil, redis.HSET,
-				mixtape.ProjectsRedisKey, redis.ObjectId(proj.Id).String(), projJSON.String())); err != nil {
-				logger.Fatal("redis.Do() failed:", err)
-			}
-			if err := redis.Do(ctx, redis.Cmd(nil, redis.HDEL,
-				mixtape.ProjectsRedisKey, proj.Name)); err != nil {
-				logger.Fatal("redis.Do() failed:", err)
-			}
-		}
-	}
-}
-
 func main() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	logrus.SetFormatter(&logrus.TextFormatter{ForceColors: true})
 
 	var showVersion bool
-	var showConfig bool
+	var showEnvUsage bool
+	var showRuntimeConfig bool
 	var envFile string
 	flag.BoolVar(&showVersion, "version", false, "show version and quit")
-	flag.BoolVar(&showConfig, "env-usage", false, "show environment variable configuration")
+	flag.BoolVar(&showEnvUsage, "env-usage", false, "show environment variable configuration")
+	flag.BoolVar(&showRuntimeConfig, "runtime-config", false, "show runtime configuration")
 	flag.StringVar(&envFile, "env-file", "", "file with environment variables")
 	flag.Parse()
 
@@ -73,7 +39,7 @@ func main() {
 	case showVersion:
 		fmt.Println(version.String())
 		os.Exit(0)
-	case showConfig:
+	case showEnvUsage:
 		_ = envconfig.Usage("", &config.Config)
 		os.Exit(0)
 	case envFile != "":
@@ -82,10 +48,26 @@ func main() {
 		config.ProcessEnv()
 	}
 
-	migrateMixtapes()
+	if showRuntimeConfig {
+		configJSON, _ := json.MarshalIndent(config.Config, "", "  ")
+		fmt.Println(string(configJSON))
+		os.Exit(0)
+	}
 
 	apiServer := server.NewServer(config.Config.VVGO.ListenAddress)
 	logger.Println("http server: listening on " + config.Config.VVGO.ListenAddress)
+
+	if !config.Config.Development {
+		go cloudflare.PurgeCache()
+
+		discord.CreateMessage(context.Background(), "692441475740467250", discord.CreateMessageParams{
+			Content: "",
+			Embed: &discord.Embed{
+				Title:       "🍏 Fresh VVGO Deployment",
+				Description: fmt.Sprintf("**Build Time:** %s\n**Git Sha:** `%s`", version.BuildTime(), version.Get().GitSha),
+			},
+		})
+	}
 
 	go func() {
 		sigCh := make(chan os.Signal, 1)

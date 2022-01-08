@@ -3,11 +3,20 @@ package sheets
 import (
 	"context"
 	"fmt"
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
+	"github.com/virtual-vgo/vvgo/pkg/logger"
+	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
 
 func ReadSheet(ctx context.Context, spreadsheetName string, sheetName string) ([][]interface{}, error) {
-	srv, err := sheets.NewService(ctx)
+	var credentialsJSON string
+	err := redis.Do(ctx, redis.Cmd(&credentialsJSON, "GET", "google_api_credentials"))
+	if err != nil {
+		logger.RedisFailure(ctx, err)
+	}
+
+	srv, err := sheets.NewService(ctx, option.WithCredentialsJSON([]byte(credentialsJSON)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Sheets client: %w", err)
 	}
