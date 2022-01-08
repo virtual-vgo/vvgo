@@ -7,12 +7,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Log in to the Container registry
-        uses: docker/login-action
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build images
         shell: bash
