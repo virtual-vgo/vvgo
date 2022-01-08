@@ -11,7 +11,7 @@ COPY webpack.config.js .
 COPY .babelrc.js .
 RUN npx webpack --mode=production
 
-FROM golang:1.16 as builder
+FROM golang:1.17 as builder
 WORKDIR /go/src/app/
 ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
 COPY go.mod go.sum ./
@@ -25,7 +25,7 @@ RUN go build -o vvgo ./cmd/vvgo
 COPY .git .git
 RUN go run ./cmd/version
 
-FROM alpine:3.4 as vvgo
+FROM alpine:3 as vvgo
 RUN apk add --no-cache ca-certificates apache2-utils
 WORKDIR /app
 COPY LICENSE .
