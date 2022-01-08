@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 )
 
 // Package to query version information
@@ -34,10 +35,14 @@ func SetVersionHeaders(w http.ResponseWriter) {
 	}
 }
 
+func BuildTime() time.Time {
+	return version.BuildTime
+}
+
 type Version struct {
-	BuildTime string `json:"build_time"`
-	GitSha    string `json:"git_sha"`
-	GoVersion string `json:"go_version"`
+	BuildTime time.Time `json:"build_time"`
+	GitSha    string    `json:"git_sha"`
+	GoVersion string    `json:"go_version"`
 }
 
 func (x Version) String() string {
@@ -51,7 +56,7 @@ func (x Version) JSON() json.RawMessage {
 
 func (x Version) Header() http.Header {
 	header := make(http.Header)
-	header.Set("Build-Time", x.BuildTime)
+	header.Set("Build-Time", x.BuildTime.String())
 	header.Set("Git-Sha", x.GitSha)
 	header.Set("Go-Version", x.GoVersion)
 	return header

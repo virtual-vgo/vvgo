@@ -15,7 +15,7 @@ func main() {
 	if file, err := os.OpenFile(version.FileName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600); err != nil {
 		panic(err)
 	} else if err = json.NewEncoder(file).Encode(&version.Version{
-		BuildTime: time.Now().String(),
+		BuildTime: time.Now(),
 		GitSha:    gitSha(),
 		GoVersion: runtime.Version(),
 	}); err != nil {

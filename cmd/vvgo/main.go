@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 	"github.com/virtual-vgo/vvgo/pkg/clients/cloudflare"
+	"github.com/virtual-vgo/vvgo/pkg/clients/discord"
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server"
@@ -57,7 +59,16 @@ func main() {
 
 	if !config.Config.Development {
 		go cloudflare.PurgeCache()
+
+		discord.CreateMessage(context.Background(), "692441475740467250", discord.CreateMessageParams{
+			Content: "",
+			Embed: &discord.Embed{
+				Title:       "🍏 Fresh VVGO Deployment",
+				Description: fmt.Sprintf("**Build Time:** %s\n**Git Sha:** `%s`", version.BuildTime(), version.Get().GitSha),
+			},
+		})
 	}
+
 	go func() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
