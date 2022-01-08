@@ -11,12 +11,12 @@ import (
 
 func TestHeader(t *testing.T) {
 	version = Version{
-		BuildTime: time.Unix(1641610201, 0),
+		BuildTime: time.Unix(1641610201, 0).UTC(),
 		GitSha:    "yeet",
 		GoVersion: "1.14.1",
 	}
 	wantHeader := http.Header{
-		"Build-Time": []string{"2022-01-07 21:50:01 -0500 EST"},
+		"Build-Time": []string{"2022-01-08 02:50:01 +0000 UTC"},
 		"Git-Sha":    []string{"yeet"},
 		"Go-Version": []string{"1.14.1"},
 	}
@@ -27,13 +27,13 @@ func TestHeader(t *testing.T) {
 func TestSetVersionHeaders(t *testing.T) {
 	w := httptest.NewRecorder()
 	version = Version{
-		BuildTime: time.Unix(1641610201, 0),
+		BuildTime: time.Unix(1641610201, 0).UTC(),
 		GitSha:    "yeet",
 		GoVersion: "1.14.1",
 	}
 
 	wantHeader := http.Header{
-		"Build-Time": []string{"2022-01-07 21:50:01 -0500 EST"},
+		"Build-Time": []string{"2022-01-08 02:50:01 +0000 UTC"},
 		"Git-Sha":    []string{"yeet"},
 		"Go-Version": []string{"1.14.1"},
 	}
@@ -44,11 +44,11 @@ func TestSetVersionHeaders(t *testing.T) {
 
 func TestJSON(t *testing.T) {
 	version = Version{
-		BuildTime: time.Unix(1641610201, 0),
+		BuildTime: time.Unix(1641610201, 0).UTC(),
 		GitSha:    "yeet",
 		GoVersion: "1.14.1",
 	}
-	wantJSON := `{"build_time":"2022-01-07T21:50:01-05:00","git_sha":"yeet","go_version":"1.14.1"}`
+	wantJSON := `{"build_time":"2022-01-08T02:50:01Z","git_sha":"yeet","go_version":"1.14.1"}`
 	gotJSON := string(JSON())
 	if expected, got := wantJSON, gotJSON; expected != got {
 		t.Errorf("\nwant: `%v`\n got: `%v`", expected, got)
@@ -58,13 +58,13 @@ func TestJSON(t *testing.T) {
 func TestSet(t *testing.T) {
 	version = Version{} // reset
 	Set(Version{
-		BuildTime: time.Unix(1641610201, 0),
+		BuildTime: time.Unix(1641610201, 0).UTC(),
 		GitSha:    "yeet",
 		GoVersion: "1.14.1",
 	})
 
 	wantVersion := Version{
-		BuildTime: time.Unix(1641610201, 0),
+		BuildTime: time.Unix(1641610201, 0).UTC(),
 		GitSha:    "yeet",
 		GoVersion: "1.14.1",
 	}
@@ -77,7 +77,7 @@ func TestSet(t *testing.T) {
 
 func TestString(t *testing.T) {
 	version = Version{
-		BuildTime: time.Unix(1641610201, 0),
+		BuildTime: time.Unix(1641610201, 0).UTC(),
 		GitSha:    "yeet",
 		GoVersion: "1.14.1",
 	}
