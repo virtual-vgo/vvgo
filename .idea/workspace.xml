@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="07521e48-1517-49fd-ad31-35f2ac38ea0e" name="Changes" comment="" />
+    <list default="true" id="07521e48-1517-49fd-ad31-35f2ac38ea0e" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -134,7 +138,7 @@
       <command value="docker exec -ti vvgo_redis_1 redis-cli" />
     </option>
   </component>
-  <component name="RunManager" selected="Go Build.Sync DB">
+  <component name="RunManager" selected="npm.Start UI">
     <configuration name="Launch VVGO" type="CompoundRunConfigurationType">
       <toRun name="Deploy VVGO Sidecars " type="docker-deploy" />
       <toRun name="Build UI" type="js.build_tools.npm" />
@@ -164,18 +168,6 @@
       <pattern value="^\QTestBuild\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestRedisDeploy in github.com/virtual-vgo/vvgo/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="vvgo" />
-      <working_directory value="$PROJECT_DIR$/test" />
-      <root_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="github.com/virtual-vgo/vvgo/test" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestRedisDeploy\E$" />
-      <method v="2" />
-    </configuration>
     <configuration name="TestRedisDeploy/GET_ in github.com/virtual-vgo/vvgo/test" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="vvgo" />
       <working_directory value="$PROJECT_DIR$/test" />
@@ -198,6 +190,31 @@
       <envs />
       <method v="2" />
     </configuration>
+    <configuration name="test" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="test" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="ApiError" type="mocha-javascript-test-runner" temporary="true" nameIsGenerated="true">
+      <node-interpreter>project</node-interpreter>
+      <node-options />
+      <mocha-package>$PROJECT_DIR$/node_modules/mocha</mocha-package>
+      <working-directory>$PROJECT_DIR$</working-directory>
+      <pass-parent-env>true</pass-parent-env>
+      <ui>bdd</ui>
+      <extra-mocha-options />
+      <test-kind>SUITE</test-kind>
+      <test-file>$PROJECT_DIR$/src/datasets/ApiError.test.ts</test-file>
+      <test-names>
+        <name value="ApiError" />
+      </test-names>
+      <method v="2" />
+    </configuration>
     <list>
       <item itemvalue="Compound.Run All Tests" />
       <item itemvalue="Compound.Launch VVGO" />
@@ -206,7 +223,6 @@
       <item itemvalue="Go Build.Sync DB" />
       <item itemvalue="Go Build.Build API" />
       <item itemvalue="Go Test.Test Api" />
-      <item itemvalue="Go Test.TestRedisDeploy in github.com/virtual-vgo/vvgo/test" />
       <item itemvalue="Go Test.TestRedisDeploy/GET_ in github.com/virtual-vgo/vvgo/test" />
       <item itemvalue="Go Test.TestBuild in github.com/virtual-vgo/vvgo/test" />
       <item itemvalue="Mocha.Test UI" />
@@ -214,13 +230,16 @@
       <item itemvalue="npm.Start UI" />
       <item itemvalue="npm.Build UI" />
       <item itemvalue="npm.start" />
+      <item itemvalue="npm.test" />
+      <item itemvalue="Mocha.ApiError" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Mocha.ApiError" />
+        <item itemvalue="npm.test" />
         <item itemvalue="npm.start" />
         <item itemvalue="Go Test.TestBuild in github.com/virtual-vgo/vvgo/test" />
         <item itemvalue="Go Test.TestRedisDeploy/GET_ in github.com/virtual-vgo/vvgo/test" />
-        <item itemvalue="Go Test.TestRedisDeploy in github.com/virtual-vgo/vvgo/test" />
       </list>
     </recent_temporary>
   </component>
