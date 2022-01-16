@@ -7,18 +7,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build images
+      - name: Authenticate With Registry
+        run: echo "${{ secrets.PACKAGE_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Pull Master Image
+        run: docker pull ghcr.io/virtual-vgo/vvgo:master
+
+      - name: Build Images
         shell: bash
         run: |
           docker build . \
             -t ghcr.io/virtual-vgo/vvgo:${{ github.sha }} \
-            -t ghcr.io/virtual-vgo/$(basename ${{ github.ref }})
-
-      - name: Log into registry
-        run: echo "${{ secrets.PACKAGE_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            -t ghcr.io/virtual-vgo/vvgo:$(basename ${{ github.ref }})
 
       - name: Push Images
         shell: bash
         run: |
           docker push ghcr.io/virtual-vgo/vvgo:${{ github.sha }}
-          docker push ghcr.io/virtual-vgo/$(basename ${{ github.ref }})
+          docker push ghcr.io/virtual-vgo/vvgo:$(basename ${{ github.ref }})
