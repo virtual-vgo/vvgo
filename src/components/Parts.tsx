@@ -46,11 +46,10 @@ export const Parts = () => {
     allProjects ?? [],
     pathMatcher,
     permaLink,
-    latestProject(
-      allProjects
-        ?.filter((r) => r.PartsReleased)
-        .filter((r) => !r.PartsArchived)
-    )
+    allProjects
+      ?.filter((r) => r.PartsReleased)
+      .filter((r) => !r.PartsArchived)
+      .pop()
   );
   if (!allProjects) return <LoadingText />;
 
@@ -175,9 +174,9 @@ const PartsTable = (props: {
 }) => {
   const searchInputRef = useRef({} as HTMLInputElement);
   const [searchInput, setSearchInput] = useState("");
-  const wantParts = searchParts(searchInput, props.parts).filter(
-    (r) => r.Project == props.projectName
-  );
+  const wantParts = searchParts(searchInput, props.parts)
+    .filter((r) => r.Project == props.projectName)
+    .filter((r) => r.PartName.length > 0);
   const searchBoxStyle = { maxWidth: 250 } as CSSProperties;
   // This width gives enough space to have all the download buttons on one line
   const partNameStyle = { width: 220 } as CSSProperties;
