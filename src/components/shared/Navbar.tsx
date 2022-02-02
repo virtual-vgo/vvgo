@@ -73,7 +73,7 @@ export const Navbar = () => {
               </Dropdown.Toggle>
               <Dropdown.Menu>
                 <Dropdown.Item href={links.BandCamp}>Music</Dropdown.Item>
-                <Dropdown.Item href="/store">Merch</Dropdown.Item>
+                <Dropdown.Item href="https://store.vvgo.org">Merch</Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
             <PrivateNavLink
