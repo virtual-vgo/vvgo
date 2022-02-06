@@ -70,6 +70,9 @@ export const Login = () => {
                 type="password"
                 placeholder="password"
                 required
+                onKeyUp={(e) => {
+                  if (e.key == "Enter") return onClickLogin();
+                }}
               />
             </Form.Group>
             <div hidden={!loginFailed} className="mt-2 text-warning">
