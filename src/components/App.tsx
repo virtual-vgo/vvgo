@@ -145,7 +145,7 @@ const MixtapeRoutes = () => {
         </AppPage>
       </PrivateRoute>
       <Route>
-        <AppPage title="Wintry Mix">
+        <AppPage title="Mixtape">
           <MemberDashboard />
         </AppPage>
       </Route>
