@@ -63,7 +63,7 @@ export const Navbar = () => {
         <BootstrapNavbar.Collapse>
           <Nav className="me-auto">
             <MemberNavLink to="/parts/">Parts</MemberNavLink>
-            <MemberNavLink to="/mixtape/">Wintry Mix</MemberNavLink>
+            <MemberNavLink to="/mixtape/">Mixtape</MemberNavLink>
             <NavLink to="/projects/">Projects</NavLink>
             <NavLink to="/about/">About</NavLink>
             <NavLink to="/contact/">Contact</NavLink>
