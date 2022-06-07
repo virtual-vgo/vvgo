@@ -38,7 +38,6 @@ func init() {
 }
 
 func WhichTime(ctx context.Context, channelId string) {
-	embed := makeEmbed()
 
 	var dataJson string
 	if err := redis.Do(ctx, redis.Cmd(&dataJson, redis.HGET, RedisKey, channelId)); err != nil {
@@ -53,33 +52,16 @@ func WhichTime(ctx context.Context, channelId string) {
 	}
 
 	if data.MessageId != "" {
-		editMessage(ctx, channelId, data.MessageId, embed)
+		editMessage(ctx, channelId, data.MessageId)
 	} else {
-		createMessage(ctx, channelId, embed)
+		createMessage(ctx, channelId)
 	}
 }
 
-func makeEmbed() *discord.Embed {
-	now := time.Now()
-	times := make([]string, len(locations))
-	for _, location := range locations {
-		locationString := location.String()
-		times = append(times, fmt.Sprintf("**%s:**\n> %s\n\n",
-			strings.Replace(locationString[strings.LastIndex(locationString, "/")+1:], "_", " ", -1),
-			now.In(location).Format(time.UnixDate),
-		))
-	}
-	sort.Strings(times)
-	return &discord.Embed{
-		Title:       "🤔🤔 ¿¿ WHICH TIME IT IS ?? 🤔🤔",
-		Description: "\n\n" + strings.Join(times, ""),
-	}
-}
-
-func createMessage(ctx context.Context, channelId string, embed *discord.Embed) {
+func createMessage(ctx context.Context, channelId string) {
 	message, err := discord.CreateMessage(ctx,
 		discord.Snowflake(channelId),
-		discord.CreateMessageParams{Embed: embed},
+		discord.CreateMessageParams{Embed: makeEmbed()},
 	)
 
 	if err != nil {
@@ -100,11 +82,11 @@ func createMessage(ctx context.Context, channelId string, embed *discord.Embed) 
 	}
 }
 
-func editMessage(ctx context.Context, channelId string, messageId string, embed *discord.Embed) {
+func editMessage(ctx context.Context, channelId string, messageId string) {
 	_, err := discord.EditMessage(ctx,
 		discord.Snowflake(channelId),
 		discord.Snowflake(messageId),
-		discord.EditMessageParams{Embed: embed},
+		discord.EditMessageParams{Embed: makeEmbed()},
 	)
 
 	if err != nil {
@@ -112,5 +94,22 @@ func editMessage(ctx context.Context, channelId string, messageId string, embed 
 		if err := redis.Do(ctx, redis.Cmd(nil, redis.HDEL, RedisKey, channelId)); err != nil {
 			logger.RedisFailure(ctx, err)
 		}
+	}
+}
+
+func makeEmbed() *discord.Embed {
+	now := time.Now()
+	times := make([]string, len(locations))
+	for _, location := range locations {
+		locationString := location.String()
+		times = append(times, fmt.Sprintf("**%s:**\n> %s\n\n",
+			strings.Replace(locationString[strings.LastIndex(locationString, "/")+1:], "_", " ", -1),
+			now.In(location).Format(time.UnixDate),
+		))
+	}
+	sort.Strings(times)
+	return &discord.Embed{
+		Title:       "🤔🤔 ¿¿ WHICH TIME IT IS ?? 🤔🤔",
+		Description: "\n\n" + strings.Join(times, ""),
 	}
 }
