@@ -24,7 +24,7 @@ COPY .git .git
 RUN go run ./cmd/version
 
 FROM alpine:3 as vvgo
-RUN apk add --no-cache ca-certificates apache2-utils
+RUN apk add --no-cache ca-certificates apache2-utils tzdata
 WORKDIR /app
 COPY LICENSE .
 COPY public ./public
