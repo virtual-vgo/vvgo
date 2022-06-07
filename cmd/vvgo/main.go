@@ -22,6 +22,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	logrus.SetFormatter(&logrus.TextFormatter{ForceColors: true})
 
@@ -60,14 +62,28 @@ func main() {
 	if !config.Config.Development {
 		go cloudflare.PurgeCache()
 
-		discord.CreateMessage(context.Background(), "692441475740467250", discord.CreateMessageParams{
-			Content: "",
+		_, err := discord.CreateMessage(ctx, "692441475740467250", discord.CreateMessageParams{
 			Embed: &discord.Embed{
 				Title:       "🍏 Fresh VVGO Deployment",
 				Description: fmt.Sprintf("**Build Time:** %s\n**Git Sha:** `%s`", version.BuildTime(), version.Get().GitSha),
 			},
 		})
+		if err != nil {
+			logger.HttpDoFailure(ctx, err)
+		}
 	}
+
+	go func() {
+		channelId := discord.VVGOChannelJacksonsSandbox
+		if !config.Config.Development {
+			channelId = discord.VVGOChannelTimezones
+		}
+
+		which_time.WhichTime(ctx, channelId)
+		for range time.Tick(30 * time.Second) {
+			which_time.WhichTime(ctx, channelId)
+		}
+	}()
 
 	go func() {
 		sigCh := make(chan os.Signal, 1)

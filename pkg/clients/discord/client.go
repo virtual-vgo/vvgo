@@ -27,6 +27,9 @@ const VVGOVerifiedMemberRoleID = "690636730281230396"
 const VVGOProductionTeamRoleID = "746434659252174971"
 const VVGOExecutiveDirectorRoleID = "690626333062987866"
 const VVGOProductionDirectorRoleID = "805504313072943155"
+const VVGOChannelJacksonsSandbox = "700792848253059142"
+const VVGOChannelWebDevelopers = "692441475740467250"
+const VVGOChannelTimezones = "983552216226992159"
 
 var IgnoreChannelIds = []string{
 	"690626217594060892",
