@@ -12,6 +12,7 @@ import (
 	"github.com/virtual-vgo/vvgo/pkg/config"
 	"github.com/virtual-vgo/vvgo/pkg/logger"
 	"github.com/virtual-vgo/vvgo/pkg/server"
+	"github.com/virtual-vgo/vvgo/pkg/server/cron/which_time"
 	"github.com/virtual-vgo/vvgo/pkg/version"
 	"math/rand"
 	"net/http"
@@ -62,7 +63,7 @@ func main() {
 	if !config.Config.Development {
 		go cloudflare.PurgeCache()
 
-		_, err := discord.CreateMessage(ctx, "692441475740467250", discord.CreateMessageParams{
+		_, err := discord.CreateMessage(ctx, discord.VVGOChannelWebDevelopers, discord.CreateMessageParams{
 			Embed: &discord.Embed{
 				Title:       "🍏 Fresh VVGO Deployment",
 				Description: fmt.Sprintf("**Build Time:** %s\n**Git Sha:** `%s`", version.BuildTime(), version.Get().GitSha),
