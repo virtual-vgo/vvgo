@@ -1,18 +1,20 @@
-import isEmpty from "lodash/fp/isEmpty";
-import { useEffect, useState } from "react";
-import { getSession } from "../auth";
-import { ApiError } from "./ApiError";
 import { ApiResponse, ApiStatus, Endpoint } from "./ApiResponse";
+import { ApiRole, Session, SessionKind } from "./Session";
+import { useEffect, useState } from "react";
+
+import { ApiError } from "./ApiError";
 import { Credit } from "./Credit";
 import { CreditsTable } from "./CreditsTable";
 import { DatasetRow } from "./Dataset";
 import { Director } from "./Director";
 import { GuildMember } from "./GuildMember";
 import { Highlight } from "./Highlight";
+import { Instrument } from "./Instrument";
 import { MixtapeProject } from "./MixtapeProject";
 import { Part } from "./Part";
 import { Project } from "./Project";
-import { ApiRole, Session, SessionKind } from "./Session";
+import { getSession } from "../auth";
+import isEmpty from "lodash/fp/isEmpty";
 
 export const useCredits = (): Credit[] | undefined =>
   useDataset("Credits", Credit.fromDatasetRow);
@@ -60,6 +62,9 @@ export const useGuildMemberLookup = (ids: string[]) => {
 
 export const useHighlights = (): Highlight[] | undefined =>
   useDataset("Highlights", Highlight.fromDatasetRow);
+
+export const useInstruments = (): Instrument[] | undefined =>
+  useDataset("Instruments", Instrument.fromDatasetRow);
 
 export const useMixtapeProjects = (): [
   MixtapeProject[] | undefined,

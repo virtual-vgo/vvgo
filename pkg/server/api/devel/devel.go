@@ -14,7 +14,7 @@ import (
 func FetchSpreadsheets(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	spreadsheet, err := vvgo.GetSheets(models.SpreadsheetWebsiteData,
-		models.SheetCredits, models.SheetProjects, models.SheetParts, models.SheetDirectors, "Highlights", "Roster")
+		models.SheetCredits, models.SheetProjects, models.SheetParts, models.SheetDirectors, "Highlights", "Roster", "Instruments")
 	if err != nil {
 		logger.MethodFailure(ctx, "vvgo.GetSheets", err)
 		http_helpers.WriteInternalServerError(ctx, w)

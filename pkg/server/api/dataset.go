@@ -16,6 +16,7 @@ func AllowedDatasets() []string {
 		"Directors",
 		"Roster",
 		"Credits",
+		"Instruments",
 	}
 }
 
