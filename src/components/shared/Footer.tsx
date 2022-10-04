@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Badge } from "react-bootstrap";
 import { latestProject, useProjects } from "../../datasets";
+
+import { Badge } from "react-bootstrap";
+import { useState } from "react";
 
 const BandcampIframeMaxWidth = 700;
 
@@ -37,7 +38,7 @@ export function Footer() {
         <a className="text-light" href="https://twitter.com/virtualvgo">
           <i className="fab fa-twitter fa-2x" />
         </a>
-        <a className="text-light" href="https://discord.gg/vvgo">
+        <a className="text-light" href="https://discord.gg/mt8EZdsrc6">
           <i className="fab fa-discord fa-2x" />
         </a>
       </div>
