@@ -1,25 +1,27 @@
-import isEmpty from "lodash/fp/isEmpty";
-import { lazy, Suspense } from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { getSession, updateLogin } from "../auth";
-import { UserRole } from "../datasets";
+
+import AccessDenied from "./errors/AccessDenied";
 import Admin from "./admin/Admin";
 import Contact from "./Contact";
-import AccessDenied from "./errors/AccessDenied";
-import InternalOopsie from "./errors/InternalOopsie";
-import NotFound from "./errors/NotFound";
+import { Footer } from "./shared/Footer";
 import Home from "./Home";
+import InternalOopsie from "./errors/InternalOopsie";
+import { LoadingText } from "./shared/LoadingText";
 import Login from "./login/Login";
 import LoginDiscord from "./login/LoginDiscord";
 import LoginFailure from "./login/LoginFailure";
 import Logout from "./login/Logout";
-import { Footer } from "./shared/Footer";
-import { LoadingText } from "./shared/LoadingText";
 import { Navbar } from "./shared/Navbar";
+import NotFound from "./errors/NotFound";
+import { UserRole } from "../datasets";
+import isEmpty from "lodash/fp/isEmpty";
 
 // Lazy loads
 const MemberStats = lazy(() => import("./stats/Members"));
 const Projects = lazy(() => import("./Projects"));
+const Submissions = lazy(() => import("./Submissions"));
 const Parts = lazy(() => import("./Parts"));
 const NewProjectWorkflow = lazy(() => import("./mixtape/NewProjectWorkflow"));
 const MemberDashboard = lazy(() => import("./mixtape/MemberDashboard"));
@@ -54,6 +56,12 @@ export const App = () => {
             <Parts />
           </AppPage>
         </PrivateRoute>
+
+        <Route path="/submissions/">
+          <AppPage title="Submissions">
+            <Submissions />
+          </AppPage>
+        </Route>
 
         <PrivateRoute path="/mixtape/" role={UserRole.VerifiedMember}>
           <MixtapeRoutes />

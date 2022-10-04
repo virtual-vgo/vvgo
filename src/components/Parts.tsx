@@ -1,31 +1,32 @@
-import { isEmpty } from "lodash";
+import {
+  ApiRole,
+  Part,
+  Project,
+  Session,
+  UserRole,
+  latestProject,
+  useNewApiSession,
+  useParts,
+  useProjects,
+} from "../datasets";
 import { CSSProperties, useRef, useState } from "react";
+import { FancyProjectMenu, useMenuSelection } from "./shared/FancyProjectMenu";
+
+import { AlertArchivedParts } from "./shared/AlertArchivedParts";
+import { AlertUnreleasedProject } from "./shared/AlertUnreleasedProject";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Col from "react-bootstrap/Col";
 import FormControl from "react-bootstrap/FormControl";
-import Row from "react-bootstrap/Row";
-import Table from "react-bootstrap/Table";
-import { getSession } from "../auth";
 import { GuildChannel } from "../data/discord";
-import { links } from "../data/links";
-import {
-  ApiRole,
-  latestProject,
-  Part,
-  Project,
-  Session,
-  useNewApiSession,
-  useParts,
-  useProjects,
-  UserRole,
-} from "../datasets";
-import { AlertArchivedParts } from "./shared/AlertArchivedParts";
-import { AlertUnreleasedProject } from "./shared/AlertUnreleasedProject";
-import { FancyProjectMenu, useMenuSelection } from "./shared/FancyProjectMenu";
 import { LinkChannel } from "./shared/LinkChannel";
 import { LoadingText } from "./shared/LoadingText";
 import { ProjectHeader } from "./shared/ProjectHeader";
+import Row from "react-bootstrap/Row";
+import Table from "react-bootstrap/Table";
+import { getSession } from "../auth";
+import { isEmpty } from "lodash";
+import { links } from "../data/links";
 
 const permaLink = (project: Project) => `/parts/${project.Name}`;
 const pathMatcher = /\/parts\/(.+)\/?/;
@@ -159,7 +160,7 @@ const PartsTopLinks = (props: {
         >
           <i className="far fa-file-audio" /> Reference Track
         </DownloadButton>
-        <LinkButton to={props.project.SubmissionLink}>
+        <LinkButton to={`/submissions/${props.project.Name}`}>
           <i className="fab fa-dropbox" /> Submit Recordings
         </LinkButton>
       </ButtonGroup>
