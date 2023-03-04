@@ -1,8 +1,9 @@
 package models
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_valuesToProjects(t *testing.T) {
@@ -36,7 +37,7 @@ func Test_valuesToProjects(t *testing.T) {
 			Title:          "Proof of a Hero",
 			PartsReleased:  true,
 			PartsArchived:  true,
-			Mixtape: 		false,
+			Mixtape:        false,
 			Sources:        "Monster Hunter",
 			Composers:      "Masato Kouda (甲田 雅人)",
 			Arrangers:      "Arranged by Jacob Zeleny",
@@ -54,7 +55,7 @@ func Test_valuesToProjects(t *testing.T) {
 			Title:          "The End Begins (To Rock)",
 			PartsReleased:  true,
 			PartsArchived:  true,
-			Mixtape: 		false,
+			Mixtape:        false,
 			Sources:        "God of War II & Guitar Hero III",
 			Composers:      "Gerard K. Marino",
 			Arrangers:      "Orch. Shota Nakama; Additional Orch. & Arr. Thomas Håkanson",
