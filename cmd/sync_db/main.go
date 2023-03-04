@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-const localRedisContainer = "vvgo_redis_1"
+const localRedisContainer = "vvgo-redis-1"
 const redisHost = "root@redis-1.infra.vvgo.org"
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 		exec.Command("ssh", redisHost, "/root/bin/backup-redis"),
 		exec.Command("scp", redisHost+":/var/lib/redis/dump.rdb", "."),
 		exec.Command("docker", "stop", localRedisContainer),
-		exec.Command("docker", "cp", "dump.rdb", "vvgo_redis_1:/data/dump.rdb"),
+		exec.Command("docker", "cp", "dump.rdb", "vvgo-redis-1:/data/dump.rdb"),
 		exec.Command("docker", "start", localRedisContainer),
 		exec.Command("docker", "exec", localRedisContainer, "redis-cli", "SET", "__db_name", "localhost"),
 	} {

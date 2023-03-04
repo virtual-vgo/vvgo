@@ -16,6 +16,7 @@ type Project struct {
 	PartsReleased           bool
 	PartsArchived           bool
 	VideoReleased           bool
+	Mixtape          		bool
 	Sources                 string
 	Composers               string
 	Arrangers               string
