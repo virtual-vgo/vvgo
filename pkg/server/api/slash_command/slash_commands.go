@@ -34,11 +34,6 @@ var SlashCommands = []SlashCommand{
 		Handler:     SubmitInteractionHandler,
 	},
 	{
-		Name:        "fuckoff",
-		Description: "A modern solution to the common problem of telling people to fuck off.",
-		Handler:     FuckoffInteractionHandler,
-	},
-	{
 		Name:        "when2meet",
 		Description: "Make a when2meet link.",
 		Options:     When2meetCommandOptions,

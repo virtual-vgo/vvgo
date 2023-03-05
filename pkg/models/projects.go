@@ -2,8 +2,9 @@ package models
 
 import (
 	"context"
-	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 	"sort"
+
+	"github.com/virtual-vgo/vvgo/pkg/clients/redis"
 )
 
 const SheetProjects = "Projects"
@@ -16,6 +17,7 @@ type Project struct {
 	PartsReleased           bool
 	PartsArchived           bool
 	VideoReleased           bool
+	Mixtape                 bool
 	Sources                 string
 	Composers               string
 	Arrangers               string
