@@ -24,4 +24,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/virtual-vgo/vvgo:${{ github.sha }},ghcr.io/virtual-vgo/vvgo:$(basename ${{ github.ref }}
+          tags: ghcr.io/virtual-vgo/vvgo:${{ github.sha }},ghcr.io/virtual-vgo/vvgo:${{ github.head_ref }}
