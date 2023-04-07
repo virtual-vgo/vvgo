@@ -4,24 +4,24 @@ on: push
 jobs:
   vvgo:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Authenticate With Registry
-        run: echo "${{ secrets.PACKAGE_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull Master Image
-        run: docker pull ghcr.io/virtual-vgo/vvgo:master
-
-      - name: Build Images
-        shell: bash
-        run: |
-          docker build . \
-            -t ghcr.io/virtual-vgo/vvgo:${{ github.sha }} \
-            -t ghcr.io/virtual-vgo/vvgo:$(basename ${{ github.ref }})
-
-      - name: Push Images
-        shell: bash
-        run: |
-          docker push ghcr.io/virtual-vgo/vvgo:${{ github.sha }}
-          docker push ghcr.io/virtual-vgo/vvgo:$(basename ${{ github.ref }})
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/virtual-vgo/vvgo:${{ github.sha }},ghcr.io/virtual-vgo/vvgo:$(basename ${{ github.ref }}
